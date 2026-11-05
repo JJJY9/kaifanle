@@ -202,6 +202,14 @@ const fakeSdk = {
         sentMessages.push(payload)
         return { errCode: 0 }
       }
+    },
+    security: {
+      async msgSecCheck({ content }) {
+        if (String(content).indexOf('违规') > -1) {
+          return { errCode: 0, result: { suggest: 'risky' } }
+        }
+        return { errCode: 0, result: { suggest: 'pass' } }
+      }
     }
   },
   getWXContext() {
@@ -492,6 +500,10 @@ async function run() {
   res = await call('createWish', { content: '想吃火锅' }, 'girl-openid')
   assert.strictEqual(res.ok, true)
   const wishId = res.data.id
+
+  // 内容安全：违规内容会被拦截
+  res = await call('createWish', { content: '这是违规内容' }, 'girl-openid')
+  assert.strictEqual(res.ok, false)
 
   res = await call('getWishes', {}, 'girl-openid')
   assert.strictEqual(res.data.length, 1)

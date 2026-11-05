@@ -57,6 +57,10 @@
   background: #FF5C8A;
 }
 
+.notify-btn.copy {
+  background: #2FBF71;
+}
+
 .notify-hint {
   color: #5C5C5C;
   font-size: 22rpx;

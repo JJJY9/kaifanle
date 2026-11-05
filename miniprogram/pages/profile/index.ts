@@ -1,5 +1,6 @@
 import { getMe, getOrders, initDb, getCoupons } from '../../services/api'
 import { USE_CLOUD } from '../../config'
+import { formatTime } from '../../utils/format'
 
 Page({
   data: {
@@ -94,6 +95,13 @@ Page({
         desc: '点一下复制，用于添加管理员',
         icon: 'ID',
         color: '#FFD23F'
+      })
+      entries.push({
+        key: 'logs',
+        label: '运行日志',
+        desc: '最近的小程序报错，方便排查',
+        icon: '记',
+        color: '#FF5C8A'
       })
     }
 
@@ -223,6 +231,29 @@ Page({
       if (this.data.openid) {
         wx.setClipboardData({ data: this.data.openid })
       }
+      return
+    }
+
+    if (key === 'logs') {
+      let logs: any[] = []
+      try {
+        logs = wx.getStorageSync('kfl_error_log') || []
+      } catch (e) {
+        logs = []
+      }
+      if (!logs.length) {
+        wx.showToast({ title: '没有报错记录，一切正常', icon: 'none' })
+        return
+      }
+      const text = logs
+        .map(
+          log =>
+            `${formatTime(Number(log.time) || Date.now())} ${String(
+              log.msg || ''
+            )}`
+        )
+        .join('\n')
+      wx.setClipboardData({ data: text })
       return
     }
 

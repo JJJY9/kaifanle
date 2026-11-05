@@ -628,8 +628,34 @@ async function autoRollMenu() {
   return { date: tomorrow, menus: rolled }
 }
 
-async function requireAdmin(openid) {
-  const ok = await isAdminOpenid(openid)
+// 内容安全检测：违规内容直接拒绝；接口未开通或异常时不阻断正常使用。
+async function checkContentSafety(openid, content) {
+  const text = String(content || '').trim()
+  if (!text) {
+    return
+  }
+  let suggest = ''
+  try {
+    const res = await cloud.openapi.security.msgSecCheck({
+      openid,
+      scene: 2,
+      version: 2,
+      content: text.slice(0, 500)
+    })
+    suggest = (res && res.result && res.result.suggest) || ''
+  } catch (err) {
+    if (err && String(err.errCode) === '87014') {
+      throw new Error('内容好像不太合适，换个说法吧')
+    }
+    console.warn('[api] msgSecCheck skipped:', (err && err.errMsg) || err)
+    return
+  }
+  if (suggest && suggest !== 'pass') {
+    throw new Error('内容好像不太合适，换个说法吧')
+  }
+}
+
+async function requireAdmin(openid) {  const ok = await isAdminOpenid(openid)
   if (!ok) {
     throw new Error('没有权限，只有管理员可以操作')
   }
@@ -764,6 +790,10 @@ async function createOrder(payload, openid) {
     throw new Error('一次最多点 20 道菜')
   }
 
+  // 备注先做内容安全检查，避免扣完库存再失败
+  const note = String(payload.note || '').slice(0, 100)
+  await checkContentSafety(openid, note)
+
   const ids = payload.items.map(item => item && item.dishId).filter(Boolean)
   const dishRes = await db
     .collection('dishes')
@@ -844,7 +874,6 @@ async function createOrder(payload, openid) {
 
   const expectedTime = String(payload.expectedTime || '尽快').slice(0, 20)
   const mode = String(payload.mode || '在家吃').slice(0, 20)
-  const note = String(payload.note || '').slice(0, 100)
   const address = String(payload.address || '').slice(0, 60)
   let buyerProfile = { dislikes: [], tastes: [] }
   try {
@@ -1213,6 +1242,7 @@ async function createWish(payload, openid) {
   if (!content || content.length > 50) {
     throw new Error('愿望需要 1-50 个字')
   }
+  await checkContentSafety(openid, content)
   await ensureCollection('wishes')
   const now = Date.now()
   const wish = {
@@ -1258,7 +1288,9 @@ async function updateWish(payload, openid) {
     data.plannedDate = String(payload.plannedDate || '').slice(0, 20)
   }
   if (payload.reply !== undefined) {
-    data.reply = String(payload.reply || '').slice(0, 50)
+    const reply = String(payload.reply || '').slice(0, 50)
+    await checkContentSafety(openid, reply)
+    data.reply = reply
   }
   data.updatedAt = Date.now()
   await db.collection('wishes').doc(id).update({ data })

@@ -13,7 +13,7 @@ import {
   STATUS_TEXT,
   mealName
 } from '../../utils/constants'
-import { formatTime, itemSummary, dateLabel, dateInputString } from '../../utils/format'
+import { formatTime, itemSummary, dateLabel, dateInputString, formatDate } from '../../utils/format'
 import { TEMPLATE_NEW_ORDER } from '../../config'
 
 Page({
@@ -37,6 +37,7 @@ Page({
   _watchTimer: null as any,
   _knownPending: [] as string[],
   _statsAt: 0,
+  _rawOrders: [] as any[],
 
   onShow() {
     this.guard()
@@ -110,6 +111,7 @@ Page({
   async load(silent = false) {
     try {
       const orders = await getAllOrders()
+      this._rawOrders = orders
       // 静默轮询只拉订单；菜品和统计沿用上次结果，省云端读取次数
       let dishes = this.data.dishes
       let stats = this.data.stats
@@ -334,6 +336,51 @@ Page({
 
   onTogglePrep() {
     this.setData({ showPrep: !this.data.showPrep })
+  },
+
+  // 把今天的订单整理成一段文字，方便记账或发给家人
+  onCopySummary() {
+    const todayKey = dateInputString()
+    const todayOrders = (this._rawOrders || []).filter(
+      order =>
+        (order.scheduledDate ||
+          dateInputString(new Date(order.createdAt))) === todayKey
+    )
+    if (!todayOrders.length) {
+      wx.showToast({ title: '今天还没有订单', icon: 'none' })
+      return
+    }
+    const valid = todayOrders.filter(order => order.status !== 'cancelled')
+    const revenue = valid.reduce(
+      (sum, order) => sum + Number(order.amount || 0),
+      0
+    )
+    const lines = todayOrders.map(order => {
+      const items = order.items
+        .map((item: any) => `${item.name}×${item.qty}`)
+        .join('、')
+      return `#${order.no} ${mealName(order.meal)} ${
+        STATUS_TEXT[order.status]
+      } ${items} ¥${order.amount}`
+    })
+    const dishMap: Record<string, number> = {}
+    valid.forEach(order => {
+      order.items.forEach((item: any) => {
+        dishMap[item.name] = (dishMap[item.name] || 0) + Number(item.qty || 0)
+      })
+    })
+    const prep = Object.keys(dishMap)
+      .map(name => `${name}×${dishMap[name]}`)
+      .join('，')
+    const text = [
+      `【张饱饭堂】${formatDate(Date.now())} 订单汇总`,
+      `共 ${valid.length} 单 · 营收 ¥${revenue}`,
+      ...lines,
+      prep ? `备菜：${prep}` : ''
+    ]
+      .filter(Boolean)
+      .join('\n')
+    wx.setClipboardData({ data: text })
   },
 
   onHistoryTap(e: any) {
