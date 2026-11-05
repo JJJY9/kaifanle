@@ -23,6 +23,11 @@ function invoke(mp, body) {
   const mp = await automator.connect({
     wsEndpoint: process.argv[2] || 'ws://127.0.0.1:9420'
   })
+  await mp.mockWxMethod('showModal', {
+    confirm: true,
+    cancel: false,
+    content: ''
+  })
 
   const current = () => mp.currentPage()
 
@@ -306,6 +311,39 @@ function invoke(mp, body) {
     Boolean(data.stats) && typeof data.stats.total === 'number',
     data.stats && `本月 ${data.stats.month} / 累计 ${data.stats.total}`
   )
+
+  // ---------- 分类管理 ----------
+  await mp.navigateTo('/pages/category-manage/index')
+  await sleep(2000)
+  page = await current()
+  data = await page.data()
+  check(
+    '分类管理加载',
+    (data.categories || []).length > 0,
+    `${(data.categories || []).length} 个分类`
+  )
+  await invoke(mp, "page.setData({ name: '回归测试', color: '#2D9CFF' })")
+  await invoke(mp, 'page.onSave()')
+  await sleep(1500)
+  page = await current()
+  data = await page.data()
+  const addedCategory = (data.categories || []).find(
+    item => item.name === '回归测试'
+  )
+  check('分类新增', Boolean(addedCategory))
+  if (addedCategory) {
+    await invoke(
+      mp,
+      `page.onDelete({ currentTarget: { dataset: { id: '${addedCategory.id}' } } })`
+    )
+    await sleep(1500)
+    page = await current()
+    data = await page.data()
+    check(
+      '分类删除',
+      !(data.categories || []).some(item => item.name === '回归测试')
+    )
+  }
 
   const failed = results.filter(r => !r.ok)
   console.log(`\n结论：${results.length - failed.length}/${results.length} 通过`)
