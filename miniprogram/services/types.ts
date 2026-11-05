@@ -27,6 +27,7 @@ export interface Dish {
   status: 'on' | 'soldout' | 'off'
   color: string
   meals: MealId[]
+  stock?: number
   isRecommended?: boolean
 }
 
@@ -48,6 +49,7 @@ export interface DishInput {
   color: string
   meals: MealId[]
   status: 'on' | 'soldout' | 'off'
+  stock: number
   isRecommended: boolean
 }
 
@@ -140,4 +142,25 @@ export interface UserProfile {
   dislikes: string[]
   tastes: string[]
   address: string
+}
+
+export interface StoreStats {
+  orderCount: number
+  completed: number
+  revenue: number
+  topDish: string
+  topQty: number
+}
+
+export type CouponStatus = 'unused' | 'used'
+
+export interface Coupon {
+  id: string
+  title: string
+  note: string
+  status: CouponStatus
+  owner: string
+  createdAt: number
+  claimedAt: number
+  usedAt: number
 }

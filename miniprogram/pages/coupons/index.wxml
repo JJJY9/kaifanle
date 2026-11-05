@@ -1,0 +1,69 @@
+<view class="page">
+  <view class="head">
+    <text class="title display">爱心券</text>
+    <text class="sub">洗碗、奶茶、夸夸卡</text>
+  </view>
+
+  <view wx:if="{{isAdmin}}" class="card create-card">
+    <view class="create-title">发一张券</view>
+    <input
+      class="create-input"
+      placeholder="券名，比如：洗碗券"
+      value="{{newTitle}}"
+      maxlength="20"
+      bindinput="onTitle"
+    />
+    <input
+      class="create-input"
+      placeholder="备注，比如：攒够 3 次换一次"
+      value="{{newNote}}"
+      maxlength="40"
+      bindinput="onNote"
+    />
+    <view
+      class="create-btn {{creating ? 'disabled' : ''}}"
+      bindtap="onCreate"
+    >{{creating ? '发放中…' : '发券'}}</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="skeleton sk"></view>
+
+  <block wx:elif="{{coupons.length}}">
+    <view wx:for="{{coupons}}" wx:key="id" class="coupon card">
+      <view class="coupon-top">
+        <view class="coupon-title">{{item.title}}</view>
+        <view class="coupon-status {{item.status}} {{item.canClaim ? 'pool' : ''}}">{{item.statusText}}</view>
+      </view>
+      <view wx:if="{{item.note}}" class="coupon-note">{{item.note}}</view>
+      <view class="coupon-foot">
+        <text class="coupon-date">{{item.dateText}}</text>
+        <view class="coupon-actions">
+          <view
+            wx:if="{{item.canClaim}}"
+            class="cbtn primary"
+            data-id="{{item.id}}"
+            bindtap="onClaim"
+          >收下</view>
+          <view
+            wx:if="{{item.canUse}}"
+            class="cbtn"
+            data-id="{{item.id}}"
+            bindtap="onUse"
+          >用掉</view>
+          <view
+            wx:if="{{isAdmin}}"
+            class="cbtn danger"
+            data-id="{{item.id}}"
+            bindtap="onDelete"
+          >删除</view>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <empty-state
+    wx:else
+    title="还没有爱心券"
+    desc="{{isAdmin ? '发一张券，给她一个小惊喜' : '等掌勺的发券'}}"
+  />
+</view>

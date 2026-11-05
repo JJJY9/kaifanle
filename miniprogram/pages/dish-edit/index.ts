@@ -27,6 +27,7 @@ Page({
     name: '',
     desc: '',
     price: '',
+    stock: '-1',
     categoryId: '',
     meals: MEALS,
     selectedMeals: [] as MealId[],
@@ -87,6 +88,7 @@ Page({
         name: dish.name,
         desc: dish.desc,
         price: String(dish.price),
+        stock: String(typeof dish.stock === 'number' ? dish.stock : -1),
         categoryId: dish.categoryId,
         selectedMeals: dish.meals || [],
         mealChecked,
@@ -122,6 +124,10 @@ Page({
 
   onPrice(e: any) {
     this.setData({ price: e.detail.value })
+  },
+
+  onStock(e: any) {
+    this.setData({ stock: e.detail.value })
   },
 
   onSelectCategory(e: any) {
@@ -210,6 +216,11 @@ Page({
       wx.showToast({ title: '先选一个分类', icon: 'none' })
       return
     }
+    const stock = Number(this.data.stock)
+    if (!isFinite(stock) || stock < -1 || stock > 9999) {
+      wx.showToast({ title: '库存填 -1 或 0-9999', icon: 'none' })
+      return
+    }
     if (!this.data.selectedMeals.length) {
       wx.showToast({ title: '至少选一个餐次', icon: 'none' })
       return
@@ -235,6 +246,7 @@ Page({
       color: this.data.colors[this.data.colorIndex],
       meals: this.data.selectedMeals,
       status: this.data.status as DishInput['status'],
+      stock: Math.floor(stock),
       isRecommended: this.data.isRecommended
     }
 

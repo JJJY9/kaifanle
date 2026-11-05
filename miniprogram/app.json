@@ -9,7 +9,8 @@
     "pages/dish-edit/index",
     "pages/wishes/index",
     "pages/business/index",
-    "pages/preferences/index"
+    "pages/preferences/index",
+    "pages/coupons/index"
   ],
   "window": {
     "navigationBarBackgroundColor": "#FFFDF6",

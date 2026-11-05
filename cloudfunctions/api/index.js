@@ -91,6 +91,18 @@ async function route(action, payload, openid) {
       return getMyProfile(openid)
     case 'saveMyProfile':
       return saveMyProfile(payload, openid)
+    case 'getStats':
+      return getStats(openid)
+    case 'createCoupon':
+      return createCoupon(payload, openid)
+    case 'getCoupons':
+      return getCoupons(openid)
+    case 'claimCoupon':
+      return claimCoupon(payload, openid)
+    case 'useCoupon':
+      return useCoupon(payload, openid)
+    case 'deleteCoupon':
+      return deleteCoupon(payload, openid)
     case 'createWish':
       return createWish(payload, openid)
     case 'getWishes':
@@ -220,6 +232,166 @@ async function saveMyProfile(payload, openid) {
   return profile
 }
 
+function chinaStartOfDay() {
+  const china = new Date(Date.now() + 8 * 60 * 60 * 1000)
+  return (
+    Date.UTC(
+      china.getUTCFullYear(),
+      china.getUTCMonth(),
+      china.getUTCDate()
+    ) -
+    8 * 60 * 60 * 1000
+  )
+}
+
+async function getStats(openid) {
+  await requireAdmin(openid)
+  const res = await db
+    .collection('orders')
+    .orderBy('createdAt', 'desc')
+    .limit(1000)
+    .get()
+  const start = chinaStartOfDay()
+  const today = res.data.filter(order => order.createdAt >= start)
+  const active = today.filter(order => order.status !== 'cancelled')
+  const revenue = active.reduce((sum, order) => sum + Number(order.amount || 0), 0)
+  const completed = today.filter(order => order.status === 'completed').length
+  const dishCount = {}
+  active.forEach(order => {
+    ;(order.items || []).forEach(item => {
+      dishCount[item.name] = (dishCount[item.name] || 0) + Number(item.qty || 0)
+    })
+  })
+  const top = Object.keys(dishCount)
+    .map(name => ({ name, qty: dishCount[name] }))
+    .sort((a, b) => b.qty - a.qty)[0]
+
+  return {
+    orderCount: active.length,
+    completed,
+    revenue: Number(revenue.toFixed(2)),
+    topDish: top ? top.name : '',
+    topQty: top ? top.qty : 0
+  }
+}
+
+async function createCoupon(payload, openid) {
+  await requireAdmin(openid)
+  const title = String((payload && payload.title) || '').trim()
+  if (!title || title.length > 20) {
+    throw new Error('券名需要 1-20 个字')
+  }
+  const note = String((payload && payload.note) || '').trim().slice(0, 40)
+  await ensureCollection('coupons')
+  const now = Date.now()
+  const coupon = {
+    title,
+    note,
+    status: 'unused',
+    owner: '',
+    createdAt: now,
+    claimedAt: 0,
+    usedAt: 0
+  }
+  const addRes = await db.collection('coupons').add({ data: coupon })
+  return withId(Object.assign({}, coupon, { _id: addRes._id }))
+}
+
+async function getCoupons(openid) {
+  await ensureCollection('coupons')
+  const admin = await isAdminOpenid(openid)
+  if (admin) {
+    const res = await db
+      .collection('coupons')
+      .orderBy('createdAt', 'desc')
+      .limit(50)
+      .get()
+    return res.data.map(withId)
+  }
+
+  const [pool, mine] = await Promise.all([
+    db
+      .collection('coupons')
+      .where({ owner: '' })
+      .orderBy('createdAt', 'desc')
+      .limit(30)
+      .get(),
+    db
+      .collection('coupons')
+      .where({ owner: openid })
+      .orderBy('createdAt', 'desc')
+      .limit(30)
+      .get()
+  ])
+  const map = {}
+  pool.data.concat(mine.data).forEach(coupon => {
+    map[coupon._id] = coupon
+  })
+  return Object.keys(map)
+    .map(id => map[id])
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .slice(0, 50)
+    .map(withId)
+}
+
+async function claimCoupon(payload, openid) {
+  await ensureCollection('coupons')
+  if (!payload || !payload.id) {
+    throw new Error('缺少券 ID')
+  }
+  const res = await db.collection('coupons').doc(payload.id).get()
+  const coupon = res.data
+  if (coupon.status === 'used') {
+    throw new Error('这张券已经用掉了')
+  }
+  if (coupon.owner && coupon.owner !== openid) {
+    throw new Error('这张券已经被领走了')
+  }
+  if (!coupon.owner) {
+    await db
+      .collection('coupons')
+      .doc(payload.id)
+      .update({ data: { owner: openid, claimedAt: Date.now() } })
+    coupon.owner = openid
+  }
+  return withId(coupon)
+}
+
+async function useCoupon(payload, openid) {
+  if (!payload || !payload.id) {
+    throw new Error('缺少券 ID')
+  }
+  const res = await db.collection('coupons').doc(payload.id).get()
+  const coupon = res.data
+  const admin = await isAdminOpenid(openid)
+  if (coupon.owner !== openid && !admin) {
+    throw new Error('这张券不是你的')
+  }
+  if (coupon.status === 'used') {
+    throw new Error('这张券已经用掉了')
+  }
+  const usedAt = Date.now()
+  await db
+    .collection('coupons')
+    .doc(payload.id)
+    .update({ data: { status: 'used', usedAt } })
+  return withId(Object.assign({}, coupon, { status: 'used', usedAt }))
+}
+
+async function deleteCoupon(payload, openid) {
+  await requireAdmin(openid)
+  if (!payload || !payload.id) {
+    throw new Error('缺少券 ID')
+  }
+  try {
+    await db.collection('coupons').doc(payload.id).get()
+  } catch (e) {
+    throw new Error('券不存在')
+  }
+  await db.collection('coupons').doc(payload.id).remove()
+  return { id: payload.id }
+}
+
 async function requireAdmin(openid) {
   const ok = await isAdminOpenid(openid)
   if (!ok) {
@@ -344,36 +516,67 @@ async function createOrder(payload, openid) {
 
   const items = []
   let amount = 0
+  const decremented = []
 
-  for (const raw of payload.items) {
-    const dish = dishMap[raw.dishId]
-    if (!dish) {
-      throw new Error('有菜品已经下架了，请刷新菜单')
-    }
-    if (dish.status !== 'on') {
-      throw new Error(`${dish.name} 已售罄，换一道吧`)
-    }
-    const qty = Number(raw.qty)
-    if (!Number.isInteger(qty) || qty < 1 || qty > 20) {
-      throw new Error('菜品数量不正确')
-    }
-    const specs = Array.isArray(raw.specs) ? raw.specs.slice(0, 10) : []
-    // 服务端按菜品单价 + 已选加料重新计价，不信任客户端传来的价格
-    const addonSum = (dish.addons || [])
-      .filter(addon => specs.indexOf(addon.name) > -1)
-      .reduce((sum, addon) => sum + addon.price, 0)
-    const unitPrice = dish.price + addonSum
-    const note = String(raw.note || '').slice(0, 50)
+  try {
+    for (const raw of payload.items) {
+      const dish = dishMap[raw.dishId]
+      if (!dish) {
+        throw new Error('有菜品已经下架了，请刷新菜单')
+      }
+      if (dish.status !== 'on') {
+        throw new Error(`${dish.name} 已售罄，换一道吧`)
+      }
+      const qty = Number(raw.qty)
+      if (!Number.isInteger(qty) || qty < 1 || qty > 20) {
+        throw new Error('菜品数量不正确')
+      }
 
-    items.push({
-      dishId: dish._id,
-      name: dish.name,
-      price: unitPrice,
-      qty,
-      specs,
-      note
-    })
-    amount += unitPrice * qty
+      // 有限库存：条件扣减，库存不足时整单回滚
+      const stockDeducted =
+        typeof dish.stock === 'number' && dish.stock >= 0
+      if (stockDeducted) {
+        const updateRes = await db
+          .collection('dishes')
+          .where({ _id: dish._id, stock: _.gte(qty) })
+          .update({ data: { stock: _.inc(-qty) } })
+        if (!updateRes.stats || updateRes.stats.updated !== 1) {
+          throw new Error(`${dish.name} 卖完了，换一道吧`)
+        }
+        decremented.push({ id: dish._id, qty })
+      }
+
+      const specs = Array.isArray(raw.specs) ? raw.specs.slice(0, 10) : []
+      // 服务端按菜品单价 + 已选加料重新计价，不信任客户端传来的价格
+      const addonSum = (dish.addons || [])
+        .filter(addon => specs.indexOf(addon.name) > -1)
+        .reduce((sum, addon) => sum + addon.price, 0)
+      const unitPrice = dish.price + addonSum
+      const note = String(raw.note || '').slice(0, 50)
+
+      items.push({
+        dishId: dish._id,
+        name: dish.name,
+        price: unitPrice,
+        qty,
+        specs,
+        note,
+        stockDeducted
+      })
+      amount += unitPrice * qty
+    }
+  } catch (err) {
+    for (const item of decremented) {
+      try {
+        await db
+          .collection('dishes')
+          .doc(item.id)
+          .update({ data: { stock: _.inc(item.qty) } })
+      } catch (e) {
+        // 回滚失败时保留原始错误
+      }
+    }
+    throw err
   }
 
   const expectedTime = String(payload.expectedTime || '尽快').slice(0, 20)
@@ -448,6 +651,7 @@ async function cancelOrder(payload, openid) {
         timeline: _.push([entry])
       }
     })
+  await restoreStock(order)
 
   return withId(
     Object.assign({}, order, {
@@ -455,6 +659,22 @@ async function cancelOrder(payload, openid) {
       timeline: (order.timeline || []).concat([entry])
     })
   )
+}
+
+async function restoreStock(order) {
+  for (const item of order.items || []) {
+    if (!item.stockDeducted) {
+      continue
+    }
+    try {
+      await db
+        .collection('dishes')
+        .doc(item.dishId)
+        .update({ data: { stock: _.inc(item.qty) } })
+    } catch (e) {
+      // 菜品可能已删除，忽略库存回补失败
+    }
+  }
 }
 
 async function updateOrderStatus(payload, openid) {  await requireAdmin(openid)
@@ -485,6 +705,11 @@ async function updateOrderStatus(payload, openid) {  await requireAdmin(openid)
         timeline: _.push([entry])
       }
     })
+
+  // 厨房拒掉尚未接单的订单时，把扣掉的库存补回去
+  if (status === 'cancelled' && order.status === 'pending') {
+    await restoreStock(order)
+  }
 
   // 出锅时给顾客发一条一次性订阅消息（模板未配置或未订阅则自动跳过）
   if (status === 'ready' && tpl.ORDER_STATUS_TEMPLATE_ID) {
@@ -604,6 +829,12 @@ async function saveDish(payload, openid) {
     }))
     .filter(addon => addon.name)
 
+  const stockValue = Number(payload.stock)
+  const stock =
+    isFinite(stockValue) && stockValue >= -1 && stockValue <= 9999
+      ? Math.floor(stockValue)
+      : -1
+
   const fields = {
     name,
     char: name.slice(0, 1),
@@ -616,6 +847,7 @@ async function saveDish(payload, openid) {
     color,
     meals,
     status,
+    stock,
     isRecommended: Boolean(payload.isRecommended)
   }
 

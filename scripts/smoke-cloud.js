@@ -29,6 +29,12 @@ const command = {
   },
   push(values) {
     return { __op: 'push', values }
+  },
+  gte(value) {
+    return { __op: 'gte', value }
+  },
+  inc(value) {
+    return { __op: 'inc', value }
   }
 }
 
@@ -39,7 +45,23 @@ function matches(doc, cond) {
     if (expected && expected.__op === 'in') {
       return expected.values.indexOf(actual) > -1
     }
+    if (expected && expected.__op === 'gte') {
+      return actual >= expected.value
+    }
     return actual === expected
+  })
+}
+
+function applyData(doc, data) {
+  Object.keys(data).forEach(key => {
+    const value = data[key]
+    if (value && value.__op === 'push') {
+      doc[key] = (doc[key] || []).concat(value.values)
+    } else if (value && value.__op === 'inc') {
+      doc[key] = Number(doc[key] || 0) + Number(value.value)
+    } else {
+      doc[key] = value
+    }
   })
 }
 
@@ -77,6 +99,17 @@ function makeQuery(name, cond, order, limit) {
           matches(doc, cond)
         ).length
       }
+    },
+    async update({ data }) {
+      let updated = 0
+      for (const doc of ensure(name).values()) {
+        if (!matches(doc, cond)) {
+          continue
+        }
+        applyData(doc, data)
+        updated++
+      }
+      return { stats: { updated } }
     }
   }
 }
@@ -104,14 +137,7 @@ function makeCollection(name) {
           if (!doc) {
             throw new Error('document does not exist')
           }
-          Object.keys(data).forEach(key => {
-            const value = data[key]
-            if (value && value.__op === 'push') {
-              doc[key] = (doc[key] || []).concat(value.values)
-            } else {
-              doc[key] = value
-            }
-          })
+          applyData(doc, data)
           return { stats: { updated: 1 } }
         },
         async remove() {
@@ -368,6 +394,13 @@ async function run() {
     'pages/order-detail/index?id=' + created.data.id
   )
 
+  res = await call(
+    'updateOrderStatus',
+    { id: created.data.id, status: 'completed' },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+
   res = await call('toggleDishStatus', { id: 'd01' }, 'admin-openid')
   assert.strictEqual(res.ok, true)
   assert.strictEqual(res.data.status, 'soldout')
@@ -526,6 +559,70 @@ async function run() {
   )
   assert.strictEqual(res.ok, true)
 
+  // 库存扣减与取消回补
+  res = await call(
+    'saveDish',
+    {
+      name: '限量菜',
+      desc: '',
+      price: 10,
+      categoryId: 'staple',
+      tags: [],
+      spicyLevels: [],
+      addons: [],
+      color: '#FFD23F',
+      meals: ['lunch'],
+      status: 'on',
+      stock: 5,
+      isRecommended: false
+    },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  const limitedId = res.data.id
+  assert.strictEqual(res.data.stock, 5)
+
+  res = await call(
+    'createOrder',
+    {
+      items: [{ dishId: limitedId, qty: 6, specs: [] }],
+      meal: 'lunch',
+      expectedTime: '12:00',
+      mode: '在家吃',
+      note: ''
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, false)
+
+  res = await call('getDish', { id: limitedId }, 'girl-openid')
+  assert.strictEqual(res.data.stock, 5)
+
+  const stockOrder = await call(
+    'createOrder',
+    {
+      items: [{ dishId: limitedId, qty: 2, specs: [] }],
+      meal: 'lunch',
+      expectedTime: '12:00',
+      mode: '在家吃',
+      note: ''
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(stockOrder.ok, true)
+
+  res = await call('getDish', { id: limitedId }, 'girl-openid')
+  assert.strictEqual(res.data.stock, 3)
+
+  res = await call('cancelOrder', { id: stockOrder.data.id }, 'girl-openid')
+  assert.strictEqual(res.ok, true)
+
+  res = await call('getDish', { id: limitedId }, 'girl-openid')
+  assert.strictEqual(res.data.stock, 5)
+
+  res = await call('deleteDish', { id: limitedId }, 'admin-openid')
+  assert.strictEqual(res.ok, true)
+
   // 口味档案
   res = await call('getMyProfile', {}, 'girl-openid')
   assert.deepStrictEqual(res.data.dislikes, [])
@@ -544,8 +641,57 @@ async function run() {
   res = await call('getMyProfile', {}, 'admin-openid')
   assert.deepStrictEqual(res.data.dislikes, [])
 
+  // 今日看板
+  res = await call('getStats', {}, 'admin-openid')
+  assert.strictEqual(res.ok, true)
+  assert.ok(res.data.orderCount >= 1)
+  assert.ok(res.data.revenue >= 40)
+  assert.ok(res.data.completed >= 1)
+
+  res = await call('getStats', {}, 'girl-openid')
+  assert.strictEqual(res.ok, false)
+
+  // 爱心券
+  res = await call(
+    'createCoupon',
+    { title: '洗碗券', note: '测试' },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, false)
+
+  res = await call(
+    'createCoupon',
+    { title: '洗碗券', note: '测试' },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  const couponId = res.data.id
+  assert.strictEqual(res.data.owner, '')
+
+  res = await call('getCoupons', {}, 'girl-openid')
+  assert.ok(
+    res.data.some(coupon => coupon.id === couponId && !coupon.owner)
+  )
+
+  res = await call('claimCoupon', { id: couponId }, 'girl-openid')
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.owner, 'girl-openid')
+
+  res = await call('useCoupon', { id: couponId }, 'girl-openid')
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.status, 'used')
+
+  res = await call('useCoupon', { id: couponId }, 'girl-openid')
+  assert.strictEqual(res.ok, false)
+
+  res = await call('deleteCoupon', { id: couponId }, 'girl-openid')
+  assert.strictEqual(res.ok, false)
+
+  res = await call('deleteCoupon', { id: couponId }, 'admin-openid')
+  assert.strictEqual(res.ok, true)
+
   console.log(
-    '云函数冒烟测试通过：初始化、菜单、菜品 CRUD、下单计价、权限、状态流转、取消订单、许愿池、营业设置、口味档案、售罄拦截、订阅消息。'
+    '云函数冒烟测试通过：初始化、菜单、菜品 CRUD、下单计价、权限、状态流转、取消订单、许愿池、营业设置、口味档案、今日看板、爱心券、售罄拦截、订阅消息。'
   )
 }
 

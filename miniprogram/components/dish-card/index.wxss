@@ -96,6 +96,13 @@
   -webkit-box-orient: vertical;
 }
 
+.stock-hint {
+  margin-top: 4rpx;
+  color: #D9431C;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
 .foot {
   display: flex;
   align-items: center;

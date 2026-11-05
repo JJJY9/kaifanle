@@ -3,6 +3,7 @@ import {
   getAllOrders,
   getDishes,
   getMe,
+  getStats,
   toggleDishStatus,
   updateOrderStatus
 } from '../../services/api'
@@ -19,6 +20,7 @@ Page({
   data: {
     orders: [] as any[],
     dishes: [] as any[],
+    stats: null as any,
     loading: true,
     forbidden: false
   },
@@ -43,7 +45,11 @@ Page({
 
   async load() {
     try {
-      const [orders, dishes] = await Promise.all([getAllOrders(), getDishes()])
+      const [orders, dishes, stats] = await Promise.all([
+        getAllOrders(),
+        getDishes(),
+        getStats().catch(() => null)
+      ])
       const active = orders.filter(
         order => order.status !== 'completed' && order.status !== 'cancelled'
       )
@@ -55,7 +61,7 @@ Page({
         summary: itemSummary(order.items.map(item => item.name)),
         actionText: NEXT_ACTION[order.status] || ''
       }))
-      this.setData({ orders: view, dishes, loading: false })
+      this.setData({ orders: view, dishes, stats, loading: false })
     } catch (e) {
       this.setData({ loading: false })
       wx.showToast({ title: '加载失败', icon: 'none' })

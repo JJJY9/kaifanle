@@ -1,0 +1,159 @@
+.page {
+  min-height: 100vh;
+  padding: 24rpx 24rpx 80rpx;
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  padding: 8rpx 4rpx 24rpx;
+}
+
+.title {
+  font-size: 52rpx;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.sub {
+  margin-top: 4rpx;
+  color: #5C5C5C;
+  font-size: 24rpx;
+}
+
+.create-card {
+  padding: 24rpx;
+  margin-bottom: 24rpx;
+}
+
+.create-title {
+  margin-bottom: 16rpx;
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 32rpx;
+  font-weight: 800;
+}
+
+.create-input {
+  height: 76rpx;
+  margin-bottom: 14rpx;
+  padding: 0 18rpx;
+  background: #FFFDF6;
+  border: 3rpx solid #111111;
+  border-radius: 18rpx;
+  font-size: 26rpx;
+}
+
+.create-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 76rpx;
+  background: #FF6B35;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  box-shadow: 4rpx 4rpx 0 #111111;
+  font-size: 26rpx;
+  font-weight: 800;
+}
+
+.create-btn:active {
+  transform: translate(4rpx, 4rpx);
+  box-shadow: none;
+}
+
+.create-btn.disabled {
+  opacity: 0.6;
+}
+
+.coupon {
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+  border-style: dashed;
+}
+
+.coupon-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.coupon-title {
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 36rpx;
+  font-weight: 800;
+}
+
+.coupon-status {
+  padding: 4rpx 18rpx;
+  background: #EFE9DC;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
+.coupon-status.pool {
+  background: #FFD23F;
+}
+
+.coupon-status.used {
+  background: #E8E8E8;
+  color: #B8B8B8;
+}
+
+.coupon-note {
+  margin-top: 12rpx;
+  color: #5C5C5C;
+  font-size: 24rpx;
+}
+
+.coupon-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 18rpx;
+  padding-top: 16rpx;
+  border-top: 3rpx dashed rgba(17, 17, 17, 0.2);
+}
+
+.coupon-date {
+  color: #B8B8B8;
+  font-size: 22rpx;
+}
+
+.coupon-actions {
+  display: flex;
+  gap: 12rpx;
+}
+
+.cbtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60rpx;
+  padding: 0 24rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 23rpx;
+  font-weight: 800;
+}
+
+.cbtn.primary {
+  background: #2FBF71;
+  box-shadow: 3rpx 3rpx 0 #111111;
+}
+
+.cbtn.primary:active {
+  transform: translate(3rpx, 3rpx);
+  box-shadow: none;
+}
+
+.cbtn.danger {
+  color: #D9431C;
+  border-color: #D9431C;
+}
+
+.sk {
+  height: 240rpx;
+}

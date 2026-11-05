@@ -1,13 +1,13 @@
 <view
   wx:if="{{dish}}"
-  class="dish {{dish.status === 'soldout' ? 'is-soldout' : ''}}"
+  class="dish {{dish.status === 'soldout' || dish.stock === 0 ? 'is-soldout' : ''}}"
   bindtap="onTap"
 >
   <view class="media" style="background: {{dish.color}};">
     <image wx:if="{{dish.image}}" class="media-img" src="{{dish.image}}" mode="aspectFill" />
     <text wx:else class="media-char">{{dish.char}}</text>
-    <view wx:if="{{dish.tags[0] && dish.status !== 'soldout'}}" class="media-tag">{{dish.tags[0]}}</view>
-    <view wx:if="{{dish.status === 'soldout'}}" class="soldout-mask">
+    <view wx:if="{{dish.tags[0] && dish.status !== 'soldout' && dish.stock !== 0}}" class="media-tag">{{dish.tags[0]}}</view>
+    <view wx:if="{{dish.status === 'soldout' || dish.stock === 0}}" class="soldout-mask">
       <text class="soldout-text">售罄</text>
     </view>
   </view>
@@ -15,17 +15,18 @@
   <view class="body">
     <view class="name">{{dish.name}}</view>
     <view class="desc">{{dish.desc}}</view>
+    <view wx:if="{{dish.stock >= 0 && dish.stock > 0 && dish.stock <= 5}}" class="stock-hint">仅剩 {{dish.stock}} 份</view>
     <view class="foot">
       <view class="price-wrap">
         <text class="currency">¥</text>
         <text class="price">{{dish.price}}</text>
       </view>
       <view
-        wx:if="{{showAdd && dish.status !== 'soldout'}}"
+        wx:if="{{showAdd && dish.status !== 'soldout' && dish.stock !== 0}}"
         class="add"
         catchtap="onAdd"
       >+</view>
-      <text wx:elif="{{dish.status === 'soldout'}}" class="soldout-hint">明天赶早</text>
+      <text wx:elif="{{dish.status === 'soldout' || dish.stock === 0}}" class="soldout-hint">明天赶早</text>
     </view>
   </view>
 </view>

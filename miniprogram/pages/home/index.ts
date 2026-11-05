@@ -166,6 +166,10 @@ Page({
     if (!dish) {
       return
     }
+    if (dish.stock === 0) {
+      wx.showToast({ title: '这一道卖完啦', icon: 'none' })
+      return
+    }
     if (
       (dish.spicyLevels && dish.spicyLevels.length) ||
       (dish.addons && dish.addons.length)
@@ -190,7 +194,7 @@ Page({
     if (!dish) {
       return
     }
-    if (dish.status === 'soldout') {
+    if (dish.status === 'soldout' || dish.stock === 0) {
       wx.showToast({ title: '今天卖完啦', icon: 'none' })
       return
     }

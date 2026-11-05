@@ -38,6 +38,17 @@
         />
       </view>
 
+      <view class="field">
+        <text class="label">库存</text>
+        <input
+          class="input"
+          type="number"
+          placeholder="-1 表示不限量"
+          value="{{stock}}"
+          bindinput="onStock"
+        />
+      </view>
+
       <view class="field field-column">
         <text class="label">分类</text>
         <view class="chips">

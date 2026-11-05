@@ -3,6 +3,7 @@ import { USE_CLOUD } from '../config'
 import type {
   Business,
   Category,
+  Coupon,
   CreateOrderPayload,
   Dish,
   DishInput,
@@ -10,6 +11,7 @@ import type {
   MeInfo,
   Order,
   OrderStatus,
+  StoreStats,
   UserProfile,
   Wish,
   WishStatus
@@ -186,4 +188,49 @@ export async function saveMyProfile(
     return callApi<UserProfile>('saveMyProfile', payload)
   }
   return mock.saveMyProfile(payload)
+}
+
+export async function getStats(): Promise<StoreStats> {
+  if (USE_CLOUD) {
+    return callApi<StoreStats>('getStats')
+  }
+  return mock.getStats()
+}
+
+export async function createCoupon(payload: {
+  title: string
+  note: string
+}): Promise<Coupon> {
+  if (USE_CLOUD) {
+    return callApi<Coupon>('createCoupon', payload)
+  }
+  return mock.createCoupon(payload)
+}
+
+export async function getCoupons(): Promise<Coupon[]> {
+  if (USE_CLOUD) {
+    return callApi<Coupon[]>('getCoupons')
+  }
+  return mock.getCoupons()
+}
+
+export async function claimCoupon(id: string): Promise<Coupon> {
+  if (USE_CLOUD) {
+    return callApi<Coupon>('claimCoupon', { id })
+  }
+  return mock.claimCoupon(id)
+}
+
+export async function useCoupon(id: string): Promise<Coupon> {
+  if (USE_CLOUD) {
+    return callApi<Coupon>('useCoupon', { id })
+  }
+  return mock.useCoupon(id)
+}
+
+export async function deleteCoupon(id: string): Promise<{ id: string }> {
+  if (USE_CLOUD) {
+    return callApi<{ id: string }>('deleteCoupon', { id })
+  }
+  return mock.deleteCoupon(id)
 }

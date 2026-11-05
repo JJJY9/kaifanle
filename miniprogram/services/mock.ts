@@ -1,6 +1,7 @@
 import type {
   Business,
   Category,
+  Coupon,
   CreateOrderPayload,
   Dish,
   DishInput,
@@ -8,6 +9,7 @@ import type {
   MeInfo,
   Order,
   OrderStatus,
+  StoreStats,
   UserProfile,
   Wish,
   WishStatus
@@ -19,6 +21,7 @@ const DISH_STATUS_KEY = 'kfl_dish_status_v1'
 const WISHES_KEY = 'kfl_wishes_v1'
 const BUSINESS_KEY = 'kfl_business_v1'
 const PROFILE_KEY = 'kfl_profile_v1'
+const COUPONS_KEY = 'kfl_coupons_v1'
 
 const DEFAULT_BUSINESS: Business = {
   breakfast: { open: true, deadline: '09:30' },
@@ -242,6 +245,7 @@ let orderCache: Order[] | null = null
 let wishCache: Wish[] | null = null
 let businessCache: Business | null = null
 let profileCache: UserProfile | null = null
+let couponCache: Coupon[] | null = null
 const dishStatusOverrides: Record<string, Dish['status']> = loadOverrides()
 
 const dishes: Dish[] = DISHES.map(dish => ({
@@ -361,6 +365,43 @@ function loadProfile(): UserProfile {
 function saveProfile(): void {
   try {
     wx.setStorageSync(PROFILE_KEY, JSON.stringify(profileCache))
+  } catch (e) {
+    // 忽略存储失败
+  }
+}
+
+function loadCoupons(): Coupon[] {
+  if (couponCache) {
+    return couponCache
+  }
+  try {
+    const raw = wx.getStorageSync(COUPONS_KEY)
+    if (raw) {
+      couponCache = JSON.parse(raw)
+      return couponCache as Coupon[]
+    }
+  } catch (e) {
+    // 读取失败则使用种子数据
+  }
+  couponCache = [
+    {
+      id: 'coupon-seed-1',
+      title: '洗碗券',
+      note: '攒够 3 次可以换一次洗碗',
+      status: 'unused',
+      owner: '',
+      createdAt: Date.now() - 2 * 60 * 60 * 1000,
+      claimedAt: 0,
+      usedAt: 0
+    }
+  ]
+  saveCoupons()
+  return couponCache as Coupon[]
+}
+
+function saveCoupons(): void {
+  try {
+    wx.setStorageSync(COUPONS_KEY, JSON.stringify(couponCache || []))
   } catch (e) {
     // 忽略存储失败
   }
@@ -490,6 +531,10 @@ export async function saveDish(payload: DishInput): Promise<Dish> {
     status: payload.status || 'on',
     color: payload.color || '#FFD23F',
     meals: payload.meals || ['lunch', 'dinner'],
+    stock:
+      typeof payload.stock === 'number' && payload.stock >= -1
+        ? Math.floor(payload.stock)
+        : -1,
     isRecommended: Boolean(payload.isRecommended)
   }
   if (payload.id) {
@@ -546,12 +591,34 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
     throw new Error('这一餐已经截单啦，下次早点来')
   }
 
+  const stockChanges: Array<{ dish: Dish; qty: number }> = []
+  const orderItems = payload.items.map(item => {
+    const dish = dishes.find(entry => entry.id === item.dishId)
+    if (!dish) {
+      throw new Error('菜品不存在')
+    }
+    if (dish.status !== 'on') {
+      throw new Error(`${dish.name} 已售罄`)
+    }
+    const limited = typeof dish.stock === 'number' && dish.stock >= 0
+    if (limited && dish.stock < item.qty) {
+      throw new Error(`${dish.name} 卖完了`)
+    }
+    if (limited) {
+      stockChanges.push({ dish, qty: item.qty })
+    }
+    return { ...item, stockDeducted: limited }
+  })
+  stockChanges.forEach(({ dish, qty }) => {
+    dish.stock = Number(dish.stock) - qty
+  })
+
   const orders = loadOrders()
   const now = Date.now()
   const order: Order = {
     id: `o${now}`,
     no: String(orders.length + 1).padStart(3, '0'),
-    items: payload.items,
+    items: orderItems,
     amount: payload.amount,
     meal: payload.meal,
     expectedTime: payload.expectedTime,
@@ -582,6 +649,15 @@ export async function cancelOrder(id: string): Promise<Order | null> {
     title: STATUS_STEP_TEXT.cancelled,
     time: Date.now()
   })
+  for (const item of order.items as any[]) {
+    if (!item.stockDeducted) {
+      continue
+    }
+    const dish = dishes.find(entry => entry.id === item.dishId)
+    if (dish && typeof dish.stock === 'number') {
+      dish.stock = Number(dish.stock) + item.qty
+    }
+  }
   saveOrders()
   return { ...order }
 }
@@ -703,4 +779,113 @@ export async function saveMyProfile(
   profileCache = JSON.parse(JSON.stringify(payload))
   saveProfile()
   return JSON.parse(JSON.stringify(profileCache))
+}
+
+export async function getStats(): Promise<StoreStats> {
+  await delay(60)
+  const orders = loadOrders()
+  const todayKey = new Date().toDateString()
+  const today = orders.filter(
+    order => new Date(order.createdAt).toDateString() === todayKey
+  )
+  const active = today.filter(order => order.status !== 'cancelled')
+  const revenue = active.reduce(
+    (sum, order) => sum + Number(order.amount || 0),
+    0
+  )
+  const dishCount: Record<string, number> = {}
+  active.forEach(order => {
+    order.items.forEach(item => {
+      dishCount[item.name] = (dishCount[item.name] || 0) + item.qty
+    })
+  })
+  const top = Object.keys(dishCount)
+    .map(name => ({ name, qty: dishCount[name] }))
+    .sort((a, b) => b.qty - a.qty)[0]
+  return {
+    orderCount: active.length,
+    completed: today.filter(order => order.status === 'completed').length,
+    revenue: Number(revenue.toFixed(2)),
+    topDish: top ? top.name : '',
+    topQty: top ? top.qty : 0
+  }
+}
+
+export async function createCoupon(payload: {
+  title: string
+  note: string
+}): Promise<Coupon> {
+  await delay(80)
+  const title = String(payload.title || '').trim()
+  if (!title) {
+    throw new Error('券名不能为空')
+  }
+  const now = Date.now()
+  const coupon: Coupon = {
+    id: `c${now}`,
+    title: title.slice(0, 20),
+    note: String(payload.note || '').trim().slice(0, 40),
+    status: 'unused',
+    owner: '',
+    createdAt: now,
+    claimedAt: 0,
+    usedAt: 0
+  }
+  const coupons = loadCoupons()
+  coupons.unshift(coupon)
+  saveCoupons()
+  return { ...coupon }
+}
+
+export async function getCoupons(): Promise<Coupon[]> {
+  await delay(60)
+  return loadCoupons()
+    .slice()
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .map(coupon => ({ ...coupon }))
+}
+
+export async function claimCoupon(id: string): Promise<Coupon> {
+  await delay(80)
+  const coupon = loadCoupons().find(item => item.id === id)
+  if (!coupon) {
+    throw new Error('券不存在')
+  }
+  if (coupon.status === 'used') {
+    throw new Error('这张券已经用掉了')
+  }
+  if (coupon.owner && coupon.owner !== 'mock-openid') {
+    throw new Error('这张券已经被领走了')
+  }
+  coupon.owner = 'mock-openid'
+  coupon.claimedAt = Date.now()
+  saveCoupons()
+  return { ...coupon }
+}
+
+export async function useCoupon(id: string): Promise<Coupon> {
+  await delay(80)
+  const coupon = loadCoupons().find(item => item.id === id)
+  if (!coupon) {
+    throw new Error('券不存在')
+  }
+  if (coupon.status === 'used') {
+    throw new Error('这张券已经用掉了')
+  }
+  coupon.status = 'used'
+  coupon.usedAt = Date.now()
+  saveCoupons()
+  return { ...coupon }
+}
+
+export async function deleteCoupon(id: string): Promise<{ id: string }> {
+  await delay(80)
+  const coupons = loadCoupons()
+  const index = coupons.findIndex(coupon => coupon.id === id)
+  if (index === -1) {
+    throw new Error('券不存在')
+  }
+  coupons.splice(index, 1)
+  saveCoupons()
+  return { id }
 }
