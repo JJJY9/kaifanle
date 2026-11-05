@@ -99,7 +99,7 @@
         </view>
       </view>
       <view class="order-summary">{{item.summary}}</view>
-      <view wx:if="{{item.urged}}" class="urge-badge">她催啦{{item.urgeCount > 1 ? ' · ' + item.urgeCount + ' 次' : ''}}</view>
+      <view wx:if="{{item.urged}}" class="urge-badge">她催啦{{item.urgeText}}</view>
       <view class="order-meta">{{item.dateText}} · {{item.mealText}} · {{item.mode}} · {{item.expectedTime}} · {{item.timeText}}</view>
       <view class="order-items">
         <view

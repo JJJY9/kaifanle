@@ -228,6 +228,10 @@ Page({
             order.urgedAt && Date.now() - order.urgedAt < 30 * 60 * 1000
           ),
           urgeCount: Number(order.urgeCount || 0),
+          urgeText:
+            Number(order.urgeCount || 0) > 1
+              ? ` · 催了 ${Number(order.urgeCount)} 次`
+              : '',
           waitText: (() => {
             const minutes = Math.floor(
               (Date.now() - Number(order.createdAt || 0)) / 60000
