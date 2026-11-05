@@ -139,6 +139,25 @@ for (const file of files.filter(f => f.endsWith('.wxml'))) {
   }
 }
 
+// 7. 客户端 action 与服务端路由一致
+const apiPath = path.join(__dirname, '..', 'miniprogram', 'services', 'api.ts')
+const serverPath = path.join(__dirname, '..', 'cloudfunctions', 'api', 'index.js')
+if (fs.existsSync(apiPath) && fs.existsSync(serverPath)) {
+  const apiSource = fs.readFileSync(apiPath, 'utf8')
+  const serverSource = fs.readFileSync(serverPath, 'utf8')
+  const actionRe = /callApi(?:<[^>]*>)?\(\s*['"]([A-Za-z0-9_]+)['"]/g
+  const actions = new Set()
+  let actionMatch
+  while ((actionMatch = actionRe.exec(apiSource))) {
+    actions.add(actionMatch[1])
+  }
+  for (const action of actions) {
+    if (!serverSource.includes(`case '${action}'`)) {
+      errors.push(`客户端调用了未定义的服务端动作: ${action}`)
+    }
+  }
+}
+
 if (warnings.length) {
   console.log('提示:')
   warnings.forEach(w => console.log('  - ' + w))
