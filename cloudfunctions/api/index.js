@@ -931,6 +931,10 @@ async function createOrder(payload, openid) {
       if (dish.status !== 'on') {
         throw new Error(`${dish.name} 已售罄，换一道吧`)
       }
+      // 即使这一餐没有排菜单，也要校验菜品是否供应这一餐
+      if (!Array.isArray(dish.meals) || dish.meals.indexOf(meal) === -1) {
+        throw new Error(`${dish.name} 这一餐不供应`)
+      }
       if (menu.exists && menu.dishIds.indexOf(raw.dishId) === -1) {
         throw new Error(`${dish.name} 这一餐不供应`)
       }
