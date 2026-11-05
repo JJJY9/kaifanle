@@ -6,6 +6,8 @@ Component({
 
   data: {
     spicyIndex: 0,
+    spicyLevels: [] as string[],
+    addons: [] as any[],
     addonChecked: {} as Record<string, boolean>,
     note: '',
     qty: 1,
@@ -23,8 +25,15 @@ Component({
 
   methods: {
     reset(dish: any) {
+      // 自定义组件属性里的空数组可能被序列化成对象，这里统一兜底
+      const spicyLevels = Array.isArray(dish.spicyLevels)
+        ? dish.spicyLevels
+        : []
+      const addons = Array.isArray(dish.addons) ? dish.addons : []
       this.setData({
         spicyIndex: 0,
+        spicyLevels,
+        addons,
         addonChecked: {},
         note: '',
         qty: 1,
@@ -38,7 +47,7 @@ Component({
       if (!dish) {
         return
       }
-      const addonSum = (dish.addons || [])
+      const addonSum = this.data.addons
         .filter((addon: any) => this.data.addonChecked[addon.id])
         .reduce((sum: number, addon: any) => sum + addon.price, 0)
       const unit = dish.price + addonSum
@@ -86,10 +95,10 @@ Component({
         return
       }
       const specs: string[] = []
-      if (dish.spicyLevels && dish.spicyLevels.length) {
-        specs.push(dish.spicyLevels[this.data.spicyIndex])
+      if (this.data.spicyLevels.length) {
+        specs.push(this.data.spicyLevels[this.data.spicyIndex])
       }
-      ;(dish.addons || []).forEach((addon: any) => {
+      this.data.addons.forEach((addon: any) => {
         if (this.data.addonChecked[addon.id]) {
           specs.push(addon.name)
         }

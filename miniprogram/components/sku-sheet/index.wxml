@@ -22,11 +22,11 @@
     </view>
 
     <scroll-view class="body" scroll-y>
-      <block wx:if="{{dish.spicyLevels.length}}">
+      <block wx:if="{{spicyLevels.length}}">
         <view class="field-label">辣度</view>
         <view class="chips">
           <view
-            wx:for="{{dish.spicyLevels}}"
+            wx:for="{{spicyLevels}}"
             wx:key="*this"
             class="chip {{spicyIndex === index ? 'active' : ''}}"
             data-index="{{index}}"
@@ -35,10 +35,10 @@
         </view>
       </block>
 
-      <block wx:if="{{dish.addons.length}}">
+      <block wx:if="{{addons.length}}">
         <view class="field-label">加料</view>
         <view
-          wx:for="{{dish.addons}}"
+          wx:for="{{addons}}"
           wx:key="id"
           class="addon {{addonChecked[item.id] ? 'active' : ''}}"
           data-id="{{item.id}}"
