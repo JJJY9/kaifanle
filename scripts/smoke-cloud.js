@@ -582,6 +582,13 @@ async function run() {
   assert.strictEqual(res.data.no, '003')
   transactionsEnabled = true
 
+  // 我的统计：总数（不含已取消）、本月、最常点
+  res = await call('getMyStats', {}, 'girl-openid')
+  assert.strictEqual(res.ok, true)
+  assert.ok(res.data.total >= 2)
+  assert.ok(res.data.month >= 1)
+  assert.strictEqual(typeof res.data.favorite, 'string')
+
   // 许愿池
   res = await call('createWish', { content: '想吃火锅' }, 'girl-openid')
   assert.strictEqual(res.ok, true)
@@ -613,8 +620,10 @@ async function run() {
   assert.strictEqual(res.data.status, 'planned')
   assert.strictEqual(res.data.plannedDate, '明天晚餐')
 
-  // 愿望删除：别人不能删，本人和管理员可以
+  // 愿望删除：别人不能删；本人只能撤回待安排的；管理员可删任意
   res = await call('deleteWish', { id: wishId }, 'stranger-openid')
+  assert.strictEqual(res.ok, false)
+  res = await call('deleteWish', { id: wishId }, 'girl-openid')
   assert.strictEqual(res.ok, false)
   res = await call('createWish', { content: '想喝奶茶' }, 'girl-openid')
   const tempWishId = res.data.id
@@ -842,6 +851,12 @@ async function run() {
   res = await call('getDish', { id: timerDishId }, 'admin-openid')
   assert.strictEqual(res.data.status, 'on')
   await call('deleteDish', { id: timerDishId }, 'admin-openid')
+
+  // 管理员补跑每日滚动；非管理员不行
+  res = await call('rollMenu', {}, 'girl-openid')
+  assert.strictEqual(res.ok, false)
+  res = await call('rollMenu', {}, 'admin-openid')
+  assert.strictEqual(res.ok, true)
   // 清理菜单，避免影响后续下单用例
   await call('deleteMenu', { date: tomorrowKey, meal: 'lunch' }, 'admin-openid')
   await call('deleteMenu', { date: todayKey, meal: 'lunch' }, 'admin-openid')
@@ -878,6 +893,21 @@ async function run() {
       expectedTime: '12:00',
       mode: '在家吃',
       note: '违规备注'
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, false)
+  res = await call('getDish', { id: limitedId }, 'admin-openid')
+  assert.strictEqual(res.data.stock, 5)
+
+  // 单品备注同样会被内容安全拦截
+  res = await call(
+    'createOrder',
+    {
+      items: [{ dishId: limitedId, qty: 1, specs: [], note: '违规单品备注' }],
+      meal: 'lunch',
+      expectedTime: '12:00',
+      mode: '在家吃'
     },
     'girl-openid'
   )

@@ -32,6 +32,7 @@ Page({
   orderId: '',
 
   _pollTimer: null as any,
+  _loadSeq: 0,
 
   onLoad(options: any) {
     this.orderId = options.id || ''
@@ -78,11 +79,15 @@ Page({
   },
 
   async load(silent = false) {
+    const seq = ++this._loadSeq
     if (!silent) {
       this.setData({ orderError: '' })
     }
     try {
       const order = await getOrder(this.orderId)
+      if (seq !== this._loadSeq) {
+        return
+      }
       if (!order) {
         throw new Error('订单不存在')
       }
@@ -127,7 +132,7 @@ Page({
         loading: false
       })
     } catch (e: any) {
-      if (silent) {
+      if (silent || seq !== this._loadSeq) {
         return
       }
       this.setData({
@@ -203,7 +208,12 @@ Page({
       let skipped = 0
       order.items.forEach((item: any) => {
         const dish = dishes ? dishMap[item.dishId] : null
-        if (dishes && (!dish || dish.status === 'off')) {
+        if (
+          dishes &&
+          (!dish ||
+            dish.status !== 'on' ||
+            (dish.meals || []).indexOf(order.meal) === -1)
+        ) {
           skipped++
           return
         }

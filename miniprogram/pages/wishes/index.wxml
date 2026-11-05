@@ -58,6 +58,11 @@
           data-id="{{item.id}}"
           bindtap="onReply"
         >回一句</view>
+        <view
+          class="wish-btn danger"
+          data-id="{{item.id}}"
+          bindtap="onDeleteWish"
+        >删除</view>
       </view>
       <view wx:if="{{!isAdmin && item.status === 'pending'}}" class="wish-actions">
         <view

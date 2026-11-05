@@ -1,4 +1,4 @@
-import { getMe, getOrders, initDb, getCoupons } from '../../services/api'
+import { getMe, getMyStats, initDb, getCoupons } from '../../services/api'
 import { USE_CLOUD } from '../../config'
 import { formatTime } from '../../utils/format'
 
@@ -126,31 +126,11 @@ Page({
 
   async loadMe() {
     try {
-      const [me, orders, coupons] = await Promise.all([
+      const [me, myStats, coupons] = await Promise.all([
         getMe(),
-        getOrders().catch(() => []),
+        getMyStats().catch(() => null),
         getCoupons().catch(() => [])
       ])
-      const now = new Date()
-      const valid = (orders || []).filter(
-        order => order.status !== 'cancelled'
-      )
-      const monthly = valid.filter(order => {
-        const date = new Date(order.createdAt)
-        return (
-          date.getFullYear() === now.getFullYear() &&
-          date.getMonth() === now.getMonth()
-        )
-      })
-      const dishCount: Record<string, number> = {}
-      monthly.forEach(order => {
-        order.items.forEach(item => {
-          dishCount[item.name] = (dishCount[item.name] || 0) + item.qty
-        })
-      })
-      const favorite =
-        Object.keys(dishCount).sort((a, b) => dishCount[b] - dishCount[a])[0] ||
-        '还没点过'
       const couponCount = (coupons || []).filter(
         coupon => coupon.owner === me.openid && coupon.status === 'unused'
       ).length
@@ -160,9 +140,9 @@ Page({
         initialized: me.initialized,
         openid: me.openid,
         stats: {
-          month: monthly.length,
-          total: valid.length,
-          favorite
+          month: myStats ? myStats.month : 0,
+          total: myStats ? myStats.total : 0,
+          favorite: myStats ? myStats.favorite : '还没点过'
         },
         entries: this.buildEntries(me.isAdmin, me.initialized, couponCount)
       })

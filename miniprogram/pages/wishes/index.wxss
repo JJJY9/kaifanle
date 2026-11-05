@@ -173,6 +173,11 @@
   opacity: 0.5;
 }
 
+.wish-btn.danger {
+  color: #D9431C;
+  border-color: #D9431C;
+}
+
 .sk {
   height: 240rpx;
   margin-top: 20rpx;

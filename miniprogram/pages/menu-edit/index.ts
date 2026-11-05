@@ -190,14 +190,14 @@ Page({
     }
     const res: any = await wx.showModal({
       title: '复制到未来 7 天？',
-      content: `把这 ${dishIds.length} 道菜复制到今天起 8 天的${this.data.meal === 'breakfast' ? '早餐' : this.data.meal === 'lunch' ? '午餐' : '晚餐'}，会覆盖那几天已有的安排。`,
+      content: `把这 ${dishIds.length} 道菜复制到未来 7 天（明天起）的${this.data.meal === 'breakfast' ? '早餐' : this.data.meal === 'lunch' ? '午餐' : '晚餐'}，会覆盖那几天已有的安排。`,
       confirmText: '复制',
       cancelText: '算了'
     })
     if (!res.confirm) {
       return
     }
-    const targets = this.data.dates.slice(0, 8)
+    const targets = this.data.dates.slice(1, 8)
     this.setData({ saving: true })
     let done = 0
     try {

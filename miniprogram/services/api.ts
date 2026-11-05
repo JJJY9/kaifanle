@@ -11,6 +11,7 @@ import type {
   InitResult,
   MealId,
   MeInfo,
+  MyStats,
   Order,
   OrderStatus,
   StoreStats,
@@ -269,6 +270,20 @@ export async function getStats(): Promise<StoreStats> {
     return callApi<StoreStats>('getStats')
   }
   return mock.getStats()
+}
+
+export async function getMyStats(): Promise<MyStats> {
+  if (USE_CLOUD) {
+    return callApi<MyStats>('getMyStats')
+  }
+  return mock.getMyStats()
+}
+
+export async function rollMenu(): Promise<any> {
+  if (USE_CLOUD) {
+    return callApi<any>('rollMenu')
+  }
+  return mock.rollMenu()
 }
 
 export async function createCoupon(payload: {

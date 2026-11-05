@@ -36,6 +36,9 @@ Page({
         statusText: STATUS_TEXT[order.status],
         mealText: mealName(order.meal),
         timeText: formatTime(order.createdAt),
+        groupKey:
+          order.scheduledDate ||
+          dateInputString(new Date(order.createdAt)),
         dateText: dateLabel(
           order.scheduledDate || dateInputString(new Date(order.createdAt))
         ),
@@ -93,12 +96,20 @@ Page({
       return true
     })
     let lastLabel = ''
-    const displayOrders = list.map(order => {
-      const label = order.dateText
-      const showHeader = label !== lastLabel
-      lastLabel = label
-      return { ...order, showHeader }
-    })
+    const displayOrders = list
+      .slice()
+      .sort((a, b) => {
+        if (a.groupKey !== b.groupKey) {
+          return a.groupKey < b.groupKey ? 1 : -1
+        }
+        return Number(b.createdAt || 0) - Number(a.createdAt || 0)
+      })
+      .map(order => {
+        const label = order.groupKey
+        const showHeader = label !== lastLabel
+        lastLabel = label
+        return { ...order, showHeader }
+      })
     this.setData({ displayOrders })
   },
 

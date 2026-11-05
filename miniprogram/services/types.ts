@@ -163,6 +163,13 @@ export interface StoreStats {
   revenue: number
   topDish: string
   topQty: number
+  totalOrders?: number
+}
+
+export interface MyStats {
+  total: number
+  month: number
+  favorite: string
 }
 
 export type CouponStatus = 'unused' | 'used'

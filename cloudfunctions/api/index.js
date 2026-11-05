@@ -84,6 +84,8 @@ async function route(action, payload, openid) {
       return getDish(payload.id)
     case 'getOrders':
       return getOrders(openid)
+    case 'getMyStats':
+      return getMyStats(openid)
     case 'getAllOrders':
       return getAllOrders(openid)
     case 'getActiveOrders':
@@ -132,6 +134,8 @@ async function route(action, payload, openid) {
       return deleteCoupon(payload, openid)
     case 'getMenuForDate':
       return getMenuForDate(payload)
+    case 'rollMenu':
+      return rollMenu(openid)
     case 'saveMenu':
       return saveMenu(payload, openid)
     case 'deleteMenu':
@@ -156,12 +160,24 @@ function withId(doc) {
   return Object.assign({}, doc, { id: doc._id })
 }
 
+// 只有「文档/集合不存在」才算未初始化；额度、网络等错误要往上抛，
+// 避免把读取失败误判成“没有数据”。
+function isMissingDocError(e) {
+  const message = String((e && (e.errMsg || e.message)) || '')
+  return /does not exist|not exist|not found|DOCUMENT_NOT_FOUND|DATABASE_COLLECTION_NOT_EXIST|-502005/i.test(
+    message
+  )
+}
+
 async function getConfig() {
   try {
     const res = await db.collection('config').doc(CONFIG_ID).get()
     return res.data
   } catch (e) {
-    return null
+    if (isMissingDocError(e)) {
+      return null
+    }
+    throw e
   }
 }
 
@@ -217,16 +233,23 @@ function envAdminOpenids() {
     .filter(Boolean)
 }
 
+// 管理员 = 环境变量 ADMIN_OPENIDS ∪ 数据库 config.adminOpenids
+function adminOpenidsFrom(config) {
+  const list =
+    config && Array.isArray(config.adminOpenids)
+      ? config.adminOpenids.slice()
+      : []
+  envAdminOpenids().forEach(openid => {
+    if (list.indexOf(openid) === -1) {
+      list.push(openid)
+    }
+  })
+  return list
+}
+
 async function isAdminOpenid(openid) {
-  if (envAdminOpenids().indexOf(openid) > -1) {
-    return true
-  }
   const config = await getConfig()
-  return Boolean(
-    config &&
-      Array.isArray(config.adminOpenids) &&
-      config.adminOpenids.indexOf(openid) > -1
-  )
+  return adminOpenidsFrom(config).indexOf(openid) > -1
 }
 
 async function ensureCollection(name) {
@@ -391,12 +414,66 @@ async function getStats(openid) {
     .map(name => ({ name, qty: dishCount[name] }))
     .sort((a, b) => b.qty - a.qty)[0]
 
+  let totalOrders = 0
+  try {
+    const [allRes, cancelledRes] = await Promise.all([
+      db.collection('orders').count(),
+      db.collection('orders').where({ status: 'cancelled' }).count()
+    ])
+    totalOrders = (allRes.total || 0) - (cancelledRes.total || 0)
+  } catch (e) {
+    // 总数失败不影响今日看板
+  }
+
   return {
     orderCount: active.length,
     completed,
     revenue: Number(revenue.toFixed(2)),
     topDish: top ? top.name : '',
-    topQty: top ? top.qty : 0
+    topQty: top ? top.qty : 0,
+    totalOrders
+  }
+}
+
+function chinaStartOfMonth() {
+  const china = new Date(Date.now() + 8 * 60 * 60 * 1000)
+  return (
+    Date.UTC(china.getUTCFullYear(), china.getUTCMonth(), 1) -
+    8 * 60 * 60 * 1000
+  )
+}
+
+// 「我的」页统计：总数用 count，月度明细最多取 200 单算最常点
+async function getMyStats(openid) {
+  const start = chinaStartOfMonth()
+  const [allRes, cancelledRes, monthRes] = await Promise.all([
+    db.collection('orders').where({ _openid: openid }).count(),
+    db
+      .collection('orders')
+      .where({ _openid: openid, status: 'cancelled' })
+      .count(),
+    db
+      .collection('orders')
+      .where({ _openid: openid, createdAt: _.gte(start) })
+      .limit(200)
+      .get()
+  ])
+  const monthOrders = monthRes.data.filter(
+    order => order.status !== 'cancelled'
+  )
+  const dishCount = {}
+  monthOrders.forEach(order => {
+    ;(order.items || []).forEach(item => {
+      dishCount[item.name] = (dishCount[item.name] || 0) + Number(item.qty || 0)
+    })
+  })
+  const favorite =
+    Object.keys(dishCount).sort((a, b) => dishCount[b] - dishCount[a])[0] ||
+    '还没点过'
+  return {
+    total: (allRes.total || 0) - (cancelledRes.total || 0),
+    month: monthOrders.length,
+    favorite
   }
 }
 
@@ -473,10 +550,10 @@ async function claimCoupon(payload, openid) {
     throw new Error('这张券已经被领走了')
   }
   if (!coupon.owner) {
-    // 条件更新保证同一张券只会被一个人领走
+    // 条件更新保证同一张券只会被一个人领走（且只能领未使用的券）
     const upd = await db
       .collection('coupons')
-      .where({ _id: payload.id, owner: '' })
+      .where({ _id: payload.id, owner: '', status: 'unused' })
       .update({ data: { owner: openid, claimedAt: Date.now() } })
     if (!upd.stats.updated) {
       const fresh = await db.collection('coupons').doc(payload.id).get()
@@ -560,7 +637,10 @@ async function getMenuDoc(date, meal) {
       res.data
     )
   } catch (e) {
-    return { exists: false, date, meal, dishIds: [], open: true }
+    if (isMissingDocError(e)) {
+      return { exists: false, date, meal, dishIds: [], open: true }
+    }
+    throw e
   }
 }
 
@@ -569,6 +649,12 @@ async function getMenuForDate(payload) {
   const meal =
     payload && MEALS.indexOf(payload.meal) > -1 ? payload.meal : 'lunch'
   return getMenuDoc(date, meal)
+}
+
+// 管理员补跑一次「每日滚动」：打开厨房时如果今天还没跑过，客户端会自动调用
+async function rollMenu(openid) {
+  await requireAdmin(openid)
+  return autoRollMenu()
 }
 
 async function saveMenu(payload, openid) {
@@ -802,11 +888,7 @@ async function getMe(openid) {
   const config = await getConfig()
   return {
     openid,
-    isAdmin: Boolean(
-      config &&
-        Array.isArray(config.adminOpenids) &&
-        config.adminOpenids.indexOf(openid) > -1
-    ),
+    isAdmin: adminOpenidsFrom(config).indexOf(openid) > -1,
     initialized: Boolean(config && config.initialized)
   }
 }
@@ -910,9 +992,17 @@ async function createOrder(payload, openid) {
     throw new Error('一次最多点 20 道菜')
   }
 
-  // 备注先做内容安全检查，避免扣完库存再失败
+  // 备注（整单 + 每道菜）先做内容安全检查，避免扣完库存再失败
   const note = String(payload.note || '').slice(0, 100)
-  await checkContentSafety(openid, note)
+  const itemNotes = payload.items
+    .map(item => String((item && item.note) || '').trim())
+    .filter(Boolean)
+    .join('\n')
+    .slice(0, 400)
+  await checkContentSafety(
+    openid,
+    [note, itemNotes].filter(Boolean).join('\n').slice(0, 500)
+  )
 
   const ids = payload.items.map(item => item && item.dishId).filter(Boolean)
   const dishRes = await db
@@ -1034,9 +1124,10 @@ async function createOrder(payload, openid) {
 
   // 新订单提醒：只发给已订阅「新订单提醒」模板的管理员。
   // 发送失败（没订阅 / 模板未配置）不影响下单。
-  if (tpl.NEW_ORDER_TEMPLATE_ID && Array.isArray(config.adminOpenids)) {
+  if (tpl.NEW_ORDER_TEMPLATE_ID) {
+    const adminOpenids = adminOpenidsFrom(config)
     const data = tpl.newOrderData(order)
-    for (const adminOpenid of config.adminOpenids) {
+    for (const adminOpenid of adminOpenids) {
       await sendSubscribe(
         adminOpenid,
         tpl.NEW_ORDER_TEMPLATE_ID,
@@ -1490,8 +1581,13 @@ async function deleteWish(payload, openid) {
   const res = await db.collection('wishes').doc(id).get()
   const wish = res.data
   const admin = await isAdminOpenid(openid)
-  if (wish._openid !== openid && !admin) {
-    throw new Error('没有权限删除这个愿望')
+  if (!admin) {
+    if (wish._openid !== openid) {
+      throw new Error('没有权限删除这个愿望')
+    }
+    if (wish.status !== 'pending') {
+      throw new Error('已经安排的愿望不能撤回了')
+    }
   }
   await db.collection('wishes').doc(id).remove()
   return { id }

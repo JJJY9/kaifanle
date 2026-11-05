@@ -9,6 +9,7 @@ import type {
   InitResult,
   MealId,
   MeInfo,
+  MyStats,
   Order,
   OrderStatus,
   StoreStats,
@@ -970,7 +971,36 @@ export async function getStats(): Promise<StoreStats> {
     completed: today.filter(order => order.status === 'completed').length,
     revenue: Number(revenue.toFixed(2)),
     topDish: top ? top.name : '',
-    topQty: top ? top.qty : 0
+    topQty: top ? top.qty : 0,
+    totalOrders: orders.filter(order => order.status !== 'cancelled').length
+  }
+}
+
+export async function getMyStats(): Promise<MyStats> {
+  await delay(60)
+  const orders = loadOrders()
+  const valid = orders.filter(order => order.status !== 'cancelled')
+  const now = new Date()
+  const monthly = valid.filter(order => {
+    const date = new Date(order.createdAt)
+    return (
+      date.getFullYear() === now.getFullYear() &&
+      date.getMonth() === now.getMonth()
+    )
+  })
+  const dishCount: Record<string, number> = {}
+  monthly.forEach(order => {
+    order.items.forEach(item => {
+      dishCount[item.name] = (dishCount[item.name] || 0) + item.qty
+    })
+  })
+  const favorite =
+    Object.keys(dishCount).sort((a, b) => dishCount[b] - dishCount[a])[0] ||
+    '还没点过'
+  return {
+    total: valid.length,
+    month: monthly.length,
+    favorite
   }
 }
 
@@ -1051,6 +1081,48 @@ export async function deleteCoupon(id: string): Promise<{ id: string }> {
   coupons.splice(index, 1)
   saveCoupons()
   return { id }
+}
+
+export async function rollMenu(): Promise<any> {
+  await delay(60)
+  const menus = loadMenus()
+  const tomorrowDate = new Date()
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1)
+  const tomorrow = dateInputString(tomorrowDate)
+  const today = dateInputString()
+  const rolled: MealId[] = []
+  const mealsList: MealId[] = ['breakfast', 'lunch', 'dinner']
+  for (const meal of mealsList) {
+    const key = `${tomorrow}_${meal}`
+    if (menus[key]) {
+      continue
+    }
+    const current = menus[`${today}_${meal}`]
+    if (!current) {
+      continue
+    }
+    menus[key] = {
+      exists: true,
+      date: tomorrow,
+      meal,
+      dishIds: current.dishIds.slice(),
+      open: current.open !== false
+    }
+    rolled.push(meal)
+  }
+  saveMenus()
+  let restored = 0
+  dishes.forEach(dish => {
+    if (dish.status === 'soldout') {
+      dish.status = 'on'
+      dishStatusOverrides[dish.id] = 'on'
+      restored++
+    }
+  })
+  if (restored) {
+    persistOverrides()
+  }
+  return { date: tomorrow, menus: rolled, restored }
 }
 
 export async function deleteMenu(

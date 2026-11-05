@@ -52,7 +52,7 @@
     <view class="save-btn {{saving ? 'disabled' : ''}}" bindtap="onSave">
       {{saving ? '保存中…' : '保存菜单'}}
     </view>
-    <view class="copy-btn {{saving ? 'disabled' : ''}}" bindtap="onCopyToComing">复制到今天起 7 天</view>
+    <view class="copy-btn {{saving ? 'disabled' : ''}}" bindtap="onCopyToComing">复制到未来 7 天</view>
     <view class="reset-btn" bindtap="onReset">恢复默认（全部菜品）</view>
   </block>
 

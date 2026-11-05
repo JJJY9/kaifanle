@@ -6,6 +6,7 @@ import {
   getMe,
   getStats,
   moveDish,
+  rollMenu,
   toggleDishStatus,
   updateOrderStatus
 } from '../../services/api'
@@ -41,6 +42,7 @@ Page({
 
   _watchTimer: null as any,
   _watching: false,
+  _watchGen: 0,
   _knownPending: [] as string[],
   _statsAt: 0,
   _rawOrders: [] as any[],
@@ -59,18 +61,21 @@ Page({
     this.stopWatch()
   },
 
-  // 轮询新订单：有未完成订单时 20 秒一次，空闲时 45 秒一次，省云端读取
+  // 轮询新订单：有未完成订单时 20 秒一次，空闲时 45 秒一次，省云端读取。
+  // 用 generation 标记防止快速切页时产生多条轮询链。
   startWatch() {
     this.stopWatch()
     this._watching = true
+    const gen = this._watchGen
     const schedule = () => {
-      if (!this._watching) {
+      if (!this._watching || gen !== this._watchGen) {
         return
       }
       const delay = this.data.orders.length ? 20000 : 45000
       this._watchTimer = setTimeout(async () => {
         if (
           this._watching &&
+          gen === this._watchGen &&
           !this.data.forbidden &&
           !this.data.error &&
           !this.data.busyId
@@ -85,6 +90,7 @@ Page({
 
   stopWatch() {
     this._watching = false
+    this._watchGen++
     if (this._watchTimer) {
       clearTimeout(this._watchTimer)
       this._watchTimer = null
@@ -105,6 +111,7 @@ Page({
         return
       }
       this.setData({ forbidden: false, error: '' })
+      await this.maybeRollMenu()
       await this.load()
     } catch (e: any) {
       this.setData({
@@ -136,6 +143,21 @@ Page({
     this.guard()
   },
 
+  // 每天第一次打开厨房时补跑一次菜单滚动/售罄重置，
+  // 即使定时触发器没生效也能生效；失败不阻塞页面。
+  async maybeRollMenu() {
+    const today = dateInputString()
+    try {
+      if (wx.getStorageSync('kfl_last_roll') === today) {
+        return
+      }
+      await rollMenu()
+      wx.setStorageSync('kfl_last_roll', today)
+    } catch (e) {
+      // 忽略：下次打开厨房再试
+    }
+  },
+
   onPullDownRefresh() {
     this.guard().then(() => wx.stopPullDownRefresh())
   },
@@ -154,7 +176,6 @@ Page({
         }
       } else {
         orders = await getAllOrders()
-        this._rawOrders = orders
       }
       if (seq !== this._loadSeq) {
         return
@@ -325,7 +346,10 @@ Page({
             (sum, order) => sum + Number(order.amount || 0),
             0
           ),
-          totalCount: valid.length,
+          totalCount:
+            stats && typeof stats.totalOrders === 'number'
+              ? stats.totalOrders
+              : valid.length,
           topDish: weekTopDish
         }
 
@@ -360,6 +384,14 @@ Page({
             : 4
         }))
         weekBarTotal = bars.reduce((sum, bar) => sum + bar.amount, 0)
+      }
+
+      // 统计请求期间可能又来了新的轮询/刷新，落盘前再确认一次
+      if (seq !== this._loadSeq) {
+        return
+      }
+      if (!silent) {
+        this._rawOrders = orders
       }
 
       this.setData({
@@ -490,11 +522,21 @@ Page({
   // 把今天的订单整理成一段文字，方便记账或发给家人
   onCopySummary() {
     const todayKey = dateInputString()
-    const todayOrders = (this._rawOrders || []).filter(
-      order =>
-        (order.scheduledDate ||
-          dateInputString(new Date(order.createdAt))) === todayKey
-    )
+    // 合并最近一次全量加载与轮询到的最新状态，避免漏掉静默刷新期间的新订单
+    const map: Record<string, any> = {}
+    ;(this._rawOrders || []).forEach(order => {
+      map[order.id] = order
+    })
+    ;(this.data.orders || []).forEach(order => {
+      map[order.id] = order
+    })
+    const todayOrders = Object.keys(map)
+      .map(id => map[id])
+      .filter(
+        order =>
+          (order.scheduledDate ||
+            dateInputString(new Date(order.createdAt))) === todayKey
+      )
     if (!todayOrders.length) {
       wx.showToast({ title: '今天还没有订单', icon: 'none' })
       return
