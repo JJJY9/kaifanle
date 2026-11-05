@@ -76,6 +76,8 @@ async function route(action, payload, openid) {
       return getOrders(openid)
     case 'getAllOrders':
       return getAllOrders(openid)
+    case 'getActiveOrders':
+      return getActiveOrders(openid)
     case 'getOrder':
       return getOrder(payload.id, openid)
     case 'createOrder':
@@ -724,6 +726,19 @@ async function getAllOrders(openid) {
     .limit(100)
     .get()
   return res.data.map(withId)
+}
+
+// 厨房轮询专用：只取未完成订单，减少每次刷新读取的文档数
+async function getActiveOrders(openid) {
+  await requireAdmin(openid)
+  const res = await db
+    .collection('orders')
+    .where({ status: _.in(['pending', 'accepted', 'cooking', 'ready']) })
+    .limit(50)
+    .get()
+  return res.data
+    .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0))
+    .map(withId)
 }
 
 async function getOrder(id, openid) {

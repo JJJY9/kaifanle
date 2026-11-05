@@ -95,6 +95,13 @@ export async function getOrders(): Promise<Order[]> {
   return mock.getOrders()
 }
 
+export async function getActiveOrders(): Promise<Order[]> {
+  if (USE_CLOUD) {
+    return callApi<Order[]>('getActiveOrders')
+  }
+  return mock.getActiveOrders()
+}
+
 export async function getAllOrders(): Promise<Order[]> {
   if (USE_CLOUD) {
     return callApi<Order[]>('getAllOrders')

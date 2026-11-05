@@ -385,6 +385,12 @@ async function run() {
   res = await call('getAllOrders', {}, 'girl-openid')
   assert.strictEqual(res.ok, false)
 
+  res = await call('getActiveOrders', {}, 'admin-openid')
+  assert.strictEqual(res.ok, true)
+  assert.ok(res.data.some(order => order.id === created.data.id))
+  res = await call('getActiveOrders', {}, 'girl-openid')
+  assert.strictEqual(res.ok, false)
+
   res = await call('getOrder', { id: created.data.id }, 'girl-openid')
   assert.strictEqual(res.ok, true)
 

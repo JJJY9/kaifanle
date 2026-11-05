@@ -1,6 +1,7 @@
 import type { OrderStatus } from '../../services/types'
 import {
   getAllOrders,
+  getActiveOrders,
   getDishes,
   getMe,
   getStats,
@@ -110,8 +111,19 @@ Page({
 
   async load(silent = false) {
     try {
-      const orders = await getAllOrders()
-      this._rawOrders = orders
+      // 静默轮询只取未完成订单；首次/操作后加载全量（含历史）
+      let orders: any[]
+      if (silent) {
+        try {
+          orders = await getActiveOrders()
+        } catch (e) {
+          // 云端还没部署 getActiveOrders 时退回全量订单
+          orders = await getAllOrders()
+        }
+      } else {
+        orders = await getAllOrders()
+        this._rawOrders = orders
+      }
       // 静默轮询只拉订单；菜品和统计沿用上次结果，省云端读取次数
       let dishes = this.data.dishes
       let stats = this.data.stats
@@ -191,13 +203,15 @@ Page({
         }
       }
       const view = active.map(toView)
-      const history = orders
-        .filter(
-          order =>
-            order.status === 'completed' || order.status === 'cancelled'
-        )
-        .slice(0, 10)
-        .map(toView)
+      const history = silent
+        ? this.data.history
+        : orders
+            .filter(
+              order =>
+                order.status === 'completed' || order.status === 'cancelled'
+            )
+            .slice(0, 10)
+            .map(toView)
 
       // 今日备菜：把今天所有未完成订单按菜名汇总
       const todayKey = dateInputString()
@@ -221,17 +235,20 @@ Page({
         .sort((a, b) => b.qty - a.qty)
       const prepTotal = prepItems.reduce((sum, item) => sum + item.qty, 0)
 
-      // 近 7 天经营概况（不含已取消订单）
-      const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
-      const valid = orders.filter(order => order.status !== 'cancelled')
-      const weekOrders = valid.filter(order => order.createdAt >= weekAgo)
-      const weekStats = {
-        count: weekOrders.length,
-        revenue: weekOrders.reduce(
-          (sum, order) => sum + Number(order.amount || 0),
-          0
-        ),
-        totalCount: valid.length
+      // 近 7 天经营概况（不含已取消订单）；静默轮询沿用上次结果
+      let weekStats = this.data.weekStats
+      if (!silent) {
+        const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
+        const valid = orders.filter(order => order.status !== 'cancelled')
+        const weekOrders = valid.filter(order => order.createdAt >= weekAgo)
+        weekStats = {
+          count: weekOrders.length,
+          revenue: weekOrders.reduce(
+            (sum, order) => sum + Number(order.amount || 0),
+            0
+          ),
+          totalCount: valid.length
+        }
       }
 
       this.setData({

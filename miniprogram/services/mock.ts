@@ -603,6 +603,20 @@ export async function getAllOrders(): Promise<Order[]> {
   return getOrders()
 }
 
+export async function getActiveOrders(): Promise<Order[]> {
+  await delay(60)
+  return loadOrders()
+    .filter(
+      order =>
+        order.status === 'pending' ||
+        order.status === 'accepted' ||
+        order.status === 'cooking' ||
+        order.status === 'ready'
+    )
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .map(order => ({ ...order }))
+}
+
 export async function getOrder(id: string): Promise<Order | null> {
   await delay(60)
   const order = loadOrders().find(item => item.id === id)
