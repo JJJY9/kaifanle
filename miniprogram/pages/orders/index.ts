@@ -12,6 +12,7 @@ Page({
     orders: [] as any[],
     displayOrders: [] as any[],
     loading: true,
+    error: '',
     filter: 'all' as 'all' | 'active' | 'done',
     counts: { all: 0, active: 0, done: 0 }
   },
@@ -27,6 +28,7 @@ Page({
   },
 
   async load() {
+    this.setData({ error: '' })
     try {
       const orders = await getOrders()
       const view = orders.map(order => ({
@@ -54,10 +56,19 @@ Page({
       this.setData({ orders: view, loading: false, counts }, () =>
         this.applyFilter()
       )
-    } catch (e) {
-      this.setData({ loading: false })
-      wx.showToast({ title: '订单加载失败', icon: 'none' })
+    } catch (e: any) {
+      this.setData({
+        loading: false,
+        error: String(
+          (e && e.message) || '订单加载失败'
+        ).slice(0, 40)
+      })
     }
+  },
+
+  onRetry() {
+    this.setData({ loading: true, error: '' })
+    this.load()
   },
 
   onSelectFilter(e: any) {

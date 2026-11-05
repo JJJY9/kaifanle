@@ -27,6 +27,14 @@
     <view class="skeleton sk-row"></view>
   </view>
 
+  <empty-state
+    wx:elif="{{error}}"
+    title="订单加载失败"
+    desc="{{error}}"
+    actionText="再试一次"
+    bind:action="onRetry"
+  />
+
   <block wx:elif="{{displayOrders.length}}">
     <block wx:for="{{displayOrders}}" wx:key="id">
       <view wx:if="{{item.showHeader}}" class="group-label">{{item.dateText}}</view>
