@@ -146,6 +146,10 @@ Page({
           summary:
             itemSummary(order.items.map((item: any) => item.name)) +
             ` · 共 ${totalQty} 份`,
+          urged: Boolean(
+            order.urgedAt && Date.now() - order.urgedAt < 30 * 60 * 1000
+          ),
+          urgeCount: Number(order.urgeCount || 0),
           totalQty,
           itemLines: order.items.map((item: any, index: number) => ({
             key: `${order.id}-${index}`,

@@ -194,6 +194,19 @@ Page({
     this.setData({ keyword: '', searchResults: [] })
   },
 
+  onSurprise() {
+    const pool = this._available.filter(
+      dish => dish.status !== 'soldout' && dish.stock !== 0
+    )
+    if (!pool.length) {
+      wx.showToast({ title: '先等厨房上菜', icon: 'none' })
+      return
+    }
+    const dish = pool[Math.floor(Math.random() * pool.length)]
+    wx.showToast({ title: `不如吃${dish.name}？`, icon: 'none' })
+    this.openSku(dish)
+  },
+
   onDishTap(e: any) {
     this.openSku(e.detail.dish)
   },

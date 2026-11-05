@@ -80,11 +80,33 @@
   border-radius: 999rpx;
   box-shadow: 4rpx 4rpx 0 #111111;
   font-size: 24rpx;
-  font-weight: 800;
-}
+  font-weight: 800;}
 
 .notify-ready:active {
   transform: translate(4rpx, 4rpx);
+  box-shadow: none;
+}
+
+.urge {
+  display: inline-block;
+  margin-top: 18rpx;
+  padding: 10rpx 24rpx;
+  background: #FF5C8A;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  box-shadow: 4rpx 4rpx 0 #111111;
+  font-size: 24rpx;
+  font-weight: 800;
+}
+
+.urge:active {
+  transform: translate(4rpx, 4rpx);
+  box-shadow: none;
+}
+
+.urge.cooling {
+  background: #FFFDF6;
+  color: #5C5C5C;
   box-shadow: none;
 }
 

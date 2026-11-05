@@ -466,6 +466,18 @@ async function run() {
   // 失败的订单不会占用订单号，成功订单连续递增
   assert.strictEqual(order2.data.no, '002')
 
+  // 催单：只有本人能催，5 分钟内不能重复
+  res = await call('urgeOrder', { id: order2.data.id }, 'stranger-openid')
+  assert.strictEqual(res.ok, false)
+  res = await call('urgeOrder', { id: order2.data.id }, 'girl-openid')
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.urgeCount, 1)
+  assert.ok(res.data.urgedAt > 0)
+  res = await call('urgeOrder', { id: order2.data.id }, 'girl-openid')
+  assert.strictEqual(res.ok, false)
+  res = await call('urgeOrder', { id: order2.data.id }, 'admin-openid')
+  assert.strictEqual(res.ok, false)
+
   res = await call('cancelOrder', { id: order2.data.id }, 'stranger-openid')
   assert.strictEqual(res.ok, false)
 

@@ -12,6 +12,7 @@ const TIME_OPTIONS: Record<MealId, string[]> = {
 }
 
 const MODES = ['在家吃', '送过来', '自取']
+const NOTE_PRESETS = ['少放辣', '多加点饭', '不要香菜', '早点送']
 
 function buildLines(): any[] {
   return cart.getLines().map(line => ({
@@ -33,6 +34,7 @@ Page({
     modes: MODES,
     modeIndex: 0,
     note: '',
+    notePresets: NOTE_PRESETS,
     address: '',
     scheduledDate: '',
     todayDate: '',
@@ -143,6 +145,16 @@ Page({
 
   onNote(e: any) {
     this.setData({ note: e.detail.value })
+  },
+
+  onNotePreset(e: any) {
+    const phrase = String(e.currentTarget.dataset.phrase || '')
+    const note = this.data.note.trim()
+    if (!phrase || note.indexOf(phrase) > -1) {
+      return
+    }
+    const next = (note ? note + '，' + phrase : phrase).slice(0, 100)
+    this.setData({ note: next })
   },
 
   onAddress(e: any) {

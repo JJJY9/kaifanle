@@ -80,6 +80,30 @@
   font-weight: 600;
 }
 
+.sub-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-right: 200rpx;
+}
+
+.surprise {
+  margin-top: 2rpx;
+  padding: 6rpx 20rpx;
+  background: #FFD23F;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  box-shadow: 3rpx 3rpx 0 #111111;
+  font-size: 22rpx;
+  font-weight: 800;
+  transform: rotate(-2deg);
+}
+
+.surprise:active {
+  transform: translate(3rpx, 3rpx) rotate(-2deg);
+  box-shadow: none;
+}
+
 .meal-tabs {
   display: flex;
   gap: 16rpx;

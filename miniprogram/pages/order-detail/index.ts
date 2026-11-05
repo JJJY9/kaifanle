@@ -1,5 +1,5 @@
 import type { Dish, Order, OrderStatus } from '../../services/types'
-import { getOrder, cancelOrder, getDishes } from '../../services/api'
+import { getOrder, cancelOrder, getDishes, urgeOrder } from '../../services/api'
 import { cart } from '../../store/cart'
 import { STATUS_STEP_TEXT, STATUS_TEXT, mealName } from '../../utils/constants'
 import {
@@ -67,6 +67,9 @@ Page({
         order: {
           ...order,
           profileText,
+          urgeCooling: Boolean(
+            order.urgedAt && Date.now() - order.urgedAt < 5 * 60 * 1000
+          ),
           scheduledText: dateLabel(
             order.scheduledDate || dateInputString(new Date(order.createdAt))
           ),
@@ -204,8 +207,24 @@ Page({
     }
   },
 
-  async onSubscribeReady() {
-    if (!TEMPLATE_ORDER_STATUS) {
+  async onUrge() {
+    const order = this.data.order
+    if (!order || order.urgeCooling) {
+      return
+    }
+    try {
+      await urgeOrder(order.id)
+      wx.showToast({ title: '帮你催啦，掌勺人马上看', icon: 'none' })
+      this.load()
+    } catch (e: any) {
+      wx.showToast({
+        title: String((e && e.message) || '催单失败').slice(0, 40),
+        icon: 'none'
+      })
+    }
+  },
+
+  async onSubscribeReady() {    if (!TEMPLATE_ORDER_STATUS) {
       wx.showToast({ title: '还没配置提醒模板', icon: 'none' })
       return
     }

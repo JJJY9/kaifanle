@@ -77,6 +77,7 @@
         <view class="status {{item.status}}">{{item.statusText}}</view>
       </view>
       <view class="order-summary">{{item.summary}}</view>
+      <view wx:if="{{item.urged}}" class="urge-badge">她催啦{{item.urgeCount > 1 ? ' · ' + item.urgeCount + ' 次' : ''}}</view>
       <view class="order-meta">{{item.dateText}} · {{item.mealText}} · {{item.mode}} · {{item.expectedTime}} · {{item.timeText}}</view>
       <view class="order-items">
         <view
@@ -149,7 +150,7 @@
         <view class="dish-dot" style="background: {{item.color}};">{{item.char}}</view>
         <view class="dish-info">
           <view class="dish-name">{{item.name}}</view>
-          <view class="dish-price">¥{{item.price}}<text wx:if="{{item.stock >= 0}}"> · 剩 {{item.stock}} 份</text></view>
+          <view class="dish-price {{item.stock >= 0 && item.stock <= 3 ? 'low' : ''}}">¥{{item.price}}<text wx:if="{{item.stock >= 0}}"> · 剩 {{item.stock}} 份</text></view>
         </view>
         <view
           class="dish-toggle {{item.status !== 'on' ? 'off' : ''}} {{item.status === 'off' ? 'hidden' : ''}} {{busyDishId === item.id ? 'busy' : ''}}"

@@ -71,6 +71,8 @@ async function route(action, payload, openid) {
       return createOrder(payload, openid)
     case 'cancelOrder':
       return cancelOrder(payload, openid)
+    case 'urgeOrder':
+      return urgeOrder(payload, openid)
     case 'updateOrderStatus':
       return updateOrderStatus(payload, openid)
     case 'toggleDishStatus':
@@ -880,8 +882,36 @@ async function cancelOrder(payload, openid) {
   )
 }
 
-async function restoreStock(order) {
-  for (const item of order.items || []) {
+// 顾客催单：只记录时间，厨房端展示「她催了」；5 分钟内不能重复催。
+async function urgeOrder(payload, openid) {
+  if (!payload.id) {
+    throw new Error('缺少订单 ID')
+  }
+  const res = await db.collection('orders').doc(payload.id).get()
+  const order = res.data
+  if (order._openid !== openid) {
+    throw new Error('只能催自己的订单')
+  }
+  if (['pending', 'accepted', 'cooking'].indexOf(order.status) === -1) {
+    throw new Error('这一单不用催啦')
+  }
+  const now = Date.now()
+  if (order.urgedAt && now - order.urgedAt < 5 * 60 * 1000) {
+    throw new Error('刚催过啦，掌勺人正在忙')
+  }
+  await db
+    .collection('orders')
+    .doc(payload.id)
+    .update({ data: { urgedAt: now, urgeCount: _.inc(1) } })
+  return withId(
+    Object.assign({}, order, {
+      urgedAt: now,
+      urgeCount: Number(order.urgeCount || 0) + 1
+    })
+  )
+}
+
+async function restoreStock(order) {  for (const item of order.items || []) {
     if (!item.stockDeducted) {
       continue
     }

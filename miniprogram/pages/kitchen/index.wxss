@@ -258,6 +258,18 @@
   font-size: 23rpx;
 }
 
+.urge-badge {
+  display: inline-block;
+  margin-top: 10rpx;
+  padding: 6rpx 20rpx;
+  background: #FF5C8A;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 800;
+  transform: rotate(-2deg);
+}
+
 .order-items {
   margin-top: 12rpx;
   padding: 12rpx 16rpx;
@@ -432,6 +444,11 @@
   margin-top: 2rpx;
   color: #5C5C5C;
   font-size: 22rpx;
+}
+
+.dish-price.low {
+  color: #D9431C;
+  font-weight: 800;
 }
 
 .dish-toggle {

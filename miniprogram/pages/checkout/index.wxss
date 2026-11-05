@@ -197,6 +197,26 @@
   font-size: 26rpx;
 }
 
+.note-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 14rpx;
+}
+
+.note-preset {
+  padding: 8rpx 22rpx;
+  background: #FFFDF6;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 23rpx;
+  font-weight: 700;
+}
+
+.note-preset:active {
+  background: #FFD23F;
+}
+
 .foot-space {
   height: 220rpx;
 }

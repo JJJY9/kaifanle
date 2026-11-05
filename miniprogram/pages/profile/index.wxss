@@ -75,6 +75,10 @@
   min-width: 0;
 }
 
+.stat.wide {
+  flex: 1.4;
+}
+
 .stat-num {
   font-family: 'SmileySans', 'PingFang SC', sans-serif;
   font-size: 56rpx;

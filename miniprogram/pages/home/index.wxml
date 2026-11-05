@@ -12,7 +12,10 @@
       <text class="big-title">{{greetText}}</text>
       <view class="sticker-title">干饭!</view>
     </view>
-    <view class="sub-line">今天也给你开小灶</view>
+    <view class="sub-row">
+      <view class="sub-line">今天也给你开小灶</view>
+      <view class="surprise" bindtap="onSurprise">🎲 帮我选</view>
+    </view>
 
     <view class="meal-tabs">
       <view

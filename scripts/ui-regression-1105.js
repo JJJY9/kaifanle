@@ -141,6 +141,14 @@ function invoke(mp, body) {
   data = await page.data()
   check('订单详情加载', Boolean(data.order), data.order && '#' + data.order.no)
 
+  await invoke(
+    mp,
+    "page.setData({ order: Object.assign({}, page.data.order, { status: 'pending', urgeCooling: false }) })"
+  )
+  await sleep(300)
+  page = await current()
+  check('催单按钮渲染', (await page.$$('.urge')).length === 1)
+
   const readCartCount = raw => {
     try {
       const lines = JSON.parse(raw || '[]')
@@ -222,6 +230,60 @@ function invoke(mp, body) {
   data = await page.data()
   check('菜品编辑加载', Boolean(data.name), data.name)
   check('图片选择入口', (await page.$$('.image-add')).length === 1)
+
+  // ---------- 首页帮我选 ----------
+  await mp.switchTab('/pages/home/index')
+  await sleep(1800)
+  const tabCount = await mp.evaluate(() => {
+    const p = getCurrentPages()[getCurrentPages().length - 1]
+    const t = p.getTabBar && p.getTabBar()
+    return t ? t.data.cartCount : -1
+  })
+  check('购物车角标同步', tabCount > 0, `角标 ${tabCount}`)
+  page = await current()
+  await invoke(mp, 'page.onSurprise()')
+  await sleep(500)
+  page = await current()
+  data = await page.data()
+  check(
+    '帮我选打开规格',
+    data.skuVisible === true && Boolean(data.activeDish),
+    data.activeDish && data.activeDish.name
+  )
+  await invoke(mp, 'page.onSkuClose()')
+  await sleep(300)
+
+  // ---------- 结算快捷备注 ----------
+  if (readCartCount(after) > 0) {
+    await mp.navigateTo('/pages/checkout/index?meal=lunch')
+    await sleep(1600)
+    page = await current()
+    await invoke(
+      mp,
+      "page.onNotePreset({ currentTarget: { dataset: { phrase: '少放辣' } } })"
+    )
+    await invoke(
+      mp,
+      "page.onNotePreset({ currentTarget: { dataset: { phrase: '多加点饭' } } })"
+    )
+    await sleep(300)
+    page = await current()
+    data = await page.data()
+    check('快捷备注拼接', data.note === '少放辣，多加点饭', data.note)
+    await mp.navigateBack()
+    await sleep(600)
+  }
+
+  // ---------- 我的统计 ----------
+  await mp.switchTab('/pages/profile/index')
+  await sleep(2000)
+  page = await current()
+  data = await page.data()
+  check(
+    '我的累计统计',
+    Boolean(data.stats) && typeof data.stats.total === 'number',
+    data.stats && `本月 ${data.stats.month} / 累计 ${data.stats.total}`
+  )
 
   const failed = results.filter(r => !r.ok)
   console.log(`\n结论：${results.length - failed.length}/${results.length} 通过`)

@@ -1,4 +1,4 @@
-import { getMe, getOrders, initDb } from '../../services/api'
+import { getMe, getOrders, initDb, getCoupons } from '../../services/api'
 import { USE_CLOUD } from '../../config'
 
 Page({
@@ -10,6 +10,7 @@ Page({
     },
     stats: {
       month: 0,
+      total: 0,
       favorite: '还没点过'
     },
     cloudMode: USE_CLOUD,
@@ -35,7 +36,11 @@ Page({
     this.loadMe()
   },
 
-  buildEntries(isAdmin: boolean, initialized: boolean): any[] {
+  buildEntries(
+    isAdmin: boolean,
+    initialized: boolean,
+    couponCount = 0
+  ): any[] {
     const entries: any[] = [
       {
         key: 'wish',
@@ -47,7 +52,9 @@ Page({
       {
         key: 'coupon',
         label: '爱心券',
-        desc: '洗碗券、奶茶券、夸夸卡',
+        desc: couponCount
+          ? `有 ${couponCount} 张还没用`
+          : '洗碗券、奶茶券、夸夸卡',
         icon: '券',
         color: '#FFD23F'
       },
@@ -111,17 +118,20 @@ Page({
 
   async loadMe() {
     try {
-      const [me, orders] = await Promise.all([
+      const [me, orders, coupons] = await Promise.all([
         getMe(),
-        getOrders().catch(() => [])
+        getOrders().catch(() => []),
+        getCoupons().catch(() => [])
       ])
       const now = new Date()
-      const monthly = (orders || []).filter(order => {
+      const valid = (orders || []).filter(
+        order => order.status !== 'cancelled'
+      )
+      const monthly = valid.filter(order => {
         const date = new Date(order.createdAt)
         return (
           date.getFullYear() === now.getFullYear() &&
-          date.getMonth() === now.getMonth() &&
-          order.status !== 'cancelled'
+          date.getMonth() === now.getMonth()
         )
       })
       const dishCount: Record<string, number> = {}
@@ -133,6 +143,9 @@ Page({
       const favorite =
         Object.keys(dishCount).sort((a, b) => dishCount[b] - dishCount[a])[0] ||
         '还没点过'
+      const couponCount = (coupons || []).filter(
+        coupon => coupon.owner === me.openid && coupon.status === 'unused'
+      ).length
 
       this.setData({
         isAdmin: me.isAdmin,
@@ -140,9 +153,10 @@ Page({
         openid: me.openid,
         stats: {
           month: monthly.length,
+          total: valid.length,
           favorite
         },
-        entries: this.buildEntries(me.isAdmin, me.initialized)
+        entries: this.buildEntries(me.isAdmin, me.initialized, couponCount)
       })
     } catch (e) {
       // 云环境还没连上时，云模式下按「未初始化」处理；mock 模式保持可用
@@ -150,7 +164,7 @@ Page({
         isAdmin: !USE_CLOUD,
         initialized: !USE_CLOUD,
         openid: '',
-        stats: { month: 0, favorite: '还没点过' },
+        stats: { month: 0, total: 0, favorite: '还没点过' },
         entries: this.buildEntries(!USE_CLOUD, !USE_CLOUD)
       })
     }

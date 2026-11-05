@@ -99,6 +99,8 @@ export interface Order {
   status: OrderStatus
   timeline: TimelineEntry[]
   createdAt: number
+  urgedAt?: number
+  urgeCount?: number
 }
 
 export interface CreateOrderPayload {

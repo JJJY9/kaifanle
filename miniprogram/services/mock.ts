@@ -715,6 +715,26 @@ export async function cancelOrder(id: string): Promise<Order | null> {
   return { ...order }
 }
 
+export async function urgeOrder(id: string): Promise<Order | null> {
+  await delay(60)
+  const orders = loadOrders()
+  const order = orders.find(item => item.id === id)
+  if (!order) {
+    return null
+  }
+  if (['pending', 'accepted', 'cooking'].indexOf(order.status) === -1) {
+    throw new Error('这一单不用催啦')
+  }
+  const now = Date.now()
+  if (order.urgedAt && now - order.urgedAt < 5 * 60 * 1000) {
+    throw new Error('刚催过啦，掌勺人正在忙')
+  }
+  order.urgedAt = now
+  order.urgeCount = Number(order.urgeCount || 0) + 1
+  saveOrders()
+  return { ...order }
+}
+
 export async function updateOrderStatus(
   id: string,
   status: OrderStatus

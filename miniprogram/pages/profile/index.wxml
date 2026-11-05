@@ -15,6 +15,11 @@
     </view>
     <view class="divider"></view>
     <view class="stat">
+      <view class="stat-num">{{stats.total}}</view>
+      <view class="stat-label">累计干饭</view>
+    </view>
+    <view class="divider"></view>
+    <view class="stat wide">
       <view class="stat-fav">{{stats.favorite}}</view>
       <view class="stat-label">最常点</view>
     </view>

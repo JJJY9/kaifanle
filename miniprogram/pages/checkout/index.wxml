@@ -89,6 +89,15 @@
       maxlength="100"
       bindinput="onNote"
     ></textarea>
+    <view class="note-presets">
+      <view
+        wx:for="{{notePresets}}"
+        wx:key="*this"
+        class="note-preset"
+        data-phrase="{{item}}"
+        bindtap="onNotePreset"
+      >{{item}}</view>
+    </view>
   </view>
 
   <view class="foot-space"></view>

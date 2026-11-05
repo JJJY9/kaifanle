@@ -13,10 +13,30 @@
 }
 
 .tab {
+  position: relative;
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.tab-badge {
+  position: absolute;
+  top: 6rpx;
+  left: 50%;
+  margin-left: 32rpx;
+  min-width: 34rpx;
+  height: 34rpx;
+  padding: 0 8rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FF5C8A;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .tab-text {
