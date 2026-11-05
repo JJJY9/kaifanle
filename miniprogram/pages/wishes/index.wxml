@@ -42,6 +42,11 @@
           data-id="{{item.id}}"
           bindtap="onDone"
         >吃上了</view>
+        <view
+          class="wish-btn"
+          data-id="{{item.id}}"
+          bindtap="onReply"
+        >回一句</view>
       </view>
     </view>
   </block>

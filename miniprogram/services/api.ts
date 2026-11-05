@@ -35,9 +35,20 @@ async function callApi<T>(action: string, payload?: any): Promise<T> {
   return result.data as T
 }
 
+// 分类几乎不变，缓存 5 分钟，减少首页每次进入的数据库读取
+let categoriesCache: { at: number; data: Category[] } | null = null
+
 export async function getCategories(): Promise<Category[]> {
   if (USE_CLOUD) {
-    return callApi<Category[]>('getCategories')
+    if (
+      categoriesCache &&
+      Date.now() - categoriesCache.at < 5 * 60 * 1000
+    ) {
+      return categoriesCache.data.map(item => ({ ...item }))
+    }
+    const data = await callApi<Category[]>('getCategories')
+    categoriesCache = { at: Date.now(), data }
+    return data.map(item => ({ ...item }))
   }
   return mock.getCategories()
 }

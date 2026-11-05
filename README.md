@@ -90,6 +90,10 @@ node scripts/init-cloud-db.js ws://127.0.0.1:9420
 
 `api` 云函数带一个定时触发器 `dailyMenuRoll`（每天 04:00），会把当天的菜单复制到第二天，只补空缺、不覆盖已经排好的安排。触发器随云函数一起部署；不需要的话删掉 `cloudfunctions/api/config.json` 里的 `triggers` 即可。
 
+### 免费额度提示
+
+云开发免费套餐有每日数据库读写额度。厨房页会每 25 秒静默刷新一次订单（为省额度，只拉订单，菜品和统计 5 分钟才刷一次），长时间挂在厨房页仍会消耗读取次数。额度用尽后云函数会返回 `EXCEED_REQUEST_LIMIT / OutOfReadRequestQuota`，次日 0 点重置；个人使用一般够用，对外开放前建议升级套餐。
+
 ### 云函数动作
 
 `getCategories` / `getDishes` / `getDish` / `getOrders` / `getAllOrders` / `getOrder` /

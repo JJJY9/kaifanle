@@ -62,7 +62,12 @@ export function dateLabel(
   const diff = Math.round(
     (target.getTime() - base.getTime()) / (24 * 60 * 60 * 1000)
   )
-  if (diff <= 0) {
+  if (diff < 0) {
+    return diff === -1
+      ? '昨天'
+      : `${target.getMonth() + 1}月${target.getDate()}日`
+  }
+  if (diff === 0) {
     return '今天'
   }
   if (diff === 1) {

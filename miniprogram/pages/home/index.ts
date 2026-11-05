@@ -106,7 +106,14 @@ Page({
       const sections = categories
         .map(category => ({
           ...category,
-          dishes: available.filter(dish => dish.categoryId === category.id)
+          dishes: available
+            .filter(dish => dish.categoryId === category.id)
+            .sort((a, b) => {
+              // 卖完的菜排到分类末尾，别挡着能点的
+              const rank = (dish: Dish) =>
+                dish.status === 'soldout' || dish.stock === 0 ? 1 : 0
+              return rank(a) - rank(b)
+            })
         }))
         .filter(section => section.dishes.length > 0)
       const hero =

@@ -6,7 +6,8 @@ import {
   formatDate,
   formatTime,
   dateLabel,
-  dateInputString
+  dateInputString,
+  itemSummary
 } from '../../utils/format'
 import { TEMPLATE_ORDER_STATUS } from '../../config'
 
@@ -270,5 +271,17 @@ Page({
 
   onBackHome() {
     wx.switchTab({ url: '/pages/home/index' })
+  },
+
+  onShareAppMessage() {
+    const order = this.data.order
+    return {
+      title: order
+        ? `我在张饱饭堂点了「${itemSummary(
+            order.items.map((item: any) => item.name)
+          )}」`
+        : '张饱饭堂 · 她点单，你掌勺',
+      path: '/pages/home/index'
+    }
   }
 })

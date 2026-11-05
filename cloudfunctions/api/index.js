@@ -915,15 +915,19 @@ async function cancelOrder(payload, openid) {
     title: STEP_TITLES.cancelled,
     time: Date.now()
   }
-  await db
+  // 条件更新：并发取消时只会成功一次，避免库存重复回补
+  const upd = await db
     .collection('orders')
-    .doc(payload.id)
+    .where({ _id: payload.id, status: 'pending' })
     .update({
       data: {
         status: 'cancelled',
         timeline: _.push([entry])
       }
     })
+  if (!upd.stats || upd.stats.updated !== 1) {
+    throw new Error('订单状态刚刚变了，刷新看看')
+  }
   await restoreStock(order)
 
   return withId(
@@ -978,7 +982,8 @@ async function restoreStock(order) {  for (const item of order.items || []) {
   }
 }
 
-async function updateOrderStatus(payload, openid) {  await requireAdmin(openid)
+async function updateOrderStatus(payload, openid) {
+  await requireAdmin(openid)
   const id = payload.id
   const status = payload.status
   if (!id || !status) {
@@ -997,15 +1002,19 @@ async function updateOrderStatus(payload, openid) {  await requireAdmin(openid)
     title: STEP_TITLES[status] || status,
     time: Date.now()
   }
-  await db
+  // 条件更新：并发操作只有一次会生效
+  const upd = await db
     .collection('orders')
-    .doc(id)
+    .where({ _id: id, status: order.status })
     .update({
       data: {
         status,
         timeline: _.push([entry])
       }
     })
+  if (!upd.stats || upd.stats.updated !== 1) {
+    throw new Error('订单状态刚刚变了，刷新看看')
+  }
 
   // 厨房拒掉尚未接单的订单时，把扣掉的库存补回去
   if (status === 'cancelled' && order.status === 'pending') {

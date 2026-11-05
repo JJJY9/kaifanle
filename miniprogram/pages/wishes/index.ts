@@ -109,5 +109,34 @@ Page({
         icon: 'none'
       })
     }
+  },
+
+  async onReply(e: any) {
+    const id = e.currentTarget.dataset.id
+    const res: any = await wx.showModal({
+      title: '回一句',
+      editable: true,
+      placeholderText: '比如：周末给你做！',
+      confirmText: '回复',
+      cancelText: '算了'
+    })
+    if (!res.confirm) {
+      return
+    }
+    const reply = String(res.content || '').trim().slice(0, 50)
+    if (!reply) {
+      wx.showToast({ title: '没写内容', icon: 'none' })
+      return
+    }
+    try {
+      await updateWish({ id, reply })
+      wx.showToast({ title: '已回复', icon: 'none' })
+      this.load()
+    } catch (err: any) {
+      wx.showToast({
+        title: String((err && err.message) || '回复失败').slice(0, 40),
+        icon: 'none'
+      })
+    }
   }
 })

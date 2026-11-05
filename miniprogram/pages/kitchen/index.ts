@@ -36,6 +36,7 @@ Page({
 
   _watchTimer: null as any,
   _knownPending: [] as string[],
+  _statsAt: 0,
 
   onShow() {
     this.guard()
@@ -108,11 +109,23 @@ Page({
 
   async load(silent = false) {
     try {
-      const [orders, dishes, stats] = await Promise.all([
-        getAllOrders(),
-        getDishes(),
-        getStats().catch(() => null)
-      ])
+      const orders = await getAllOrders()
+      // 静默轮询只拉订单；菜品和统计沿用上次结果，省云端读取次数
+      let dishes = this.data.dishes
+      let stats = this.data.stats
+      if (
+        !silent ||
+        !dishes.length ||
+        Date.now() - this._statsAt > 5 * 60 * 1000
+      ) {
+        const [freshDishes, freshStats] = await Promise.all([
+          getDishes(),
+          getStats().catch(() => null)
+        ])
+        dishes = freshDishes
+        stats = freshStats
+        this._statsAt = Date.now()
+      }
       const active = orders.filter(
         order => order.status !== 'completed' && order.status !== 'cancelled'
       )
