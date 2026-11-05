@@ -1,0 +1,139 @@
+// mock 模式 UI 回归：不依赖云环境，验证新增页面与数据逻辑
+const automator = require('miniprogram-automator')
+const sleep = ms => new Promise(r => setTimeout(r, ms))
+
+const results = []
+function check(name, ok, detail) {
+  results.push({ name, ok, detail })
+  console.log(`${ok ? 'PASS' : 'FAIL'} ${name}${detail ? ' · ' + detail : ''}`)
+}
+
+function invoke(mp, body) {
+  return mp.evaluate(
+    new Function(
+      'return (() => { const page = getCurrentPages()[getCurrentPages().length - 1]; ' +
+        body +
+        ' })()'
+    )
+  )
+}
+
+;(async () => {
+  const mp = await automator.connect({
+    wsEndpoint: process.argv[2] || 'ws://127.0.0.1:9420'
+  })
+  await mp.mockWxMethod('showModal', {
+    confirm: true,
+    cancel: false,
+    content: ''
+  })
+  const current = () => mp.currentPage()
+
+  // 首页
+  await mp.reLaunch('/pages/home/index')
+  await sleep(2500)
+  let page = await current()
+  let data = await page.data()
+  check('mock 首页加载', (data.sections || []).length > 0, `${data.sections.length} 个分类`)
+
+  await invoke(mp, "page.onSearchInput({ detail: { value: '饭' } })")
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check('mock 搜索', data.searchResults.length > 0, `${data.searchResults.length} 条`)
+
+  await invoke(mp, 'page.onClearSearch()')
+  await sleep(300)
+
+  // 厨房与菜品排序
+  await mp.navigateTo('/pages/kitchen/index')
+  await sleep(2200)
+  page = await current()
+  data = await page.data()
+  check('mock 厨房加载', (data.dishes || []).length > 0, `${data.dishes.length} 道菜`)
+  const firstDish = (data.dishes || [])[0]
+  const secondDish = (data.dishes || [])[1]
+  if (firstDish && secondDish) {
+    await invoke(
+      mp,
+      `page.onMoveDish({ currentTarget: { dataset: { id: '${secondDish.id}', direction: 'up' } } })`
+    )
+    await sleep(1200)
+    page = await current()
+    data = await page.data()
+    check(
+      'mock 菜品排序',
+      data.dishes[0].id === secondDish.id,
+      `${data.dishes[0].name} / ${data.dishes[1] && data.dishes[1].name}`
+    )
+    await invoke(
+      mp,
+      `page.onMoveDish({ currentTarget: { dataset: { id: '${secondDish.id}', direction: 'down' } } })`
+    )
+    await sleep(1200)
+  }
+
+  // 分类管理
+  await mp.navigateTo('/pages/category-manage/index')
+  await sleep(1600)
+  page = await current()
+  data = await page.data()
+  check('mock 分类管理加载', (data.categories || []).length > 0)
+  await invoke(mp, "page.setData({ name: '夜宵', color: '#2D9CFF' })")
+  await invoke(mp, 'page.onSave()')
+  await sleep(1200)
+  page = await current()
+  data = await page.data()
+  const added = (data.categories || []).find(item => item.name === '夜宵')
+  check('mock 分类新增', Boolean(added))
+  if (added) {
+    await invoke(
+      mp,
+      `page.onDelete({ currentTarget: { dataset: { id: '${added.id}' } } })`
+    )
+    await sleep(1200)
+    page = await current()
+    data = await page.data()
+    check(
+      'mock 分类删除',
+      !(data.categories || []).some(item => item.name === '夜宵')
+    )
+  }
+
+  // 营业设置与公告
+  await mp.navigateTo('/pages/business/index')
+  await sleep(1600)
+  page = await current()
+  data = await page.data()
+  check('mock 营业设置加载', Array.isArray(data.mealViews) && data.mealViews.length === 3)
+  await invoke(mp, "page.setData({ notice: '今天只有一锅炖菜' })")
+  await invoke(mp, 'page.onSave()')
+  await sleep(1000)
+  await mp.switchTab('/pages/home/index')
+  await sleep(1600)
+  page = await current()
+  data = await page.data()
+  check('mock 今日公告展示', data.notice === '今天只有一锅炖菜', data.notice)
+  // 还原公告
+  await mp.navigateTo('/pages/business/index')
+  await sleep(1200)
+  page = await current()
+  await invoke(mp, "page.setData({ notice: '' })")
+  await invoke(mp, 'page.onSave()')
+  await sleep(900)
+
+  // 订单筛选
+  await mp.switchTab('/pages/orders/index')
+  await sleep(1600)
+  page = await current()
+  data = await page.data()
+  check('mock 订单列表', (data.orders || []).length > 0, `${data.orders.length} 单`)
+
+  const failed = results.filter(r => !r.ok)
+  console.log(`\n结论：${results.length - failed.length}/${results.length} 通过`)
+  await mp.disconnect()
+  process.exit(failed.length ? 1 : 0)
+})().catch(err => {
+  console.error('mock 回归异常：', err)
+  process.exit(2)
+})
