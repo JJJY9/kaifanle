@@ -105,6 +105,12 @@ function invoke(mp, body) {
       data.counts.active === expectActive,
     JSON.stringify(data.counts)
   )
+  check(
+    '订单日期分组',
+    (data.displayOrders || []).length > 0 &&
+      data.displayOrders[0].showHeader === true,
+    data.displayOrders && data.displayOrders[0] && data.displayOrders[0].dateText
+  )
 
   await invoke(
     mp,
