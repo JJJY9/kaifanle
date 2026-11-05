@@ -174,6 +174,21 @@ function chinaNow() {
   return { h: d.getUTCHours(), m: d.getUTCMinutes() }
 }
 
+function pad2(n) {
+  return n < 10 ? '0' + n : String(n)
+}
+
+function chinaDateString(ts) {
+  const d = new Date((ts || Date.now()) + 8 * 60 * 60 * 1000)
+  return (
+    d.getUTCFullYear() +
+    '-' +
+    pad2(d.getUTCMonth() + 1) +
+    '-' +
+    pad2(d.getUTCDate())
+  )
+}
+
 async function getBusiness() {
   const config = await getConfig()
   return normalizeBusiness(config && config.business)
@@ -252,7 +267,11 @@ async function getStats(openid) {
     .limit(1000)
     .get()
   const start = chinaStartOfDay()
-  const today = res.data.filter(order => order.createdAt >= start)
+  const todayKey = chinaDateString()
+  const today = res.data.filter(
+    order =>
+      (order.scheduledDate || chinaDateString(order.createdAt)) === todayKey
+  )
   const active = today.filter(order => order.status !== 'cancelled')
   const revenue = active.reduce((sum, order) => sum + Number(order.amount || 0), 0)
   const completed = today.filter(order => order.status === 'completed').length
@@ -489,12 +508,31 @@ async function createOrder(payload, openid) {
   if (!mealBusiness.open) {
     throw new Error('这一餐还没开火，先歇歇')
   }
-  const current = chinaNow()
-  const [deadlineHour, deadlineMinute] = mealBusiness.deadline
-    .split(':')
-    .map(Number)
-  if (current.h * 60 + current.m > deadlineHour * 60 + deadlineMinute) {
-    throw new Error('这一餐已经截单啦，下次早点来')
+
+  const todayKey = chinaDateString()
+  let scheduledDate = String(payload.scheduledDate || '').slice(0, 10)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(scheduledDate)) {
+    scheduledDate = todayKey
+  }
+  const todayStart = Date.parse(todayKey + 'T00:00:00+08:00')
+  const scheduledStart = Date.parse(scheduledDate + 'T00:00:00+08:00')
+  if (
+    !isFinite(scheduledStart) ||
+    scheduledStart < todayStart ||
+    scheduledStart > todayStart + 7 * 24 * 60 * 60 * 1000
+  ) {
+    throw new Error('只能预订今天到 7 天内的餐')
+  }
+
+  // 只对「今天」的订单检查截单时间，提前预订不受当天截单限制
+  if (scheduledDate === todayKey) {
+    const current = chinaNow()
+    const [deadlineHour, deadlineMinute] = mealBusiness.deadline
+      .split(':')
+      .map(Number)
+    if (current.h * 60 + current.m > deadlineHour * 60 + deadlineMinute) {
+      throw new Error('这一餐已经截单啦，下次早点来')
+    }
   }
 
   if (!payload || !Array.isArray(payload.items) || payload.items.length === 0) {
@@ -611,6 +649,7 @@ async function createOrder(payload, openid) {
     mode,
     note,
     address,
+    scheduledDate,
     profile: buyerProfile,
     status: 'pending',
     timeline: [{ status: 'pending', title: STEP_TITLES.pending, time: now }],

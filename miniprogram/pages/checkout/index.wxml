@@ -13,6 +13,17 @@
       >{{item.name}}</view>
     </view>
 
+    <view class="block-title">哪一天</view>
+    <picker
+      mode="date"
+      start="{{todayDate}}"
+      end="{{maxDate}}"
+      value="{{scheduledDate}}"
+      bindchange="onDateChange"
+    >
+      <view class="date-pill">{{dateDisplay}}</view>
+    </picker>
+
     <view class="block-title">期望时间</view>
     <view class="chip-row">
       <view

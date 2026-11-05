@@ -65,6 +65,10 @@
       <text>{{order.mode}}</text>
     </view>
     <view class="receipt-row">
+      <text>哪一天</text>
+      <text>{{order.scheduledText}}</text>
+    </view>
+    <view class="receipt-row">
       <text>期望时间</text>
       <text>{{order.expectedTime}}</text>
     </view>

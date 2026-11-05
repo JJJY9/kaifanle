@@ -2,7 +2,7 @@ import type { MealId } from '../../services/types'
 import { createOrder, getBusiness, getMyProfile } from '../../services/api'
 import { cart } from '../../store/cart'
 import { MEALS } from '../../utils/constants'
-import { currentMeal } from '../../utils/format'
+import { currentMeal, dateInputString, dateLabel } from '../../utils/format'
 import { TEMPLATE_ORDER_STATUS } from '../../config'
 
 const TIME_OPTIONS: Record<MealId, string[]> = {
@@ -34,6 +34,10 @@ Page({
     modeIndex: 0,
     note: '',
     address: '',
+    scheduledDate: '',
+    todayDate: '',
+    maxDate: '',
+    dateDisplay: '今天',
     closed: false,
     closedText: '',
     submitting: false
@@ -48,11 +52,18 @@ Page({
       return
     }
     const meal = (options.meal || currentMeal()) as MealId
+    const todayDate = dateInputString()
+    const max = new Date()
+    max.setDate(max.getDate() + 7)
     this.setData({
       lines,
       total: cart.getTotal(),
       meal,
-      timeOptions: TIME_OPTIONS[meal] || TIME_OPTIONS.lunch
+      timeOptions: TIME_OPTIONS[meal] || TIME_OPTIONS.lunch,
+      scheduledDate: todayDate,
+      todayDate,
+      maxDate: dateInputString(max),
+      dateDisplay: '今天'
     })
     this.checkClosed(meal)
     this.loadProfile()
@@ -86,7 +97,9 @@ Page({
       const [deadlineHour, deadlineMinute] = setting.deadline
         .split(':')
         .map(Number)
-      const pastDeadline = nowMinutes > deadlineHour * 60 + deadlineMinute
+      const isToday = this.data.scheduledDate === this.data.todayDate
+      const pastDeadline =
+        isToday && nowMinutes > deadlineHour * 60 + deadlineMinute
       const closed = !setting.open || pastDeadline
       this.setData({
         closed,
@@ -117,6 +130,15 @@ Page({
 
   onModeSelect(e: any) {
     this.setData({ modeIndex: Number(e.currentTarget.dataset.index) })
+  },
+
+  onDateChange(e: any) {
+    const date = e.detail.value
+    this.setData({
+      scheduledDate: date,
+      dateDisplay: dateLabel(date, this.data.todayDate)
+    })
+    this.checkClosed(this.data.meal)
   },
 
   onNote(e: any) {
@@ -209,7 +231,8 @@ Page({
         expectedTime: this.data.timeOptions[this.data.timeIndex],
         mode,
         note: this.data.note.trim(),
-        address: this.data.address.trim()
+        address: this.data.address.trim(),
+        scheduledDate: this.data.scheduledDate
       })
       cart.clear()
       wx.redirectTo({ url: `/pages/order-detail/index?id=${order.id}` })

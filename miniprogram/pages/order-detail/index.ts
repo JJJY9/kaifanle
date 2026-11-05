@@ -2,7 +2,12 @@ import type { Order, OrderStatus } from '../../services/types'
 import { getOrder, cancelOrder } from '../../services/api'
 import { cart } from '../../store/cart'
 import { STATUS_STEP_TEXT, STATUS_TEXT, mealName } from '../../utils/constants'
-import { formatDate, formatTime } from '../../utils/format'
+import {
+  formatDate,
+  formatTime,
+  dateLabel,
+  dateInputString
+} from '../../utils/format'
 import { TEMPLATE_ORDER_STATUS } from '../../config'
 
 const FLOW: OrderStatus[] = [
@@ -61,6 +66,9 @@ Page({
         order: {
           ...order,
           profileText,
+          scheduledText: dateLabel(
+            order.scheduledDate || dateInputString(new Date(order.createdAt))
+          ),
           mealText: mealName(order.meal),
           createdText: `${formatDate(order.createdAt)} ${formatTime(
             order.createdAt

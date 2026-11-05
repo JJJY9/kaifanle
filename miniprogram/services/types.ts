@@ -89,6 +89,7 @@ export interface Order {
   mode: string
   note: string
   address?: string
+  scheduledDate?: string
   profile?: {
     dislikes: string[]
     tastes: string[]
@@ -106,6 +107,7 @@ export interface CreateOrderPayload {
   mode: string
   note: string
   address?: string
+  scheduledDate?: string
 }
 
 export interface MeInfo {

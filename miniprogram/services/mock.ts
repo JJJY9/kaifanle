@@ -15,6 +15,7 @@ import type {
   WishStatus
 } from './types'
 import { STATUS_STEP_TEXT } from '../utils/constants'
+import { dateInputString } from '../utils/format'
 
 const ORDERS_KEY = 'kfl_orders_v1'
 const DISH_STATUS_KEY = 'kfl_dish_status_v1'
@@ -584,10 +585,16 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
   if (!setting.open) {
     throw new Error('这一餐还没开火，先歇歇')
   }
+  const todayDate = dateInputString()
+  let scheduledDate = String(payload.scheduledDate || todayDate)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(scheduledDate)) {
+    scheduledDate = todayDate
+  }
+  const isToday = scheduledDate === todayDate
   const nowDate = new Date()
   const nowMinutes = nowDate.getHours() * 60 + nowDate.getMinutes()
   const [deadlineHour, deadlineMinute] = setting.deadline.split(':').map(Number)
-  if (nowMinutes > deadlineHour * 60 + deadlineMinute) {
+  if (isToday && nowMinutes > deadlineHour * 60 + deadlineMinute) {
     throw new Error('这一餐已经截单啦，下次早点来')
   }
 
@@ -626,6 +633,7 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
     mode: payload.mode,
     note: payload.note,
     address: String(payload.address || '').slice(0, 60),
+    scheduledDate,
     profile: {
       dislikes: profile.dislikes.slice(),
       tastes: profile.tastes.slice()

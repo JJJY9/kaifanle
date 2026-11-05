@@ -46,7 +46,7 @@
       </view>
     </view>
 
-    <view class="section-title display">今天要做的</view>
+    <view class="section-title display">待处理订单</view>
     <view wx:if="{{!orders.length}}" class="empty-line">暂时没有待处理的订单，歇会儿吧</view>
 
     <view wx:for="{{orders}}" wx:key="id" class="order card">
@@ -55,7 +55,7 @@
         <view class="status {{item.status}}">{{item.statusText}}</view>
       </view>
       <view class="order-summary">{{item.summary}}</view>
-      <view class="order-meta">{{item.mealText}} · {{item.mode}} · {{item.expectedTime}} · {{item.timeText}}</view>
+      <view class="order-meta">{{item.dateText}} · {{item.mealText}} · {{item.mode}} · {{item.expectedTime}} · {{item.timeText}}</view>
       <view class="order-items">
         <view
           wx:for="{{item.itemLines}}"

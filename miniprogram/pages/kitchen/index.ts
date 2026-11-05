@@ -13,7 +13,7 @@ import {
   STATUS_TEXT,
   mealName
 } from '../../utils/constants'
-import { formatTime, itemSummary } from '../../utils/format'
+import { formatTime, itemSummary, dateLabel, dateInputString } from '../../utils/format'
 import { TEMPLATE_NEW_ORDER } from '../../config'
 
 Page({
@@ -85,6 +85,9 @@ Page({
           statusText: STATUS_TEXT[order.status],
           mealText: mealName(order.meal),
           timeText: formatTime(order.createdAt),
+          dateText: dateLabel(
+            order.scheduledDate || dateInputString(new Date(order.createdAt))
+          ),
           summary:
             itemSummary(order.items.map(item => item.name)) +
             ` · 共 ${totalQty} 份`,

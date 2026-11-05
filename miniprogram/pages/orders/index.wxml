@@ -22,7 +22,7 @@
         <view class="status {{item.status}}">{{item.statusText}}</view>
       </view>
       <view class="order-summary">{{item.summary}}</view>
-      <view class="order-meta">{{item.mealText}} · 共 {{item.totalQty}} 份 · {{item.timeText}}</view>
+      <view class="order-meta">{{item.dateText}} · {{item.mealText}} · 共 {{item.totalQty}} 份 · {{item.timeText}}</view>
       <view class="order-foot">
         <text class="order-amount">¥{{item.amount}}</text>
         <text class="order-arrow">查看 →</text>

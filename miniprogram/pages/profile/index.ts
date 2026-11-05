@@ -4,9 +4,9 @@ import { USE_CLOUD } from '../../config'
 Page({
   data: {
     user: {
-      name: '小董',
+      name: '干饭人',
       motto: '今天也要好好吃饭',
-      char: '董'
+      char: '饭'
     },
     stats: {
       month: 0,

@@ -12,6 +12,13 @@ const store = new Map()
 const sentMessages = []
 let currentOpenid = 'admin-openid'
 
+function chinaDate(offset) {
+  const d = new Date(
+    Date.now() + 8 * 60 * 60 * 1000 + (offset || 0) * 24 * 60 * 60 * 1000
+  )
+  return d.toISOString().slice(0, 10)
+}
+
 function ensure(name) {
   if (!store.has(name)) {
     store.set(name, new Map())
@@ -546,6 +553,23 @@ async function run() {
     'girl-openid'
   )
   assert.strictEqual(res.ok, false)
+
+  // 未来日期不受当天截单时间限制
+  res = await call(
+    'createOrder',
+    {
+      items: [{ dishId: 'd02', qty: 1, specs: [] }],
+      meal: 'lunch',
+      expectedTime: '12:00',
+      mode: '在家吃',
+      note: '',
+      scheduledDate: chinaDate(1)
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  res = await call('cancelOrder', { id: res.data.id }, 'girl-openid')
+  assert.strictEqual(res.ok, true)
 
   res = await call(
     'updateBusiness',

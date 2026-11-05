@@ -1,6 +1,11 @@
 import { getOrders } from '../../services/api'
 import { STATUS_TEXT, mealName } from '../../utils/constants'
-import { formatTime, itemSummary } from '../../utils/format'
+import {
+  formatTime,
+  itemSummary,
+  dateLabel,
+  dateInputString
+} from '../../utils/format'
 
 Page({
   data: {
@@ -26,6 +31,9 @@ Page({
         statusText: STATUS_TEXT[order.status],
         mealText: mealName(order.meal),
         timeText: formatTime(order.createdAt),
+        dateText: dateLabel(
+          order.scheduledDate || dateInputString(new Date(order.createdAt))
+        ),
         summary: itemSummary(order.items.map(item => item.name)),
         totalQty: order.items.reduce((sum, item) => sum + item.qty, 0)
       }))
