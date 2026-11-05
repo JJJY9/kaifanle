@@ -168,9 +168,27 @@ Page({
         stats = freshStats
         this._statsAt = Date.now()
       }
-      const active = orders.filter(
-        order => order.status !== 'completed' && order.status !== 'cancelled'
-      )
+      const STATUS_RANK: Record<string, number> = {
+        pending: 0,
+        accepted: 1,
+        cooking: 2,
+        ready: 3
+      }
+      const active = orders
+        .filter(
+          order =>
+            order.status !== 'completed' && order.status !== 'cancelled'
+        )
+        .sort((a, b) => {
+          const rankA =
+            STATUS_RANK[a.status] === undefined ? 9 : STATUS_RANK[a.status]
+          const rankB =
+            STATUS_RANK[b.status] === undefined ? 9 : STATUS_RANK[b.status]
+          if (rankA !== rankB) {
+            return rankA - rankB
+          }
+          return Number(a.createdAt || 0) - Number(b.createdAt || 0)
+        })
       const pendingIds = active
         .filter(order => order.status === 'pending')
         .map(order => order.id)
