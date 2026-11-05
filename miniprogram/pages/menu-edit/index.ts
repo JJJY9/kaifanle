@@ -60,7 +60,10 @@ Page({
     this.load()
   },
 
+  _loadSeq: 0,
+
   async load() {
+    const seq = ++this._loadSeq
     this.setData({ loading: true })
     try {
       const [categories, dishes, menu] = await Promise.all([
@@ -68,6 +71,9 @@ Page({
         getDishes(),
         getMenuForDate(this.data.selectedDate, this.data.meal)
       ])
+      if (seq !== this._loadSeq) {
+        return
+      }
       const categoryMap: Record<string, string> = {}
       categories.forEach(category => {
         categoryMap[category.id] = category.name
@@ -98,6 +104,9 @@ Page({
         loading: false
       })
     } catch (e: any) {
+      if (seq !== this._loadSeq) {
+        return
+      }
       this.setData({ loading: false })
       wx.showToast({
         title: String((e && e.message) || '加载失败').slice(0, 40),

@@ -44,6 +44,7 @@ Page({
 
   _unsub: null as null | (() => void),
   _available: [] as Dish[],
+  _loadSeq: 0,
 
   onLoad() {
     const app = getApp()
@@ -84,6 +85,8 @@ Page({
   },
 
   async loadMenu() {
+    // 切换餐次很快时，只认最后一次请求的结果
+    const seq = ++this._loadSeq
     // 已有菜单时静默刷新，避免切回 tab 时骨架屏闪一下
     if (!this.data.sections.length) {
       this.setData({ loading: true })
@@ -97,6 +100,9 @@ Page({
         getBusiness().catch(() => null),
         getMenuForDate(today, meal).catch(() => null)
       ])
+      if (seq !== this._loadSeq) {
+        return
+      }
       const menuActive = Boolean(menu && menu.exists)
       const available = dishes.filter(
         dish =>
@@ -160,6 +166,9 @@ Page({
             : '换个餐次看看，或者去许愿池点个菜'
       })
     } catch (e: any) {
+      if (seq !== this._loadSeq) {
+        return
+      }
       const message = String((e && (e.message || e.errMsg)) || '')
       const quotaExceeded =
         message.indexOf('EXCEED_REQUEST_LIMIT') > -1 ||
