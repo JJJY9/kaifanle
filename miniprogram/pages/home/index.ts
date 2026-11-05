@@ -171,6 +171,8 @@ Page({
       }
       const message = String((e && (e.message || e.errMsg)) || '')
       const quotaExceeded =
+        message.indexOf('额度') > -1 ||
+        message.indexOf('0 点后恢复') > -1 ||
         message.indexOf('EXCEED_REQUEST_LIMIT') > -1 ||
         message.indexOf('quota') > -1 ||
         message.indexOf('exceed request limit') > -1

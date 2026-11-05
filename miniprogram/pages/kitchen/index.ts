@@ -120,6 +120,8 @@ Page({
       (e && (e.message || e.errMsg)) || '加载失败，下拉重试'
     )
     if (
+      raw.indexOf('额度') > -1 ||
+      raw.indexOf('0 点后恢复') > -1 ||
       raw.indexOf('EXCEED_REQUEST_LIMIT') > -1 ||
       raw.indexOf('quota') > -1 ||
       raw.indexOf('exceed request limit') > -1
