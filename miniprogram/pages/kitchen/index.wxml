@@ -52,6 +52,24 @@
       近 7 天 {{weekStats.count}} 单 · ¥{{weekStats.revenue}} · 累计 {{weekStats.totalCount}} 单
     </view>
 
+    <view wx:if="{{weekBarTotal > 0}}" class="chart card">
+      <view class="chart-head">
+        <view class="chart-title">近 7 天营收</view>
+        <view class="chart-total">¥{{weekBarTotal}}</view>
+      </view>
+      <view class="chart-bars">
+        <view wx:for="{{weekBars}}" wx:key="key" class="chart-col">
+          <view class="chart-bar-wrap">
+            <view
+              class="chart-bar {{item.amount ? '' : 'empty'}}"
+              style="height: {{item.height}}%;"
+            ></view>
+          </view>
+          <text class="chart-label">{{item.label}}</text>
+        </view>
+      </view>
+    </view>
+
     <view class="prep card">
       <view class="prep-head" bindtap="onTogglePrep">
         <view class="prep-text">

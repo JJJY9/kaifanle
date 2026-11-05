@@ -34,7 +34,9 @@ Page({
     showPrep: false,
     prepItems: [] as any[],
     prepTotal: 0,
-    weekStats: null as any
+    weekStats: null as any,
+    weekBars: [] as any[],
+    weekBarTotal: 0
   },
 
   _watchTimer: null as any,
@@ -251,6 +253,8 @@ Page({
 
       // 近 7 天经营概况（不含已取消订单）；静默轮询沿用上次结果
       let weekStats = this.data.weekStats
+      let weekBars = this.data.weekBars
+      let weekBarTotal = this.data.weekBarTotal
       if (!silent) {
         const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
         const valid = orders.filter(order => order.status !== 'cancelled')
@@ -263,6 +267,38 @@ Page({
           ),
           totalCount: valid.length
         }
+
+        // 近 7 天营收柱状图，按预约日期归组
+        const WEEK_LABELS = ['日', '一', '二', '三', '四', '五', '六']
+        const dayMap: Record<string, number> = {}
+        valid.forEach(order => {
+          const key =
+            order.scheduledDate ||
+            dateInputString(new Date(order.createdAt))
+          dayMap[key] = (dayMap[key] || 0) + Number(order.amount || 0)
+        })
+        const bars: any[] = []
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date()
+          d.setDate(d.getDate() - i)
+          const key = dateInputString(d)
+          bars.push({
+            key,
+            label: WEEK_LABELS[d.getDay()],
+            amount: dayMap[key] || 0
+          })
+        }
+        const maxAmount = Math.max(
+          1,
+          ...bars.map(bar => bar.amount)
+        )
+        weekBars = bars.map(bar => ({
+          ...bar,
+          height: bar.amount
+            ? Math.max(10, Math.round((bar.amount / maxAmount) * 100))
+            : 4
+        }))
+        weekBarTotal = bars.reduce((sum, bar) => sum + bar.amount, 0)
       }
 
       this.setData({
@@ -273,6 +309,8 @@ Page({
         prepItems,
         prepTotal,
         weekStats,
+        weekBars,
+        weekBarTotal,
         loading: false,
         error: ''
       })
