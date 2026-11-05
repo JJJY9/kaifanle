@@ -93,11 +93,23 @@ Page({
       this.setData({
         forbidden: false,
         loading: false,
-        error: String(
-          (e && (e.message || e.errMsg)) || '加载失败，下拉重试'
-        ).slice(0, 40)
+        error: this.errorText(e)
       })
     }
+  },
+
+  errorText(e: any): string {
+    const raw = String(
+      (e && (e.message || e.errMsg)) || '加载失败，下拉重试'
+    )
+    if (
+      raw.indexOf('EXCEED_REQUEST_LIMIT') > -1 ||
+      raw.indexOf('quota') > -1 ||
+      raw.indexOf('exceed request limit') > -1
+    ) {
+      return '今天的云端读取额度用完了，0 点后恢复'
+    }
+    return raw.slice(0, 40)
   },
 
   onRetry() {
@@ -268,9 +280,7 @@ Page({
       }
       this.setData({
         loading: false,
-        error: String(
-          (e && (e.message || e.errMsg)) || '加载失败，下拉重试'
-        ).slice(0, 40)
+        error: this.errorText(e)
       })
     }
   },

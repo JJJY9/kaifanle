@@ -157,10 +157,17 @@ Page({
               : '云数据库可能还没初始化，去「我的」看一眼'
             : '换个餐次看看，或者去许愿池点个菜'
       })
-    } catch (e) {
+    } catch (e: any) {
+      const message = String((e && (e.message || e.errMsg)) || '')
+      const quotaExceeded =
+        message.indexOf('EXCEED_REQUEST_LIMIT') > -1 ||
+        message.indexOf('quota') > -1 ||
+        message.indexOf('exceed request limit') > -1
       this.setData({
         loading: false,
-        emptyDesc: USE_CLOUD
+        emptyDesc: quotaExceeded
+          ? '今天的云端读取额度用完了，0 点后自动恢复'
+          : USE_CLOUD
           ? '云环境还没连上，检查一下云函数是否已部署'
           : '菜单加载失败，下拉试试'
       })
