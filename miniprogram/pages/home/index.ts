@@ -52,8 +52,6 @@ Page({
       const total = lines.reduce((sum, line) => sum + line.qty * line.price, 0)
       this.setData({ cartCount: count, cartTotal: total })
     })
-
-    this.loadMenu()
   },
 
   onShow() {
@@ -64,6 +62,8 @@ Page({
       tabBar.setData({ selected: 0 })
     }
     this.setData({ isOpen: isOpenNow() })
+    // 每次回到首页都刷新菜单，保证厨房端的售罄/上架能同步过来
+    this.loadMenu()
   },
 
   onUnload() {
@@ -74,7 +74,10 @@ Page({
   },
 
   async loadMenu() {
-    this.setData({ loading: true })
+    // 已有菜单时静默刷新，避免切回 tab 时骨架屏闪一下
+    if (!this.data.sections.length) {
+      this.setData({ loading: true })
+    }
     try {
       const [categories, dishes] = await Promise.all([
         getCategories(),

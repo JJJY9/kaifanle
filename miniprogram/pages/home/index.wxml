@@ -82,6 +82,7 @@
 />
 
 <sku-sheet
+  id="skuSheet"
   visible="{{skuVisible}}"
   dish="{{activeDish}}"
   bind:close="onSkuClose"
