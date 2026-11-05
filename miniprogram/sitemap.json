@@ -1,9 +1,13 @@
 {
-  "desc": "关于本文件的更多信息，请参考文档 https://developers.weixin.qq.com/miniprogram/dev/framework/sitemap.html",
+  "desc": "管理端和订单详情不参与微信搜索索引",
   "rules": [
-    {
-      "action": "allow",
-      "page": "*"
-    }
+    { "action": "disallow", "page": "pages/kitchen/index" },
+    { "action": "disallow", "page": "pages/dish-edit/index" },
+    { "action": "disallow", "page": "pages/menu-edit/index" },
+    { "action": "disallow", "page": "pages/business/index" },
+    { "action": "disallow", "page": "pages/category-manage/index" },
+    { "action": "disallow", "page": "pages/order-detail/index" },
+    { "action": "disallow", "page": "pages/checkout/index" },
+    { "action": "allow", "page": "*" }
   ]
 }
