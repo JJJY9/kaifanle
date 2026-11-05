@@ -105,6 +105,29 @@ function invoke(mp, body) {
     )
   }
 
+  // 菜品模板
+  await mp.navigateTo('/pages/dish-templates/index')
+  await sleep(1800)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 菜品模板加载',
+    (data.templates || []).length > 0 && data.missingCount > 0,
+    `${(data.templates || []).length} 个模板 / 缺 ${data.missingCount}`
+  )
+  await invoke(
+    mp,
+    'page.onAddOne({ currentTarget: { dataset: { index: 0 } } })'
+  )
+  await sleep(1600)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 模板添加一道',
+    Boolean(data.templates[0] && data.templates[0].exists),
+    data.templates[0] && data.templates[0].name
+  )
+
   // 营业设置与公告
   await mp.navigateTo('/pages/business/index')
   await sleep(1600)

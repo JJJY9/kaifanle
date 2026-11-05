@@ -589,6 +589,10 @@ Page({
     wx.navigateTo({ url: '/pages/category-manage/index' })
   },
 
+  onTemplates() {
+    wx.navigateTo({ url: '/pages/dish-templates/index' })
+  },
+
   onBusiness() {
     wx.navigateTo({ url: '/pages/business/index' })
   },

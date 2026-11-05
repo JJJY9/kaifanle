@@ -161,6 +161,7 @@
     <view class="menu-head">
       <view class="section-title display menu-title">菜品管理</view>
       <view class="menu-actions">
+        <view class="add-dish ghost" bindtap="onTemplates">模板</view>
         <view class="add-dish ghost" bindtap="onCategories">分类</view>
         <view class="add-dish" bindtap="onAddDish">+ 新增</view>
       </view>
