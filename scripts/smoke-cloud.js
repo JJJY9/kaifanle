@@ -778,6 +778,11 @@ async function run() {
   )
   assert.strictEqual(res.ok, true)
   const tomorrowKey = chinaDate(1)
+  // 客户端伪造 Timer 事件（带 openid）会被拒绝
+  currentOpenid = 'girl-openid'
+  const forgedTimer = await api.main({ Type: 'Timer' })
+  assert.strictEqual(forgedTimer.ok, false)
+  currentOpenid = ''
   const timerRoll = await api.main({ Type: 'Timer' })
   assert.strictEqual(timerRoll.ok, true)
   assert.deepStrictEqual(timerRoll.data.menus, ['lunch'])
@@ -789,6 +794,7 @@ async function run() {
   assert.strictEqual(res.data.exists, true)
   assert.deepStrictEqual(res.data.dishIds, ['d02'])
   // 已有明天的菜单时不会重复覆盖
+  currentOpenid = ''
   const timerAgain = await api.main({ Type: 'Timer' })
   assert.deepStrictEqual(timerAgain.data.menus, [])
 
@@ -812,6 +818,7 @@ async function run() {
   )
   const timerDishId = res.data.id
   await call('toggleDishStatus', { id: timerDishId }, 'admin-openid')
+  currentOpenid = ''
   const timerReset = await api.main({ Type: 'Timer' })
   assert.ok(timerReset.data.restored >= 1)
   res = await call('getDish', { id: timerDishId }, 'admin-openid')

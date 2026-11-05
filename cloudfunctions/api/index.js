@@ -37,8 +37,13 @@ const DEFAULT_BUSINESS = {
 }
 
 exports.main = async event => {
-  // 定时触发器：每天凌晨把今天的菜单补到明天，只填空缺不覆盖
+  // 定时触发器：每天凌晨把今天的菜单补到明天，只填空缺不覆盖。
+  // 定时调用没有用户 openid；如果带 openid 说明是客户端伪造的 Timer 事件。
   if (event && event.Type === 'Timer') {
+    const { OPENID } = cloud.getWXContext()
+    if (OPENID) {
+      return { ok: false, error: '未知操作' }
+    }
     try {
       const data = await autoRollMenu()
       return { ok: true, data }
