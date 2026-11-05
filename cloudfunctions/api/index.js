@@ -348,17 +348,31 @@ function chinaStartOfDay() {
 
 async function getStats(openid) {
   await requireAdmin(openid)
-  const res = await db
-    .collection('orders')
-    .orderBy('createdAt', 'desc')
-    .limit(1000)
-    .get()
   const start = chinaStartOfDay()
   const todayKey = chinaDateString()
-  const today = res.data.filter(
-    order =>
-      (order.scheduledDate || chinaDateString(order.createdAt)) === todayKey
-  )
+  // 只取今天相关的小部分订单，避免每次看板都扫全表
+  const [createdRes, scheduledRes] = await Promise.all([
+    db
+      .collection('orders')
+      .where({ createdAt: _.gte(start) })
+      .limit(200)
+      .get(),
+    db
+      .collection('orders')
+      .where({ scheduledDate: todayKey })
+      .limit(200)
+      .get()
+  ])
+  const map = {}
+  createdRes.data.concat(scheduledRes.data).forEach(order => {
+    map[order._id] = order
+  })
+  const today = Object.keys(map)
+    .map(id => map[id])
+    .filter(
+      order =>
+        (order.scheduledDate || chinaDateString(order.createdAt)) === todayKey
+    )
   const active = today.filter(order => order.status !== 'cancelled')
   const revenue = active.reduce((sum, order) => sum + Number(order.amount || 0), 0)
   const completed = today.filter(order => order.status === 'completed').length
