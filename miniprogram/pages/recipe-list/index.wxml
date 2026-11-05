@@ -1,0 +1,67 @@
+<view class="page">
+  <view class="head">
+    <text class="title display">菜谱大全</text>
+    <text class="sub">每道菜都教你做，点开看步骤</text>
+  </view>
+
+  <view class="search-bar">
+    <text class="search-icon">🔍</text>
+    <input
+      class="search-input"
+      placeholder="搜菜名或食材"
+      value="{{keyword}}"
+      confirm-type="search"
+      bindinput="onSearch"
+    />
+  </view>
+
+  <view wx:if="{{loading}}" class="skeleton sk"></view>
+
+  <view wx:elif="{{error}}" class="page-inner">
+    <empty-state
+      title="菜谱加载失败"
+      desc="{{error}}"
+      actionText="再试一次"
+      bind:action="onRetry"
+    />
+  </view>
+
+  <block wx:elif="{{displayGroups.length}}">
+    <view wx:for="{{displayGroups}}" wx:key="id" class="section">
+      <view class="section-head">
+        <view class="section-dot" style="background: {{item.color}};"></view>
+        <text class="section-name">{{item.name}}</text>
+        <view class="section-line"></view>
+      </view>
+      <view class="list card">
+        <view
+          wx:for="{{item.dishes}}"
+          wx:for-item="dish"
+          wx:key="id"
+          class="row"
+          data-id="{{dish.id}}"
+          bindtap="onTapDish"
+        >
+          <view class="dot" style="background: {{dish.color}};">
+            <image wx:if="{{dish.image}}" class="dot-img" src="{{dish.image}}" mode="aspectFill" />
+            <text wx:else class="dot-char">{{dish.char}}</text>
+          </view>
+          <view class="info">
+            <view class="name">{{dish.name}}</view>
+            <view class="step-preview">{{dish.firstStep}}</view>
+          </view>
+          <view class="meta">
+            <text class="steps">{{dish.stepsCount}} 步</text>
+            <text class="arrow">→</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <empty-state
+    wx:else
+    title="{{keyword ? '没搜到菜谱' : '还没有菜谱'}}"
+    desc="{{keyword ? '换个关键词试试' : '去菜品编辑里给菜写上做法吧'}}"
+  />
+</view>

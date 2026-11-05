@@ -280,6 +280,17 @@ function invoke(mp, body) {
     data.dish && `${data.dish.name} · ${(data.steps || []).length} 步`
   )
 
+  // 菜谱大全
+  await mp.navigateTo('/pages/recipe-list/index')
+  await sleep(1800)
+  page = await current()
+  data = await page.data()
+  check(
+    '菜谱大全加载',
+    (data.groups || []).length > 0 && data.total >= 1,
+    `${data.total} 道带做法`
+  )
+
   // ---------- 首页帮我选 ----------
   await mp.switchTab('/pages/home/index')
   await sleep(1800)

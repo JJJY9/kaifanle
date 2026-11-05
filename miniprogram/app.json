@@ -15,7 +15,8 @@
     "pages/menu-edit/index",
     "pages/category-manage/index",
     "pages/dish-templates/index",
-    "pages/recipe/index"
+    "pages/recipe/index",
+    "pages/recipe-list/index"
   ],
   "window": {
     "navigationBarBackgroundColor": "#FFFDF6",

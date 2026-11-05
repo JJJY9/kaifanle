@@ -139,6 +139,28 @@ function invoke(mp, body) {
     data.dish && `${data.dish.name} · ${data.steps.length} 步`
   )
 
+  // 菜谱大全
+  await mp.navigateTo('/pages/recipe-list/index')
+  await sleep(1600)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 菜谱大全',
+    (data.groups || []).length > 0 && data.total >= 1,
+    `${data.total} 道带做法`
+  )
+  await invoke(mp, "page.onSearch({ detail: { value: '牛腩' } })")
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 菜谱搜索',
+    (data.displayGroups || []).length > 0,
+    `${data.displayGroups.length} 组`
+  )
+  await invoke(mp, "page.onSearch({ detail: { value: '' } })")
+  await sleep(300)
+
   // 营业设置与公告
   await mp.navigateTo('/pages/business/index')
   await sleep(1600)

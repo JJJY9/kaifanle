@@ -106,6 +106,14 @@ Page({
     }
 
     entries.push({
+      key: 'recipes',
+      label: '菜谱大全',
+      desc: '每道菜怎么做，都在这里',
+      icon: '谱',
+      color: '#2D9CFF'
+    })
+
+    entries.push({
       key: 'privacy',
       label: '隐私与数据',
       desc: '我们怎么使用你的信息',
@@ -239,6 +247,11 @@ Page({
 
     if (key === 'privacy') {
       wx.navigateTo({ url: '/pages/privacy/index' })
+      return
+    }
+
+    if (key === 'recipes') {
+      wx.navigateTo({ url: '/pages/recipe-list/index' })
       return
     }
 
