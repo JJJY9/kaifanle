@@ -269,6 +269,17 @@ function invoke(mp, body) {
   check('菜品编辑加载', Boolean(data.name), data.name)
   check('图片选择入口', (await page.$$('.image-add')).length === 1)
 
+  // ---------- 菜谱页 ----------
+  await mp.navigateTo(`/pages/recipe/index?id=${sampleDish.id}`)
+  await sleep(1800)
+  page = await current()
+  data = await page.data()
+  check(
+    '菜谱页加载',
+    Boolean(data.dish) && (data.steps || []).length >= 2,
+    data.dish && `${data.dish.name} · ${(data.steps || []).length} 步`
+  )
+
   // ---------- 首页帮我选 ----------
   await mp.switchTab('/pages/home/index')
   await sleep(1800)
