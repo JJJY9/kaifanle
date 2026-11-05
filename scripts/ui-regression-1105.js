@@ -140,6 +140,10 @@ function invoke(mp, body) {
   page = await current()
   data = await page.data()
   check('订单详情加载', Boolean(data.order), data.order && '#' + data.order.no)
+  const polling = await mp.evaluate(
+    () => Boolean(getCurrentPages()[getCurrentPages().length - 1]._pollTimer)
+  )
+  check('订单详情自动刷新', polling === true)
 
   await invoke(
     mp,
@@ -222,6 +226,24 @@ function invoke(mp, body) {
   page = await current()
   data = await page.data()
   check('备菜清单展开', data.showPrep === true)
+
+  const clipboard = await invoke(
+    mp,
+    "const today = (() => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') })();" +
+      "page._rawOrders = [{ no: '999', meal: 'lunch', status: 'pending', amount: 10, items: [{ name: '测试菜', qty: 2 }], scheduledDate: today }];" +
+      'let captured = "";' +
+      'const orig = wx.setClipboardData;' +
+      'wx.setClipboardData = (opts) => { captured = String(opts.data || ""); if (opts.success) opts.success({}); };' +
+      'page.onCopySummary();' +
+      'wx.setClipboardData = orig;' +
+      'return captured;'
+  )
+  check(
+    '今日清单复制',
+    String(clipboard).indexOf('张饱饭堂') > -1 &&
+      String(clipboard).indexOf('测试菜×2') > -1,
+    String(clipboard).split('\n')[0]
+  )
 
   // ---------- 菜品图片入口 ----------
   await mp.navigateTo(`/pages/dish-edit/index?id=${sampleDish.id}`)

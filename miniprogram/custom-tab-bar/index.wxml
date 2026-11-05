@@ -8,6 +8,6 @@
     bindtap="onSwitch"
   >
     <text class="tab-text {{selected === index ? 'active' : ''}}">{{item.text}}</text>
-    <view wx:if="{{index === 0 && cartCount > 0}}" class="tab-badge">{{cartCount}}</view>
+    <view wx:if="{{index === 0 && cartCount > 0}}" class="tab-badge">{{cartCount > 99 ? '99+' : cartCount}}</view>
   </view>
 </view>

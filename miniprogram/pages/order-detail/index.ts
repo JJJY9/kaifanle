@@ -31,6 +31,8 @@ Page({
 
   orderId: '',
 
+  _pollTimer: null as any,
+
   onLoad(options: any) {
     this.orderId = options.id || ''
     this.load()
@@ -39,11 +41,46 @@ Page({
   onShow() {
     if (this.orderId) {
       this.load()
+      this.startPoll()
     }
   },
 
-  async load() {
-    this.setData({ orderError: '' })
+  onHide() {
+    this.stopPoll()
+  },
+
+  onUnload() {
+    this.stopPoll()
+  },
+
+  // 订单还在进行中时每 20 秒刷新一次，出锅/完成能及时看到
+  startPoll() {
+    this.stopPoll()
+    this._pollTimer = setInterval(() => {
+      const order = this.data.order
+      if (
+        order &&
+        order.status !== 'completed' &&
+        order.status !== 'cancelled'
+      ) {
+        this.load(true)
+      } else {
+        this.stopPoll()
+      }
+    }, 20000)
+  },
+
+  stopPoll() {
+    if (this._pollTimer) {
+      clearInterval(this._pollTimer)
+      this._pollTimer = null
+    }
+  },
+
+  async load(silent = false) {
+    if (!silent) {
+      this.setData({ orderError: '' })
+    }
     try {
       const order = await getOrder(this.orderId)
       if (!order) {
@@ -90,6 +127,9 @@ Page({
         loading: false
       })
     } catch (e: any) {
+      if (silent) {
+        return
+      }
       this.setData({
         loading: false,
         orderError: String(
