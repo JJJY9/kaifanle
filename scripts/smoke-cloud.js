@@ -11,6 +11,7 @@ const Module = require('module')
 const store = new Map()
 const sentMessages = []
 let currentOpenid = 'admin-openid'
+let transactionsEnabled = true
 
 function chinaDate(offset) {
   const d = new Date(
@@ -180,21 +181,22 @@ const fakeSdk = {
   DYNAMIC_CURRENT_ENV: 'test-env',
   init() {},
   database() {
-    return {
+    const api = {
       command,
       async createCollection(name) {
         ensure(name)
       },
-      collection: makeCollection,
-      // 事务在当前单线程假库里退化为直接操作，接口保持一致
-      async startTransaction() {
-        return {
-          collection: makeCollection,
-          async commit() {},
-          async rollback() {}
-        }
-      }
+      collection: makeCollection
     }
+    if (transactionsEnabled) {
+      // 事务在当前单线程假库里退化为直接操作，接口保持一致
+      api.startTransaction = async () => ({
+        collection: makeCollection,
+        async commit() {},
+        async rollback() {}
+      })
+    }
+    return api
   },
   openapi: {
     subscribeMessage: {
@@ -563,6 +565,22 @@ async function run() {
 
   res = await call('cancelOrder', { id: order2.data.id }, 'admin-openid')
   assert.strictEqual(res.ok, false)
+
+  // 事务不可用时退化为原子自增，订单号继续递增
+  transactionsEnabled = false
+  res = await call(
+    'createOrder',
+    {
+      items: [{ dishId: 'd02', qty: 1, specs: [] }],
+      meal: 'lunch',
+      expectedTime: '12:00',
+      mode: '在家吃'
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.no, '003')
+  transactionsEnabled = true
 
   // 许愿池
   res = await call('createWish', { content: '想吃火锅' }, 'girl-openid')
