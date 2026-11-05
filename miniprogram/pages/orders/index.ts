@@ -81,7 +81,14 @@ Page({
       }
       return true
     })
-    this.setData({ displayOrders: list })
+    let lastLabel = ''
+    const displayOrders = list.map(order => {
+      const label = order.dateText
+      const showHeader = label !== lastLabel
+      lastLabel = label
+      return { ...order, showHeader }
+    })
+    this.setData({ displayOrders })
   },
 
   onTapOrder(e: any) {
