@@ -293,6 +293,41 @@
   background: #FFFFFF;
 }
 
+.kbtn.busy,
+.dish-toggle.busy {
+  opacity: 0.45;
+}
+
+.history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 34rpx 4rpx 18rpx;
+}
+
+.history-toggle {
+  padding: 8rpx 22rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  box-shadow: 3rpx 3rpx 0 #111111;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
+.history-toggle:active {
+  transform: translate(3rpx, 3rpx);
+  box-shadow: none;
+}
+
+.history-order .order-summary {
+  font-size: 26rpx;
+}
+
+.history-order .order-meta {
+  margin-top: 6rpx;
+}
+
 .menu {
   padding: 6rpx 24rpx;
 }

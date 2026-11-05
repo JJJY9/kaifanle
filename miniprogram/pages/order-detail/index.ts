@@ -1,5 +1,5 @@
-import type { Order, OrderStatus } from '../../services/types'
-import { getOrder, cancelOrder } from '../../services/api'
+import type { Dish, Order, OrderStatus } from '../../services/types'
+import { getOrder, cancelOrder, getDishes } from '../../services/api'
 import { cart } from '../../store/cart'
 import { STATUS_STEP_TEXT, STATUS_TEXT, mealName } from '../../utils/constants'
 import {
@@ -24,7 +24,8 @@ Page({
     steps: [] as any[],
     statusText: '',
     orderError: '',
-    loading: true
+    loading: true,
+    reordering: false
   },
 
   orderId: '',
@@ -134,25 +135,73 @@ Page({
     })
   },
 
-  onReorder() {
+  async onReorder() {
     const order = this.data.order
-    if (!order) {
+    if (!order || this.data.reordering) {
       return
     }
-    order.items.forEach((item: any) => {
-      cart.add({
-        key: '',
-        dishId: item.dishId,
-        name: item.name,
-        price: item.price,
-        qty: item.qty,
-        specs: item.specs,
-        note: item.note,
-        color: '#FFD23F'
+    this.setData({ reordering: true })
+    try {
+      // 用当前菜价和供应状态重新加购，下架/售罄的菜跳过
+      let dishes: Dish[] | null = null
+      try {
+        dishes = await getDishes()
+      } catch (e) {
+        dishes = null
+      }
+      const dishMap: Record<string, Dish> = {}
+      if (dishes) {
+        dishes.forEach(dish => {
+          dishMap[dish.id] = dish
+        })
+      }
+      let added = 0
+      let skipped = 0
+      order.items.forEach((item: any) => {
+        const dish = dishes ? dishMap[item.dishId] : null
+        if (dishes && (!dish || dish.status === 'off')) {
+          skipped++
+          return
+        }
+        let qty = item.qty
+        if (dish && typeof dish.stock === 'number' && dish.stock >= 0) {
+          qty = Math.min(qty, dish.stock)
+        }
+        if (qty <= 0) {
+          skipped++
+          return
+        }
+        cart.add({
+          key: '',
+          dishId: item.dishId,
+          name: dish ? dish.name : item.name,
+          price: dish ? dish.price : item.price,
+          qty,
+          specs: item.specs,
+          note: item.note,
+          color: dish ? dish.color : '#FFD23F'
+        })
+        added++
       })
-    })
-    wx.switchTab({ url: '/pages/home/index' })
-    wx.showToast({ title: '已放回购物车', icon: 'none' })
+      if (!added) {
+        wx.showToast({
+          title: skipped ? '这些菜暂时都不供应了' : '加购失败，稍后再试',
+          icon: 'none'
+        })
+        return
+      }
+      wx.switchTab({ url: '/pages/home/index' })
+      setTimeout(() => {
+        wx.showToast({
+          title: skipped
+            ? `已加购，${skipped} 道暂时没供应`
+            : '已放回购物车',
+          icon: 'none'
+        })
+      }, 300)
+    } finally {
+      this.setData({ reordering: false })
+    }
   },
 
   async onSubscribeReady() {

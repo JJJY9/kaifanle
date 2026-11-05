@@ -78,18 +78,40 @@
       <view class="order-actions">
         <view
           wx:if="{{item.status === 'pending'}}"
-          class="kbtn ghost"
+          class="kbtn ghost {{busyId === item.id ? 'busy' : ''}}"
           data-id="{{item.id}}"
           bindtap="onReject"
-        >拒单</view>
+        >{{busyId === item.id ? '处理中…' : '拒单'}}</view>
         <view
-          class="kbtn primary"
+          class="kbtn primary {{busyId === item.id ? 'busy' : ''}}"
           data-id="{{item.id}}"
           data-status="{{item.status}}"
           bindtap="onAdvance"
-        >{{item.actionText}} →</view>
+        >{{busyId === item.id ? '处理中…' : item.actionText + ' →'}}</view>
       </view>
     </view>
+
+    <view class="history-head" bindtap="onToggleHistory">
+      <view class="section-title display">历史订单</view>
+      <view class="history-toggle">{{showHistory ? '收起' : '看最近 10 单'}}</view>
+    </view>
+    <block wx:if="{{showHistory}}">
+      <view wx:if="{{!history.length}}" class="empty-line">还没有历史订单</view>
+      <view
+        wx:for="{{history}}"
+        wx:key="id"
+        class="order card history-order"
+        data-id="{{item.id}}"
+        bindtap="onHistoryTap"
+      >
+        <view class="order-top">
+          <text class="no">#{{item.no}}</text>
+          <view class="status {{item.status}}">{{item.statusText}}</view>
+        </view>
+        <view class="order-summary">{{item.summary}}</view>
+        <view class="order-meta">{{item.dateText}} · {{item.mealText}} · {{item.timeText}}</view>
+      </view>
+    </block>
 
     <view class="menu-head">
       <view class="section-title display menu-title">菜品管理</view>
@@ -109,7 +131,7 @@
           <view class="dish-price">¥{{item.price}}<text wx:if="{{item.stock >= 0}}"> · 剩 {{item.stock}} 份</text></view>
         </view>
         <view
-          class="dish-toggle {{item.status !== 'on' ? 'off' : ''}} {{item.status === 'off' ? 'hidden' : ''}}"
+          class="dish-toggle {{item.status !== 'on' ? 'off' : ''}} {{item.status === 'off' ? 'hidden' : ''}} {{busyDishId === item.id ? 'busy' : ''}}"
           data-id="{{item.id}}"
           catchtap="onToggleDish"
         >{{item.status === 'off' ? '已下架' : (item.status === 'soldout' ? '已售罄' : '供应中')}}</view>

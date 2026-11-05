@@ -5,6 +5,8 @@ declare const wx: any
 declare const console: any
 declare const setTimeout: any
 declare const clearTimeout: any
+declare const setInterval: any
+declare const clearInterval: any
 
 declare function App(options: any): void
 declare function Page(options: any): void

@@ -168,6 +168,55 @@ Page({
     }
   },
 
+  async onCopyToComing() {
+    if (this.data.saving) {
+      return
+    }
+    const dishIds = this.data.dishes
+      .filter(dish => this.data.selectedMap[dish.id])
+      .map(dish => dish.id)
+    if (!dishIds.length) {
+      wx.showToast({ title: '先选几道菜再复制', icon: 'none' })
+      return
+    }
+    const res: any = await wx.showModal({
+      title: '复制到未来 7 天？',
+      content: `把这 ${dishIds.length} 道菜复制到今天起 8 天的${this.data.meal === 'breakfast' ? '早餐' : this.data.meal === 'lunch' ? '午餐' : '晚餐'}，会覆盖那几天已有的安排。`,
+      confirmText: '复制',
+      cancelText: '算了'
+    })
+    if (!res.confirm) {
+      return
+    }
+    const targets = this.data.dates.slice(0, 8)
+    this.setData({ saving: true })
+    let done = 0
+    try {
+      for (const target of targets) {
+        await saveMenu({
+          date: target.value,
+          meal: this.data.meal,
+          dishIds,
+          open: this.data.open
+        })
+        done++
+      }
+      wx.showToast({ title: `已复制到 ${done} 天`, icon: 'none' })
+      setTimeout(() => {
+        wx.navigateBack({ delta: 1 })
+      }, 600)
+    } catch (e: any) {
+      wx.showToast({
+        title: `第 ${done + 1} 天复制失败：${String(
+          (e && e.message) || '请重试'
+        ).slice(0, 20)}`,
+        icon: 'none'
+      })
+    } finally {
+      this.setData({ saving: false })
+    }
+  },
+
   async onReset() {
     const res: any = await wx.showModal({
       title: '恢复默认菜单？',

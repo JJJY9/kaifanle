@@ -19,15 +19,52 @@ import { TEMPLATE_NEW_ORDER } from '../../config'
 Page({
   data: {
     orders: [] as any[],
+    history: [] as any[],
     dishes: [] as any[],
     stats: null as any,
     loading: true,
     forbidden: false,
-    error: ''
+    error: '',
+    busyId: '',
+    busyDishId: '',
+    showHistory: false
   },
+
+  _watchTimer: null as any,
+  _knownPending: [] as string[],
 
   onShow() {
     this.guard()
+    this.startWatch()
+  },
+
+  onHide() {
+    this.stopWatch()
+  },
+
+  onUnload() {
+    this.stopWatch()
+  },
+
+  // 每 25 秒静默刷新一次，有新订单就震动提醒
+  startWatch() {
+    this.stopWatch()
+    this._watchTimer = setInterval(() => {
+      if (
+        !this.data.forbidden &&
+        !this.data.error &&
+        !this.data.busyId
+      ) {
+        this.load(true)
+      }
+    }, 25000)
+  },
+
+  stopWatch() {
+    if (this._watchTimer) {
+      clearInterval(this._watchTimer)
+      this._watchTimer = null
+    }
   },
 
   async guard() {
@@ -65,7 +102,7 @@ Page({
     this.guard().then(() => wx.stopPullDownRefresh())
   },
 
-  async load() {
+  async load(silent = false) {
     try {
       const [orders, dishes, stats] = await Promise.all([
         getAllOrders(),
@@ -75,9 +112,22 @@ Page({
       const active = orders.filter(
         order => order.status !== 'completed' && order.status !== 'cancelled'
       )
-      const view = active.map(order => {
+      const pendingIds = active
+        .filter(order => order.status === 'pending')
+        .map(order => order.id)
+      if (this._knownPending.length) {
+        const fresh = pendingIds.filter(
+          id => this._knownPending.indexOf(id) === -1
+        )
+        if (fresh.length) {
+          wx.vibrateShort({ type: 'heavy', fail: () => {} } as any)
+          wx.showToast({ title: '来新订单啦', icon: 'none' })
+        }
+      }
+      this._knownPending = pendingIds
+      const toView = (order: any) => {
         const totalQty = order.items.reduce(
-          (sum, item) => sum + Number(item.qty || 0),
+          (sum: number, item: any) => sum + Number(item.qty || 0),
           0
         )
         return {
@@ -86,13 +136,14 @@ Page({
           mealText: mealName(order.meal),
           timeText: formatTime(order.createdAt),
           dateText: dateLabel(
-            order.scheduledDate || dateInputString(new Date(order.createdAt))
+            order.scheduledDate ||
+              dateInputString(new Date(order.createdAt))
           ),
           summary:
-            itemSummary(order.items.map(item => item.name)) +
+            itemSummary(order.items.map((item: any) => item.name)) +
             ` · 共 ${totalQty} 份`,
           totalQty,
-          itemLines: order.items.map((item, index) => ({
+          itemLines: order.items.map((item: any, index: number) => ({
             key: `${order.id}-${index}`,
             name: item.name,
             qty: item.qty,
@@ -115,9 +166,27 @@ Page({
               : '',
           actionText: NEXT_ACTION[order.status] || ''
         }
+      }
+      const view = active.map(toView)
+      const history = orders
+        .filter(
+          order =>
+            order.status === 'completed' || order.status === 'cancelled'
+        )
+        .slice(0, 10)
+        .map(toView)
+      this.setData({
+        orders: view,
+        history,
+        dishes,
+        stats,
+        loading: false,
+        error: ''
       })
-      this.setData({ orders: view, dishes, stats, loading: false, error: '' })
     } catch (e: any) {
+      if (silent) {
+        return
+      }
       this.setData({
         loading: false,
         error: String(
@@ -128,25 +197,34 @@ Page({
   },
 
   async onAdvance(e: any) {
+    if (this.data.busyId) {
+      return
+    }
     const id = e.currentTarget.dataset.id
     const status = e.currentTarget.dataset.status as OrderStatus
     const next = NEXT_STATUS[status]
     if (!next) {
       return
     }
+    this.setData({ busyId: id })
     try {
       await updateOrderStatus(id, next)
       wx.showToast({ title: '状态已更新', icon: 'none' })
-      this.load()
+      await this.load()
     } catch (err: any) {
       wx.showToast({
         title: String((err && err.message) || '操作失败').slice(0, 40),
         icon: 'none'
       })
+    } finally {
+      this.setData({ busyId: '' })
     }
   },
 
   async onReject(e: any) {
+    if (this.data.busyId) {
+      return
+    }
     const id = e.currentTarget.dataset.id
     const res: any = await wx.showModal({
       title: '拒掉这一单？',
@@ -157,27 +235,47 @@ Page({
     if (!res.confirm) {
       return
     }
+    this.setData({ busyId: id })
     try {
       await updateOrderStatus(id, 'cancelled')
-      this.load()
+      await this.load()
     } catch (err: any) {
       wx.showToast({
         title: String((err && err.message) || '操作失败').slice(0, 40),
         icon: 'none'
       })
+    } finally {
+      this.setData({ busyId: '' })
     }
   },
 
   async onToggleDish(e: any) {
+    if (this.data.busyDishId) {
+      return
+    }
     const id = e.currentTarget.dataset.id
+    this.setData({ busyDishId: id })
     try {
       await toggleDishStatus(id)
-      this.load()
+      await this.load()
     } catch (err: any) {
       wx.showToast({
         title: String((err && err.message) || '操作失败').slice(0, 40),
         icon: 'none'
       })
+    } finally {
+      this.setData({ busyDishId: '' })
+    }
+  },
+
+  onToggleHistory() {
+    this.setData({ showHistory: !this.data.showHistory })
+  },
+
+  onHistoryTap(e: any) {
+    const id = e.currentTarget.dataset.id
+    if (id) {
+      wx.navigateTo({ url: '/pages/order-detail/index?id=' + id })
     }
   },
 

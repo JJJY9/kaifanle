@@ -4,14 +4,32 @@
     <text class="sub">她点的每一顿，都记在这儿</text>
   </view>
 
+  <view class="filter-row">
+    <view
+      class="filter-tab {{filter === 'all' ? 'active' : ''}}"
+      data-filter="all"
+      bindtap="onSelectFilter"
+    >全部 {{counts.all}}</view>
+    <view
+      class="filter-tab {{filter === 'active' ? 'active' : ''}}"
+      data-filter="active"
+      bindtap="onSelectFilter"
+    >进行中 {{counts.active}}</view>
+    <view
+      class="filter-tab {{filter === 'done' ? 'active' : ''}}"
+      data-filter="done"
+      bindtap="onSelectFilter"
+    >已结束 {{counts.done}}</view>
+  </view>
+
   <view wx:if="{{loading}}" class="loading">
     <view class="skeleton sk-row"></view>
     <view class="skeleton sk-row"></view>
   </view>
 
-  <block wx:elif="{{orders.length}}">
+  <block wx:elif="{{displayOrders.length}}">
     <view
-      wx:for="{{orders}}"
+      wx:for="{{displayOrders}}"
       wx:key="id"
       class="order card"
       data-id="{{item.id}}"
@@ -29,6 +47,12 @@
       </view>
     </view>
   </block>
+
+  <empty-state
+    wx:elif="{{orders.length}}"
+    title="这里还没有订单"
+    desc="换个分类看看"
+  />
 
   <empty-state
     wx:else

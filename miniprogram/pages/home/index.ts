@@ -36,10 +36,13 @@ Page({
     activeDish: null as Dish | null,
     loading: true,
     mealNotice: '',
+    keyword: '',
+    searchResults: [] as Dish[],
     emptyDesc: '换个餐次看看，或者去许愿池点个菜'
   },
 
   _unsub: null as null | (() => void),
+  _available: [] as Dish[],
 
   onLoad() {
     const app = getApp()
@@ -109,6 +112,8 @@ Page({
       const hero =
         available.find(dish => dish.isRecommended) || available[0] || null
 
+      this._available = available
+
       let isOpen = isOpenNow()
       let mealNotice = ''
       const mealSetting = business ? business[meal] : null
@@ -137,6 +142,7 @@ Page({
         loading: false,
         isOpen,
         mealNotice,
+        searchResults: this.filterDishes(this.data.keyword),
         emptyDesc:
           USE_CLOUD && sections.length === 0
             ? menuActive
@@ -161,6 +167,31 @@ Page({
       return
     }
     this.setData({ selectedMeal: meal }, () => this.loadMenu())
+  },
+
+  filterDishes(keyword: string): Dish[] {
+    const kw = String(keyword || '')
+      .trim()
+      .toLowerCase()
+    if (!kw) {
+      return []
+    }
+    return this._available.filter(dish => {
+      const haystack = [dish.name, dish.desc]
+        .concat(dish.tags || [])
+        .join(' ')
+        .toLowerCase()
+      return haystack.indexOf(kw) > -1
+    })
+  },
+
+  onSearchInput(e: any) {
+    const keyword = String(e.detail.value || '').slice(0, 20)
+    this.setData({ keyword, searchResults: this.filterDishes(keyword) })
+  },
+
+  onClearSearch() {
+    this.setData({ keyword: '', searchResults: [] })
   },
 
   onDishTap(e: any) {

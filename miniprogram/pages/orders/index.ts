@@ -10,7 +10,10 @@ import {
 Page({
   data: {
     orders: [] as any[],
-    loading: true
+    displayOrders: [] as any[],
+    loading: true,
+    filter: 'all' as 'all' | 'active' | 'done',
+    counts: { all: 0, active: 0, done: 0 }
   },
 
   onShow() {
@@ -37,11 +40,48 @@ Page({
         summary: itemSummary(order.items.map(item => item.name)),
         totalQty: order.items.reduce((sum, item) => sum + item.qty, 0)
       }))
-      this.setData({ orders: view, loading: false })
+      const counts = {
+        all: view.length,
+        active: view.filter(
+          order =>
+            order.status !== 'completed' && order.status !== 'cancelled'
+        ).length,
+        done: view.filter(
+          order =>
+            order.status === 'completed' || order.status === 'cancelled'
+        ).length
+      }
+      this.setData({ orders: view, loading: false, counts }, () =>
+        this.applyFilter()
+      )
     } catch (e) {
       this.setData({ loading: false })
       wx.showToast({ title: '订单加载失败', icon: 'none' })
     }
+  },
+
+  onSelectFilter(e: any) {
+    const filter = e.currentTarget.dataset.filter
+    if (filter === this.data.filter) {
+      return
+    }
+    this.setData({ filter }, () => this.applyFilter())
+  },
+
+  applyFilter() {
+    const filter = this.data.filter
+    const list = this.data.orders.filter(order => {
+      const finished =
+        order.status === 'completed' || order.status === 'cancelled'
+      if (filter === 'active') {
+        return !finished
+      }
+      if (filter === 'done') {
+        return finished
+      }
+      return true
+    })
+    this.setData({ displayOrders: list })
   },
 
   onTapOrder(e: any) {

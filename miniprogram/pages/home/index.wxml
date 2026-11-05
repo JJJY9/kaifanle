@@ -24,6 +24,19 @@
       >{{item.name}}</view>
     </view>
     <view wx:if="{{mealNotice}}" class="meal-notice">{{mealNotice}}</view>
+
+    <view class="search-bar">
+      <text class="search-icon">🔍</text>
+      <input
+        class="search-input"
+        value="{{keyword}}"
+        placeholder="想吃点什么？搜搜看"
+        placeholder-class="search-placeholder"
+        confirm-type="search"
+        bindinput="onSearchInput"
+      />
+      <view wx:if="{{keyword}}" class="search-clear" bindtap="onClearSearch">×</view>
+    </view>
   </view>
 
   <view wx:if="{{loading}}" class="loading">
@@ -31,6 +44,23 @@
     <view class="skeleton sk-row"></view>
     <view class="skeleton sk-row"></view>
   </view>
+
+  <block wx:elif="{{keyword}}">
+    <view wx:if="{{searchResults.length}}" class="dish-list search-list">
+      <dish-card
+        wx:for="{{searchResults}}"
+        wx:key="id"
+        dish="{{item}}"
+        bind:select="onDishTap"
+        bind:add="onQuickAdd"
+      />
+    </view>
+    <empty-state
+      wx:else
+      title="没搜到"
+      desc="换个关键词试试，或者去许愿池点个菜"
+    />
+  </block>
 
   <block wx:elif="{{sections.length}}">
     <view wx:if="{{hero}}" class="hero" bindtap="onHeroTap">

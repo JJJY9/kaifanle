@@ -185,7 +185,15 @@ const fakeSdk = {
       async createCollection(name) {
         ensure(name)
       },
-      collection: makeCollection
+      collection: makeCollection,
+      // 事务在当前单线程假库里退化为直接操作，接口保持一致
+      async startTransaction() {
+        return {
+          collection: makeCollection,
+          async commit() {},
+          async rollback() {}
+        }
+      }
     }
   },
   openapi: {
@@ -341,6 +349,7 @@ async function run() {
   assert.strictEqual(created.data.amount, 40)
   assert.strictEqual(created.data.items[0].price, 20)
   assert.strictEqual(created.data.status, 'pending')
+  assert.strictEqual(created.data.no, '001')
 
   // 新订单通知发给管理员
   assert.strictEqual(sentMessages.length, 1)
@@ -452,6 +461,8 @@ async function run() {
     'girl-openid'
   )
   assert.strictEqual(order2.ok, true)
+  // 失败的订单不会占用订单号，成功订单连续递增
+  assert.strictEqual(order2.data.no, '002')
 
   res = await call('cancelOrder', { id: order2.data.id }, 'stranger-openid')
   assert.strictEqual(res.ok, false)

@@ -84,7 +84,7 @@
   </view>
 
   <view class="actions">
-    <view class="btn btn-ink" bindtap="onReorder">再来一单</view>
+    <view class="btn btn-ink {{reordering ? 'busy' : ''}}" bindtap="onReorder">{{reordering ? '加购中…' : '再来一单'}}</view>
     <view class="btn" bindtap="onBackHome">回首页</view>
   </view>
 </view>

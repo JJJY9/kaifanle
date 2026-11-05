@@ -1,0 +1,189 @@
+// 2026-11-05 功能回归：首页搜索、订单筛选、再来一单、厨房历史
+const automator = require('miniprogram-automator')
+const sleep = ms => new Promise(r => setTimeout(r, ms))
+
+const results = []
+function check(name, ok, detail) {
+  results.push({ name, ok, detail })
+  console.log(`${ok ? 'PASS' : 'FAIL'} ${name}${detail ? ' · ' + detail : ''}`)
+}
+
+// 在页面上下文里直接执行方法，避免 callMethod 的序列化问题
+function invoke(mp, body) {
+  return mp.evaluate(
+    new Function(
+      'return (() => { const page = getCurrentPages()[getCurrentPages().length - 1]; ' +
+        body +
+        ' })()'
+    )
+  )
+}
+
+;(async () => {
+  const mp = await automator.connect({
+    wsEndpoint: process.argv[2] || 'ws://127.0.0.1:9420'
+  })
+
+  const current = () => mp.currentPage()
+
+  // ---------- 首页搜索 ----------
+  await mp.switchTab('/pages/home/index')
+  await sleep(2500)
+  let page = await current()
+  let data = await page.data()
+  const sections = data.sections || []
+  const dishTotal = sections.reduce((sum, s) => sum + s.dishes.length, 0)
+  const sampleDish = sections.length ? sections[0].dishes[0] : null
+  check('首页加载菜品', dishTotal > 0, `${sections.length} 个分类 / ${dishTotal} 道菜`)
+
+  page = await current()
+  const searchBar = await page.$$('.search-bar')
+  check('搜索框渲染', searchBar.length === 1)
+
+  await invoke(mp, "page.onSearchInput({ detail: { value: '饭' } })")
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    '关键词「饭」命中',
+    data.keyword === '饭' && data.searchResults.length > 0,
+    `关键词=${data.keyword} 结果=${data.searchResults.length}`
+  )
+
+  await invoke(mp, "page.onSearchInput({ detail: { value: '不存在的菜名xyz' } })")
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    '无结果时为空',
+    data.searchResults.length === 0,
+    `结果=${data.searchResults.length}`
+  )
+  // 自定义组件在 automator 里选不到，用截图做视觉证据
+  await mp.screenshot({ path: 'docs/search-empty.png' })
+
+  await invoke(mp, 'page.onClearSearch()')
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check('清空搜索恢复菜单', data.keyword === '' && data.sections.length > 0)
+
+  // ---------- 订单筛选 ----------
+  await mp.switchTab('/pages/orders/index')
+  await sleep(2000)
+  page = await current()
+  data = await page.data()
+  const orders = data.orders || []
+  check('订单列表加载', orders.length > 0, `共 ${orders.length} 单`)
+  const expectDone = orders.filter(
+    o => o.status === 'completed' || o.status === 'cancelled'
+  ).length
+  const expectActive = orders.length - expectDone
+  check(
+    '筛选计数正确',
+    data.counts.all === orders.length &&
+      data.counts.done === expectDone &&
+      data.counts.active === expectActive,
+    JSON.stringify(data.counts)
+  )
+
+  await invoke(
+    mp,
+    "page.onSelectFilter({ currentTarget: { dataset: { filter: 'active' } } })"
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    '进行中筛选',
+    data.displayOrders.length === expectActive &&
+      data.displayOrders.every(
+        o => o.status !== 'completed' && o.status !== 'cancelled'
+      ),
+    `${data.displayOrders.length} 单`
+  )
+
+  await invoke(
+    mp,
+    "page.onSelectFilter({ currentTarget: { dataset: { filter: 'done' } } })"
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    '已结束筛选',
+    data.displayOrders.length === expectDone &&
+      data.displayOrders.every(
+        o => o.status === 'completed' || o.status === 'cancelled'
+      ),
+    `${data.displayOrders.length} 单`
+  )
+
+  // ---------- 再来一单 ----------
+  const firstOrder = orders[0]
+  await mp.navigateTo(`/pages/order-detail/index?id=${firstOrder.id}`)
+  await sleep(2000)
+  page = await current()
+  data = await page.data()
+  check('订单详情加载', Boolean(data.order), data.order && '#' + data.order.no)
+
+  const readCartCount = raw => {
+    try {
+      const lines = JSON.parse(raw || '[]')
+      return lines.reduce((sum, l) => sum + l.qty, 0)
+    } catch (e) {
+      return 0
+    }
+  }
+  const before = await mp.callWxMethod('getStorageSync', 'kfl_cart_v1')
+  // 云端历史订单的菜可能已删除，注入一道当前在售的菜来验证加购逻辑
+  if (sampleDish) {
+    const line = JSON.stringify({
+      dishId: sampleDish.id,
+      name: sampleDish.name,
+      price: sampleDish.price,
+      qty: 1,
+      specs: [],
+      note: ''
+    })
+    await invoke(
+      mp,
+      `page.setData({ order: Object.assign({}, page.data.order, { items: [${line}] }) })`
+    )
+    await sleep(300)
+  }
+  await invoke(mp, 'page.onReorder()')
+  await sleep(2500)
+  const after = await mp.callWxMethod('getStorageSync', 'kfl_cart_v1')
+  check(
+    '再来一单加入购物车',
+    readCartCount(after) > readCartCount(before) ||
+      (readCartCount(before) === 0 && readCartCount(after) > 0),
+    `购物车 ${readCartCount(before)} → ${readCartCount(after)}`
+  )
+
+  // ---------- 厨房历史 ----------
+  await mp.navigateTo('/pages/kitchen/index')
+  await sleep(2500)
+  page = await current()
+  data = await page.data()
+  check('厨房加载', Boolean(data.stats), `待处理 ${data.orders.length} 单`)
+  check(
+    '厨房历史订单',
+    Array.isArray(data.history),
+    `历史 ${data.history.length} 单`
+  )
+  await invoke(mp, 'page.onToggleHistory()')
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  check('历史展开', data.showHistory === true)
+
+  const failed = results.filter(r => !r.ok)
+  console.log(`\n结论：${results.length - failed.length}/${results.length} 通过`)
+  await mp.disconnect()
+  process.exit(failed.length ? 1 : 0)
+})().catch(err => {
+  console.error('回归脚本异常：', err)
+  process.exit(2)
+})

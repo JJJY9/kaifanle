@@ -142,6 +142,29 @@
   opacity: 0.6;
 }
 
+.copy-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 84rpx;
+  margin-top: 22rpx;
+  background: #FFFFFF;
+  border: 4rpx solid #111111;
+  border-radius: 999rpx;
+  box-shadow: 5rpx 5rpx 0 #111111;
+  font-size: 26rpx;
+  font-weight: 800;
+}
+
+.copy-btn:active {
+  transform: translate(5rpx, 5rpx);
+  box-shadow: none;
+}
+
+.copy-btn.disabled {
+  opacity: 0.6;
+}
+
 .reset-btn {
   display: flex;
   align-items: center;

@@ -268,6 +268,10 @@
   font-size: 28rpx;
 }
 
+.actions .btn.busy {
+  opacity: 0.5;
+}
+
 .sk-detail {
   height: 900rpx;
 }

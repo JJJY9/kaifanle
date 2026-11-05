@@ -136,7 +136,62 @@ async function getConfig() {
   }
 }
 
+// 订单号取号：优先用事务，保证并发下单不会拿到同一个号；
+// 环境不支持事务时退化为原子自增。
+async function reserveOrderSeq() {
+  if (typeof db.startTransaction === 'function') {
+    for (let attempt = 0; attempt < 4; attempt++) {
+      let transaction = null
+      try {
+        transaction = await db.startTransaction()
+        const res = await transaction
+          .collection('config')
+          .doc(CONFIG_ID)
+          .get()
+        const seq = Number((res.data && res.data.orderSeq) || 0) + 1
+        await transaction
+          .collection('config')
+          .doc(CONFIG_ID)
+          .update({ data: { orderSeq: seq } })
+        await transaction.commit()
+        return seq
+      } catch (err) {
+        if (transaction) {
+          try {
+            await transaction.rollback()
+          } catch (e) {
+            // 回滚失败时忽略，继续重试
+          }
+        }
+        if (attempt === 3) {
+          console.warn('[api] 事务取号失败，退化为自增:', err)
+          break
+        }
+        await new Promise(resolve => setTimeout(resolve, 20 * (attempt + 1)))
+      }
+    }
+  }
+  await db
+    .collection('config')
+    .doc(CONFIG_ID)
+    .update({ data: { orderSeq: _.inc(1) } })
+  const fresh = await db.collection('config').doc(CONFIG_ID).get()
+  return Number((fresh.data && fresh.data.orderSeq) || 1)
+}
+
+// 可在云函数环境变量里配置 ADMIN_OPENIDS（逗号分隔）固定管理员，
+// 这样即使数据库被清空重建，管理员也不会变化。
+function envAdminOpenids() {
+  return String(process.env.ADMIN_OPENIDS || '')
+    .split(',')
+    .map(item => item.trim())
+    .filter(Boolean)
+}
+
 async function isAdminOpenid(openid) {
+  if (envAdminOpenids().indexOf(openid) > -1) {
+    return true
+  }
   const config = await getConfig()
   return Boolean(
     config &&
@@ -748,11 +803,7 @@ async function createOrder(payload, openid) {
     // 没有口味档案时不影响下单
   }
 
-  const seq = Number(config.orderSeq || 0) + 1
-  await db
-    .collection('config')
-    .doc(CONFIG_ID)
-    .update({ data: { orderSeq: seq } })
+  const seq = await reserveOrderSeq()
 
   const now = Date.now()
   const order = {
@@ -1113,18 +1164,23 @@ async function updateWish(payload, openid) {
   return withId(Object.assign({}, wish, data))
 }
 
-// 一次性初始化：写入默认菜单，并把第一个调用者设为管理员。
+// 一次性初始化：写入默认菜单并确定管理员。
+// 设置了环境变量 ADMIN_OPENIDS 时只认这些管理员；
+// 否则把第一个调用者设为管理员（仅适合私用）。
 // 初始化完成后再次调用不会改动任何数据。
 async function initDb(openid) {
+  const envAdmins = envAdminOpenids()
   const existing = await getConfig()
   if (existing && existing.initialized) {
     return {
       initialized: true,
       already: true,
-      isAdmin: Boolean(
-        Array.isArray(existing.adminOpenids) &&
-          existing.adminOpenids.indexOf(openid) > -1
-      )
+      isAdmin: envAdmins.length
+        ? envAdmins.indexOf(openid) > -1
+        : Boolean(
+            Array.isArray(existing.adminOpenids) &&
+              existing.adminOpenids.indexOf(openid) > -1
+          )
     }
   }
 
@@ -1167,7 +1223,13 @@ async function initDb(openid) {
     existing && Array.isArray(existing.adminOpenids)
       ? existing.adminOpenids.slice()
       : []
-  if (admins.indexOf(openid) === -1) {
+  if (envAdmins.length) {
+    envAdmins.forEach(admin => {
+      if (admins.indexOf(admin) === -1) {
+        admins.push(admin)
+      }
+    })
+  } else if (admins.indexOf(openid) === -1) {
     admins.push(openid)
   }
 
