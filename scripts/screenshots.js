@@ -6,9 +6,41 @@ const sleep = ms => new Promise(r => setTimeout(r, ms))
   const mp = await automator.connect({
     wsEndpoint: process.argv[2] || 'ws://127.0.0.1:9420'
   })
+  await mp.mockWxMethod('showModal', {
+    confirm: true,
+    cancel: false,
+    content: ''
+  })
 
+  // 清空测试遗留的购物车，再切到午餐拍首页
   await mp.switchTab('/pages/home/index')
-  await sleep(2500)
+  await sleep(1600)
+  let page = await mp.currentPage()
+  let data = await page.data()
+  if (data.cartCount > 0) {
+    await mp.evaluate(function () {
+      const current = getCurrentPages()[getCurrentPages().length - 1]
+      current.onCheckout()
+    })
+    await sleep(1400)
+    await mp.evaluate(function () {
+      const current = getCurrentPages()[getCurrentPages().length - 1]
+      current.onClearCart()
+    })
+    await sleep(1400)
+  }
+  await mp.switchTab('/pages/home/index')
+  await sleep(1200)
+  await mp.evaluate(function () {
+    const current = getCurrentPages()[getCurrentPages().length - 1]
+    current.onClearSearch()
+  })
+  await sleep(400)
+  await mp.evaluate(function () {
+    const current = getCurrentPages()[getCurrentPages().length - 1]
+    current.onSelectMeal({ currentTarget: { dataset: { meal: 'lunch' } } })
+  })
+  await sleep(1800)
   await mp.screenshot({ path: 'docs/home-preview.png' })
   console.log('saved docs/home-preview.png')
 
@@ -18,7 +50,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms))
   console.log('saved docs/kitchen-prep.png')
 
   await mp.switchTab('/pages/home/index')
-  await sleep(1200)
+  await sleep(1500)
   await mp.evaluate(function () {
     const page = getCurrentPages()[getCurrentPages().length - 1]
     page.onSearchInput({ detail: { value: '饭' } })
@@ -27,6 +59,10 @@ const sleep = ms => new Promise(r => setTimeout(r, ms))
   await mp.screenshot({ path: 'docs/search-result.png' })
   console.log('saved docs/search-result.png')
 
+  await mp.evaluate(function () {
+    const page = getCurrentPages()[getCurrentPages().length - 1]
+    page.onClearSearch()
+  })
   await mp.disconnect()
   process.exit(0)
 })().catch(err => {
