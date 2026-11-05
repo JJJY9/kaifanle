@@ -36,6 +36,17 @@ const DEFAULT_BUSINESS = {
 }
 
 exports.main = async event => {
+  // 定时触发器：每天凌晨把今天的菜单补到明天，只填空缺不覆盖
+  if (event && event.Type === 'Timer') {
+    try {
+      const data = await autoRollMenu()
+      return { ok: true, data }
+    } catch (err) {
+      console.error('[api] timer failed:', err)
+      return { ok: false, error: (err && err.message) || '定时任务失败' }
+    }
+  }
+
   const { OPENID } = cloud.getWXContext()
   const action = (event && event.action) || ''
   const payload = (event && event.payload) || {}
@@ -430,10 +441,18 @@ async function claimCoupon(payload, openid) {
     throw new Error('这张券已经被领走了')
   }
   if (!coupon.owner) {
-    await db
+    // 条件更新保证同一张券只会被一个人领走
+    const upd = await db
       .collection('coupons')
-      .doc(payload.id)
+      .where({ _id: payload.id, owner: '' })
       .update({ data: { owner: openid, claimedAt: Date.now() } })
+    if (!upd.stats.updated) {
+      const fresh = await db.collection('coupons').doc(payload.id).get()
+      if (fresh.data.owner !== openid) {
+        throw new Error('这张券已经被领走了')
+      }
+      return withId(fresh.data)
+    }
     coupon.owner = openid
   }
   return withId(coupon)
@@ -453,10 +472,14 @@ async function useCoupon(payload, openid) {
     throw new Error('这张券已经用掉了')
   }
   const usedAt = Date.now()
-  await db
+  // 条件更新：并发下同一张券只会被用掉一次
+  const upd = await db
     .collection('coupons')
-    .doc(payload.id)
+    .where({ _id: payload.id, status: 'unused' })
     .update({ data: { status: 'used', usedAt } })
+  if (!upd.stats.updated) {
+    throw new Error('这张券已经用掉了')
+  }
   return withId(Object.assign({}, coupon, { status: 'used', usedAt }))
 }
 
@@ -557,8 +580,7 @@ async function saveMenu(payload, openid) {
   return Object.assign({ exists: true }, data)
 }
 
-async function deleteMenu(payload, openid) {
-  await requireAdmin(openid)
+async function deleteMenu(payload, openid) {  await requireAdmin(openid)
   if (!payload) {
     throw new Error('参数不完整')
   }
@@ -574,6 +596,36 @@ async function deleteMenu(payload, openid) {
     // 菜单本来就不存在
   }
   return { date, meal }
+}
+
+// 每天凌晨把今天的菜单复制到明天：只补空缺，不覆盖已排好的菜单。
+async function autoRollMenu() {
+  const today = chinaDateString()
+  const tomorrow = chinaDateString(Date.now() + 24 * 60 * 60 * 1000)
+  const rolled = []
+  for (const meal of MEALS) {
+    const next = await getMenuDoc(tomorrow, meal)
+    if (next.exists) {
+      continue
+    }
+    const current = await getMenuDoc(today, meal)
+    if (!current.exists) {
+      continue
+    }
+    const data = {
+      date: tomorrow,
+      meal,
+      dishIds: current.dishIds,
+      open: current.open !== false,
+      updatedAt: Date.now()
+    }
+    await db
+      .collection('menus')
+      .doc(menuDocId(tomorrow, meal))
+      .set({ data })
+    rolled.push(meal)
+  }
+  return { date: tomorrow, menus: rolled }
 }
 
 async function requireAdmin(openid) {

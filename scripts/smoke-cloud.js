@@ -682,6 +682,31 @@ async function run() {
   )
   assert.strictEqual(res.data.exists, false)
 
+  // 定时任务：把今天的菜单滚动复制到明天，只补空缺
+  res = await call(
+    'saveMenu',
+    { date: todayKey, meal: 'lunch', dishIds: ['d02'], open: true },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  const tomorrowKey = chinaDate(1)
+  const timerRoll = await api.main({ Type: 'Timer' })
+  assert.strictEqual(timerRoll.ok, true)
+  assert.deepStrictEqual(timerRoll.data.menus, ['lunch'])
+  res = await call(
+    'getMenuForDate',
+    { date: tomorrowKey, meal: 'lunch' },
+    'admin-openid'
+  )
+  assert.strictEqual(res.data.exists, true)
+  assert.deepStrictEqual(res.data.dishIds, ['d02'])
+  // 已有明天的菜单时不会重复覆盖
+  const timerAgain = await api.main({ Type: 'Timer' })
+  assert.deepStrictEqual(timerAgain.data.menus, [])
+  // 清理菜单，避免影响后续下单用例
+  await call('deleteMenu', { date: tomorrowKey, meal: 'lunch' }, 'admin-openid')
+  await call('deleteMenu', { date: todayKey, meal: 'lunch' }, 'admin-openid')
+
   // 库存扣减与取消回补
   res = await call(
     'saveDish',
@@ -799,6 +824,10 @@ async function run() {
   res = await call('claimCoupon', { id: couponId }, 'girl-openid')
   assert.strictEqual(res.ok, true)
   assert.strictEqual(res.data.owner, 'girl-openid')
+
+  // 已被领走的券别人不能再领
+  res = await call('claimCoupon', { id: couponId }, 'stranger-openid')
+  assert.strictEqual(res.ok, false)
 
   res = await call('useCoupon', { id: couponId }, 'girl-openid')
   assert.strictEqual(res.ok, true)

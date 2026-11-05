@@ -3,5 +3,12 @@
     "openapi": [
       "subscribeMessage.send"
     ]
-  }
+  },
+  "triggers": [
+    {
+      "name": "dailyMenuRoll",
+      "type": "timer",
+      "config": "0 0 4 * * * *"
+    }
+  ]
 }

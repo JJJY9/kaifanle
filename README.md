@@ -86,6 +86,10 @@ node scripts/init-cloud-db.js ws://127.0.0.1:9420
 
 订单金额和菜品单价由云函数按数据库中的菜价重新计算，不信任客户端传值；售罄菜品会被拒绝。
 
+### 每日菜单自动滚动
+
+`api` 云函数带一个定时触发器 `dailyMenuRoll`（每天 04:00），会把当天的菜单复制到第二天，只补空缺、不覆盖已经排好的安排。触发器随云函数一起部署；不需要的话删掉 `cloudfunctions/api/config.json` 里的 `triggers` 即可。
+
 ### 云函数动作
 
 `getCategories` / `getDishes` / `getDish` / `getOrders` / `getAllOrders` / `getOrder` /

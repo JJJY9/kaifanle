@@ -51,6 +51,12 @@ Page({
     this.setData({ mealViews })
   },
 
+  onToggleAll(e: any) {
+    const open = String(e.currentTarget.dataset.open) === 'true'
+    const mealViews = this.data.mealViews.map(view => ({ ...view, open }))
+    this.setData({ mealViews })
+  },
+
   onDeadline(e: any) {
     const index = Number(e.currentTarget.dataset.index)
     const mealViews = this.data.mealViews.slice()

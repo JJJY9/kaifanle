@@ -154,6 +154,10 @@
   border-color: #D9431C;
 }
 
+.cbtn.busy {
+  opacity: 0.5;
+}
+
 .sk {
   height: 240rpx;
 }

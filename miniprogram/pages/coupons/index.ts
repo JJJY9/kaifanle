@@ -16,7 +16,9 @@ Page({
     loading: true,
     newTitle: '',
     newNote: '',
-    creating: false
+    creating: false,
+    claimingId: '',
+    usingId: ''
   },
 
   onShow() {
@@ -92,7 +94,11 @@ Page({
   },
 
   async onClaim(e: any) {
+    if (this.data.claimingId) {
+      return
+    }
     const id = e.currentTarget.dataset.id
+    this.setData({ claimingId: id })
     try {
       await claimCoupon(id)
       wx.showToast({ title: '收下了', icon: 'none' })
@@ -102,10 +108,15 @@ Page({
         title: String((err && err.message) || '领取失败').slice(0, 40),
         icon: 'none'
       })
+    } finally {
+      this.setData({ claimingId: '' })
     }
   },
 
   async onUse(e: any) {
+    if (this.data.usingId) {
+      return
+    }
     const id = e.currentTarget.dataset.id
     const res: any = await wx.showModal({
       title: '用掉这张券？',
@@ -116,6 +127,7 @@ Page({
     if (!res.confirm) {
       return
     }
+    this.setData({ usingId: id })
     try {
       await useCoupon(id)
       wx.showToast({ title: '已用掉', icon: 'none' })
@@ -125,6 +137,8 @@ Page({
         title: String((err && err.message) || '操作失败').slice(0, 40),
         icon: 'none'
       })
+    } finally {
+      this.setData({ usingId: '' })
     }
   },
 

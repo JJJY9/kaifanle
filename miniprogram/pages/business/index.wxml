@@ -4,6 +4,11 @@
     <text class="sub">每一餐可以单独开关和截单时间</text>
   </view>
 
+  <view class="bulk-row">
+    <view class="bulk-btn" data-open="true" bindtap="onToggleAll">全部开火</view>
+    <view class="bulk-btn rest" data-open="false" bindtap="onToggleAll">今天休息</view>
+  </view>
+
   <view wx:if="{{loading}}" class="skeleton sk"></view>
 
   <block wx:else>

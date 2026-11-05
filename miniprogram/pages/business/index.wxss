@@ -21,6 +21,35 @@
   font-size: 24rpx;
 }
 
+.bulk-row {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 20rpx;
+}
+
+.bulk-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 76rpx;
+  background: #2FBF71;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  box-shadow: 4rpx 4rpx 0 #111111;
+  font-size: 26rpx;
+  font-weight: 800;
+}
+
+.bulk-btn.rest {
+  background: #FFFFFF;
+}
+
+.bulk-btn:active {
+  transform: translate(4rpx, 4rpx);
+  box-shadow: none;
+}
+
 .meal-card {
   padding: 24rpx;
   margin-bottom: 20rpx;
