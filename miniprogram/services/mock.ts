@@ -31,7 +31,8 @@ const DEFAULT_BUSINESS: Business = {
   breakfast: { open: true, deadline: '09:30' },
   lunch: { open: true, deadline: '12:00' },
   dinner: { open: true, deadline: '20:00' },
-  closedNote: '今天休息，明天见'
+  closedNote: '今天休息，明天见',
+  notice: ''
 }
 
 const CATEGORIES: Category[] = [

@@ -145,6 +145,37 @@
   font-weight: 700;
 }
 
+.notice-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 14rpx;
+  margin-top: 16rpx;
+  padding: 16rpx 20rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 20rpx;
+  box-shadow: 4rpx 4rpx 0 #111111;
+}
+
+.notice-tag {
+  flex: 0 0 auto;
+  padding: 2rpx 14rpx;
+  background: #FF5C8A;
+  border: 3rpx solid #111111;
+  border-radius: 8rpx;
+  font-size: 20rpx;
+  font-weight: 800;
+  transform: rotate(-3deg);
+}
+
+.notice-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 24rpx;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
 .search-bar {
   display: flex;
   align-items: center;

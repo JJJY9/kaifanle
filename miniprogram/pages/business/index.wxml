@@ -47,6 +47,15 @@
         maxlength="40"
         bindinput="onNote"
       />
+
+      <view class="block-title">今日公告（显示在首页）</view>
+      <input
+        class="note"
+        placeholder="比如：今天只有一锅炖菜，先到先得"
+        value="{{notice}}"
+        maxlength="60"
+        bindinput="onNotice"
+      />
     </view>
 
     <view

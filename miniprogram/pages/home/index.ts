@@ -36,6 +36,7 @@ Page({
     activeDish: null as Dish | null,
     loading: true,
     mealNotice: '',
+    notice: '',
     keyword: '',
     searchResults: [] as Dish[],
     emptyDesc: '换个餐次看看，或者去许愿池点个菜'
@@ -149,6 +150,7 @@ Page({
         loading: false,
         isOpen,
         mealNotice,
+        notice: business && business.notice ? business.notice : '',
         searchResults: this.filterDishes(this.data.keyword),
         emptyDesc:
           USE_CLOUD && sections.length === 0

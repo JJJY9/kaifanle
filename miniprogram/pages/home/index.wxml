@@ -27,6 +27,10 @@
       >{{item.name}}</view>
     </view>
     <view wx:if="{{mealNotice}}" class="meal-notice">{{mealNotice}}</view>
+    <view wx:if="{{notice}}" class="notice-box">
+      <text class="notice-tag">店长说</text>
+      <text class="notice-text">{{notice}}</text>
+    </view>
 
     <view class="search-bar">
       <text class="search-icon">🔍</text>

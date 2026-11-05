@@ -32,7 +32,8 @@ const DEFAULT_BUSINESS = {
   breakfast: { open: true, deadline: '09:30' },
   lunch: { open: true, deadline: '12:00' },
   dinner: { open: true, deadline: '20:00' },
-  closedNote: '今天休息，明天见'
+  closedNote: '今天休息，明天见',
+  notice: ''
 }
 
 exports.main = async event => {
@@ -229,7 +230,9 @@ function normalizeBusiness(value) {
     closedNote: String(source.closedNote || DEFAULT_BUSINESS.closedNote).slice(
       0,
       40
-    )
+    ),
+    // 今日公告：显示在首页，让她一眼看到
+    notice: String(source.notice || '').slice(0, 60)
   }
   for (const meal of MEALS) {
     const item =

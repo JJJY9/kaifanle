@@ -267,7 +267,8 @@ async function run() {
       breakfast: { open: true, deadline: '23:59' },
       lunch: { open: true, deadline: '23:59' },
       dinner: { open: true, deadline: '23:59' },
-      closedNote: '测试休息'
+      closedNote: '测试休息',
+      notice: '今晚有炖汤'
     },
     'admin-openid'
   )
@@ -276,6 +277,7 @@ async function run() {
   res = await call('getBusiness', {}, 'girl-openid')
   assert.strictEqual(res.data.lunch.open, true)
   assert.strictEqual(res.data.lunch.deadline, '23:59')
+  assert.strictEqual(res.data.notice, '今晚有炖汤')
 
   res = await call('getCategories', {}, 'girl-openid')
   assert.strictEqual(res.ok, true)

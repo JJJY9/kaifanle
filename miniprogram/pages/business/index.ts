@@ -14,7 +14,8 @@ Page({
     loading: true,
     saving: false,
     mealViews: [] as MealView[],
-    closedNote: ''
+    closedNote: '',
+    notice: ''
   },
 
   onLoad() {
@@ -33,6 +34,7 @@ Page({
       this.setData({
         mealViews,
         closedNote: business.closedNote,
+        notice: business.notice || '',
         loading: false
       })
     } catch (e: any) {
@@ -68,13 +70,18 @@ Page({
     this.setData({ closedNote: e.detail.value })
   },
 
+  onNotice(e: any) {
+    this.setData({ notice: e.detail.value })
+  },
+
   async onSave() {
     if (this.data.saving) {
       return
     }
     const business: any = {
       closedNote:
-        this.data.closedNote.trim().slice(0, 40) || '今天休息，明天见'
+        this.data.closedNote.trim().slice(0, 40) || '今天休息，明天见',
+      notice: this.data.notice.trim().slice(0, 60)
     }
     this.data.mealViews.forEach(view => {
       business[view.id] = {

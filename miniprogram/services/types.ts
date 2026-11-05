@@ -148,6 +148,7 @@ export interface Business {
   lunch: MealBusiness
   dinner: MealBusiness
   closedNote: string
+  notice?: string
 }
 
 export interface UserProfile {
