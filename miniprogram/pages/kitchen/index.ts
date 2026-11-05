@@ -5,6 +5,7 @@ import {
   getDishes,
   getMe,
   getStats,
+  moveDish,
   toggleDishStatus,
   updateOrderStatus
 } from '../../services/api'
@@ -28,6 +29,7 @@ Page({
     error: '',
     busyId: '',
     busyDishId: '',
+    movingId: '',
     showHistory: false,
     showPrep: false,
     prepItems: [] as any[],
@@ -338,8 +340,29 @@ Page({
     }
   },
 
-  async onToggleDish(e: any) {
-    if (this.data.busyDishId) {
+  async onMoveDish(e: any) {
+    if (this.data.movingId) {
+      return
+    }
+    const id = e.currentTarget.dataset.id
+    const direction = e.currentTarget.dataset.direction
+    this.setData({ movingId: id })
+    try {
+      const res = await moveDish(id, direction)
+      if (res && res.moved) {
+        await this.load()
+      }
+    } catch (err: any) {
+      wx.showToast({
+        title: String((err && err.message) || '调整失败').slice(0, 40),
+        icon: 'none'
+      })
+    } finally {
+      this.setData({ movingId: '' })
+    }
+  },
+
+  async onToggleDish(e: any) {    if (this.data.busyDishId) {
       return
     }
     const id = e.currentTarget.dataset.id

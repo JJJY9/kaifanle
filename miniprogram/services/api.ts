@@ -103,8 +103,17 @@ export async function saveDish(payload: DishInput): Promise<Dish> {
   return mock.saveDish(payload)
 }
 
-export async function deleteDish(id: string): Promise<{ id: string }> {
+export async function moveDish(
+  id: string,
+  direction: 'up' | 'down'
+): Promise<{ moved: boolean }> {
   if (USE_CLOUD) {
+    return callApi<{ moved: boolean }>('moveDish', { id, direction })
+  }
+  return mock.moveDish(id, direction)
+}
+
+export async function deleteDish(id: string): Promise<{ id: string }> {  if (USE_CLOUD) {
     return callApi<{ id: string }>('deleteDish', { id })
   }
   return mock.deleteDish(id)

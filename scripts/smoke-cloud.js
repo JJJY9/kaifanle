@@ -314,6 +314,23 @@ async function run() {
   assert.strictEqual(res.ok, true)
   assert.strictEqual(res.data.length, 14)
 
+  // 菜品排序：相邻交换、越界不动、权限校验
+  const firstDishId = res.data[0].id
+  const secondDishId = res.data[1].id
+  res = await call('moveDish', { id: secondDishId, direction: 'down' }, 'girl-openid')
+  assert.strictEqual(res.ok, false)
+  res = await call('moveDish', { id: secondDishId, direction: 'up' }, 'admin-openid')
+  assert.strictEqual(res.ok, true)
+  res = await call('getDishes', {}, 'admin-openid')
+  assert.strictEqual(res.data[0].id, secondDishId)
+  assert.strictEqual(res.data[1].id, firstDishId)
+  res = await call('moveDish', { id: secondDishId, direction: 'down' }, 'admin-openid')
+  assert.strictEqual(res.ok, true)
+  res = await call('getDishes', {}, 'admin-openid')
+  assert.strictEqual(res.data[0].id, firstDishId)
+  res = await call('moveDish', { id: firstDishId, direction: 'up' }, 'admin-openid')
+  assert.strictEqual(res.data.moved, false)
+
   // 菜品管理：权限、创建、编辑、下架
   const dishPayload = {
     name: '测试菜',

@@ -588,6 +588,25 @@ export async function toggleDishStatus(id: string): Promise<Dish | null> {
   return { ...dish }
 }
 
+export async function moveDish(
+  id: string,
+  direction: 'up' | 'down'
+): Promise<{ moved: boolean }> {
+  await delay(60)
+  const index = dishes.findIndex(dish => dish.id === id)
+  if (index === -1) {
+    throw new Error('菜品不存在')
+  }
+  const target = index + (direction === 'up' ? -1 : 1)
+  if (target < 0 || target >= dishes.length) {
+    return { moved: false }
+  }
+  const temp = dishes[index]
+  dishes[index] = dishes[target]
+  dishes[target] = temp
+  return { moved: true }
+}
+
 export async function saveDish(payload: DishInput): Promise<Dish> {
   await delay(100)
   const name = String(payload.name || '').trim()

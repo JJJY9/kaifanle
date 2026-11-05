@@ -97,7 +97,7 @@ node scripts/init-cloud-db.js ws://127.0.0.1:9420
 ### 云函数动作
 
 `getCategories` / `saveCategory` / `deleteCategory` / `getDishes` / `getDish` / `getOrders` / `getAllOrders` / `getActiveOrders` / `getOrder` /
-`createOrder` / `cancelOrder` / `urgeOrder` / `updateOrderStatus` / `toggleDishStatus` / `saveDish` / `deleteDish` /
+`createOrder` / `cancelOrder` / `urgeOrder` / `updateOrderStatus` / `toggleDishStatus` / `saveDish` / `deleteDish` / `moveDish` /
 `getBusiness` / `updateBusiness` / `getMenuForDate` / `saveMenu` / `deleteMenu` /
 `getMyProfile` / `saveMyProfile` / `getStats` / `createWish` / `getWishes` / `updateWish` /
 `createCoupon` / `getCoupons` / `claimCoupon` / `useCoupon` / `deleteCoupon` / `getMe` / `initDb`

@@ -99,6 +99,8 @@ async function route(action, payload, openid) {
       return saveDish(payload, openid)
     case 'deleteDish':
       return deleteDish(payload, openid)
+    case 'moveDish':
+      return moveDish(payload, openid)
     case 'getMe':
       return getMe(openid)
     case 'initDb':
@@ -1315,6 +1317,45 @@ async function deleteDish(payload, openid) {
   }
   await db.collection('dishes').doc(payload.id).remove()
   return { id: payload.id }
+}
+
+// 菜品排序：与相邻菜品交换 sort，direction 为 up / down
+async function moveDish(payload, openid) {
+  await requireAdmin(openid)
+  const id = String((payload && payload.id) || '')
+  if (!id) {
+    throw new Error('缺少菜品 ID')
+  }
+  const direction = payload.direction === 'up' ? -1 : 1
+  const res = await db
+    .collection('dishes')
+    .orderBy('sort', 'asc')
+    .limit(200)
+    .get()
+  const list = res.data
+  const index = list.findIndex(dish => dish._id === id)
+  if (index === -1) {
+    throw new Error('菜品不存在')
+  }
+  const target = index + direction
+  if (target < 0 || target >= list.length) {
+    return { moved: false }
+  }
+  const current = list[index]
+  const neighbor = list[target]
+  const currentSort =
+    typeof current.sort === 'number' ? current.sort : (index + 1) * 10
+  const neighborSort =
+    typeof neighbor.sort === 'number' ? neighbor.sort : (target + 1) * 10
+  await db
+    .collection('dishes')
+    .doc(current._id)
+    .update({ data: { sort: neighborSort } })
+  await db
+    .collection('dishes')
+    .doc(neighbor._id)
+    .update({ data: { sort: currentSort } })
+  return { moved: true }
 }
 
 const WISH_STATUS = ['pending', 'planned', 'done']

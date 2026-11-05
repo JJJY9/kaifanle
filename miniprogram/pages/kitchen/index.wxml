@@ -156,6 +156,10 @@
           <view class="dish-name">{{item.name}}</view>
           <view class="dish-price {{item.stock >= 0 && item.stock <= 3 ? 'low' : ''}}">¥{{item.price}}<text wx:if="{{item.stock >= 0}}"> · 剩 {{item.stock}} 份</text></view>
         </view>
+        <view class="dish-move">
+          <view class="move-btn {{movingId === item.id ? 'busy' : ''}}" data-id="{{item.id}}" data-direction="up" catchtap="onMoveDish">↑</view>
+          <view class="move-btn {{movingId === item.id ? 'busy' : ''}}" data-id="{{item.id}}" data-direction="down" catchtap="onMoveDish">↓</view>
+        </view>
         <view
           class="dish-toggle {{item.status !== 'on' ? 'off' : ''}} {{item.status === 'off' ? 'hidden' : ''}} {{busyDishId === item.id ? 'busy' : ''}}"
           data-id="{{item.id}}"
