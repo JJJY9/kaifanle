@@ -701,7 +701,8 @@ async function checkContentSafety(openid, content) {
   }
 }
 
-async function requireAdmin(openid) {  const ok = await isAdminOpenid(openid)
+async function requireAdmin(openid) {
+  const ok = await isAdminOpenid(openid)
   if (!ok) {
     throw new Error('没有权限，只有管理员可以操作')
   }
