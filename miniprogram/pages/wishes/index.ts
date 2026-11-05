@@ -18,6 +18,7 @@ Page({
   data: {
     wishes: [] as any[],
     content: '',
+    presets: ['想吃火锅', '想喝奶茶', '想吃甜品'],
     isAdmin: false,
     loading: true,
     submitting: false,
@@ -52,6 +53,10 @@ Page({
 
   onContent(e: any) {
     this.setData({ content: e.detail.value })
+  },
+
+  onPreset(e: any) {
+    this.setData({ content: e.currentTarget.dataset.text })
   },
 
   async onSubmit() {

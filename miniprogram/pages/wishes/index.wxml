@@ -5,17 +5,28 @@
   </view>
 
   <view class="wish-form card">
-    <input
-      class="wish-input"
-      placeholder="比如：想吃番茄牛腩饭"
-      value="{{content}}"
-      maxlength="50"
-      bindinput="onContent"
-    />
-    <view
-      class="wish-submit {{submitting ? 'disabled' : ''}}"
-      bindtap="onSubmit"
-    >{{submitting ? '…' : '许愿'}}</view>
+    <view class="wish-row">
+      <input
+        class="wish-input"
+        placeholder="比如：想吃番茄牛腩饭"
+        value="{{content}}"
+        maxlength="50"
+        bindinput="onContent"
+      />
+      <view
+        class="wish-submit {{submitting ? 'disabled' : ''}}"
+        bindtap="onSubmit"
+      >{{submitting ? '…' : '许愿'}}</view>
+    </view>
+    <view class="preset-row">
+      <view
+        wx:for="{{presets}}"
+        wx:key="*this"
+        class="preset-chip"
+        data-text="{{item}}"
+        bindtap="onPreset"
+      >{{item}}</view>
+    </view>
   </view>
 
   <view wx:if="{{loading}}" class="skeleton sk"></view>

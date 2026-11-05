@@ -23,9 +23,34 @@
 
 .wish-form {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 14rpx;
   padding: 18rpx;
+}
+
+.wish-row {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+}
+
+.preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.preset-chip {
+  padding: 6rpx 20rpx;
+  background: #FFFDF6;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.preset-chip:active {
+  background: #FFD23F;
 }
 
 .wish-input {
