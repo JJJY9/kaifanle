@@ -48,8 +48,9 @@ Page({
         createdText: `${formatDate(order.createdAt)} ${formatTime(
           order.createdAt
         )}`,
-        items: order.items.map(item => ({
+        items: order.items.map((item, index) => ({
           ...item,
+          key: `${index}-${item.dishId}`,
           lineTotal: item.price * item.qty,
           specText: item.specs.join(' / ')
         }))
