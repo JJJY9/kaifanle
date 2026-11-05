@@ -8,7 +8,7 @@ const db = cloud.database()
 const _ = db.command
 
 const CONFIG_ID = 'app'
-const COLLECTIONS = ['categories', 'dishes', 'orders', 'config']
+const COLLECTIONS = ['categories', 'dishes', 'orders', 'config', 'wishes']
 
 const STEP_TITLES = {
   pending: '已下单',
@@ -27,6 +27,13 @@ const ALLOWED_TRANSITIONS = {
 }
 
 const MEALS = ['breakfast', 'lunch', 'dinner']
+
+const DEFAULT_BUSINESS = {
+  breakfast: { open: true, deadline: '09:30' },
+  lunch: { open: true, deadline: '12:00' },
+  dinner: { open: true, deadline: '20:00' },
+  closedNote: '今天休息，明天见'
+}
 
 exports.main = async event => {
   const { OPENID } = cloud.getWXContext()
@@ -62,14 +69,34 @@ async function route(action, payload, openid) {
       return getOrder(payload.id, openid)
     case 'createOrder':
       return createOrder(payload, openid)
+    case 'cancelOrder':
+      return cancelOrder(payload, openid)
     case 'updateOrderStatus':
       return updateOrderStatus(payload, openid)
     case 'toggleDishStatus':
       return toggleDishStatus(payload, openid)
+    case 'saveDish':
+      return saveDish(payload, openid)
+    case 'deleteDish':
+      return deleteDish(payload, openid)
     case 'getMe':
       return getMe(openid)
     case 'initDb':
       return initDb(openid)
+    case 'getBusiness':
+      return getBusiness()
+    case 'updateBusiness':
+      return updateBusiness(payload, openid)
+    case 'getMyProfile':
+      return getMyProfile(openid)
+    case 'saveMyProfile':
+      return saveMyProfile(payload, openid)
+    case 'createWish':
+      return createWish(payload, openid)
+    case 'getWishes':
+      return getWishes(openid)
+    case 'updateWish':
+      return updateWish(payload, openid)
     default:
       throw new Error('未知操作: ' + action)
   }
@@ -98,6 +125,99 @@ async function isAdminOpenid(openid) {
       Array.isArray(config.adminOpenids) &&
       config.adminOpenids.indexOf(openid) > -1
   )
+}
+
+async function ensureCollection(name) {
+  try {
+    await db.createCollection(name)
+  } catch (e) {
+    // 集合已存在时会报错，忽略即可
+  }
+}
+
+function normalizeBusiness(value) {
+  const source = value && typeof value === 'object' ? value : {}
+  const result = {
+    closedNote: String(source.closedNote || DEFAULT_BUSINESS.closedNote).slice(
+      0,
+      40
+    )
+  }
+  for (const meal of MEALS) {
+    const item =
+      source[meal] && typeof source[meal] === 'object' ? source[meal] : {}
+    const deadline = /^\d{2}:\d{2}$/.test(item.deadline || '')
+      ? item.deadline
+      : DEFAULT_BUSINESS[meal].deadline
+    result[meal] = {
+      open: item.open !== false,
+      deadline
+    }
+  }
+  return result
+}
+
+function chinaNow() {
+  const d = new Date(Date.now() + 8 * 60 * 60 * 1000)
+  return { h: d.getUTCHours(), m: d.getUTCMinutes() }
+}
+
+async function getBusiness() {
+  const config = await getConfig()
+  return normalizeBusiness(config && config.business)
+}
+
+async function updateBusiness(payload, openid) {
+  await requireAdmin(openid)
+  const config = await getConfig()
+  if (!config || !config.initialized) {
+    throw new Error('云数据库还没初始化')
+  }
+  const business = normalizeBusiness(payload)
+  await db
+    .collection('config')
+    .doc(CONFIG_ID)
+    .update({ data: { business } })
+  return business
+}
+
+function normalizeProfile(value) {
+  const source = value && typeof value === 'object' ? value : {}
+  const clean = list =>
+    Array.isArray(list)
+      ? list
+          .map(item => String(item || '').trim())
+          .filter(Boolean)
+          .slice(0, 8)
+          .map(item => item.slice(0, 8))
+      : []
+  return {
+    dislikes: clean(source.dislikes),
+    tastes: clean(source.tastes),
+    address: String(source.address || '').slice(0, 60)
+  }
+}
+
+async function getMyProfile(openid) {
+  await ensureCollection('users')
+  try {
+    const res = await db.collection('users').doc(openid).get()
+    return normalizeProfile(res.data)
+  } catch (e) {
+    return normalizeProfile(null)
+  }
+}
+
+async function saveMyProfile(payload, openid) {
+  await ensureCollection('users')
+  const profile = normalizeProfile(payload)
+  await db
+    .collection('users')
+    .doc(openid)
+    .set({
+      data: Object.assign({ updatedAt: Date.now() }, profile)
+    })
+  return profile
 }
 
 async function requireAdmin(openid) {
@@ -190,6 +310,21 @@ async function createOrder(payload, openid) {
   if (!config || !config.initialized) {
     throw new Error('云数据库还没初始化，请先到「我的」完成初始化')
   }
+
+  const meal = MEALS.indexOf(payload && payload.meal) > -1 ? payload.meal : 'lunch'
+  const business = normalizeBusiness(config.business)
+  const mealBusiness = business[meal]
+  if (!mealBusiness.open) {
+    throw new Error('这一餐还没开火，先歇歇')
+  }
+  const current = chinaNow()
+  const [deadlineHour, deadlineMinute] = mealBusiness.deadline
+    .split(':')
+    .map(Number)
+  if (current.h * 60 + current.m > deadlineHour * 60 + deadlineMinute) {
+    throw new Error('这一餐已经截单啦，下次早点来')
+  }
+
   if (!payload || !Array.isArray(payload.items) || payload.items.length === 0) {
     throw new Error('订单是空的')
   }
@@ -241,7 +376,6 @@ async function createOrder(payload, openid) {
     amount += unitPrice * qty
   }
 
-  const meal = MEALS.indexOf(payload.meal) > -1 ? payload.meal : 'lunch'
   const expectedTime = String(payload.expectedTime || '尽快').slice(0, 20)
   const mode = String(payload.mode || '在家吃').slice(0, 20)
   const note = String(payload.note || '').slice(0, 100)
@@ -286,8 +420,44 @@ async function createOrder(payload, openid) {
   return Object.assign({}, order, { id: addRes._id })
 }
 
-async function updateOrderStatus(payload, openid) {
-  await requireAdmin(openid)
+async function cancelOrder(payload, openid) {
+  if (!payload.id) {
+    throw new Error('缺少订单 ID')
+  }
+  const res = await db.collection('orders').doc(payload.id).get()
+  const order = res.data
+  const admin = await isAdminOpenid(openid)
+  if (order._openid !== openid && !admin) {
+    throw new Error('没有权限取消这个订单')
+  }
+  if (order.status !== 'pending') {
+    throw new Error('已经接单啦，不能取消')
+  }
+
+  const entry = {
+    status: 'cancelled',
+    title: STEP_TITLES.cancelled,
+    time: Date.now()
+  }
+  await db
+    .collection('orders')
+    .doc(payload.id)
+    .update({
+      data: {
+        status: 'cancelled',
+        timeline: _.push([entry])
+      }
+    })
+
+  return withId(
+    Object.assign({}, order, {
+      status: 'cancelled',
+      timeline: (order.timeline || []).concat([entry])
+    })
+  )
+}
+
+async function updateOrderStatus(payload, openid) {  await requireAdmin(openid)
   const id = payload.id
   const status = payload.status
   if (!id || !status) {
@@ -363,12 +533,184 @@ async function toggleDishStatus(payload, openid) {
   }
   const res = await db.collection('dishes').doc(payload.id).get()
   const dish = res.data
-  const status = dish.status === 'soldout' ? 'on' : 'soldout'
+  // 供应中 -> 售罄；售罄/已下架 -> 恢复供应
+  const status = dish.status === 'on' ? 'soldout' : 'on'
   await db
     .collection('dishes')
     .doc(payload.id)
     .update({ data: { status } })
   return withId(Object.assign({}, dish, { status }))
+}
+
+const MEAL_KEYS = ['breakfast', 'lunch', 'dinner']
+const DISH_STATUS = ['on', 'soldout', 'off']
+
+function cleanTextArray(value, maxCount, maxLength) {
+  if (!Array.isArray(value)) {
+    return []
+  }
+  return value
+    .map(item => String(item || '').trim())
+    .filter(Boolean)
+    .slice(0, maxCount)
+    .map(item => item.slice(0, maxLength))
+}
+
+async function saveDish(payload, openid) {
+  await requireAdmin(openid)
+  if (!payload || typeof payload !== 'object') {
+    throw new Error('参数不完整')
+  }
+
+  const name = String(payload.name || '').trim()
+  if (!name || name.length > 20) {
+    throw new Error('菜品名称需要 1-20 个字')
+  }
+  const desc = String(payload.desc || '').trim().slice(0, 40)
+  const price = Number(payload.price)
+  if (!isFinite(price) || price < 0 || price > 999) {
+    throw new Error('价格需要是 0-999 之间的数字')
+  }
+  const categoryId = String(payload.categoryId || '')
+  if (!categoryId) {
+    throw new Error('请选择分类')
+  }
+  try {
+    await db.collection('categories').doc(categoryId).get()
+  } catch (e) {
+    throw new Error('分类不存在')
+  }
+
+  const meals = (Array.isArray(payload.meals) ? payload.meals : []).filter(
+    meal => MEAL_KEYS.indexOf(meal) > -1
+  )
+  if (!meals.length) {
+    throw new Error('至少选择一个餐次')
+  }
+
+  const status =
+    DISH_STATUS.indexOf(payload.status) > -1 ? payload.status : 'on'
+  const color = /^#[0-9a-fA-F]{6}$/.test(payload.color || '')
+    ? payload.color
+    : '#FFD23F'
+  const tags = cleanTextArray(payload.tags, 5, 8)
+  const spicyLevels = cleanTextArray(payload.spicyLevels, 5, 4)
+  const addons = (Array.isArray(payload.addons) ? payload.addons : [])
+    .slice(0, 10)
+    .map((addon, index) => ({
+      id: String((addon && addon.id) || 'a' + (index + 1)),
+      name: String((addon && addon.name) || '').trim().slice(0, 10),
+      price: Math.max(0, Math.min(999, Number(addon && addon.price) || 0))
+    }))
+    .filter(addon => addon.name)
+
+  const fields = {
+    name,
+    char: name.slice(0, 1),
+    desc,
+    price,
+    categoryId,
+    tags,
+    spicyLevels,
+    addons,
+    color,
+    meals,
+    status,
+    isRecommended: Boolean(payload.isRecommended)
+  }
+
+  if (payload.id) {
+    const id = String(payload.id)
+    const res = await db.collection('dishes').doc(id).get()
+    const dish = res.data
+    await db.collection('dishes').doc(id).update({ data: fields })
+    return withId(Object.assign({}, dish, fields))
+  }
+
+  const lastRes = await db
+    .collection('dishes')
+    .orderBy('sort', 'desc')
+    .limit(1)
+    .get()
+  const sort = lastRes.data.length
+    ? Number(lastRes.data[0].sort || 0) + 10
+    : 10
+  const data = Object.assign({}, fields, { sort })
+  const addRes = await db.collection('dishes').add({ data })
+  return withId(Object.assign({}, data, { _id: addRes._id }))
+}
+
+async function deleteDish(payload, openid) {
+  await requireAdmin(openid)
+  if (!payload.id) {
+    throw new Error('缺少菜品 ID')
+  }
+  try {
+    await db.collection('dishes').doc(payload.id).get()
+  } catch (e) {
+    throw new Error('菜品不存在')
+  }
+  await db.collection('dishes').doc(payload.id).remove()
+  return { id: payload.id }
+}
+
+const WISH_STATUS = ['pending', 'planned', 'done']
+
+async function createWish(payload, openid) {
+  const content = String((payload && payload.content) || '').trim()
+  if (!content || content.length > 50) {
+    throw new Error('愿望需要 1-50 个字')
+  }
+  await ensureCollection('wishes')
+  const now = Date.now()
+  const wish = {
+    _openid: openid,
+    content,
+    status: 'pending',
+    plannedDate: '',
+    reply: '',
+    createdAt: now,
+    updatedAt: now
+  }
+  const addRes = await db.collection('wishes').add({ data: wish })
+  return withId(Object.assign({}, wish, { _id: addRes._id }))
+}
+
+async function getWishes(openid) {
+  await ensureCollection('wishes')
+  const admin = await isAdminOpenid(openid)
+  let query = db.collection('wishes')
+  if (!admin) {
+    query = query.where({ _openid: openid })
+  }
+  const res = await query.orderBy('createdAt', 'desc').limit(50).get()
+  return res.data.map(withId)
+}
+
+async function updateWish(payload, openid) {
+  await requireAdmin(openid)
+  const id = String((payload && payload.id) || '')
+  if (!id) {
+    throw new Error('缺少愿望 ID')
+  }
+  const res = await db.collection('wishes').doc(id).get()
+  const wish = res.data
+  const data = {}
+  if (payload.status !== undefined) {
+    if (WISH_STATUS.indexOf(payload.status) === -1) {
+      throw new Error('愿望状态不正确')
+    }
+    data.status = payload.status
+  }
+  if (payload.plannedDate !== undefined) {
+    data.plannedDate = String(payload.plannedDate || '').slice(0, 20)
+  }
+  if (payload.reply !== undefined) {
+    data.reply = String(payload.reply || '').slice(0, 50)
+  }
+  data.updatedAt = Date.now()
+  await db.collection('wishes').doc(id).update({ data })
+  return withId(Object.assign({}, wish, data))
 }
 
 // 一次性初始化：写入默认菜单，并把第一个调用者设为管理员。
@@ -433,6 +775,7 @@ async function initDb(openid) {
     initialized: true,
     adminOpenids: admins,
     orderSeq: (existing && existing.orderSeq) || 0,
+    business: normalizeBusiness(existing && existing.business),
     updatedAt: Date.now()
   }
   await db.collection('config').doc(CONFIG_ID).set({ data: config })

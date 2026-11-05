@@ -1,0 +1,162 @@
+<view class="page">
+  <view wx:if="{{loading}}" class="skeleton sk"></view>
+
+  <block wx:else>
+    <view class="card block">
+      <view class="block-title">基本信息</view>
+
+      <view class="field">
+        <text class="label">名称</text>
+        <input
+          class="input"
+          placeholder="比如：番茄牛腩饭"
+          value="{{name}}"
+          maxlength="20"
+          bindinput="onName"
+        />
+      </view>
+
+      <view class="field">
+        <text class="label">描述</text>
+        <input
+          class="input"
+          placeholder="一句话介绍，最多 40 字"
+          value="{{desc}}"
+          maxlength="40"
+          bindinput="onDesc"
+        />
+      </view>
+
+      <view class="field">
+        <text class="label">价格</text>
+        <input
+          class="input"
+          type="digit"
+          placeholder="0"
+          value="{{price}}"
+          bindinput="onPrice"
+        />
+      </view>
+
+      <view class="field field-column">
+        <text class="label">分类</text>
+        <view class="chips">
+          <view
+            wx:for="{{categories}}"
+            wx:key="id"
+            class="chip {{categoryId === item.id ? 'active' : ''}}"
+            data-id="{{item.id}}"
+            bindtap="onSelectCategory"
+          >{{item.name}}</view>
+        </view>
+      </view>
+
+      <view class="field field-column">
+        <text class="label">餐次</text>
+        <view class="chips">
+          <view
+            wx:for="{{meals}}"
+            wx:key="id"
+            class="chip {{mealChecked[item.id] ? 'active' : ''}}"
+            data-id="{{item.id}}"
+            bindtap="onToggleMeal"
+          >{{item.name}}</view>
+        </view>
+      </view>
+
+      <view class="field">
+        <text class="label">标签</text>
+        <input
+          class="input"
+          placeholder="逗号分隔，如：招牌，微辣"
+          value="{{tagsText}}"
+          bindinput="onTags"
+        />
+      </view>
+
+      <view class="field">
+        <text class="label">辣度</text>
+        <input
+          class="input"
+          placeholder="逗号分隔，如：不辣，微辣"
+          value="{{spicyText}}"
+          bindinput="onSpicy"
+        />
+      </view>
+    </view>
+
+    <view class="card block">
+      <view class="block-title">加料</view>
+      <view wx:for="{{addons}}" wx:key="key" class="addon-row">
+        <input
+          class="addon-name"
+          placeholder="加料名"
+          value="{{item.name}}"
+          data-index="{{index}}"
+          bindinput="onAddonName"
+        />
+        <input
+          class="addon-price"
+          type="digit"
+          placeholder="价格"
+          value="{{item.price}}"
+          data-index="{{index}}"
+          bindinput="onAddonPrice"
+        />
+        <view class="remove" data-index="{{index}}" bindtap="onRemoveAddon">×</view>
+      </view>
+      <view class="add-row" bindtap="onAddAddon">+ 添加加料</view>
+    </view>
+
+    <view class="card block">
+      <view class="block-title">展示</view>
+
+      <view class="field field-column">
+        <text class="label">色块</text>
+        <view class="colors">
+          <view
+            wx:for="{{colors}}"
+            wx:key="*this"
+            class="color-dot {{colorIndex === index ? 'active' : ''}}"
+            style="background: {{item}};"
+            data-index="{{index}}"
+            bindtap="onSelectColor"
+          ></view>
+        </view>
+      </view>
+
+      <view class="field">
+        <text class="label">推荐</text>
+        <switch
+          checked="{{isRecommended}}"
+          color="#FF6B35"
+          bindchange="onRecommended"
+        />
+      </view>
+
+      <view class="field field-column">
+        <text class="label">状态</text>
+        <view class="chips">
+          <view
+            wx:for="{{statuses}}"
+            wx:key="id"
+            class="chip {{status === item.id ? 'active' : ''}}"
+            data-id="{{item.id}}"
+            bindtap="onSelectStatus"
+          >{{item.name}}</view>
+        </view>
+      </view>
+    </view>
+
+    <view
+      class="save-btn {{saving ? 'disabled' : ''}}"
+      bindtap="onSave"
+    >{{saving ? '保存中…' : (isEdit ? '保存修改' : '创建菜品')}}</view>
+
+    <view
+      wx:if="{{isEdit}}"
+      class="delete-btn {{deleting ? 'disabled' : ''}}"
+      bindtap="onDelete"
+    >{{deleting ? '删除中…' : '删除这道菜'}}</view>
+  </block>
+</view>

@@ -1,13 +1,18 @@
 import * as mock from './mock'
 import { USE_CLOUD } from '../config'
 import type {
+  Business,
   Category,
   CreateOrderPayload,
   Dish,
+  DishInput,
   InitResult,
   MeInfo,
   Order,
-  OrderStatus
+  OrderStatus,
+  UserProfile,
+  Wish,
+  WishStatus
 } from './types'
 
 // 所有云调用统一走 cloudfunctions/api，按 action 路由。
@@ -54,6 +59,20 @@ export async function toggleDishStatus(id: string): Promise<Dish | null> {
   return mock.toggleDishStatus(id)
 }
 
+export async function saveDish(payload: DishInput): Promise<Dish> {
+  if (USE_CLOUD) {
+    return callApi<Dish>('saveDish', payload)
+  }
+  return mock.saveDish(payload)
+}
+
+export async function deleteDish(id: string): Promise<{ id: string }> {
+  if (USE_CLOUD) {
+    return callApi<{ id: string }>('deleteDish', { id })
+  }
+  return mock.deleteDish(id)
+}
+
 export async function getOrders(): Promise<Order[]> {
   if (USE_CLOUD) {
     return callApi<Order[]>('getOrders')
@@ -82,6 +101,13 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
   return mock.createOrder(payload)
 }
 
+export async function cancelOrder(id: string): Promise<Order | null> {
+  if (USE_CLOUD) {
+    return callApi<Order | null>('cancelOrder', { id })
+  }
+  return mock.cancelOrder(id)
+}
+
 export async function updateOrderStatus(
   id: string,
   status: OrderStatus
@@ -104,4 +130,60 @@ export async function initDb(): Promise<InitResult> {
     return callApi<InitResult>('initDb')
   }
   return mock.initDb()
+}
+
+export async function createWish(content: string): Promise<Wish> {
+  if (USE_CLOUD) {
+    return callApi<Wish>('createWish', { content })
+  }
+  return mock.createWish(content)
+}
+
+export async function getWishes(): Promise<Wish[]> {
+  if (USE_CLOUD) {
+    return callApi<Wish[]>('getWishes')
+  }
+  return mock.getWishes()
+}
+
+export async function updateWish(payload: {
+  id: string
+  status?: WishStatus
+  plannedDate?: string
+  reply?: string
+}): Promise<Wish> {
+  if (USE_CLOUD) {
+    return callApi<Wish>('updateWish', payload)
+  }
+  return mock.updateWish(payload)
+}
+
+export async function getBusiness(): Promise<Business> {
+  if (USE_CLOUD) {
+    return callApi<Business>('getBusiness')
+  }
+  return mock.getBusiness()
+}
+
+export async function updateBusiness(payload: Business): Promise<Business> {
+  if (USE_CLOUD) {
+    return callApi<Business>('updateBusiness', payload)
+  }
+  return mock.updateBusiness(payload)
+}
+
+export async function getMyProfile(): Promise<UserProfile> {
+  if (USE_CLOUD) {
+    return callApi<UserProfile>('getMyProfile')
+  }
+  return mock.getMyProfile()
+}
+
+export async function saveMyProfile(
+  payload: UserProfile
+): Promise<UserProfile> {
+  if (USE_CLOUD) {
+    return callApi<UserProfile>('saveMyProfile', payload)
+  }
+  return mock.saveMyProfile(payload)
 }

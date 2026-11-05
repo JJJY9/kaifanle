@@ -113,6 +113,10 @@ function makeCollection(name) {
             }
           })
           return { stats: { updated: 1 } }
+        },
+        async remove() {
+          const existed = ensure(name).delete(id)
+          return { stats: { removed: existed ? 1 : 0 } }
         }
       }
     },
@@ -207,6 +211,23 @@ async function run() {
   assert.strictEqual(res.ok, true)
   assert.strictEqual(res.data.already, true)
 
+  // 测试期间把三餐都开到 23:59，避免测试受当前时间影响
+  res = await call(
+    'updateBusiness',
+    {
+      breakfast: { open: true, deadline: '23:59' },
+      lunch: { open: true, deadline: '23:59' },
+      dinner: { open: true, deadline: '23:59' },
+      closedNote: '测试休息'
+    },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+
+  res = await call('getBusiness', {}, 'girl-openid')
+  assert.strictEqual(res.data.lunch.open, true)
+  assert.strictEqual(res.data.lunch.deadline, '23:59')
+
   res = await call('getCategories', {}, 'girl-openid')
   assert.strictEqual(res.ok, true)
   assert.strictEqual(res.data.length, 5)
@@ -214,6 +235,61 @@ async function run() {
   res = await call('getDishes', {}, 'girl-openid')
   assert.strictEqual(res.ok, true)
   assert.strictEqual(res.data.length, 14)
+
+  // 菜品管理：权限、创建、编辑、下架
+  const dishPayload = {
+    name: '测试菜',
+    desc: '测试用',
+    price: 12,
+    categoryId: 'staple',
+    tags: ['测试'],
+    spicyLevels: [],
+    addons: [],
+    color: '#FFD23F',
+    meals: ['lunch'],
+    status: 'on',
+    isRecommended: false
+  }
+
+  res = await call('saveDish', dishPayload, 'girl-openid')
+  assert.strictEqual(res.ok, false)
+
+  res = await call('saveDish', dishPayload, 'admin-openid')
+  assert.strictEqual(res.ok, true)
+  const createdDishId = res.data.id
+  assert.strictEqual(res.data.char, '测')
+
+  res = await call(
+    'saveDish',
+    {
+      id: createdDishId,
+      name: '测试菜改',
+      desc: '改',
+      price: 15,
+      categoryId: 'staple',
+      tags: [],
+      spicyLevels: [],
+      addons: [],
+      color: '#2D9CFF',
+      meals: ['lunch', 'dinner'],
+      status: 'off',
+      isRecommended: false
+    },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.price, 15)
+  assert.strictEqual(res.data.status, 'off')
+
+  res = await call('getDishes', {}, 'admin-openid')
+  assert.ok(
+    res.data.some(dish => dish.id === createdDishId && dish.status === 'off')
+  )
+
+  res = await call('deleteDish', { id: createdDishId }, 'admin-openid')
+  assert.strictEqual(res.ok, true)
+  res = await call('getDishes', {}, 'admin-openid')
+  assert.ok(!res.data.some(dish => dish.id === createdDishId))
 
   const created = await call(
     'createOrder',
@@ -323,8 +399,153 @@ async function run() {
   res = await call('getMe', {}, 'girl-openid')
   assert.strictEqual(res.data.isAdmin, false)
 
+  // 顾客取消未接单订单
+  const order2 = await call(
+    'createOrder',
+    {
+      items: [{ dishId: 'd02', qty: 1, specs: [] }],
+      meal: 'lunch',
+      expectedTime: '12:30',
+      mode: '在家吃',
+      note: ''
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(order2.ok, true)
+
+  res = await call('cancelOrder', { id: order2.data.id }, 'stranger-openid')
+  assert.strictEqual(res.ok, false)
+
+  res = await call('cancelOrder', { id: order2.data.id }, 'girl-openid')
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.status, 'cancelled')
+
+  res = await call('cancelOrder', { id: order2.data.id }, 'admin-openid')
+  assert.strictEqual(res.ok, false)
+
+  // 许愿池
+  res = await call('createWish', { content: '想吃火锅' }, 'girl-openid')
+  assert.strictEqual(res.ok, true)
+  const wishId = res.data.id
+
+  res = await call('getWishes', {}, 'girl-openid')
+  assert.strictEqual(res.data.length, 1)
+
+  res = await call('getWishes', {}, 'admin-openid')
+  assert.strictEqual(res.data.length, 1)
+
+  res = await call(
+    'updateWish',
+    { id: wishId, status: 'planned', plannedDate: '明天晚餐' },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, false)
+
+  res = await call(
+    'updateWish',
+    { id: wishId, status: 'planned', plannedDate: '明天晚餐' },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.status, 'planned')
+  assert.strictEqual(res.data.plannedDate, '明天晚餐')
+
+  // 营业设置：非管理员不能改；关掉的餐次不能下单；截单时间后不能下单
+  res = await call(
+    'updateBusiness',
+    {
+      breakfast: { open: true, deadline: '23:59' },
+      lunch: { open: true, deadline: '23:59' },
+      dinner: { open: false, deadline: '23:59' },
+      closedNote: '今天休息'
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, false)
+
+  res = await call(
+    'updateBusiness',
+    {
+      breakfast: { open: true, deadline: '23:59' },
+      lunch: { open: true, deadline: '23:59' },
+      dinner: { open: false, deadline: '23:59' },
+      closedNote: '今天休息'
+    },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.dinner.open, false)
+
+  res = await call(
+    'createOrder',
+    {
+      items: [{ dishId: 'd02', qty: 1, specs: [] }],
+      meal: 'dinner',
+      expectedTime: '18:00',
+      mode: '在家吃',
+      note: ''
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, false)
+
+  res = await call(
+    'updateBusiness',
+    {
+      breakfast: { open: true, deadline: '23:59' },
+      lunch: { open: true, deadline: '00:00' },
+      dinner: { open: true, deadline: '23:59' },
+      closedNote: '测试休息'
+    },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+
+  res = await call(
+    'createOrder',
+    {
+      items: [{ dishId: 'd02', qty: 1, specs: [] }],
+      meal: 'lunch',
+      expectedTime: '12:00',
+      mode: '在家吃',
+      note: ''
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, false)
+
+  res = await call(
+    'updateBusiness',
+    {
+      breakfast: { open: true, deadline: '23:59' },
+      lunch: { open: true, deadline: '23:59' },
+      dinner: { open: true, deadline: '23:59' },
+      closedNote: '测试休息'
+    },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+
+  // 口味档案
+  res = await call('getMyProfile', {}, 'girl-openid')
+  assert.deepStrictEqual(res.data.dislikes, [])
+
+  res = await call(
+    'saveMyProfile',
+    { dislikes: ['香菜'], tastes: ['微辣'], address: '家里' },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, true)
+
+  res = await call('getMyProfile', {}, 'girl-openid')
+  assert.deepStrictEqual(res.data.dislikes, ['香菜'])
+  assert.strictEqual(res.data.address, '家里')
+
+  res = await call('getMyProfile', {}, 'admin-openid')
+  assert.deepStrictEqual(res.data.dislikes, [])
+
   console.log(
-    '云函数冒烟测试通过：初始化、菜单、下单计价、权限、状态流转、售罄拦截、订阅消息。'
+    '云函数冒烟测试通过：初始化、菜单、菜品 CRUD、下单计价、权限、状态流转、取消订单、许愿池、营业设置、口味档案、售罄拦截、订阅消息。'
   )
 }
 

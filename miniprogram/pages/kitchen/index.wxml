@@ -15,6 +15,7 @@
 
   <view class="notify-bar">
     <view class="notify-btn" bindtap="onSubscribeNotice">订阅新订单提醒</view>
+    <view class="notify-btn settings" bindtap="onBusiness">营业设置</view>
     <text class="notify-hint">一次授权提醒下一单</text>
   </view>
 
@@ -48,19 +49,28 @@
       </view>
     </view>
 
-    <view class="section-title display menu-title">菜品管理</view>
+    <view class="menu-head">
+      <view class="section-title display menu-title">菜品管理</view>
+      <view class="add-dish" bindtap="onAddDish">+ 新增</view>
+    </view>
     <view class="menu card">
-      <view wx:for="{{dishes}}" wx:key="id" class="dish-row">
+      <view
+        wx:for="{{dishes}}"
+        wx:key="id"
+        class="dish-row"
+        data-id="{{item.id}}"
+        bindtap="onEditDish"
+      >
         <view class="dish-dot" style="background: {{item.color}};">{{item.char}}</view>
         <view class="dish-info">
           <view class="dish-name">{{item.name}}</view>
           <view class="dish-price">¥{{item.price}}</view>
         </view>
         <view
-          class="dish-toggle {{item.status === 'soldout' ? 'off' : ''}}"
+          class="dish-toggle {{item.status !== 'on' ? 'off' : ''}} {{item.status === 'off' ? 'hidden' : ''}}"
           data-id="{{item.id}}"
-          bindtap="onToggleDish"
-        >{{item.status === 'soldout' ? '已售罄' : '供应中'}}</view>
+          catchtap="onToggleDish"
+        >{{item.status === 'off' ? '已下架' : (item.status === 'soldout' ? '已售罄' : '供应中')}}</view>
       </view>
     </view>
   </block>

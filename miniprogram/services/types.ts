@@ -36,6 +36,21 @@ export interface Category {
   color: string
 }
 
+export interface DishInput {
+  id?: string
+  name: string
+  desc: string
+  price: number
+  categoryId: string
+  tags: string[]
+  spicyLevels: string[]
+  addons: Addon[]
+  color: string
+  meals: MealId[]
+  status: 'on' | 'soldout' | 'off'
+  isRecommended: boolean
+}
+
 export interface CartLine {
   key: string
   dishId: string
@@ -95,4 +110,34 @@ export interface InitResult {
   initialized: boolean
   already: boolean
   isAdmin: boolean
+}
+
+export type WishStatus = 'pending' | 'planned' | 'done'
+
+export interface Wish {
+  id: string
+  content: string
+  status: WishStatus
+  plannedDate: string
+  reply: string
+  createdAt: number
+  updatedAt: number
+}
+
+export interface MealBusiness {
+  open: boolean
+  deadline: string
+}
+
+export interface Business {
+  breakfast: MealBusiness
+  lunch: MealBusiness
+  dinner: MealBusiness
+  closedNote: string
+}
+
+export interface UserProfile {
+  dislikes: string[]
+  tastes: string[]
+  address: string
 }

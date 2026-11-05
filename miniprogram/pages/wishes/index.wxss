@@ -1,0 +1,150 @@
+.page {
+  min-height: 100vh;
+  padding: 24rpx 24rpx 80rpx;
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  padding: 8rpx 4rpx 24rpx;
+}
+
+.title {
+  font-size: 52rpx;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.sub {
+  margin-top: 4rpx;
+  color: #5C5C5C;
+  font-size: 24rpx;
+}
+
+.wish-form {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  padding: 18rpx;
+}
+
+.wish-input {
+  flex: 1;
+  height: 78rpx;
+  padding: 0 20rpx;
+  background: #FFFDF6;
+  border: 3rpx solid #111111;
+  border-radius: 20rpx;
+  font-size: 26rpx;
+}
+
+.wish-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 78rpx;
+  padding: 0 32rpx;
+  background: #FF6B35;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  box-shadow: 4rpx 4rpx 0 #111111;
+  font-size: 26rpx;
+  font-weight: 800;
+}
+
+.wish-submit:active {
+  transform: translate(4rpx, 4rpx);
+  box-shadow: none;
+}
+
+.wish-submit.disabled {
+  opacity: 0.6;
+}
+
+.wish {
+  padding: 24rpx;
+  margin-top: 20rpx;
+}
+
+.wish-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wish-status {
+  padding: 4rpx 18rpx;
+  background: #FFD23F;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
+.wish-status.planned {
+  background: #2D9CFF;
+  color: #FFFFFF;
+}
+
+.wish-status.done {
+  background: #EFE9DC;
+  color: #5C5C5C;
+}
+
+.wish-date {
+  color: #5C5C5C;
+  font-size: 22rpx;
+}
+
+.wish-content {
+  margin-top: 16rpx;
+  font-size: 32rpx;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.wish-plan,
+.wish-reply {
+  margin-top: 10rpx;
+  padding: 8rpx 14rpx;
+  background: #FFFDF6;
+  border: 3rpx dashed rgba(17, 17, 17, 0.3);
+  border-radius: 14rpx;
+  color: #5C5C5C;
+  font-size: 23rpx;
+}
+
+.wish-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 14rpx;
+  margin-top: 18rpx;
+}
+
+.wish-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 64rpx;
+  padding: 0 28rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  font-weight: 800;
+}
+
+.wish-btn.primary {
+  background: #2FBF71;
+  box-shadow: 4rpx 4rpx 0 #111111;
+}
+
+.wish-btn.primary:active {
+  transform: translate(4rpx, 4rpx);
+  box-shadow: none;
+}
+
+.sk {
+  height: 240rpx;
+  margin-top: 20rpx;
+}

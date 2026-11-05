@@ -11,6 +11,11 @@
       class="notify-ready"
       bindtap="onSubscribeReady"
     >出锅时提醒我</view>
+    <view
+      wx:if="{{order.status === 'pending'}}"
+      class="cancel-order"
+      bindtap="onCancelOrder"
+    >取消订单</view>
   </view>
 
   <view class="block card">

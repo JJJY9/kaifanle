@@ -1,5 +1,5 @@
 import type { MealId } from '../../services/types'
-import { createOrder } from '../../services/api'
+import { createOrder, getBusiness } from '../../services/api'
 import { cart } from '../../store/cart'
 import { MEALS } from '../../utils/constants'
 import { currentMeal } from '../../utils/format'
@@ -33,6 +33,8 @@ Page({
     modes: MODES,
     modeIndex: 0,
     note: '',
+    closed: false,
+    closedText: '',
     submitting: false
   },
 
@@ -49,6 +51,35 @@ Page({
       meal,
       timeOptions: TIME_OPTIONS[meal] || TIME_OPTIONS.lunch
     })
+    this.checkClosed(meal)
+  },
+
+  async checkClosed(meal: MealId) {
+    try {
+      const business = await getBusiness()
+      const setting = business[meal]
+      if (!setting) {
+        this.setData({ closed: false, closedText: '' })
+        return
+      }
+      const now = new Date()
+      const nowMinutes = now.getHours() * 60 + now.getMinutes()
+      const [deadlineHour, deadlineMinute] = setting.deadline
+        .split(':')
+        .map(Number)
+      const pastDeadline = nowMinutes > deadlineHour * 60 + deadlineMinute
+      const closed = !setting.open || pastDeadline
+      this.setData({
+        closed,
+        closedText: closed
+          ? !setting.open
+            ? business.closedNote || '今天休息，明天见'
+            : '这一餐已经截单啦，下次早点来'
+          : ''
+      })
+    } catch (e) {
+      // 营业信息获取失败时由服务端兜底校验
+    }
   },
 
   onMealChange(e: any) {
@@ -58,6 +89,7 @@ Page({
       timeOptions: TIME_OPTIONS[meal],
       timeIndex: 0
     })
+    this.checkClosed(meal)
   },
 
   onTimeSelect(e: any) {
@@ -85,6 +117,13 @@ Page({
 
   async onSubmit() {
     if (this.data.submitting || !this.data.lines.length) {
+      return
+    }
+    if (this.data.closed) {
+      wx.showToast({
+        title: this.data.closedText || '这一餐休息中',
+        icon: 'none'
+      })
       return
     }
     this.setData({ submitting: true })

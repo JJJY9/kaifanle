@@ -48,6 +48,13 @@ Page({
         desc: '洗碗券、奶茶券、夸夸卡',
         icon: '券',
         color: '#FFD23F'
+      },
+      {
+        key: 'prefs',
+        label: '口味与地址',
+        desc: '忌口、口味、常用地址',
+        icon: '味',
+        color: '#FF6B35'
       }
     ]
 
@@ -114,6 +121,16 @@ Page({
 
   async onEntryTap(e: any) {
     const key = e.currentTarget.dataset.key
+
+    if (key === 'wish') {
+      wx.navigateTo({ url: '/pages/wishes/index' })
+      return
+    }
+
+    if (key === 'prefs') {
+      wx.navigateTo({ url: '/pages/preferences/index' })
+      return
+    }
 
     if (key === 'kitchen') {
       wx.navigateTo({ url: '/pages/kitchen/index' })

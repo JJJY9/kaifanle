@@ -116,6 +116,21 @@ Page({
     }
   },
 
+  onAddDish() {
+    wx.navigateTo({ url: '/pages/dish-edit/index' })
+  },
+
+  onBusiness() {
+    wx.navigateTo({ url: '/pages/business/index' })
+  },
+
+  onEditDish(e: any) {
+    const id = e.currentTarget.dataset.id
+    if (id) {
+      wx.navigateTo({ url: '/pages/dish-edit/index?id=' + id })
+    }
+  },
+
   async onSubscribeNotice() {
     if (!TEMPLATE_NEW_ORDER) {
       wx.showToast({ title: '还没配置提醒模板', icon: 'none' })

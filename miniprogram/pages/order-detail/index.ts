@@ -1,5 +1,5 @@
 import type { Order, OrderStatus } from '../../services/types'
-import { getOrder } from '../../services/api'
+import { getOrder, cancelOrder } from '../../services/api'
 import { cart } from '../../store/cart'
 import { STATUS_STEP_TEXT, STATUS_TEXT, mealName } from '../../utils/constants'
 import { formatDate, formatTime } from '../../utils/format'
@@ -130,6 +130,32 @@ Page({
       })
     } catch (e) {
       wx.showToast({ title: '订阅失败，稍后再试', icon: 'none' })
+    }
+  },
+
+  async onCancelOrder() {
+    const order = this.data.order
+    if (!order || order.status !== 'pending') {
+      return
+    }
+    const res: any = await wx.showModal({
+      title: '取消这一单？',
+      content: '还没接单，可以取消。取消后要重新点哦。',
+      confirmText: '取消订单',
+      cancelText: '再想想'
+    })
+    if (!res.confirm) {
+      return
+    }
+    try {
+      await cancelOrder(order.id)
+      wx.showToast({ title: '已取消', icon: 'none' })
+      this.load()
+    } catch (e: any) {
+      wx.showToast({
+        title: String((e && e.message) || '取消失败').slice(0, 40),
+        icon: 'none'
+      })
     }
   },
 

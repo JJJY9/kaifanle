@@ -23,6 +23,7 @@
         bindtap="onSelectMeal"
       >{{item.name}}</view>
     </view>
+    <view wx:if="{{mealNotice}}" class="meal-notice">{{mealNotice}}</view>
   </view>
 
   <view wx:if="{{loading}}" class="loading">

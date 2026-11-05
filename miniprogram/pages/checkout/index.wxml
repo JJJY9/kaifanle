@@ -1,4 +1,6 @@
 <view class="page">
+  <view wx:if="{{closed}}" class="closed-banner">{{closedText}}</view>
+
   <view class="block card">
     <view class="block-title">送到哪一顿</view>
     <view class="chip-row">
@@ -70,7 +72,7 @@
     <text class="submit-price">¥{{total}}</text>
   </view>
   <view
-    class="submit-btn {{submitting ? 'disabled' : ''}}"
+    class="submit-btn {{submitting || closed ? 'disabled' : ''}}"
     bindtap="onSubmit"
   >{{submitting ? '提交中…' : '提交订单'}}</view>
 </view>

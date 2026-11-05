@@ -2,6 +2,16 @@
   padding: 24rpx 24rpx 0;
 }
 
+.closed-banner {
+  margin-bottom: 24rpx;
+  padding: 16rpx 20rpx;
+  background: #FFD23F;
+  border: 3rpx dashed #111111;
+  border-radius: 18rpx;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
 .block {
   padding: 24rpx;
   margin-bottom: 24rpx;

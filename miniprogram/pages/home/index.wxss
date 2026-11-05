@@ -111,6 +111,16 @@
   color: #FFFFFF;
 }
 
+.meal-notice {
+  margin-top: 16rpx;
+  padding: 12rpx 20rpx;
+  background: #FFD23F;
+  border: 3rpx dashed #111111;
+  border-radius: 16rpx;
+  font-size: 23rpx;
+  font-weight: 700;
+}
+
 .hero {
   margin-top: 32rpx;
   background: #FFFFFF;

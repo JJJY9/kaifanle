@@ -1,5 +1,5 @@
 import type { Category, Dish, MealId } from '../../services/types'
-import { getCategories, getDishes } from '../../services/api'
+import { getCategories, getDishes, getBusiness } from '../../services/api'
 import { cart } from '../../store/cart'
 import { MEALS } from '../../utils/constants'
 import { USE_CLOUD } from '../../config'
@@ -29,6 +29,7 @@ Page({
     skuVisible: false,
     activeDish: null as Dish | null,
     loading: true,
+    mealNotice: '',
     emptyDesc: '换个餐次看看，或者去许愿池点个菜'
   },
 
@@ -61,7 +62,6 @@ Page({
     if (tabBar) {
       tabBar.setData({ selected: 0 })
     }
-    this.setData({ isOpen: isOpenNow() })
     // 每次回到首页都刷新菜单，保证厨房端的售罄/上架能同步过来
     this.loadMenu()
   },
@@ -79,9 +79,10 @@ Page({
       this.setData({ loading: true })
     }
     try {
-      const [categories, dishes] = await Promise.all([
+      const [categories, dishes, business] = await Promise.all([
         getCategories(),
-        getDishes()
+        getDishes(),
+        getBusiness().catch(() => null)
       ])
       const meal = this.data.selectedMeal
       const available = dishes.filter(
@@ -96,10 +97,31 @@ Page({
       const hero =
         available.find(dish => dish.isRecommended) || available[0] || null
 
+      let isOpen = isOpenNow()
+      let mealNotice = ''
+      const mealSetting = business ? business[meal] : null
+      if (mealSetting) {
+        const now = new Date()
+        const nowMinutes = now.getHours() * 60 + now.getMinutes()
+        const [deadlineHour, deadlineMinute] = mealSetting.deadline
+          .split(':')
+          .map(Number)
+        const pastDeadline =
+          nowMinutes > deadlineHour * 60 + deadlineMinute
+        isOpen = mealSetting.open && !pastDeadline
+        mealNotice = !mealSetting.open
+          ? business!.closedNote || '今天休息，明天见'
+          : pastDeadline
+          ? '这一餐已经截单啦，下次早点来'
+          : ''
+      }
+
       this.setData({
         sections,
         hero,
         loading: false,
+        isOpen,
+        mealNotice,
         emptyDesc:
           USE_CLOUD && sections.length === 0
             ? '云数据库可能还没初始化，去「我的」看一眼'
@@ -189,6 +211,13 @@ Page({
     if (this.data.cartCount <= 0) {
       return
     }
+    if (!this.data.isOpen) {
+      wx.showToast({
+        title: this.data.mealNotice || '这一餐休息中',
+        icon: 'none'
+      })
+      return
+    }
     wx.navigateTo({
       url: `/pages/checkout/index?meal=${this.data.selectedMeal}`
     })
@@ -197,9 +226,21 @@ Page({
   onPullDownRefresh() {
     this.setData({
       dateText: formatDate(),
-      greetText: greeting(),
-      isOpen: isOpenNow()
+      greetText: greeting()
     })
     this.loadMenu().then(() => wx.stopPullDownRefresh())
+  },
+
+  onShareAppMessage() {
+    return {
+      title: '张饱饭堂 · 她点单，你掌勺',
+      path: '/pages/home/index'
+    }
+  },
+
+  onShareTimeline() {
+    return {
+      title: '张饱饭堂 · 今天想吃啥？'
+    }
   }
 })

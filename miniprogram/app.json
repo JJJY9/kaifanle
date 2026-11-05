@@ -5,7 +5,11 @@
     "pages/profile/index",
     "pages/checkout/index",
     "pages/order-detail/index",
-    "pages/kitchen/index"
+    "pages/kitchen/index",
+    "pages/dish-edit/index",
+    "pages/wishes/index",
+    "pages/business/index",
+    "pages/preferences/index"
   ],
   "window": {
     "navigationBarBackgroundColor": "#FFFDF6",

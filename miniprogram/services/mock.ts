@@ -1,16 +1,31 @@
 import type {
+  Business,
   Category,
   CreateOrderPayload,
   Dish,
+  DishInput,
   InitResult,
   MeInfo,
   Order,
-  OrderStatus
+  OrderStatus,
+  UserProfile,
+  Wish,
+  WishStatus
 } from './types'
 import { STATUS_STEP_TEXT } from '../utils/constants'
 
 const ORDERS_KEY = 'kfl_orders_v1'
 const DISH_STATUS_KEY = 'kfl_dish_status_v1'
+const WISHES_KEY = 'kfl_wishes_v1'
+const BUSINESS_KEY = 'kfl_business_v1'
+const PROFILE_KEY = 'kfl_profile_v1'
+
+const DEFAULT_BUSINESS: Business = {
+  breakfast: { open: true, deadline: '09:30' },
+  lunch: { open: true, deadline: '12:00' },
+  dinner: { open: true, deadline: '20:00' },
+  closedNote: '今天休息，明天见'
+}
 
 const CATEGORIES: Category[] = [
   { id: 'staple', name: '主食', color: '#FFD23F' },
@@ -224,6 +239,9 @@ const DISHES: Dish[] = [
 ]
 
 let orderCache: Order[] | null = null
+let wishCache: Wish[] | null = null
+let businessCache: Business | null = null
+let profileCache: UserProfile | null = null
 const dishStatusOverrides: Record<string, Dish['status']> = loadOverrides()
 
 const dishes: Dish[] = DISHES.map(dish => ({
@@ -255,6 +273,94 @@ function persistOverrides(): void {
 function saveOrders(): void {
   try {
     wx.setStorageSync(ORDERS_KEY, JSON.stringify(orderCache || []))
+  } catch (e) {
+    // 忽略存储失败
+  }
+}
+
+function loadWishes(): Wish[] {
+  if (wishCache) {
+    return wishCache
+  }
+  try {
+    const raw = wx.getStorageSync(WISHES_KEY)
+    if (raw) {
+      wishCache = JSON.parse(raw)
+      return wishCache as Wish[]
+    }
+  } catch (e) {
+    // 读取失败则使用种子数据
+  }
+  wishCache = [
+    {
+      id: 'wish-seed-1',
+      content: '想吃番茄牛腩饭',
+      status: 'pending',
+      plannedDate: '',
+      reply: '',
+      createdAt: Date.now() - 60 * 60 * 1000,
+      updatedAt: Date.now() - 60 * 60 * 1000
+    }
+  ]
+  saveWishes()
+  return wishCache
+}
+
+function saveWishes(): void {
+  try {
+    wx.setStorageSync(WISHES_KEY, JSON.stringify(wishCache || []))
+  } catch (e) {
+    // 忽略存储失败
+  }
+}
+
+function loadBusiness(): Business {
+  if (businessCache) {
+    return businessCache
+  }
+  try {
+    const raw = wx.getStorageSync(BUSINESS_KEY)
+    if (raw) {
+      businessCache = JSON.parse(raw)
+      return businessCache as Business
+    }
+  } catch (e) {
+    // 读取失败则使用默认值
+  }
+  businessCache = JSON.parse(JSON.stringify(DEFAULT_BUSINESS))
+  saveBusiness()
+  return businessCache as Business
+}
+
+function saveBusiness(): void {
+  try {
+    wx.setStorageSync(BUSINESS_KEY, JSON.stringify(businessCache))
+  } catch (e) {
+    // 忽略存储失败
+  }
+}
+
+function loadProfile(): UserProfile {
+  if (profileCache) {
+    return profileCache
+  }
+  try {
+    const raw = wx.getStorageSync(PROFILE_KEY)
+    if (raw) {
+      profileCache = JSON.parse(raw)
+      return profileCache as UserProfile
+    }
+  } catch (e) {
+    // 读取失败则使用默认值
+  }
+  profileCache = { dislikes: [], tastes: [], address: '' }
+  saveProfile()
+  return profileCache as UserProfile
+}
+
+function saveProfile(): void {
+  try {
+    wx.setStorageSync(PROFILE_KEY, JSON.stringify(profileCache))
   } catch (e) {
     // 忽略存储失败
   }
@@ -358,10 +464,54 @@ export async function toggleDishStatus(id: string): Promise<Dish | null> {
   if (!dish) {
     return null
   }
-  dish.status = dish.status === 'soldout' ? 'on' : 'soldout'
+  // 供应中 -> 售罄；售罄/已下架 -> 恢复供应
+  dish.status = dish.status === 'on' ? 'soldout' : 'on'
   dishStatusOverrides[id] = dish.status
   persistOverrides()
   return { ...dish }
+}
+
+export async function saveDish(payload: DishInput): Promise<Dish> {
+  await delay(100)
+  const name = String(payload.name || '').trim()
+  if (!name) {
+    throw new Error('菜品名称不能为空')
+  }
+  const fields: Dish = {
+    id: payload.id || `m${Date.now()}`,
+    name,
+    char: name.slice(0, 1),
+    desc: String(payload.desc || '').trim(),
+    price: Number(payload.price) || 0,
+    categoryId: payload.categoryId,
+    tags: payload.tags || [],
+    spicyLevels: payload.spicyLevels || [],
+    addons: (payload.addons || []).map(addon => ({ ...addon })),
+    status: payload.status || 'on',
+    color: payload.color || '#FFD23F',
+    meals: payload.meals || ['lunch', 'dinner'],
+    isRecommended: Boolean(payload.isRecommended)
+  }
+  if (payload.id) {
+    const existing = dishes.find(item => item.id === payload.id)
+    if (!existing) {
+      throw new Error('菜品不存在')
+    }
+    Object.assign(existing, fields)
+    return { ...existing }
+  }
+  dishes.push(fields)
+  return { ...fields }
+}
+
+export async function deleteDish(id: string): Promise<{ id: string }> {
+  await delay(80)
+  const index = dishes.findIndex(dish => dish.id === id)
+  if (index === -1) {
+    throw new Error('菜品不存在')
+  }
+  dishes.splice(index, 1)
+  return { id }
 }
 
 export async function getOrders(): Promise<Order[]> {
@@ -384,6 +534,18 @@ export async function getOrder(id: string): Promise<Order | null> {
 
 export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
   await delay(150)
+  const business = loadBusiness()
+  const setting = business[payload.meal]
+  if (!setting.open) {
+    throw new Error('这一餐还没开火，先歇歇')
+  }
+  const nowDate = new Date()
+  const nowMinutes = nowDate.getHours() * 60 + nowDate.getMinutes()
+  const [deadlineHour, deadlineMinute] = setting.deadline.split(':').map(Number)
+  if (nowMinutes > deadlineHour * 60 + deadlineMinute) {
+    throw new Error('这一餐已经截单啦，下次早点来')
+  }
+
   const orders = loadOrders()
   const now = Date.now()
   const order: Order = {
@@ -400,6 +562,26 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
     createdAt: now
   }
   orders.unshift(order)
+  saveOrders()
+  return { ...order }
+}
+
+export async function cancelOrder(id: string): Promise<Order | null> {
+  await delay(80)
+  const orders = loadOrders()
+  const order = orders.find(item => item.id === id)
+  if (!order) {
+    return null
+  }
+  if (order.status !== 'pending') {
+    throw new Error('已经接单啦，不能取消')
+  }
+  order.status = 'cancelled'
+  order.timeline.push({
+    status: 'cancelled',
+    title: STATUS_STEP_TEXT.cancelled,
+    time: Date.now()
+  })
   saveOrders()
   return { ...order }
 }
@@ -440,4 +622,85 @@ export async function initDb(): Promise<InitResult> {
     already: true,
     isAdmin: true
   }
+}
+
+export async function createWish(content: string): Promise<Wish> {
+  await delay(80)
+  const text = String(content || '').trim()
+  if (!text) {
+    throw new Error('愿望不能为空')
+  }
+  const now = Date.now()
+  const wish: Wish = {
+    id: `w${now}`,
+    content: text.slice(0, 50),
+    status: 'pending',
+    plannedDate: '',
+    reply: '',
+    createdAt: now,
+    updatedAt: now
+  }
+  const wishes = loadWishes()
+  wishes.unshift(wish)
+  saveWishes()
+  return { ...wish }
+}
+
+export async function getWishes(): Promise<Wish[]> {
+  await delay(60)
+  return loadWishes()
+    .slice()
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .map(wish => ({ ...wish }))
+}
+
+export async function updateWish(payload: {
+  id: string
+  status?: WishStatus
+  plannedDate?: string
+  reply?: string
+}): Promise<Wish> {
+  await delay(80)
+  const wish = loadWishes().find(item => item.id === payload.id)
+  if (!wish) {
+    throw new Error('愿望不存在')
+  }
+  if (payload.status) {
+    wish.status = payload.status
+  }
+  if (payload.plannedDate !== undefined) {
+    wish.plannedDate = payload.plannedDate.slice(0, 20)
+  }
+  if (payload.reply !== undefined) {
+    wish.reply = payload.reply.slice(0, 50)
+  }
+  wish.updatedAt = Date.now()
+  saveWishes()
+  return { ...wish }
+}
+
+export async function getBusiness(): Promise<Business> {
+  await delay(60)
+  return JSON.parse(JSON.stringify(loadBusiness()))
+}
+
+export async function updateBusiness(payload: Business): Promise<Business> {
+  await delay(80)
+  businessCache = JSON.parse(JSON.stringify(payload))
+  saveBusiness()
+  return JSON.parse(JSON.stringify(businessCache))
+}
+
+export async function getMyProfile(): Promise<UserProfile> {
+  await delay(60)
+  return JSON.parse(JSON.stringify(loadProfile()))
+}
+
+export async function saveMyProfile(
+  payload: UserProfile
+): Promise<UserProfile> {
+  await delay(80)
+  profileCache = JSON.parse(JSON.stringify(payload))
+  saveProfile()
+  return JSON.parse(JSON.stringify(profileCache))
 }
