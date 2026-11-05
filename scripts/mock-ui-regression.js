@@ -128,6 +128,17 @@ function invoke(mp, body) {
     data.templates[0] && data.templates[0].name
   )
 
+  // 菜谱页
+  await mp.navigateTo('/pages/recipe/index?id=d01')
+  await sleep(1600)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 菜谱页',
+    Boolean(data.dish) && (data.steps || []).length >= 3,
+    data.dish && `${data.dish.name} · ${data.steps.length} 步`
+  )
+
   // 营业设置与公告
   await mp.navigateTo('/pages/business/index')
   await sleep(1600)

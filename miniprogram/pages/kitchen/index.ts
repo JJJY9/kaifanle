@@ -230,6 +230,10 @@ Page({
         }
       }
       this._knownPending = pendingIds
+      const dishById: Record<string, any> = {}
+      dishes.forEach((dish: any) => {
+        dishById[dish.id] = dish
+      })
       const toView = (order: any) => {
         const totalQty = order.items.reduce(
           (sum: number, item: any) => sum + Number(item.qty || 0),
@@ -264,6 +268,10 @@ Page({
           totalQty,
           itemLines: order.items.map((item: any, index: number) => ({
             key: `${order.id}-${index}`,
+            dishId: item.dishId,
+            hasRecipe: Boolean(
+              dishById[item.dishId] && dishById[item.dishId].recipe
+            ),
             name: item.name,
             qty: item.qty,
             specText: (item.specs || []).join(' / '),
@@ -578,6 +586,13 @@ Page({
     const id = e.currentTarget.dataset.id
     if (id) {
       wx.navigateTo({ url: '/pages/order-detail/index?id=' + id })
+    }
+  },
+
+  onViewRecipe(e: any) {
+    const id = e.currentTarget.dataset.id
+    if (id) {
+      wx.navigateTo({ url: '/pages/recipe/index?id=' + id })
     }
   },
 

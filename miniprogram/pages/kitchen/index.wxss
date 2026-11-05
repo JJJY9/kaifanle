@@ -388,6 +388,21 @@
   gap: 12rpx;
 }
 
+.oi-right {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.oi-recipe {
+  padding: 2rpx 14rpx;
+  background: #FFD23F;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
 .oi-name {
   font-size: 26rpx;
   font-weight: 800;

@@ -1,0 +1,43 @@
+<view wx:if="{{loading}}" class="page">
+  <view class="skeleton sk"></view>
+</view>
+
+<view wx:elif="{{error}}" class="page">
+  <empty-state
+    title="菜谱加载失败"
+    desc="{{error}}"
+    actionText="再试一次"
+    bind:action="onRetry"
+  />
+</view>
+
+<view wx:elif="{{dish}}" class="page">
+  <view class="hero card">
+    <view class="hero-media" style="background: {{dish.color}};">
+      <image wx:if="{{dish.image}}" class="hero-img" src="{{dish.image}}" mode="aspectFill" />
+      <text wx:else class="hero-char">{{dish.char}}</text>
+    </view>
+    <view class="hero-info">
+      <view class="dish-name display">{{dish.name}}</view>
+      <view class="dish-desc">{{dish.desc}}</view>
+      <view class="tags">
+        <text wx:for="{{dish.tags}}" wx:key="*this" class="tag">{{item}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="steps-card card">
+    <view class="steps-title display">怎么做</view>
+    <block wx:if="{{steps.length}}">
+      <view wx:for="{{steps}}" wx:key="index" class="step-row">
+        <view class="step-no">{{index + 1}}</view>
+        <view class="step-text">{{item}}</view>
+      </view>
+    </block>
+    <view wx:else class="empty-steps">这道菜还没写做法，可以在菜品编辑里补充</view>
+  </view>
+
+  <view wx:if="{{isAdmin}}" class="actions">
+    <view class="btn btn-primary" bindtap="onEdit">编辑菜品与做法</view>
+  </view>
+</view>

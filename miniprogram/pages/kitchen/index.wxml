@@ -111,7 +111,15 @@
         >
           <view class="oi-main">
             <text class="oi-name">{{dish.name}}</text>
-            <text class="oi-qty">×{{dish.qty}}</text>
+            <view class="oi-right">
+              <view
+                wx:if="{{dish.hasRecipe}}"
+                class="oi-recipe"
+                data-id="{{dish.dishId}}"
+                catchtap="onViewRecipe"
+              >做法</view>
+              <text class="oi-qty">×{{dish.qty}}</text>
+            </view>
           </view>
           <view wx:if="{{dish.specText}}" class="oi-spec">{{dish.specText}}</view>
           <view wx:if="{{dish.note}}" class="oi-note">备注：{{dish.note}}</view>

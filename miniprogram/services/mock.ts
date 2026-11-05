@@ -61,7 +61,9 @@ const DISHES: Dish[] = [
     status: 'on',
     color: '#FFD23F',
     meals: ['lunch', 'dinner'],
-    isRecommended: true
+    isRecommended: true,
+    recipe:
+      '牛腩切块冷水下锅焯水\n番茄切块炒出汁，下牛腩翻炒\n小火炖 60 分钟，加盐收汁\n浇在热米饭上'
   },
   {
     id: 'd02',
