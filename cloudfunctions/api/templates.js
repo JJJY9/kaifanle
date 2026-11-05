@@ -20,29 +20,33 @@ function pad(n) {
   return n < 10 ? '0' + n : String(n)
 }
 
+// 云函数运行环境默认 UTC，这里统一按北京时间格式化
 function formatTime(ts) {
-  const d = new Date(ts)
+  const d = new Date(ts + 8 * 60 * 60 * 1000)
   return (
-    d.getFullYear() +
+    d.getUTCFullYear() +
     '-' +
-    pad(d.getMonth() + 1) +
+    pad(d.getUTCMonth() + 1) +
     '-' +
-    pad(d.getDate()) +
+    pad(d.getUTCDate()) +
     ' ' +
-    pad(d.getHours()) +
+    pad(d.getUTCHours()) +
     ':' +
-    pad(d.getMinutes()) +
+    pad(d.getUTCMinutes()) +
     ':' +
-    pad(d.getSeconds())
+    pad(d.getUTCSeconds())
   )
 }
 
 function summary(items) {
-  const names = (items || []).map(item => item.name)
+  const names = (items || []).map(
+    item => `${item.name}×${item.qty}`
+  )
   if (!names.length) {
     return '一份好吃的'
   }
-  const text = names.length > 1 ? `${names[0]} 等 ${names.length} 样` : names[0]
+  const text =
+    names.slice(0, 2).join('、') + (names.length > 2 ? '…' : '')
   return text.length > 20 ? text.slice(0, 19) + '…' : text
 }
 

@@ -18,6 +18,7 @@ Page({
     order: null as any,
     steps: [] as any[],
     statusText: '',
+    orderError: '',
     loading: true
   },
 
@@ -35,31 +36,63 @@ Page({
   },
 
   async load() {
-    const order = await getOrder(this.orderId)
-    if (!order) {
-      this.setData({ loading: false })
-      wx.showToast({ title: '订单不存在', icon: 'none' })
-      return
-    }
+    this.setData({ orderError: '' })
+    try {
+      const order = await getOrder(this.orderId)
+      if (!order) {
+        throw new Error('订单不存在')
+      }
+      const profile = order.profile
+      const profileText =
+        profile && (profile.dislikes.length || profile.tastes.length)
+          ? [
+              profile.dislikes.length
+                ? `忌口：${profile.dislikes.join('、')}`
+                : '',
+              profile.tastes.length
+                ? `口味：${profile.tastes.join('、')}`
+                : ''
+            ]
+              .filter(Boolean)
+              .join(' · ')
+          : ''
 
-    this.setData({
-      order: {
-        ...order,
-        mealText: mealName(order.meal),
-        createdText: `${formatDate(order.createdAt)} ${formatTime(
-          order.createdAt
-        )}`,
-        items: order.items.map((item, index) => ({
-          ...item,
-          key: `${index}-${item.dishId}`,
-          lineTotal: item.price * item.qty,
-          specText: item.specs.join(' / ')
-        }))
-      },
-      steps: this.buildSteps(order),
-      statusText: STATUS_TEXT[order.status],
-      loading: false
-    })
+      this.setData({
+        order: {
+          ...order,
+          profileText,
+          mealText: mealName(order.meal),
+          createdText: `${formatDate(order.createdAt)} ${formatTime(
+            order.createdAt
+          )}`,
+          items: order.items.map((item, index) => ({
+            ...item,
+            key: `${index}-${item.dishId}`,
+            lineTotal: item.price * item.qty,
+            specText: item.specs.join(' / ')
+          }))
+        },
+        steps: this.buildSteps(order),
+        statusText: STATUS_TEXT[order.status],
+        loading: false
+      })
+    } catch (e: any) {
+      this.setData({
+        loading: false,
+        orderError: String(
+          (e && (e.message || e.errMsg)) || '订单加载失败'
+        ).slice(0, 40)
+      })
+    }
+  },
+
+  onRetry() {
+    this.setData({ loading: true })
+    this.load()
+  },
+
+  onPullDownRefresh() {
+    this.load().then(() => wx.stopPullDownRefresh())
   },
 
   buildSteps(order: Order) {

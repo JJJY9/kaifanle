@@ -88,6 +88,11 @@ export interface Order {
   expectedTime: string
   mode: string
   note: string
+  address?: string
+  profile?: {
+    dislikes: string[]
+    tastes: string[]
+  }
   status: OrderStatus
   timeline: TimelineEntry[]
   createdAt: number
@@ -100,6 +105,7 @@ export interface CreateOrderPayload {
   expectedTime: string
   mode: string
   note: string
+  address?: string
 }
 
 export interface MeInfo {

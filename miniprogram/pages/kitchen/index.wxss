@@ -193,6 +193,59 @@
   font-size: 23rpx;
 }
 
+.order-items {
+  margin-top: 12rpx;
+  padding: 12rpx 16rpx;
+  background: #FFFDF6;
+  border: 3rpx dashed rgba(17, 17, 17, 0.25);
+  border-radius: 16rpx;
+}
+
+.order-item {
+  padding: 6rpx 0;
+  border-bottom: 2rpx dashed rgba(17, 17, 17, 0.1);
+}
+
+.order-item:last-child {
+  border-bottom: none;
+}
+
+.oi-main {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+
+.oi-name {
+  font-size: 26rpx;
+  font-weight: 800;
+}
+
+.oi-qty {
+  color: #5C5C5C;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
+.oi-spec,
+.oi-note {
+  margin-top: 2rpx;
+  color: #5C5C5C;
+  font-size: 22rpx;
+}
+
+.order-taste,
+.order-address {
+  margin-top: 10rpx;
+  padding: 8rpx 14rpx;
+  background: #FFFDF6;
+  border: 3rpx dashed rgba(17, 17, 17, 0.3);
+  border-radius: 14rpx;
+  color: #5C5C5C;
+  font-size: 22rpx;
+}
+
 .order-note {
   margin-top: 12rpx;
   padding: 10rpx 16rpx;

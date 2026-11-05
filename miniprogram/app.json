@@ -10,7 +10,8 @@
     "pages/wishes/index",
     "pages/business/index",
     "pages/preferences/index",
-    "pages/coupons/index"
+    "pages/coupons/index",
+    "pages/privacy/index"
   ],
   "window": {
     "navigationBarBackgroundColor": "#FFFDF6",

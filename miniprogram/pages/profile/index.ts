@@ -1,4 +1,4 @@
-import { getMe, initDb } from '../../services/api'
+import { getMe, getOrders, initDb } from '../../services/api'
 import { USE_CLOUD } from '../../config'
 
 Page({
@@ -9,18 +9,20 @@ Page({
       char: '董'
     },
     stats: {
-      month: 12,
-      favorite: '番茄牛腩饭'
+      month: 0,
+      favorite: '还没点过'
     },
     cloudMode: USE_CLOUD,
-    isAdmin: true,
-    initialized: true,
+    isAdmin: !USE_CLOUD,
+    initialized: !USE_CLOUD,
     openid: '',
     entries: [] as any[]
   },
 
   onLoad() {
-    this.setData({ entries: this.buildEntries(true, true) })
+    this.setData({
+      entries: this.buildEntries(!USE_CLOUD, !USE_CLOUD)
+    })
   },
 
   onShow() {
@@ -89,6 +91,14 @@ Page({
     }
 
     entries.push({
+      key: 'privacy',
+      label: '隐私与数据',
+      desc: '我们怎么使用你的信息',
+      icon: '隐',
+      color: '#B8B8B8'
+    })
+
+    entries.push({
       key: 'about',
       label: '关于开饭咯',
       desc: 'v0.1.0 · 还在长大',
@@ -101,11 +111,37 @@ Page({
 
   async loadMe() {
     try {
-      const me = await getMe()
+      const [me, orders] = await Promise.all([
+        getMe(),
+        getOrders().catch(() => [])
+      ])
+      const now = new Date()
+      const monthly = (orders || []).filter(order => {
+        const date = new Date(order.createdAt)
+        return (
+          date.getFullYear() === now.getFullYear() &&
+          date.getMonth() === now.getMonth() &&
+          order.status !== 'cancelled'
+        )
+      })
+      const dishCount: Record<string, number> = {}
+      monthly.forEach(order => {
+        order.items.forEach(item => {
+          dishCount[item.name] = (dishCount[item.name] || 0) + item.qty
+        })
+      })
+      const favorite =
+        Object.keys(dishCount).sort((a, b) => dishCount[b] - dishCount[a])[0] ||
+        '还没点过'
+
       this.setData({
         isAdmin: me.isAdmin,
         initialized: me.initialized,
         openid: me.openid,
+        stats: {
+          month: monthly.length,
+          favorite
+        },
         entries: this.buildEntries(me.isAdmin, me.initialized)
       })
     } catch (e) {
@@ -114,6 +150,7 @@ Page({
         isAdmin: !USE_CLOUD,
         initialized: !USE_CLOUD,
         openid: '',
+        stats: { month: 0, favorite: '还没点过' },
         entries: this.buildEntries(!USE_CLOUD, !USE_CLOUD)
       })
     }
@@ -129,6 +166,11 @@ Page({
 
     if (key === 'prefs') {
       wx.navigateTo({ url: '/pages/preferences/index' })
+      return
+    }
+
+    if (key === 'coupon') {
+      wx.navigateTo({ url: '/pages/coupons/index' })
       return
     }
 
@@ -167,6 +209,11 @@ Page({
       if (this.data.openid) {
         wx.setClipboardData({ data: this.data.openid })
       }
+      return
+    }
+
+    if (key === 'privacy') {
+      wx.navigateTo({ url: '/pages/privacy/index' })
       return
     }
 

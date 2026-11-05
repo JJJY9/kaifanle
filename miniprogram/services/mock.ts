@@ -613,6 +613,7 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
     dish.stock = Number(dish.stock) - qty
   })
 
+  const profile = loadProfile()
   const orders = loadOrders()
   const now = Date.now()
   const order: Order = {
@@ -624,6 +625,11 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
     expectedTime: payload.expectedTime,
     mode: payload.mode,
     note: payload.note,
+    address: String(payload.address || '').slice(0, 60),
+    profile: {
+      dislikes: profile.dislikes.slice(),
+      tastes: profile.tastes.slice()
+    },
     status: 'pending',
     timeline: [{ status: 'pending', title: '已下单', time: now }],
     createdAt: now

@@ -24,6 +24,49 @@
   font-weight: 800;
 }
 
+.block-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+}
+
+.block-title-row .block-title {
+  margin-bottom: 0;
+}
+
+.clear-cart {
+  color: #D9431C;
+  font-size: 23rpx;
+  font-weight: 800;
+}
+
+.qty-stepper {
+  display: flex;
+  align-items: center;
+  border: 2rpx solid #111111;
+  border-radius: 999rpx;
+  overflow: hidden;
+}
+
+.qty-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44rpx;
+  height: 40rpx;
+  font-size: 28rpx;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.qty-num {
+  min-width: 36rpx;
+  text-align: center;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
 .chip-row {
   display: flex;
   flex-wrap: wrap;
@@ -33,6 +76,15 @@
 
 .chip-row.last {
   margin-bottom: 0;
+}
+
+.addr-input {
+  height: 80rpx;
+  padding: 0 20rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 20rpx;
+  font-size: 26rpx;
 }
 
 .chip {

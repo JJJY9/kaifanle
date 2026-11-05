@@ -25,7 +25,7 @@
     </view>
 
     <view class="block-title">怎么吃</view>
-    <view class="chip-row last">
+    <view class="chip-row">
       <view
         wx:for="{{modes}}"
         wx:key="*this"
@@ -34,10 +34,22 @@
         bindtap="onModeSelect"
       >{{item}}</view>
     </view>
+
+    <view class="block-title">送到哪里</view>
+    <input
+      class="addr-input"
+      placeholder="选填，选「送过来」时填一下"
+      value="{{address}}"
+      maxlength="60"
+      bindinput="onAddress"
+    />
   </view>
 
   <view class="block card">
-    <view class="block-title">这顿吃点啥</view>
+    <view class="block-title-row">
+      <view class="block-title">这顿吃点啥</view>
+      <view class="clear-cart" bindtap="onClearCart">清空</view>
+    </view>
     <view wx:for="{{lines}}" wx:key="key" class="line">
       <view class="line-media" style="background: {{item.color}};">{{item.char}}</view>
       <view class="line-info">
@@ -47,6 +59,11 @@
       </view>
       <view class="line-right">
         <text class="line-price">¥{{item.lineTotal}}</text>
+        <view class="qty-stepper">
+          <view class="qty-btn" data-key="{{item.key}}" data-delta="-1" bindtap="onChangeQty">−</view>
+          <text class="qty-num">{{item.qty}}</text>
+          <view class="qty-btn" data-key="{{item.key}}" data-delta="1" bindtap="onChangeQty">+</view>
+        </view>
         <view class="line-remove" data-key="{{item.key}}" bindtap="onRemove">×</view>
       </view>
     </view>

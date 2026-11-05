@@ -5,7 +5,7 @@
       <view class="name">{{user.name}}</view>
       <view class="motto">{{user.motto}}</view>
     </view>
-    <view class="sticker">掌勺人</view>
+    <view wx:if="{{isAdmin}}" class="sticker">掌勺人</view>
   </view>
 
   <view class="stats card">

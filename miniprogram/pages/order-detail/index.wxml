@@ -1,5 +1,4 @@
-<view wx:if="{{order}}" class="page">
-  <view class="status-card card">
+<view wx:if="{{order}}" class="page">  <view class="status-card card">
     <view class="status-top">
       <view class="status-badge {{order.status}}">{{statusText}}</view>
       <text class="status-no">#{{order.no}}</text>
@@ -69,6 +68,14 @@
       <text>期望时间</text>
       <text>{{order.expectedTime}}</text>
     </view>
+    <view wx:if="{{order.address}}" class="receipt-row">
+      <text>送到</text>
+      <text>{{order.address}}</text>
+    </view>
+    <view wx:if="{{order.profileText}}" class="receipt-row">
+      <text>口味</text>
+      <text>{{order.profileText}}</text>
+    </view>
     <view class="receipt-stamp">记你账上 ♥</view>
   </view>
 
@@ -76,4 +83,17 @@
     <view class="btn btn-ink" bindtap="onReorder">再来一单</view>
     <view class="btn" bindtap="onBackHome">回首页</view>
   </view>
+</view>
+
+<view wx:elif="{{orderError}}" class="page">
+  <empty-state
+    title="订单加载失败"
+    desc="{{orderError}}"
+    actionText="再试一次"
+    bind:action="onRetry"
+  />
+</view>
+
+<view wx:else class="page">
+  <view class="skeleton sk-detail"></view>
 </view>

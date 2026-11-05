@@ -582,6 +582,17 @@ async function createOrder(payload, openid) {
   const expectedTime = String(payload.expectedTime || '尽快').slice(0, 20)
   const mode = String(payload.mode || '在家吃').slice(0, 20)
   const note = String(payload.note || '').slice(0, 100)
+  const address = String(payload.address || '').slice(0, 60)
+  let buyerProfile = { dislikes: [], tastes: [] }
+  try {
+    const savedProfile = await getMyProfile(openid)
+    buyerProfile = {
+      dislikes: savedProfile.dislikes,
+      tastes: savedProfile.tastes
+    }
+  } catch (e) {
+    // 没有口味档案时不影响下单
+  }
 
   const seq = Number(config.orderSeq || 0) + 1
   await db
@@ -599,6 +610,8 @@ async function createOrder(payload, openid) {
     expectedTime,
     mode,
     note,
+    address,
+    profile: buyerProfile,
     status: 'pending',
     timeline: [{ status: 'pending', title: STEP_TITLES.pending, time: now }],
     createdAt: now

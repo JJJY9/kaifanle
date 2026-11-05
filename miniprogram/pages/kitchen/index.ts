@@ -22,7 +22,8 @@ Page({
     dishes: [] as any[],
     stats: null as any,
     loading: true,
-    forbidden: false
+    forbidden: false,
+    error: ''
   },
 
   onShow() {
@@ -33,14 +34,35 @@ Page({
     try {
       const me = await getMe()
       if (!me.isAdmin) {
-        this.setData({ forbidden: true, loading: false, orders: [], dishes: [] })
+        this.setData({
+          forbidden: true,
+          error: '',
+          loading: false,
+          orders: [],
+          dishes: []
+        })
         return
       }
-      this.setData({ forbidden: false })
-      this.load()
-    } catch (e) {
-      this.setData({ forbidden: true, loading: false })
+      this.setData({ forbidden: false, error: '' })
+      await this.load()
+    } catch (e: any) {
+      this.setData({
+        forbidden: false,
+        loading: false,
+        error: String(
+          (e && (e.message || e.errMsg)) || '加载失败，下拉重试'
+        ).slice(0, 40)
+      })
     }
+  },
+
+  onRetry() {
+    this.setData({ error: '', loading: true })
+    this.guard()
+  },
+
+  onPullDownRefresh() {
+    this.guard().then(() => wx.stopPullDownRefresh())
   },
 
   async load() {
@@ -53,18 +75,52 @@ Page({
       const active = orders.filter(
         order => order.status !== 'completed' && order.status !== 'cancelled'
       )
-      const view = active.map(order => ({
-        ...order,
-        statusText: STATUS_TEXT[order.status],
-        mealText: mealName(order.meal),
-        timeText: formatTime(order.createdAt),
-        summary: itemSummary(order.items.map(item => item.name)),
-        actionText: NEXT_ACTION[order.status] || ''
-      }))
-      this.setData({ orders: view, dishes, stats, loading: false })
-    } catch (e) {
-      this.setData({ loading: false })
-      wx.showToast({ title: '加载失败', icon: 'none' })
+      const view = active.map(order => {
+        const totalQty = order.items.reduce(
+          (sum, item) => sum + Number(item.qty || 0),
+          0
+        )
+        return {
+          ...order,
+          statusText: STATUS_TEXT[order.status],
+          mealText: mealName(order.meal),
+          timeText: formatTime(order.createdAt),
+          summary:
+            itemSummary(order.items.map(item => item.name)) +
+            ` · 共 ${totalQty} 份`,
+          totalQty,
+          itemLines: order.items.map((item, index) => ({
+            key: `${order.id}-${index}`,
+            name: item.name,
+            qty: item.qty,
+            specText: (item.specs || []).join(' / '),
+            note: item.note
+          })),
+          profileText:
+            order.profile &&
+            (order.profile.dislikes.length || order.profile.tastes.length)
+              ? [
+                  order.profile.dislikes.length
+                    ? `忌口：${order.profile.dislikes.join('、')}`
+                    : '',
+                  order.profile.tastes.length
+                    ? `口味：${order.profile.tastes.join('、')}`
+                    : ''
+                ]
+                  .filter(Boolean)
+                  .join(' · ')
+              : '',
+          actionText: NEXT_ACTION[order.status] || ''
+        }
+      })
+      this.setData({ orders: view, dishes, stats, loading: false, error: '' })
+    } catch (e: any) {
+      this.setData({
+        loading: false,
+        error: String(
+          (e && (e.message || e.errMsg)) || '加载失败，下拉重试'
+        ).slice(0, 40)
+      })
     }
   },
 

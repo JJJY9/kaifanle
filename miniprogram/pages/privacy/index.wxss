@@ -1,0 +1,48 @@
+.page {
+  min-height: 100vh;
+  padding: 24rpx 24rpx 80rpx;
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  padding: 8rpx 4rpx 24rpx;
+}
+
+.title {
+  font-size: 52rpx;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.sub {
+  margin-top: 6rpx;
+  color: #5C5C5C;
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+
+.block {
+  padding: 26rpx;
+  margin-bottom: 20rpx;
+}
+
+.block-title {
+  margin-bottom: 12rpx;
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 32rpx;
+  font-weight: 800;
+}
+
+.p {
+  color: #3D3A36;
+  font-size: 26rpx;
+  line-height: 1.75;
+}
+
+.footer {
+  margin-top: 24rpx;
+  color: #B8B8B8;
+  font-size: 22rpx;
+  text-align: center;
+}

@@ -1,5 +1,5 @@
 import type { MealId } from '../../services/types'
-import { createOrder, getBusiness } from '../../services/api'
+import { createOrder, getBusiness, getMyProfile } from '../../services/api'
 import { cart } from '../../store/cart'
 import { MEALS } from '../../utils/constants'
 import { currentMeal } from '../../utils/format'
@@ -33,10 +33,13 @@ Page({
     modes: MODES,
     modeIndex: 0,
     note: '',
+    address: '',
     closed: false,
     closedText: '',
     submitting: false
   },
+
+  _closedSeq: 0,
 
   onLoad(options: any) {
     const lines = buildLines()
@@ -52,11 +55,27 @@ Page({
       timeOptions: TIME_OPTIONS[meal] || TIME_OPTIONS.lunch
     })
     this.checkClosed(meal)
+    this.loadProfile()
+  },
+
+  async loadProfile() {
+    try {
+      const profile = await getMyProfile()
+      if (profile.address) {
+        this.setData({ address: profile.address })
+      }
+    } catch (e) {
+      // 没有档案时手填即可
+    }
   },
 
   async checkClosed(meal: MealId) {
+    const seq = ++this._closedSeq
     try {
       const business = await getBusiness()
+      if (seq !== this._closedSeq || meal !== this.data.meal) {
+        return
+      }
       const setting = business[meal]
       if (!setting) {
         this.setData({ closed: false, closedText: '' })
@@ -104,6 +123,10 @@ Page({
     this.setData({ note: e.detail.value })
   },
 
+  onAddress(e: any) {
+    this.setData({ address: e.detail.value })
+  },
+
   onRemove(e: any) {
     const key = e.currentTarget.dataset.key
     cart.remove(key)
@@ -115,6 +138,32 @@ Page({
     this.setData({ lines, total: cart.getTotal() })
   },
 
+  onChangeQty(e: any) {
+    const key = e.currentTarget.dataset.key
+    const delta = Number(e.currentTarget.dataset.delta)
+    cart.changeQty(key, delta)
+    const lines = buildLines()
+    if (!lines.length) {
+      wx.navigateBack({ delta: 1 })
+      return
+    }
+    this.setData({ lines, total: cart.getTotal() })
+  },
+
+  async onClearCart() {
+    const res: any = await wx.showModal({
+      title: '清空购物车？',
+      content: '所有已选菜品都会被移除。',
+      confirmText: '清空',
+      cancelText: '算了'
+    })
+    if (!res.confirm) {
+      return
+    }
+    cart.clear()
+    wx.navigateBack({ delta: 1 })
+  },
+
   async onSubmit() {
     if (this.data.submitting || !this.data.lines.length) {
       return
@@ -124,6 +173,11 @@ Page({
         title: this.data.closedText || '这一餐休息中',
         icon: 'none'
       })
+      return
+    }
+    const mode = MODES[this.data.modeIndex]
+    if (mode === '送过来' && !this.data.address.trim()) {
+      wx.showToast({ title: '写一下送到哪里', icon: 'none' })
       return
     }
     this.setData({ submitting: true })
@@ -153,14 +207,20 @@ Page({
         amount: this.data.total,
         meal: this.data.meal,
         expectedTime: this.data.timeOptions[this.data.timeIndex],
-        mode: MODES[this.data.modeIndex],
-        note: this.data.note.trim()
+        mode,
+        note: this.data.note.trim(),
+        address: this.data.address.trim()
       })
       cart.clear()
       wx.redirectTo({ url: `/pages/order-detail/index?id=${order.id}` })
-    } catch (e) {
+    } catch (e: any) {
+      const message =
+        (e && (e.message || e.errMsg)) || '下单失败，再试一次'
+      wx.showToast({
+        title: String(message).slice(0, 40),
+        icon: 'none'
+      })
       this.setData({ submitting: false })
-      wx.showToast({ title: '下单失败，再试一次', icon: 'none' })
     }
   }
 })

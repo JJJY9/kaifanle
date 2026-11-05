@@ -267,3 +267,7 @@
   height: 88rpx;
   font-size: 28rpx;
 }
+
+.sk-detail {
+  height: 900rpx;
+}

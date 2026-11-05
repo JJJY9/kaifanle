@@ -1,4 +1,13 @@
-<view wx:if="{{forbidden}}" class="page">
+<view wx:if="{{error}}" class="page">
+  <empty-state
+    title="加载失败"
+    desc="{{error}}"
+    actionText="再试一次"
+    bind:action="onRetry"
+  />
+</view>
+
+<view wx:elif="{{forbidden}}" class="page">
   <empty-state
     title="厨房重地"
     desc="只有掌勺人能进"
@@ -47,7 +56,24 @@
       </view>
       <view class="order-summary">{{item.summary}}</view>
       <view class="order-meta">{{item.mealText}} · {{item.mode}} · {{item.expectedTime}} · {{item.timeText}}</view>
-      <view wx:if="{{item.note}}" class="order-note">她备注：{{item.note}}</view>
+      <view class="order-items">
+        <view
+          wx:for="{{item.itemLines}}"
+          wx:for-item="dish"
+          wx:key="key"
+          class="order-item"
+        >
+          <view class="oi-main">
+            <text class="oi-name">{{dish.name}}</text>
+            <text class="oi-qty">×{{dish.qty}}</text>
+          </view>
+          <view wx:if="{{dish.specText}}" class="oi-spec">{{dish.specText}}</view>
+          <view wx:if="{{dish.note}}" class="oi-note">备注：{{dish.note}}</view>
+        </view>
+      </view>
+      <view wx:if="{{item.profileText}}" class="order-taste">{{item.profileText}}</view>
+      <view wx:if="{{item.address}}" class="order-address">送到：{{item.address}}</view>
+      <view wx:if="{{item.note}}" class="order-note">整单备注：{{item.note}}</view>
       <view class="order-actions">
         <view
           wx:if="{{item.status === 'pending'}}"
