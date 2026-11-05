@@ -640,21 +640,14 @@ async function autoRollMenu() {
     rolled.push(meal)
   }
 
-  // 售罄状态按天重置（下架 off 不受影响）
+  // 售罄状态按天重置（下架 off 不受影响），一次批量更新，避免定时任务超时
   let restored = 0
   try {
-    const soldoutRes = await db
+    const upd = await db
       .collection('dishes')
       .where({ status: 'soldout' })
-      .limit(200)
-      .get()
-    for (const dish of soldoutRes.data) {
-      await db
-        .collection('dishes')
-        .doc(dish._id)
-        .update({ data: { status: 'on' } })
-      restored++
-    }
+      .update({ data: { status: 'on' } })
+    restored = (upd.stats && upd.stats.updated) || 0
   } catch (e) {
     console.warn('[api] reset soldout failed:', e)
   }
