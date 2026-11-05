@@ -51,6 +51,11 @@ function invoke(mp, body) {
   page = await current()
   data = await page.data()
   check('mock 厨房加载', (data.dishes || []).length > 0, `${data.dishes.length} 道菜`)
+  check(
+    'mock 近7天柱状图',
+    Array.isArray(data.weekBars) && data.weekBars.length === 7,
+    `合计 ¥${data.weekBarTotal}`
+  )
   const firstDish = (data.dishes || [])[0]
   const secondDish = (data.dishes || [])[1]
   if (firstDish && secondDish) {
@@ -121,6 +126,22 @@ function invoke(mp, body) {
   await invoke(mp, "page.setData({ notice: '' })")
   await invoke(mp, 'page.onSave()')
   await sleep(900)
+
+  // 排菜单
+  await mp.navigateTo('/pages/menu-edit/index')
+  await sleep(1800)
+  page = await current()
+  data = await page.data()
+  check('mock 排菜单加载', (data.dishes || []).length > 0, `餐次=${data.meal}`)
+  await invoke(mp, 'page.onSave()')
+  await sleep(1400)
+  page = await current()
+  check('mock 排菜单保存返回', page.path === 'pages/home/index', page.path)
+  // 恢复默认，保持 mock 状态干净
+  await mp.navigateTo('/pages/menu-edit/index')
+  await sleep(1600)
+  await invoke(mp, 'page.onReset()')
+  await sleep(1400)
 
   // 订单筛选
   await mp.switchTab('/pages/orders/index')
