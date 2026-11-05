@@ -1116,6 +1116,9 @@ async function createOrder(payload, openid) {
     scheduledDate,
     profile: buyerProfile,
     status: 'pending',
+    urgedAt: 0,
+    urgeCount: 0,
+    urgeBucket: 0,
     timeline: [{ status: 'pending', title: STEP_TITLES.pending, time: now }],
     createdAt: now
   }
@@ -1196,16 +1199,29 @@ async function urgeOrder(payload, openid) {
     throw new Error('这一单不用催啦')
   }
   const now = Date.now()
-  if (order.urgedAt && now - order.urgedAt < 5 * 60 * 1000) {
+  // 5 分钟冷却桶：条件更新保证并发催单只会成功一次
+  const urgeBucket = Math.floor(now / (5 * 60 * 1000))
+  const upd = await db
+    .collection('orders')
+    .where({
+      _id: payload.id,
+      status: _.in(['pending', 'accepted', 'cooking']),
+      urgeBucket: _.neq(urgeBucket)
+    })
+    .update({
+      data: {
+        urgedAt: now,
+        urgeCount: _.inc(1),
+        urgeBucket
+      }
+    })
+  if (!upd.stats || upd.stats.updated !== 1) {
     throw new Error('刚催过啦，掌勺人正在忙')
   }
-  await db
-    .collection('orders')
-    .doc(payload.id)
-    .update({ data: { urgedAt: now, urgeCount: _.inc(1) } })
   return withId(
     Object.assign({}, order, {
       urgedAt: now,
+      urgeBucket,
       urgeCount: Number(order.urgeCount || 0) + 1
     })
   )

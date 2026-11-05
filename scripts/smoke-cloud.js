@@ -41,6 +41,9 @@ const command = {
   gte(value) {
     return { __op: 'gte', value }
   },
+  neq(value) {
+    return { __op: 'neq', value }
+  },
   inc(value) {
     return { __op: 'inc', value }
   }
@@ -55,6 +58,9 @@ function matches(doc, cond) {
     }
     if (expected && expected.__op === 'gte') {
       return actual >= expected.value
+    }
+    if (expected && expected.__op === 'neq') {
+      return actual !== expected.value
     }
     return actual === expected
   })
