@@ -6,6 +6,11 @@
     </view>
     <view class="status-sub">{{order.mealText}} · {{order.mode}} · {{order.expectedTime}}</view>
     <view wx:if="{{order.status === 'ready'}}" class="ready-tip">锅已经端上桌，趁热吃！</view>
+    <view
+      wx:if="{{order.status === 'pending' || order.status === 'accepted'}}"
+      class="notify-ready"
+      bindtap="onSubscribeReady"
+    >出锅时提醒我</view>
   </view>
 
   <view class="block card">

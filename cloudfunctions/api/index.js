@@ -1,5 +1,6 @@
 const cloud = require('wx-server-sdk')
 const seed = require('./seed')
+const tpl = require('./templates')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
@@ -267,6 +268,21 @@ async function createOrder(payload, openid) {
   }
 
   const addRes = await db.collection('orders').add({ data: order })
+
+  // 新订单提醒：只发给已订阅「新订单提醒」模板的管理员。
+  // 发送失败（没订阅 / 模板未配置）不影响下单。
+  if (tpl.NEW_ORDER_TEMPLATE_ID && Array.isArray(config.adminOpenids)) {
+    const data = tpl.newOrderData(order)
+    for (const adminOpenid of config.adminOpenids) {
+      await sendSubscribe(
+        adminOpenid,
+        tpl.NEW_ORDER_TEMPLATE_ID,
+        'pages/kitchen/index',
+        data
+      )
+    }
+  }
+
   return Object.assign({}, order, { id: addRes._id })
 }
 
@@ -300,12 +316,44 @@ async function updateOrderStatus(payload, openid) {
       }
     })
 
+  // 出锅时给顾客发一条一次性订阅消息（模板未配置或未订阅则自动跳过）
+  if (status === 'ready' && tpl.ORDER_STATUS_TEMPLATE_ID) {
+    await sendSubscribe(
+      order._openid,
+      tpl.ORDER_STATUS_TEMPLATE_ID,
+      'pages/order-detail/index?id=' + id,
+      tpl.orderStatusData(Object.assign({}, order, { status }))
+    )
+  }
+
   return withId(
     Object.assign({}, order, {
       status,
       timeline: (order.timeline || []).concat([entry])
     })
   )
+}
+
+async function sendSubscribe(touser, templateId, page, data) {
+  if (!touser || !templateId) {
+    return
+  }
+  try {
+    await cloud.openapi.subscribeMessage.send({
+      touser,
+      templateId,
+      page,
+      data,
+      miniprogramState: tpl.MINIPROGRAM_STATE,
+      lang: 'zh_CN'
+    })
+  } catch (e) {
+    // 43101 = 用户没有订阅（或订阅次数已用完），属于正常情况
+    console.warn(
+      '[notify] subscribeMessage.send skipped:',
+      (e && (e.errCode || e.errMsg)) || e
+    )
+  }
 }
 
 async function toggleDishStatus(payload, openid) {

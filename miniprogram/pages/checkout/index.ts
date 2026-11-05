@@ -3,6 +3,7 @@ import { createOrder } from '../../services/api'
 import { cart } from '../../store/cart'
 import { MEALS } from '../../utils/constants'
 import { currentMeal } from '../../utils/format'
+import { TEMPLATE_ORDER_STATUS } from '../../config'
 
 const TIME_OPTIONS: Record<MealId, string[]> = {
   breakfast: ['尽快', '07:30', '08:00', '08:30'],
@@ -87,6 +88,19 @@ Page({
       return
     }
     this.setData({ submitting: true })
+
+    // 一次性订阅：授权后，出锅时会给顾客发一条提醒。
+    // 必须紧贴用户点击调用；拒绝授权也继续下单。
+    if (TEMPLATE_ORDER_STATUS) {
+      try {
+        await wx.requestSubscribeMessage({
+          tmplIds: [TEMPLATE_ORDER_STATUS]
+        })
+      } catch (e) {
+        // 用户拒绝或当前环境不支持订阅，忽略即可
+      }
+    }
+
     try {
       const order = await createOrder({
         items: this.data.lines.map((line: any) => ({

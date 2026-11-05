@@ -11,8 +11,8 @@
 
 - v0.1.0 · MVP
 - **默认接入微信云开发**；把 `miniprogram/config.ts` 里的 `USE_CLOUD` 改成 `false` 即可切回本地 mock 数据
-- 已实现：今日菜单、餐次切换、菜品详情 / 加料弹层、购物车、结算下单、订单列表、订单状态时间轴、厨房端（接单 / 状态流转 / 菜品上下架）、管理员权限、云数据库初始化
-- 未实现：订阅消息、微信支付、许愿池、爱心券（见路线图）
+- 已实现：今日菜单、餐次切换、菜品详情 / 加料弹层、购物车、结算下单、订单列表、订单状态时间轴、厨房端（接单 / 状态流转 / 菜品上下架）、管理员权限、云数据库初始化、订阅消息（模板 ID 需自行配置）
+- 未实现：微信支付、许愿池、爱心券（见路线图）
 
 ## 快速开始
 
@@ -64,6 +64,28 @@
 `getCategories` / `getDishes` / `getDish` / `getOrders` / `getAllOrders` / `getOrder` /
 `createOrder` / `updateOrderStatus` / `toggleDishStatus` / `getMe` / `initDb`
 
+### 订阅消息（可选）
+
+已接入两类通知，模板 ID 留空时会静默跳过，不影响下单：
+
+- **新订单提醒**（发给管理员）：在厨房端点「订阅新订单提醒」
+- **出锅提醒**（发给顾客）：下单时授权，或在订单详情点「出锅时提醒我」
+
+配置步骤：
+
+1. 微信公众平台 → 功能 → 订阅消息 → 我的模板 → 选用模板。
+   建议选「新订单提醒」「订单状态通知」类模板；可用模板取决于小程序类目
+2. 复制两个模板 ID，分别填到：
+   - `miniprogram/config.ts` 的 `TEMPLATE_NEW_ORDER` / `TEMPLATE_ORDER_STATUS`
+   - `cloudfunctions/api/templates.js` 的 `NEW_ORDER_TEMPLATE_ID` / `ORDER_STATUS_TEMPLATE_ID`
+3. 按实际模板的字段名修改 `templates.js` 里 `data` 的键（如 `thing1`、`time2`、`amount3`）。
+   字段必须与模板一一对应，否则发送会失败
+4. 设置 `templates.js` 里的 `MINIPROGRAM_STATE`：体验版 `trial`、开发版 `developer`、正式版 `formal`
+5. 重新「上传并部署」api 云函数（`config.json` 已声明 `subscribeMessage.send` 权限）
+
+> 私用小程序只能使用**一次性订阅**：一次授权只能发一条消息。
+> 所以顾客每次下单都会重新请求授权；管理员点一次提醒按钮，能收到下一单的通知。
+
 ## 目录结构
 
 ```
@@ -72,6 +94,8 @@
 │   └── api/                 统一业务云函数
 │       ├── index.js         路由 + 业务逻辑
 │       ├── seed.js          默认分类与菜品
+│       ├── templates.js     订阅消息模板与字段映射
+│       ├── config.json      openapi 权限声明
 │       └── package.json
 ├── miniprogram/
 │   ├── app.ts/json/wxss     全局入口、路由、设计 tokens
@@ -119,7 +143,7 @@ npx -p typescript tsc --noEmit
 - [x] 订单状态机与厨房端
 - [x] 云函数 + 云数据库接入
 - [x] 管理员权限与数据库初始化
-- [ ] 订阅消息（下单 / 接单 / 出餐通知）
+- [x] 订阅消息（下单 / 接单 / 出餐通知，模板 ID 需配置）
 - [ ] 许愿池、爱心券、预约点单
 - [ ] 每日菜单编排与定时触发器
 - [ ] 隐私协议、内容安全

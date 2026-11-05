@@ -3,6 +3,7 @@ import { getOrder } from '../../services/api'
 import { cart } from '../../store/cart'
 import { STATUS_STEP_TEXT, STATUS_TEXT, mealName } from '../../utils/constants'
 import { formatDate, formatTime } from '../../utils/format'
+import { TEMPLATE_ORDER_STATUS } from '../../config'
 
 const FLOW: OrderStatus[] = [
   'pending',
@@ -111,6 +112,25 @@ Page({
     })
     wx.switchTab({ url: '/pages/home/index' })
     wx.showToast({ title: '已放回购物车', icon: 'none' })
+  },
+
+  async onSubscribeReady() {
+    if (!TEMPLATE_ORDER_STATUS) {
+      wx.showToast({ title: '还没配置提醒模板', icon: 'none' })
+      return
+    }
+    try {
+      const res: any = await wx.requestSubscribeMessage({
+        tmplIds: [TEMPLATE_ORDER_STATUS]
+      })
+      const accepted = res[TEMPLATE_ORDER_STATUS] === 'accept'
+      wx.showToast({
+        title: accepted ? '出锅时提醒你' : '好的，不打扰',
+        icon: 'none'
+      })
+    } catch (e) {
+      wx.showToast({ title: '订阅失败，稍后再试', icon: 'none' })
+    }
   },
 
   onBackHome() {

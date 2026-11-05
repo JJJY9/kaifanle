@@ -13,6 +13,11 @@
     <view class="sub">管理员视图 · 只有你能看到</view>
   </view>
 
+  <view class="notify-bar">
+    <view class="notify-btn" bindtap="onSubscribeNotice">订阅新订单提醒</view>
+    <text class="notify-hint">一次授权提醒下一单</text>
+  </view>
+
   <view wx:if="{{loading}}" class="skeleton sk-row"></view>
 
   <block wx:else>

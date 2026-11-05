@@ -21,6 +21,37 @@
   font-size: 24rpx;
 }
 
+.notify-bar {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-top: 20rpx;
+}
+
+.notify-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 72rpx;
+  padding: 0 28rpx;
+  background: #FFD23F;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  box-shadow: 4rpx 4rpx 0 #111111;
+  font-size: 24rpx;
+  font-weight: 800;
+}
+
+.notify-btn:active {
+  transform: translate(4rpx, 4rpx);
+  box-shadow: none;
+}
+
+.notify-hint {
+  color: #5C5C5C;
+  font-size: 22rpx;
+}
+
 .section-title {
   margin: 30rpx 4rpx 18rpx;
   font-size: 36rpx;

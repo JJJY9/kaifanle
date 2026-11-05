@@ -13,6 +13,7 @@ import {
   mealName
 } from '../../utils/constants'
 import { formatTime, itemSummary } from '../../utils/format'
+import { TEMPLATE_NEW_ORDER } from '../../config'
 
 Page({
   data: {
@@ -112,6 +113,25 @@ Page({
         title: String((err && err.message) || '操作失败').slice(0, 40),
         icon: 'none'
       })
+    }
+  },
+
+  async onSubscribeNotice() {
+    if (!TEMPLATE_NEW_ORDER) {
+      wx.showToast({ title: '还没配置提醒模板', icon: 'none' })
+      return
+    }
+    try {
+      const res: any = await wx.requestSubscribeMessage({
+        tmplIds: [TEMPLATE_NEW_ORDER]
+      })
+      const accepted = res[TEMPLATE_NEW_ORDER] === 'accept'
+      wx.showToast({
+        title: accepted ? '下一单会提醒你' : '好的，不打扰',
+        icon: 'none'
+      })
+    } catch (e) {
+      wx.showToast({ title: '订阅失败，稍后再试', icon: 'none' })
     }
   },
 

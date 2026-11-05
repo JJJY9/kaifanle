@@ -9,6 +9,7 @@ const path = require('path')
 const Module = require('module')
 
 const store = new Map()
+const sentMessages = []
 let currentOpenid = 'admin-openid'
 
 function ensure(name) {
@@ -150,6 +151,14 @@ const fakeSdk = {
       collection: makeCollection
     }
   },
+  openapi: {
+    subscribeMessage: {
+      async send(payload) {
+        sentMessages.push(payload)
+        return { errCode: 0 }
+      }
+    }
+  },
   getWXContext() {
     return { OPENID: currentOpenid }
   }
@@ -162,6 +171,19 @@ Module._load = function (request, parent, isMain) {
   }
   return originalLoad.apply(this, arguments)
 }
+
+// 打开订阅消息开关，验证通知逻辑（模板 ID 仅在测试进程内存里改）
+const templatesPath = path.join(
+  __dirname,
+  '..',
+  'cloudfunctions',
+  'api',
+  'templates.js'
+)
+const templates = require(templatesPath)
+templates.NEW_ORDER_TEMPLATE_ID = 'tpl-new-order'
+templates.ORDER_STATUS_TEMPLATE_ID = 'tpl-order-status'
+templates.MINIPROGRAM_STATE = 'trial'
 
 const api = require(path.join(__dirname, '..', 'cloudfunctions', 'api', 'index.js'))
 
@@ -211,6 +233,13 @@ async function run() {
   assert.strictEqual(created.data.items[0].price, 20)
   assert.strictEqual(created.data.status, 'pending')
 
+  // 新订单通知发给管理员
+  assert.strictEqual(sentMessages.length, 1)
+  assert.strictEqual(sentMessages[0].touser, 'admin-openid')
+  assert.strictEqual(sentMessages[0].templateId, 'tpl-new-order')
+  assert.strictEqual(sentMessages[0].page, 'pages/kitchen/index')
+  assert.strictEqual(sentMessages[0].miniprogramState, 'trial')
+
   res = await call('getOrders', {}, 'girl-openid')
   assert.strictEqual(res.data.length, 1)
 
@@ -236,6 +265,24 @@ async function run() {
 
   res = await call('updateOrderStatus', { id: created.data.id, status: 'ready' }, 'admin-openid')
   assert.strictEqual(res.ok, false)
+
+  res = await call('updateOrderStatus', { id: created.data.id, status: 'cooking' }, 'admin-openid')
+  assert.strictEqual(res.ok, true)
+
+  res = await call('updateOrderStatus', { id: created.data.id, status: 'ready' }, 'admin-openid')
+  assert.strictEqual(res.ok, true)
+
+  // 出锅通知发给顾客
+  const readyMessage = sentMessages.find(
+    message => message.templateId === 'tpl-order-status'
+  )
+  assert.ok(readyMessage)
+  assert.strictEqual(readyMessage.touser, 'girl-openid')
+  assert.strictEqual(readyMessage.data.phrase3.value, '已出锅')
+  assert.strictEqual(
+    readyMessage.page,
+    'pages/order-detail/index?id=' + created.data.id
+  )
 
   res = await call('toggleDishStatus', { id: 'd01' }, 'admin-openid')
   assert.strictEqual(res.ok, true)
@@ -268,7 +315,9 @@ async function run() {
   res = await call('getMe', {}, 'girl-openid')
   assert.strictEqual(res.data.isAdmin, false)
 
-  console.log('云函数冒烟测试通过：初始化、菜单、下单计价、权限、状态流转、售罄拦截。')
+  console.log(
+    '云函数冒烟测试通过：初始化、菜单、下单计价、权限、状态流转、售罄拦截、订阅消息。'
+  )
 }
 
 run().catch(err => {
