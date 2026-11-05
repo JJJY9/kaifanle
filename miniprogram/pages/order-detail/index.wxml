@@ -1,0 +1,69 @@
+<view wx:if="{{order}}" class="page">
+  <view class="status-card card">
+    <view class="status-top">
+      <view class="status-badge {{order.status}}">{{statusText}}</view>
+      <text class="status-no">#{{order.no}}</text>
+    </view>
+    <view class="status-sub">{{order.mealText}} · {{order.mode}} · {{order.expectedTime}}</view>
+    <view wx:if="{{order.status === 'ready'}}" class="ready-tip">锅已经端上桌，趁热吃！</view>
+  </view>
+
+  <view class="block card">
+    <view class="block-title">进度</view>
+    <view class="timeline">
+      <view
+        wx:for="{{steps}}"
+        wx:key="status"
+        class="tstep {{item.done ? 'done' : ''}}"
+      >
+        <view class="rail">
+          <view class="dot"></view>
+          <view wx:if="{{index < steps.length - 1}}" class="line"></view>
+        </view>
+        <view class="tinfo">
+          <view class="ttitle">{{item.title}}</view>
+          <view wx:if="{{item.time}}" class="ttime">{{item.time}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="block card">
+    <view class="block-title">这顿吃了啥</view>
+    <view wx:for="{{order.items}}" wx:key="dishId" class="item">
+      <view class="item-left">
+        <view class="item-name">{{item.name}} <text class="item-qty">×{{item.qty}}</text></view>
+        <view wx:if="{{item.specText}}" class="item-spec">{{item.specText}}</view>
+        <view wx:if="{{item.note}}" class="item-spec">备注：{{item.note}}</view>
+      </view>
+      <text class="item-price">¥{{item.lineTotal}}</text>
+    </view>
+    <view wx:if="{{order.note}}" class="order-note">整单备注：{{order.note}}</view>
+    <view class="total-row">
+      <text>合计</text>
+      <text class="total-price">¥{{order.amount}}</text>
+    </view>
+  </view>
+
+  <view class="block card">
+    <view class="block-title">小票</view>
+    <view class="receipt-row">
+      <text>下单时间</text>
+      <text>{{order.createdText}}</text>
+    </view>
+    <view class="receipt-row">
+      <text>用餐方式</text>
+      <text>{{order.mode}}</text>
+    </view>
+    <view class="receipt-row">
+      <text>期望时间</text>
+      <text>{{order.expectedTime}}</text>
+    </view>
+    <view class="receipt-stamp">记你账上 ♥</view>
+  </view>
+
+  <view class="actions">
+    <view class="btn btn-ink" bindtap="onReorder">再来一单</view>
+    <view class="btn" bindtap="onBackHome">回首页</view>
+  </view>
+</view>

@@ -1,0 +1,181 @@
+.page {
+  padding: 24rpx 24rpx 0;
+}
+
+.block {
+  padding: 24rpx;
+  margin-bottom: 24rpx;
+}
+
+.block-title {
+  margin-bottom: 16rpx;
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 32rpx;
+  font-weight: 800;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-bottom: 26rpx;
+}
+
+.chip-row.last {
+  margin-bottom: 0;
+}
+
+.chip {
+  padding: 12rpx 30rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 26rpx;
+  font-weight: 700;
+}
+
+.chip.active {
+  background: #FFD23F;
+  box-shadow: 4rpx 4rpx 0 #111111;
+  transform: rotate(-2deg);
+}
+
+.line {
+  display: flex;
+  gap: 16rpx;
+  padding: 16rpx 0;
+  border-bottom: 3rpx dashed rgba(17, 17, 17, 0.15);
+}
+
+.line:last-child {
+  border-bottom: none;
+}
+
+.line-media {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 88rpx;
+  height: 88rpx;
+  border: 3rpx solid #111111;
+  border-radius: 20rpx;
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 44rpx;
+  font-weight: 800;
+}
+
+.line-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.line-name {
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+.line-qty {
+  color: #5C5C5C;
+  font-size: 22rpx;
+}
+
+.line-spec,
+.line-note {
+  margin-top: 4rpx;
+  color: #5C5C5C;
+  font-size: 22rpx;
+}
+
+.line-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10rpx;
+}
+
+.line-price {
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 30rpx;
+  font-weight: 800;
+}
+
+.line-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40rpx;
+  height: 40rpx;
+  border: 2rpx solid #111111;
+  border-radius: 50%;
+  font-size: 26rpx;
+  line-height: 1;
+}
+
+.note-input {
+  width: 100%;
+  height: 140rpx;
+  padding: 16rpx 20rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 24rpx;
+  font-size: 26rpx;
+}
+
+.foot-space {
+  height: 220rpx;
+}
+
+.submit-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16rpx 24rpx calc(16rpx + env(safe-area-inset-bottom));
+  background: #FFFDF6;
+  border-top: 4rpx solid #111111;
+}
+
+.submit-total {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.submit-label {
+  color: #5C5C5C;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
+.submit-price {
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 44rpx;
+  font-weight: 800;
+}
+
+.submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88rpx;
+  padding: 0 56rpx;
+  background: #FF6B35;
+  border: 4rpx solid #111111;
+  border-radius: 999rpx;
+  box-shadow: 6rpx 6rpx 0 #111111;
+  font-size: 30rpx;
+  font-weight: 800;
+}
+
+.submit-btn:active {
+  transform: translate(6rpx, 6rpx);
+  box-shadow: none;
+}
+
+.submit-btn.disabled {
+  opacity: 0.6;
+}

@@ -1,0 +1,187 @@
+import type { Category, Dish, MealId } from '../../services/types'
+import { getCategories, getDishes } from '../../services/api'
+import { cart } from '../../store/cart'
+import { MEALS } from '../../utils/constants'
+import {
+  currentMeal,
+  formatDate,
+  greeting,
+  isOpenNow
+} from '../../utils/format'
+
+interface Section extends Category {
+  dishes: Dish[]
+}
+
+Page({
+  data: {
+    navPad: 44,
+    dateText: '',
+    greetText: '',
+    isOpen: true,
+    meals: MEALS,
+    selectedMeal: 'lunch' as MealId,
+    hero: null as Dish | null,
+    sections: [] as Section[],
+    cartCount: 0,
+    cartTotal: 0,
+    skuVisible: false,
+    activeDish: null as Dish | null,
+    loading: true
+  },
+
+  _unsub: null as null | (() => void),
+
+  onLoad() {
+    const app = getApp()
+    const statusBarHeight =
+      (app && app.globalData && app.globalData.statusBarHeight) || 20
+
+    this.setData({
+      navPad: statusBarHeight + 14,
+      dateText: formatDate(),
+      greetText: greeting(),
+      isOpen: isOpenNow(),
+      selectedMeal: currentMeal()
+    })
+
+    this._unsub = cart.subscribe(lines => {
+      const count = lines.reduce((sum, line) => sum + line.qty, 0)
+      const total = lines.reduce((sum, line) => sum + line.qty * line.price, 0)
+      this.setData({ cartCount: count, cartTotal: total })
+    })
+
+    this.loadMenu()
+  },
+
+  onShow() {
+    const tabBar: any = (this as any).getTabBar
+      ? (this as any).getTabBar()
+      : null
+    if (tabBar) {
+      tabBar.setData({ selected: 0 })
+    }
+    this.setData({ isOpen: isOpenNow() })
+  },
+
+  onUnload() {
+    if (this._unsub) {
+      this._unsub()
+      this._unsub = null
+    }
+  },
+
+  async loadMenu() {
+    this.setData({ loading: true })
+    try {
+      const [categories, dishes] = await Promise.all([
+        getCategories(),
+        getDishes()
+      ])
+      const meal = this.data.selectedMeal
+      const available = dishes.filter(
+        dish => dish.status !== 'off' && dish.meals.indexOf(meal) > -1
+      )
+      const sections = categories
+        .map(category => ({
+          ...category,
+          dishes: available.filter(dish => dish.categoryId === category.id)
+        }))
+        .filter(section => section.dishes.length > 0)
+      const hero =
+        available.find(dish => dish.isRecommended) || available[0] || null
+
+      this.setData({ sections, hero, loading: false })
+    } catch (e) {
+      this.setData({ loading: false })
+      wx.showToast({ title: '菜单加载失败', icon: 'none' })
+    }
+  },
+
+  onSelectMeal(e: any) {
+    const meal = e.currentTarget.dataset.meal as MealId
+    if (meal === this.data.selectedMeal) {
+      return
+    }
+    this.setData({ selectedMeal: meal }, () => this.loadMenu())
+  },
+
+  onDishTap(e: any) {
+    this.openSku(e.detail.dish)
+  },
+
+  onQuickAdd(e: any) {
+    this.quickAdd(e.detail.dish)
+  },
+
+  onHeroTap() {
+    this.openSku(this.data.hero)
+  },
+
+  onHeroAdd() {
+    this.quickAdd(this.data.hero)
+  },
+
+  quickAdd(dish: Dish | null) {
+    if (!dish) {
+      return
+    }
+    if (
+      (dish.spicyLevels && dish.spicyLevels.length) ||
+      (dish.addons && dish.addons.length)
+    ) {
+      this.openSku(dish)
+      return
+    }
+    cart.add({
+      key: '',
+      dishId: dish.id,
+      name: dish.name,
+      price: dish.price,
+      qty: 1,
+      specs: [],
+      note: '',
+      color: dish.color
+    })
+    wx.showToast({ title: '已加购', icon: 'none' })
+  },
+
+  openSku(dish: Dish | null) {
+    if (!dish) {
+      return
+    }
+    if (dish.status === 'soldout') {
+      wx.showToast({ title: '今天卖完啦', icon: 'none' })
+      return
+    }
+    this.setData({ activeDish: dish, skuVisible: true })
+  },
+
+  onSkuClose() {
+    this.setData({ skuVisible: false })
+  },
+
+  onSkuAdd(e: any) {
+    cart.add(e.detail.line)
+    this.setData({ skuVisible: false })
+    wx.showToast({ title: '已加购', icon: 'none' })
+  },
+
+  onCheckout() {
+    if (this.data.cartCount <= 0) {
+      return
+    }
+    wx.navigateTo({
+      url: `/pages/checkout/index?meal=${this.data.selectedMeal}`
+    })
+  },
+
+  onPullDownRefresh() {
+    this.setData({
+      dateText: formatDate(),
+      greetText: greeting(),
+      isOpen: isOpenNow()
+    })
+    this.loadMenu().then(() => wx.stopPullDownRefresh())
+  }
+})

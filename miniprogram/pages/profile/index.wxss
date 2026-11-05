@@ -1,0 +1,161 @@
+.page {
+  min-height: 100vh;
+  padding: 24rpx 24rpx 260rpx;
+}
+
+.profile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 22rpx;
+  padding: 30rpx 26rpx;
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 120rpx;
+  height: 120rpx;
+  background: #FFD23F;
+  border: 4rpx solid #111111;
+  border-radius: 32rpx;
+  box-shadow: 6rpx 6rpx 0 #111111;
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 56rpx;
+  font-weight: 800;
+  transform: rotate(-4deg);
+}
+
+.info {
+  flex: 1;
+}
+
+.name {
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 42rpx;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.motto {
+  margin-top: 4rpx;
+  color: #5C5C5C;
+  font-size: 24rpx;
+}
+
+.sticker {
+  position: absolute;
+  top: -16rpx;
+  right: 24rpx;
+  padding: 4rpx 18rpx;
+  background: #FF5C8A;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  box-shadow: 3rpx 3rpx 0 #111111;
+  color: #111111;
+  font-size: 22rpx;
+  font-weight: 800;
+  transform: rotate(6deg);
+}
+
+.stats {
+  display: flex;
+  align-items: stretch;
+  margin-top: 24rpx;
+  padding: 28rpx 16rpx;
+}
+
+.stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+.stat-num {
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 56rpx;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.stat-fav {
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 34rpx;
+  font-weight: 800;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.stat-label {
+  margin-top: 4rpx;
+  color: #5C5C5C;
+  font-size: 22rpx;
+}
+
+.divider {
+  width: 3rpx;
+  margin: 8rpx 0;
+  background: rgba(17, 17, 17, 0.15);
+}
+
+.entries {
+  margin-top: 24rpx;
+  padding: 8rpx 24rpx;
+}
+
+.entry {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 22rpx 0;
+  border-bottom: 3rpx dashed rgba(17, 17, 17, 0.15);
+}
+
+.entry:last-child {
+  border-bottom: none;
+}
+
+.entry-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 76rpx;
+  height: 76rpx;
+  border: 3rpx solid #111111;
+  border-radius: 20rpx;
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 34rpx;
+  font-weight: 800;
+}
+
+.entry-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.entry-label {
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+.entry-desc {
+  margin-top: 2rpx;
+  color: #5C5C5C;
+  font-size: 22rpx;
+}
+
+.entry-arrow {
+  font-size: 30rpx;
+  font-weight: 800;
+}
+
+.footer {
+  margin-top: 40rpx;
+  color: #B8B8B8;
+  font-size: 22rpx;
+  text-align: center;
+}

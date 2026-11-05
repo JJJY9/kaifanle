@@ -1,0 +1,12 @@
+<view class="empty">
+  <view class="face">
+    <view class="eye left"></view>
+    <view class="eye right"></view>
+    <view class="blush left"></view>
+    <view class="blush right"></view>
+    <view class="mouth"></view>
+  </view>
+  <view class="title">{{title}}</view>
+  <view wx:if="{{desc}}" class="desc">{{desc}}</view>
+  <view wx:if="{{actionText}}" class="action" bindtap="onAction">{{actionText}}</view>
+</view>

@@ -1,0 +1,76 @@
+<view class="page">
+  <view class="block card">
+    <view class="block-title">送到哪一顿</view>
+    <view class="chip-row">
+      <view
+        wx:for="{{meals}}"
+        wx:key="id"
+        class="chip {{meal === item.id ? 'active' : ''}}"
+        data-meal="{{item.id}}"
+        bindtap="onMealChange"
+      >{{item.name}}</view>
+    </view>
+
+    <view class="block-title">期望时间</view>
+    <view class="chip-row">
+      <view
+        wx:for="{{timeOptions}}"
+        wx:key="*this"
+        class="chip {{timeIndex === index ? 'active' : ''}}"
+        data-index="{{index}}"
+        bindtap="onTimeSelect"
+      >{{item}}</view>
+    </view>
+
+    <view class="block-title">怎么吃</view>
+    <view class="chip-row last">
+      <view
+        wx:for="{{modes}}"
+        wx:key="*this"
+        class="chip {{modeIndex === index ? 'active' : ''}}"
+        data-index="{{index}}"
+        bindtap="onModeSelect"
+      >{{item}}</view>
+    </view>
+  </view>
+
+  <view class="block card">
+    <view class="block-title">这顿吃点啥</view>
+    <view wx:for="{{lines}}" wx:key="key" class="line">
+      <view class="line-media" style="background: {{item.color}};">{{item.char}}</view>
+      <view class="line-info">
+        <view class="line-name">{{item.name}} <text class="line-qty">×{{item.qty}}</text></view>
+        <view wx:if="{{item.specText}}" class="line-spec">{{item.specText}}</view>
+        <view wx:if="{{item.note}}" class="line-note">备注：{{item.note}}</view>
+      </view>
+      <view class="line-right">
+        <text class="line-price">¥{{item.lineTotal}}</text>
+        <view class="line-remove" data-key="{{item.key}}" bindtap="onRemove">×</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="block card">
+    <view class="block-title">想跟掌勺的说</view>
+    <textarea
+      class="note-input"
+      placeholder="比如：今天想多吃点菜"
+      value="{{note}}"
+      maxlength="100"
+      bindinput="onNote"
+    />
+  </view>
+
+  <view class="foot-space"></view>
+</view>
+
+<view class="submit-bar">
+  <view class="submit-total">
+    <text class="submit-label">合计</text>
+    <text class="submit-price">¥{{total}}</text>
+  </view>
+  <view
+    class="submit-btn {{submitting ? 'disabled' : ''}}"
+    bindtap="onSubmit"
+  >{{submitting ? '提交中…' : '提交订单'}}</view>
+</view>

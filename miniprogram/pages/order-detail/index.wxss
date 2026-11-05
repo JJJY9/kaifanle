@@ -1,0 +1,234 @@
+.page {
+  min-height: 100vh;
+  padding: 24rpx 24rpx 80rpx;
+}
+
+.status-card {
+  padding: 28rpx;
+}
+
+.status-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.status-badge {
+  padding: 8rpx 24rpx;
+  background: #FFD23F;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+.status-badge.accepted {
+  background: #2D9CFF;
+  color: #FFFFFF;
+}
+
+.status-badge.cooking {
+  background: #FF6B35;
+}
+
+.status-badge.ready {
+  background: #2FBF71;
+}
+
+.status-badge.completed {
+  background: #EFE9DC;
+  color: #5C5C5C;
+}
+
+.status-badge.cancelled {
+  background: #E8E8E8;
+  color: #B8B8B8;
+}
+
+.status-no {
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 32rpx;
+  font-weight: 800;
+  color: #5C5C5C;
+}
+
+.status-sub {
+  margin-top: 16rpx;
+  color: #5C5C5C;
+  font-size: 24rpx;
+}
+
+.ready-tip {
+  display: inline-block;
+  margin-top: 18rpx;
+  padding: 10rpx 20rpx;
+  background: #2FBF71;
+  border: 3rpx solid #111111;
+  border-radius: 16rpx;
+  font-size: 26rpx;
+  font-weight: 800;
+  transform: rotate(-1deg);
+}
+
+.block {
+  padding: 28rpx;
+  margin-top: 24rpx;
+}
+
+.block-title {
+  margin-bottom: 20rpx;
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 32rpx;
+  font-weight: 800;
+}
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+}
+
+.tstep {
+  display: flex;
+  gap: 20rpx;
+  min-height: 92rpx;
+}
+
+.rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 24rpx;
+}
+
+.dot {
+  width: 22rpx;
+  height: 22rpx;
+  margin-top: 6rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #B8B8B8;
+  border-radius: 50%;
+}
+
+.line {
+  flex: 1;
+  width: 0;
+  margin: 4rpx 0;
+  border-left: 3rpx dashed #B8B8B8;
+}
+
+.tstep.done .dot {
+  background: #111111;
+  border-color: #111111;
+}
+
+.tstep.done .line {
+  border-color: #111111;
+}
+
+.tinfo {
+  flex: 1;
+  padding-bottom: 20rpx;
+}
+
+.ttitle {
+  color: #B8B8B8;
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+.tstep.done .ttitle {
+  color: #111111;
+}
+
+.ttime {
+  margin-top: 2rpx;
+  color: #5C5C5C;
+  font-size: 22rpx;
+}
+
+.item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 12rpx 0;
+}
+
+.item-name {
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.item-qty {
+  color: #5C5C5C;
+  font-size: 22rpx;
+}
+
+.item-spec {
+  margin-top: 2rpx;
+  color: #5C5C5C;
+  font-size: 22rpx;
+}
+
+.item-price {
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+.order-note {
+  margin-top: 12rpx;
+  padding: 12rpx 16rpx;
+  background: #FFD23F;
+  border: 3rpx solid #111111;
+  border-radius: 16rpx;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
+.total-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 20rpx;
+  padding-top: 20rpx;
+  border-top: 3rpx dashed rgba(17, 17, 17, 0.2);
+  font-weight: 800;
+}
+
+.total-price {
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 40rpx;
+}
+
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8rpx 0;
+  color: #5C5C5C;
+  font-size: 24rpx;
+}
+
+.receipt-stamp {
+  display: inline-block;
+  margin-top: 20rpx;
+  padding: 6rpx 18rpx;
+  border: 3rpx solid #FF5C8A;
+  border-radius: 8rpx;
+  color: #FF5C8A;
+  font-size: 26rpx;
+  font-weight: 800;
+  transform: rotate(-3deg);
+}
+
+.actions {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 28rpx;
+}
+
+.actions .btn {
+  flex: 1;
+  height: 88rpx;
+  font-size: 28rpx;
+}

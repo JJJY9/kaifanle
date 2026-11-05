@@ -1,0 +1,263 @@
+.page {
+  min-height: 100vh;
+  padding-left: 24rpx;
+  padding-right: 24rpx;
+  padding-bottom: 320rpx;
+}
+
+.header {
+  padding-top: 8rpx;
+}
+
+.top-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.date {
+  color: #5C5C5C;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 6rpx 18rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  box-shadow: 3rpx 3rpx 0 #111111;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
+.status-dot {
+  width: 12rpx;
+  height: 12rpx;
+  background: #2FBF71;
+  border: 2rpx solid #111111;
+  border-radius: 50%;
+}
+
+.status.closed .status-dot {
+  background: #B8B8B8;
+}
+
+.title-line {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-top: 18rpx;
+}
+
+.big-title {
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 68rpx;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: 2rpx;
+}
+
+.sticker-title {
+  padding: 2rpx 16rpx;
+  background: #FFD23F;
+  border: 3rpx solid #111111;
+  border-radius: 8rpx;
+  box-shadow: 3rpx 3rpx 0 #111111;
+  font-size: 22rpx;
+  font-weight: 800;
+  transform: rotate(-4deg);
+}
+
+.sub-line {
+  margin-top: 4rpx;
+  color: #5C5C5C;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.meal-tabs {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 28rpx;
+}
+
+.meal-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 84rpx;
+  background: #FFFFFF;
+  border: 4rpx solid #111111;
+  border-radius: 24rpx;
+  box-shadow: 5rpx 5rpx 0 #111111;
+  font-size: 28rpx;
+  font-weight: 800;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+.meal-tab:active {
+  transform: translate(5rpx, 5rpx);
+  box-shadow: none;
+}
+
+.meal-tab.active {
+  background: #111111;
+  color: #FFFFFF;
+}
+
+.hero {
+  margin-top: 32rpx;
+  background: #FFFFFF;
+  border: 4rpx solid #111111;
+  border-radius: 44rpx;
+  box-shadow: 10rpx 10rpx 0 #111111;
+  overflow: hidden;
+}
+
+.hero-media {
+  position: relative;
+  height: 300rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 4rpx solid #111111;
+}
+
+.hero-char {
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 200rpx;
+  font-weight: 800;
+  line-height: 1;
+  color: rgba(17, 17, 17, 0.85);
+  transform: rotate(-8deg);
+}
+
+.hero-sticker {
+  position: absolute;
+  top: 24rpx;
+  right: 24rpx;
+  padding: 8rpx 22rpx;
+  background: #FFFFFF;
+  border: 4rpx solid #111111;
+  border-radius: 999rpx;
+  box-shadow: 4rpx 4rpx 0 #111111;
+  font-size: 24rpx;
+  font-weight: 800;
+  transform: rotate(6deg);
+}
+
+.hero-body {
+  padding: 20rpx 24rpx 24rpx;
+}
+
+.hero-name {
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 44rpx;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.hero-desc {
+  margin-top: 6rpx;
+  color: #5C5C5C;
+  font-size: 24rpx;
+}
+
+.hero-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16rpx;
+}
+
+.hero-price {
+  display: flex;
+  align-items: baseline;
+}
+
+.currency {
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
+.price-num {
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 48rpx;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.hero-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72rpx;
+  height: 72rpx;
+  background: #FF6B35;
+  border: 4rpx solid #111111;
+  border-radius: 50%;
+  box-shadow: 5rpx 5rpx 0 #111111;
+  font-size: 44rpx;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.hero-add:active {
+  transform: translate(5rpx, 5rpx);
+  box-shadow: none;
+}
+
+.section {
+  margin-top: 40rpx;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  margin-bottom: 20rpx;
+}
+
+.section-dot {
+  width: 22rpx;
+  height: 22rpx;
+  border: 3rpx solid #111111;
+  border-radius: 6rpx;
+}
+
+.section-title {
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 38rpx;
+  font-weight: 800;
+}
+
+.section-line {
+  flex: 1;
+  margin-left: 6rpx;
+  border-top: 3rpx dashed #111111;
+  opacity: 0.35;
+}
+
+.dish-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.loading {
+  margin-top: 32rpx;
+}
+
+.sk-hero {
+  height: 480rpx;
+}
+
+.sk-row {
+  height: 208rpx;
+  margin-top: 20rpx;
+}

@@ -1,0 +1,89 @@
+<view class="page" style="padding-top: {{navPad}}px;">
+  <view class="header">
+    <view class="top-line">
+      <text class="date">{{dateText}}</text>
+      <view class="status {{isOpen ? 'open' : 'closed'}}">
+        <view class="status-dot"></view>
+        <text>{{isOpen ? '营业中' : '休息中'}}</text>
+      </view>
+    </view>
+
+    <view class="title-line">
+      <text class="big-title">{{greetText}}</text>
+      <view class="sticker-title">干饭!</view>
+    </view>
+    <view class="sub-line">今天也给你开小灶</view>
+
+    <view class="meal-tabs">
+      <view
+        wx:for="{{meals}}"
+        wx:key="id"
+        class="meal-tab {{selectedMeal === item.id ? 'active' : ''}}"
+        data-meal="{{item.id}}"
+        bindtap="onSelectMeal"
+      >{{item.name}}</view>
+    </view>
+  </view>
+
+  <view wx:if="{{loading}}" class="loading">
+    <view class="skeleton sk-hero"></view>
+    <view class="skeleton sk-row"></view>
+    <view class="skeleton sk-row"></view>
+  </view>
+
+  <block wx:elif="{{sections.length}}">
+    <view wx:if="{{hero}}" class="hero" bindtap="onHeroTap">
+      <view class="hero-media" style="background: {{hero.color}};">
+        <text class="hero-char">{{hero.char}}</text>
+        <view class="hero-sticker">今日推荐</view>
+      </view>
+      <view class="hero-body">
+        <view class="hero-name">{{hero.name}}</view>
+        <view class="hero-desc">{{hero.desc}}</view>
+        <view class="hero-foot">
+          <view class="hero-price">
+            <text class="currency">¥</text>
+            <text class="price-num">{{hero.price}}</text>
+          </view>
+          <view class="hero-add" catchtap="onHeroAdd">+</view>
+        </view>
+      </view>
+    </view>
+
+    <view wx:for="{{sections}}" wx:key="id" class="section">
+      <view class="section-head">
+        <view class="section-dot" style="background: {{item.color}};"></view>
+        <text class="section-title">{{item.name}}</text>
+        <view class="section-line"></view>
+      </view>
+      <view class="dish-list">
+        <dish-card
+          wx:for="{{item.dishes}}"
+          wx:key="id"
+          dish="{{item}}"
+          bind:select="onDishTap"
+          bind:add="onQuickAdd"
+        />
+      </view>
+    </view>
+  </block>
+
+  <empty-state
+    wx:else
+    title="这一餐还没开火"
+    desc="换个餐次看看，或者去许愿池点个菜"
+  />
+</view>
+
+<cart-bar
+  count="{{cartCount}}"
+  total="{{cartTotal}}"
+  bind:checkout="onCheckout"
+/>
+
+<sku-sheet
+  visible="{{skuVisible}}"
+  dish="{{activeDish}}"
+  bind:close="onSkuClose"
+  bind:add="onSkuAdd"
+/>

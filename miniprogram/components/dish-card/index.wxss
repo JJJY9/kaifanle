@@ -1,0 +1,158 @@
+.dish {
+  display: flex;
+  gap: 20rpx;
+  width: 100%;
+  padding: 16rpx;
+  background: #FFFFFF;
+  border: 4rpx solid #111111;
+  border-radius: 32rpx;
+  box-shadow: 6rpx 6rpx 0 #111111;
+}
+
+.media {
+  position: relative;
+  flex: 0 0 176rpx;
+  width: 176rpx;
+  height: 176rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3rpx solid #111111;
+  border-radius: 24rpx;
+  overflow: hidden;
+}
+
+.media-img {
+  width: 100%;
+  height: 100%;
+}
+
+.media-char {
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 96rpx;
+  font-weight: 800;
+  color: rgba(17, 17, 17, 0.82);
+  transform: rotate(-8deg);
+}
+
+.media-tag {
+  position: absolute;
+  top: 10rpx;
+  left: 10rpx;
+  padding: 2rpx 12rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 18rpx;
+  font-weight: 800;
+  transform: rotate(-6deg);
+}
+
+.soldout-mask {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.soldout-text {
+  padding: 6rpx 20rpx;
+  background: #111111;
+  color: #FFFFFF;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  font-weight: 800;
+  transform: rotate(-8deg);
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 4rpx 0;
+}
+
+.name {
+  font-size: 30rpx;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.desc {
+  margin-top: 6rpx;
+  color: #5C5C5C;
+  font-size: 22rpx;
+  line-height: 1.4;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10rpx;
+}
+
+.price-wrap {
+  display: flex;
+  align-items: baseline;
+  color: #111111;
+}
+
+.currency {
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
+.price {
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 36rpx;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56rpx;
+  height: 56rpx;
+  background: #FF6B35;
+  border: 3rpx solid #111111;
+  border-radius: 50%;
+  box-shadow: 4rpx 4rpx 0 #111111;
+  color: #111111;
+  font-size: 40rpx;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.add:active {
+  transform: translate(4rpx, 4rpx);
+  box-shadow: none;
+}
+
+.soldout-hint {
+  color: #B8B8B8;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
+.is-soldout .name,
+.is-soldout .desc {
+  color: #B8B8B8;
+}
+
+.is-soldout .price-wrap {
+  color: #B8B8B8;
+}

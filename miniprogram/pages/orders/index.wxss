@@ -1,0 +1,110 @@
+.page {
+  min-height: 100vh;
+  padding: 24rpx 24rpx 240rpx;
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  padding: 8rpx 4rpx 28rpx;
+}
+
+.title {
+  font-size: 52rpx;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.sub {
+  margin-top: 4rpx;
+  color: #5C5C5C;
+  font-size: 24rpx;
+}
+
+.order {
+  padding: 24rpx;
+  margin-bottom: 24rpx;
+}
+
+.order-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.no {
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 32rpx;
+  font-weight: 800;
+  color: #5C5C5C;
+}
+
+.status {
+  padding: 4rpx 20rpx;
+  background: #FFD23F;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
+.status.accepted {
+  background: #2D9CFF;
+  color: #FFFFFF;
+}
+
+.status.cooking {
+  background: #FF6B35;
+}
+
+.status.ready {
+  background: #2FBF71;
+}
+
+.status.completed {
+  background: #EFE9DC;
+  color: #5C5C5C;
+}
+
+.status.cancelled {
+  background: #E8E8E8;
+  color: #B8B8B8;
+}
+
+.order-summary {
+  margin-top: 18rpx;
+  font-size: 32rpx;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.order-meta {
+  margin-top: 6rpx;
+  color: #5C5C5C;
+  font-size: 24rpx;
+}
+
+.order-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 18rpx;
+  padding-top: 18rpx;
+  border-top: 3rpx dashed rgba(17, 17, 17, 0.15);
+}
+
+.order-amount {
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 38rpx;
+  font-weight: 800;
+}
+
+.order-arrow {
+  font-size: 24rpx;
+  font-weight: 800;
+}
+
+.sk-row {
+  height: 240rpx;
+  margin-bottom: 24rpx;
+}

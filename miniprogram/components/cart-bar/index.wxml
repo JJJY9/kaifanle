@@ -1,0 +1,13 @@
+<view wx:if="{{count > 0}}" class="cartbar">
+  <view class="info">
+    <view class="badge">{{count}}</view>
+    <view class="amount">
+      <text class="label">已选 {{count}} 份</text>
+      <view class="price-wrap">
+        <text class="currency">¥</text>
+        <text class="price">{{total}}</text>
+      </view>
+    </view>
+  </view>
+  <view class="go" bindtap="onCheckout">去结算 →</view>
+</view>

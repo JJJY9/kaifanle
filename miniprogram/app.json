@@ -1,0 +1,46 @@
+{
+  "pages": [
+    "pages/home/index",
+    "pages/orders/index",
+    "pages/profile/index",
+    "pages/checkout/index",
+    "pages/order-detail/index",
+    "pages/kitchen/index"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#FFFDF6",
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "开饭咯",
+    "backgroundColor": "#FFFDF6",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#5C5C5C",
+    "selectedColor": "#111111",
+    "backgroundColor": "#FFFDF6",
+    "list": [
+      {
+        "pagePath": "pages/home/index",
+        "text": "点餐"
+      },
+      {
+        "pagePath": "pages/orders/index",
+        "text": "订单"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "text": "我的"
+      }
+    ]
+  },
+  "usingComponents": {
+    "dish-card": "/components/dish-card/index",
+    "cart-bar": "/components/cart-bar/index",
+    "sku-sheet": "/components/sku-sheet/index",
+    "empty-state": "/components/empty-state/index"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

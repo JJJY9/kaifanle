@@ -1,0 +1,98 @@
+.cartbar {
+  position: fixed;
+  left: 24rpx;
+  right: 24rpx;
+  bottom: calc(128rpx + env(safe-area-inset-bottom));
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 104rpx;
+  padding: 0 12rpx 0 16rpx;
+  background: #FFFFFF;
+  border: 4rpx solid #111111;
+  border-radius: 999rpx;
+  box-shadow: 8rpx 8rpx 0 #111111;
+  animation: cart-in 0.18s ease-out;
+}
+
+@keyframes cart-in {
+  from {
+    transform: translateY(24rpx);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.info {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 64rpx;
+  height: 64rpx;
+  padding: 0 12rpx;
+  background: #FFD23F;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 28rpx;
+  font-weight: 800;
+  transform: rotate(-4deg);
+}
+
+.amount {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  line-height: 1.1;
+}
+
+.label {
+  color: #5C5C5C;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
+.price-wrap {
+  display: flex;
+  align-items: baseline;
+}
+
+.currency {
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
+.price {
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 36rpx;
+  font-weight: 800;
+}
+
+.go {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 80rpx;
+  padding: 0 36rpx;
+  background: #FF6B35;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  box-shadow: 4rpx 4rpx 0 #111111;
+  color: #111111;
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+.go:active {
+  transform: translate(4rpx, 4rpx);
+  box-shadow: none;
+}

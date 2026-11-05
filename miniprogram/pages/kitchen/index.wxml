@@ -1,0 +1,53 @@
+<view class="page">
+  <view class="head">
+    <view class="title display">厨房端</view>
+    <view class="sub">管理员视图 · 只有你能看到</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="skeleton sk-row"></view>
+
+  <block wx:else>
+    <view class="section-title display">今天要做的</view>
+    <view wx:if="{{!orders.length}}" class="empty-line">暂时没有待处理的订单，歇会儿吧</view>
+
+    <view wx:for="{{orders}}" wx:key="id" class="order card">
+      <view class="order-top">
+        <text class="no">#{{item.no}}</text>
+        <view class="status {{item.status}}">{{item.statusText}}</view>
+      </view>
+      <view class="order-summary">{{item.summary}}</view>
+      <view class="order-meta">{{item.mealText}} · {{item.mode}} · {{item.expectedTime}} · {{item.timeText}}</view>
+      <view wx:if="{{item.note}}" class="order-note">她备注：{{item.note}}</view>
+      <view class="order-actions">
+        <view
+          wx:if="{{item.status === 'pending'}}"
+          class="kbtn ghost"
+          data-id="{{item.id}}"
+          bindtap="onReject"
+        >拒单</view>
+        <view
+          class="kbtn primary"
+          data-id="{{item.id}}"
+          data-status="{{item.status}}"
+          bindtap="onAdvance"
+        >{{item.actionText}} →</view>
+      </view>
+    </view>
+
+    <view class="section-title display menu-title">菜品管理</view>
+    <view class="menu card">
+      <view wx:for="{{dishes}}" wx:key="id" class="dish-row">
+        <view class="dish-dot" style="background: {{item.color}};">{{item.char}}</view>
+        <view class="dish-info">
+          <view class="dish-name">{{item.name}}</view>
+          <view class="dish-price">¥{{item.price}}</view>
+        </view>
+        <view
+          class="dish-toggle {{item.status === 'soldout' ? 'off' : ''}}"
+          data-id="{{item.id}}"
+          bindtap="onToggleDish"
+        >{{item.status === 'soldout' ? '已售罄' : '供应中'}}</view>
+      </view>
+    </view>
+  </block>
+</view>
