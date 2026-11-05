@@ -44,6 +44,7 @@ Page({
   _knownPending: [] as string[],
   _statsAt: 0,
   _rawOrders: [] as any[],
+  _loadSeq: 0,
 
   onShow() {
     this.guard()
@@ -138,6 +139,7 @@ Page({
   },
 
   async load(silent = false) {
+    const seq = ++this._loadSeq
     try {
       // 静默轮询只取未完成订单；首次/操作后加载全量（含历史）
       let orders: any[]
@@ -151,6 +153,9 @@ Page({
       } else {
         orders = await getAllOrders()
         this._rawOrders = orders
+      }
+      if (seq !== this._loadSeq) {
+        return
       }
       // 静默轮询只拉订单；菜品和统计沿用上次结果，省云端读取次数
       let dishes = this.data.dishes
@@ -351,7 +356,7 @@ Page({
         error: ''
       })
     } catch (e: any) {
-      if (silent) {
+      if (silent || seq !== this._loadSeq) {
         return
       }
       this.setData({
