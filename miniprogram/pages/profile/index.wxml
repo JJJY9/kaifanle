@@ -37,5 +37,5 @@
     </view>
   </view>
 
-  <view class="footer">开饭咯 v0.1.0 · 用爱发电</view>
+  <view class="footer">{{cloudMode ? (initialized ? '云开发已连接' : '云开发未初始化') : '本地 mock 模式'}} · 开饭咯 v0.1.0</view>
 </view>

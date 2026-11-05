@@ -1,66 +1,83 @@
 import * as mock from './mock'
+import { USE_CLOUD } from '../config'
 import type {
   Category,
   CreateOrderPayload,
   Dish,
+  InitResult,
+  MeInfo,
   Order,
   OrderStatus
 } from './types'
 
-// 先跑 mock 数据，微信开发者工具导入即可预览。
-// 配好云开发环境、部署云函数后改成 true，即切换到真实后端。
-const USE_CLOUD = false
-
-async function callCloud<T = any>(name: string, data?: any): Promise<T> {
-  const res: any = await wx.cloud.callFunction({ name, data })
-  return res.result as T
+// 所有云调用统一走 cloudfunctions/api，按 action 路由。
+async function callApi<T>(action: string, payload?: any): Promise<T> {
+  if (!wx.cloud) {
+    throw new Error('当前基础库不支持云开发')
+  }
+  const res: any = await wx.cloud.callFunction({
+    name: 'api',
+    data: { action, payload: payload || {} }
+  })
+  const result = (res && res.result) || {}
+  if (result.ok === false) {
+    throw new Error(result.error || '云函数调用失败')
+  }
+  return result.data as T
 }
 
 export async function getCategories(): Promise<Category[]> {
   if (USE_CLOUD) {
-    return callCloud<Category[]>('getCategories')
+    return callApi<Category[]>('getCategories')
   }
   return mock.getCategories()
 }
 
 export async function getDishes(): Promise<Dish[]> {
   if (USE_CLOUD) {
-    return callCloud<Dish[]>('getDishes')
+    return callApi<Dish[]>('getDishes')
   }
   return mock.getDishes()
 }
 
 export async function getDish(id: string): Promise<Dish | null> {
   if (USE_CLOUD) {
-    return callCloud<Dish | null>('getDish', { id })
+    return callApi<Dish | null>('getDish', { id })
   }
   return mock.getDish(id)
 }
 
 export async function toggleDishStatus(id: string): Promise<Dish | null> {
   if (USE_CLOUD) {
-    return callCloud<Dish | null>('toggleDishStatus', { id })
+    return callApi<Dish | null>('toggleDishStatus', { id })
   }
   return mock.toggleDishStatus(id)
 }
 
 export async function getOrders(): Promise<Order[]> {
   if (USE_CLOUD) {
-    return callCloud<Order[]>('getOrders')
+    return callApi<Order[]>('getOrders')
   }
   return mock.getOrders()
 }
 
+export async function getAllOrders(): Promise<Order[]> {
+  if (USE_CLOUD) {
+    return callApi<Order[]>('getAllOrders')
+  }
+  return mock.getAllOrders()
+}
+
 export async function getOrder(id: string): Promise<Order | null> {
   if (USE_CLOUD) {
-    return callCloud<Order | null>('getOrder', { id })
+    return callApi<Order | null>('getOrder', { id })
   }
   return mock.getOrder(id)
 }
 
 export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
   if (USE_CLOUD) {
-    return callCloud<Order>('createOrder', payload)
+    return callApi<Order>('createOrder', payload)
   }
   return mock.createOrder(payload)
 }
@@ -70,7 +87,21 @@ export async function updateOrderStatus(
   status: OrderStatus
 ): Promise<Order | null> {
   if (USE_CLOUD) {
-    return callCloud<Order | null>('updateOrderStatus', { id, status })
+    return callApi<Order | null>('updateOrderStatus', { id, status })
   }
   return mock.updateOrderStatus(id, status)
+}
+
+export async function getMe(): Promise<MeInfo> {
+  if (USE_CLOUD) {
+    return callApi<MeInfo>('getMe')
+  }
+  return mock.getMe()
+}
+
+export async function initDb(): Promise<InitResult> {
+  if (USE_CLOUD) {
+    return callApi<InitResult>('initDb')
+  }
+  return mock.initDb()
 }

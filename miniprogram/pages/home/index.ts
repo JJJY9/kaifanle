@@ -2,6 +2,7 @@ import type { Category, Dish, MealId } from '../../services/types'
 import { getCategories, getDishes } from '../../services/api'
 import { cart } from '../../store/cart'
 import { MEALS } from '../../utils/constants'
+import { USE_CLOUD } from '../../config'
 import {
   currentMeal,
   formatDate,
@@ -27,7 +28,8 @@ Page({
     cartTotal: 0,
     skuVisible: false,
     activeDish: null as Dish | null,
-    loading: true
+    loading: true,
+    emptyDesc: '换个餐次看看，或者去许愿池点个菜'
   },
 
   _unsub: null as null | (() => void),
@@ -91,9 +93,22 @@ Page({
       const hero =
         available.find(dish => dish.isRecommended) || available[0] || null
 
-      this.setData({ sections, hero, loading: false })
+      this.setData({
+        sections,
+        hero,
+        loading: false,
+        emptyDesc:
+          USE_CLOUD && sections.length === 0
+            ? '云数据库可能还没初始化，去「我的」看一眼'
+            : '换个餐次看看，或者去许愿池点个菜'
+      })
     } catch (e) {
-      this.setData({ loading: false })
+      this.setData({
+        loading: false,
+        emptyDesc: USE_CLOUD
+          ? '云环境还没连上，检查一下云函数是否已部署'
+          : '菜单加载失败，下拉试试'
+      })
       wx.showToast({ title: '菜单加载失败', icon: 'none' })
     }
   },

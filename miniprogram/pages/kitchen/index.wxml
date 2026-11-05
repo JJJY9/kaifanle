@@ -1,4 +1,13 @@
-<view class="page">
+<view wx:if="{{forbidden}}" class="page">
+  <empty-state
+    title="厨房重地"
+    desc="只有掌勺人能进"
+    actionText="回我的"
+    bind:action="onBack"
+  />
+</view>
+
+<view wx:else class="page">
   <view class="head">
     <view class="title display">厨房端</view>
     <view class="sub">管理员视图 · 只有你能看到</view>

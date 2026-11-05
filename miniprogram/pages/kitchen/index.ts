@@ -1,7 +1,8 @@
 import type { OrderStatus } from '../../services/types'
 import {
+  getAllOrders,
   getDishes,
-  getOrders,
+  getMe,
   toggleDishStatus,
   updateOrderStatus
 } from '../../services/api'
@@ -17,16 +18,31 @@ Page({
   data: {
     orders: [] as any[],
     dishes: [] as any[],
-    loading: true
+    loading: true,
+    forbidden: false
   },
 
   onShow() {
-    this.load()
+    this.guard()
+  },
+
+  async guard() {
+    try {
+      const me = await getMe()
+      if (!me.isAdmin) {
+        this.setData({ forbidden: true, loading: false, orders: [], dishes: [] })
+        return
+      }
+      this.setData({ forbidden: false })
+      this.load()
+    } catch (e) {
+      this.setData({ forbidden: true, loading: false })
+    }
   },
 
   async load() {
     try {
-      const [orders, dishes] = await Promise.all([getOrders(), getDishes()])
+      const [orders, dishes] = await Promise.all([getAllOrders(), getDishes()])
       const active = orders.filter(
         order => order.status !== 'completed' && order.status !== 'cancelled'
       )
@@ -52,9 +68,16 @@ Page({
     if (!next) {
       return
     }
-    await updateOrderStatus(id, next)
-    wx.showToast({ title: '状态已更新', icon: 'none' })
-    this.load()
+    try {
+      await updateOrderStatus(id, next)
+      wx.showToast({ title: '状态已更新', icon: 'none' })
+      this.load()
+    } catch (err: any) {
+      wx.showToast({
+        title: String((err && err.message) || '操作失败').slice(0, 40),
+        icon: 'none'
+      })
+    }
   },
 
   async onReject(e: any) {
@@ -68,13 +91,31 @@ Page({
     if (!res.confirm) {
       return
     }
-    await updateOrderStatus(id, 'cancelled')
-    this.load()
+    try {
+      await updateOrderStatus(id, 'cancelled')
+      this.load()
+    } catch (err: any) {
+      wx.showToast({
+        title: String((err && err.message) || '操作失败').slice(0, 40),
+        icon: 'none'
+      })
+    }
   },
 
   async onToggleDish(e: any) {
     const id = e.currentTarget.dataset.id
-    await toggleDishStatus(id)
-    this.load()
+    try {
+      await toggleDishStatus(id)
+      this.load()
+    } catch (err: any) {
+      wx.showToast({
+        title: String((err && err.message) || '操作失败').slice(0, 40),
+        icon: 'none'
+      })
+    }
+  },
+
+  onBack() {
+    wx.navigateBack({ delta: 1 })
   }
 })

@@ -84,3 +84,15 @@ export interface CreateOrderPayload {
   mode: string
   note: string
 }
+
+export interface MeInfo {
+  openid: string
+  isAdmin: boolean
+  initialized: boolean
+}
+
+export interface InitResult {
+  initialized: boolean
+  already: boolean
+  isAdmin: boolean
+}

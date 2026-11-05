@@ -1,3 +1,6 @@
+import { getMe, initDb } from '../../services/api'
+import { USE_CLOUD } from '../../config'
+
 Page({
   data: {
     user: {
@@ -9,7 +12,29 @@ Page({
       month: 12,
       favorite: '番茄牛腩饭'
     },
-    entries: [
+    cloudMode: USE_CLOUD,
+    isAdmin: true,
+    initialized: true,
+    openid: '',
+    entries: [] as any[]
+  },
+
+  onLoad() {
+    this.setData({ entries: this.buildEntries(true, true) })
+  },
+
+  onShow() {
+    const tabBar: any = (this as any).getTabBar
+      ? (this as any).getTabBar()
+      : null
+    if (tabBar) {
+      tabBar.setData({ selected: 2 })
+    }
+    this.loadMe()
+  },
+
+  buildEntries(isAdmin: boolean, initialized: boolean): any[] {
+    const entries: any[] = [
       {
         key: 'wish',
         label: '许愿池',
@@ -23,39 +48,111 @@ Page({
         desc: '洗碗券、奶茶券、夸夸卡',
         icon: '券',
         color: '#FFD23F'
-      },
-      {
+      }
+    ]
+
+    if (isAdmin) {
+      entries.push({
         key: 'kitchen',
         label: '厨房端',
         desc: '接单、上下架（管理员）',
         icon: '厨',
         color: '#2D9CFF'
-      },
-      {
-        key: 'about',
-        label: '关于开饭咯',
-        desc: 'v0.1.0 · 还在长大',
-        icon: '关',
-        color: '#2FBF71'
-      }
-    ]
+      })
+    }
+
+    if (USE_CLOUD && !initialized) {
+      entries.push({
+        key: 'init',
+        label: '云环境初始化',
+        desc: '首次使用，写入默认菜单',
+        icon: '云',
+        color: '#FF6B35'
+      })
+    }
+
+    if (USE_CLOUD && isAdmin) {
+      entries.push({
+        key: 'openid',
+        label: '我的 openid',
+        desc: '点一下复制，用于添加管理员',
+        icon: 'ID',
+        color: '#FFD23F'
+      })
+    }
+
+    entries.push({
+      key: 'about',
+      label: '关于开饭咯',
+      desc: 'v0.1.0 · 还在长大',
+      icon: '关',
+      color: '#2FBF71'
+    })
+
+    return entries
   },
 
-  onShow() {
-    const tabBar: any = (this as any).getTabBar
-      ? (this as any).getTabBar()
-      : null
-    if (tabBar) {
-      tabBar.setData({ selected: 2 })
+  async loadMe() {
+    try {
+      const me = await getMe()
+      this.setData({
+        isAdmin: me.isAdmin,
+        initialized: me.initialized,
+        openid: me.openid,
+        entries: this.buildEntries(me.isAdmin, me.initialized)
+      })
+    } catch (e) {
+      // 云环境还没连上时，云模式下按「未初始化」处理；mock 模式保持可用
+      this.setData({
+        isAdmin: !USE_CLOUD,
+        initialized: !USE_CLOUD,
+        openid: '',
+        entries: this.buildEntries(!USE_CLOUD, !USE_CLOUD)
+      })
     }
   },
 
-  onEntryTap(e: any) {
+  async onEntryTap(e: any) {
     const key = e.currentTarget.dataset.key
+
     if (key === 'kitchen') {
       wx.navigateTo({ url: '/pages/kitchen/index' })
       return
     }
+
+    if (key === 'init') {
+      const res: any = await wx.showModal({
+        title: '初始化云数据库？',
+        content: '会写入默认菜单，并把当前账号设为管理员。只需执行一次。',
+        confirmText: '初始化',
+        cancelText: '再等等'
+      })
+      if (!res.confirm) {
+        return
+      }
+      wx.showLoading({ title: '初始化中…' })
+      try {
+        await initDb()
+        wx.hideLoading()
+        wx.showToast({ title: '初始化完成', icon: 'none' })
+        this.loadMe()
+      } catch (err: any) {
+        wx.hideLoading()
+        wx.showToast({
+          title: String((err && err.message) || '初始化失败').slice(0, 40),
+          icon: 'none'
+        })
+      }
+      return
+    }
+
+    if (key === 'openid') {
+      if (this.data.openid) {
+        wx.setClipboardData({ data: this.data.openid })
+      }
+      return
+    }
+
     if (key === 'about') {
       wx.showModal({
         title: '开饭咯 v0.1.0',
@@ -65,6 +162,7 @@ Page({
       })
       return
     }
+
     wx.showToast({ title: 'V1.1 上线，先忍忍', icon: 'none' })
   }
 })

@@ -71,7 +71,7 @@
   <empty-state
     wx:else
     title="这一餐还没开火"
-    desc="换个餐次看看，或者去许愿池点个菜"
+    desc="{{emptyDesc}}"
   />
 </view>
 

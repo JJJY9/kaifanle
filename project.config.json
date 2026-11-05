@@ -2,6 +2,7 @@
   "compileType": "miniprogram",
   "miniprogramRoot": "miniprogram/",
   "srcMiniprogramRoot": "miniprogram/",
+  "cloudfunctionRoot": "cloudfunctions/",
   "appid": "touristappid",
   "projectname": "kaifanle",
   "description": "开饭咯 · 私厨点单小程序",

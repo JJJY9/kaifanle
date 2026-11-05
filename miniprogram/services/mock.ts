@@ -2,6 +2,8 @@ import type {
   Category,
   CreateOrderPayload,
   Dish,
+  InitResult,
+  MeInfo,
   Order,
   OrderStatus
 } from './types'
@@ -370,6 +372,10 @@ export async function getOrders(): Promise<Order[]> {
     .map(order => ({ ...order }))
 }
 
+export async function getAllOrders(): Promise<Order[]> {
+  return getOrders()
+}
+
 export async function getOrder(id: string): Promise<Order | null> {
   await delay(60)
   const order = loadOrders().find(item => item.id === id)
@@ -416,4 +422,22 @@ export async function updateOrderStatus(
   })
   saveOrders()
   return { ...order }
+}
+
+export async function getMe(): Promise<MeInfo> {
+  await delay(40)
+  return {
+    openid: 'mock-openid',
+    isAdmin: true,
+    initialized: true
+  }
+}
+
+export async function initDb(): Promise<InitResult> {
+  await delay(60)
+  return {
+    initialized: true,
+    already: true,
+    isAdmin: true
+  }
 }

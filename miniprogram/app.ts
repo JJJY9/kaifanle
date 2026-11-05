@@ -1,3 +1,5 @@
+import { CLOUD_ENV, USE_CLOUD } from './config'
+
 App({
   globalData: {
     statusBarHeight: 20
@@ -9,6 +11,21 @@ App({
       this.globalData.statusBarHeight = info.statusBarHeight || 20
     } catch (e) {
       // 保持默认值即可
+    }
+
+    if (USE_CLOUD) {
+      try {
+        if (!wx.cloud) {
+          throw new Error('当前基础库不支持云开发')
+        }
+        const options: any = { traceUser: true }
+        if (CLOUD_ENV) {
+          options.env = CLOUD_ENV
+        }
+        wx.cloud.init(options)
+      } catch (e) {
+        console.error('云开发初始化失败：', e)
+      }
     }
 
     // 得意黑用于标题。生产环境需要把 cdn.jsdelivr.net 加入
