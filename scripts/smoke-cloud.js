@@ -767,6 +767,32 @@ async function run() {
   // 已有明天的菜单时不会重复覆盖
   const timerAgain = await api.main({ Type: 'Timer' })
   assert.deepStrictEqual(timerAgain.data.menus, [])
+
+  // 定时任务同时会把售罄菜品恢复供应
+  res = await call(
+    'saveDish',
+    {
+      name: '定时测试菜',
+      desc: '',
+      price: 5,
+      categoryId: 'staple',
+      tags: [],
+      spicyLevels: [],
+      addons: [],
+      color: '#FFD23F',
+      meals: ['lunch'],
+      status: 'on',
+      isRecommended: false
+    },
+    'admin-openid'
+  )
+  const timerDishId = res.data.id
+  await call('toggleDishStatus', { id: timerDishId }, 'admin-openid')
+  const timerReset = await api.main({ Type: 'Timer' })
+  assert.ok(timerReset.data.restored >= 1)
+  res = await call('getDish', { id: timerDishId }, 'admin-openid')
+  assert.strictEqual(res.data.status, 'on')
+  await call('deleteDish', { id: timerDishId }, 'admin-openid')
   // 清理菜单，避免影响后续下单用例
   await call('deleteMenu', { date: tomorrowKey, meal: 'lunch' }, 'admin-openid')
   await call('deleteMenu', { date: todayKey, meal: 'lunch' }, 'admin-openid')

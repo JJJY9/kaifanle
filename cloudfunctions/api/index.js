@@ -609,7 +609,8 @@ async function deleteMenu(payload, openid) {  await requireAdmin(openid)
   return { date, meal }
 }
 
-// 每天凌晨把今天的菜单复制到明天：只补空缺，不覆盖已排好的菜单。
+// 每天凌晨把今天的菜单复制到明天：只补空缺，不覆盖已排好的菜单；
+// 同时把「已售罄」的菜品恢复供应，新的一天重新开卖。
 async function autoRollMenu() {
   const today = chinaDateString()
   const tomorrow = chinaDateString(Date.now() + 24 * 60 * 60 * 1000)
@@ -636,7 +637,27 @@ async function autoRollMenu() {
       .set({ data })
     rolled.push(meal)
   }
-  return { date: tomorrow, menus: rolled }
+
+  // 售罄状态按天重置（下架 off 不受影响）
+  let restored = 0
+  try {
+    const soldoutRes = await db
+      .collection('dishes')
+      .where({ status: 'soldout' })
+      .limit(200)
+      .get()
+    for (const dish of soldoutRes.data) {
+      await db
+        .collection('dishes')
+        .doc(dish._id)
+        .update({ data: { status: 'on' } })
+      restored++
+    }
+  } catch (e) {
+    console.warn('[api] reset soldout failed:', e)
+  }
+
+  return { date: tomorrow, menus: rolled, restored }
 }
 
 // 内容安全检测：违规内容直接拒绝；接口未开通或异常时不阻断正常使用。

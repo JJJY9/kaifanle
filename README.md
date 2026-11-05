@@ -95,7 +95,7 @@ node scripts/init-cloud-db.js ws://127.0.0.1:9420
 
 ### 每日菜单自动滚动
 
-`api` 云函数带一个定时触发器 `dailyMenuRoll`（每天 04:00），会把当天的菜单复制到第二天，只补空缺、不覆盖已经排好的安排。触发器随云函数一起部署；不需要的话删掉 `cloudfunctions/api/config.json` 里的 `triggers` 即可。
+`api` 云函数带一个定时触发器 `dailyMenuRoll`（每天 04:00）：会把当天的菜单复制到第二天，只补空缺、不覆盖已经排好的安排；同时把「已售罄」的菜品恢复为供应中，新的一天重新开卖（手动「下架」的菜不受影响）。触发器随云函数一起部署；不需要的话删掉 `cloudfunctions/api/config.json` 里的 `triggers` 即可。
 
 ### 免费额度提示
 
