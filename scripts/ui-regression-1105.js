@@ -232,6 +232,11 @@ function invoke(mp, body) {
     data.weekStats &&
       `近 7 天 ${data.weekStats.count} 单 / ¥${data.weekStats.revenue}`
   )
+  check(
+    '近 7 天柱状图',
+    Array.isArray(data.weekBars) && data.weekBars.length === 7,
+    `合计 ¥${data.weekBarTotal}`
+  )
   await invoke(mp, 'page.onTogglePrep()')
   await sleep(300)
   page = await current()
