@@ -212,6 +212,9 @@ const fakeSdk = {
       }
     }
   },
+  async deleteFile() {
+    return { fileList: [] }
+  },
   getWXContext() {
     return { OPENID: currentOpenid }
   }

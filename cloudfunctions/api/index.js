@@ -1305,6 +1305,19 @@ async function saveDish(payload, openid) {
     const res = await db.collection('dishes').doc(id).get()
     const dish = res.data
     await db.collection('dishes').doc(id).update({ data: fields })
+    // 换图后顺手删掉旧图，避免云存储堆积
+    if (
+      image !== null &&
+      dish.image &&
+      dish.image !== image &&
+      String(dish.image).indexOf('cloud://') === 0
+    ) {
+      try {
+        await cloud.deleteFile({ fileList: [dish.image] })
+      } catch (e) {
+        // 旧图删除失败不影响保存
+      }
+    }
     return withId(Object.assign({}, dish, fields))
   }
 
@@ -1326,12 +1339,21 @@ async function deleteDish(payload, openid) {
   if (!payload.id) {
     throw new Error('缺少菜品 ID')
   }
+  let dish = null
   try {
-    await db.collection('dishes').doc(payload.id).get()
+    const res = await db.collection('dishes').doc(payload.id).get()
+    dish = res.data
   } catch (e) {
     throw new Error('菜品不存在')
   }
   await db.collection('dishes').doc(payload.id).remove()
+  if (dish && dish.image && String(dish.image).indexOf('cloud://') === 0) {
+    try {
+      await cloud.deleteFile({ fileList: [dish.image] })
+    } catch (e) {
+      // 图片删除失败不影响菜品删除
+    }
+  }
   return { id: payload.id }
 }
 
