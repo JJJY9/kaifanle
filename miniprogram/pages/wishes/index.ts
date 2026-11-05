@@ -1,5 +1,11 @@
 import type { WishStatus } from '../../services/types'
-import { createWish, getMe, getWishes, updateWish } from '../../services/api'
+import {
+  createWish,
+  deleteWish,
+  getMe,
+  getWishes,
+  updateWish
+} from '../../services/api'
 import { formatDate } from '../../utils/format'
 
 const STATUS_TEXT: Record<WishStatus, string> = {
@@ -14,7 +20,8 @@ Page({
     content: '',
     isAdmin: false,
     loading: true,
-    submitting: false
+    submitting: false,
+    deletingId: ''
   },
 
   onShow() {
@@ -111,8 +118,36 @@ Page({
     }
   },
 
-  async onReply(e: any) {
+  async onDeleteWish(e: any) {
+    if (this.data.deletingId) {
+      return
+    }
     const id = e.currentTarget.dataset.id
+    const res: any = await wx.showModal({
+      title: '撤回这个愿望？',
+      content: '撤回后就从许愿池里消失了。',
+      confirmText: '撤回',
+      cancelText: '留着'
+    })
+    if (!res.confirm) {
+      return
+    }
+    this.setData({ deletingId: id })
+    try {
+      await deleteWish(id)
+      wx.showToast({ title: '已撤回', icon: 'none' })
+      this.load()
+    } catch (err: any) {
+      wx.showToast({
+        title: String((err && err.message) || '撤回失败').slice(0, 40),
+        icon: 'none'
+      })
+    } finally {
+      this.setData({ deletingId: '' })
+    }
+  },
+
+  async onReply(e: any) {    const id = e.currentTarget.dataset.id
     const res: any = await wx.showModal({
       title: '回一句',
       editable: true,

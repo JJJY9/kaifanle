@@ -48,6 +48,13 @@
           bindtap="onReply"
         >回一句</view>
       </view>
+      <view wx:if="{{!isAdmin && item.status === 'pending'}}" class="wish-actions">
+        <view
+          class="wish-btn {{deletingId === item.id ? 'disabled' : ''}}"
+          data-id="{{item.id}}"
+          bindtap="onDeleteWish"
+        >{{deletingId === item.id ? '撤回中…' : '撤回'}}</view>
+      </view>
     </view>
   </block>
 

@@ -218,6 +218,13 @@ export async function updateWish(payload: {
   return mock.updateWish(payload)
 }
 
+export async function deleteWish(id: string): Promise<{ id: string }> {
+  if (USE_CLOUD) {
+    return callApi<{ id: string }>('deleteWish', { id })
+  }
+  return mock.deleteWish(id)
+}
+
 export async function getBusiness(): Promise<Business> {
   if (USE_CLOUD) {
     return callApi<Business>('getBusiness')

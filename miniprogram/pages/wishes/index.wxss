@@ -144,6 +144,10 @@
   box-shadow: none;
 }
 
+.wish-btn.disabled {
+  opacity: 0.5;
+}
+
 .sk {
   height: 240rpx;
   margin-top: 20rpx;

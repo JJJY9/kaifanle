@@ -881,6 +881,18 @@ export async function getWishes(): Promise<Wish[]> {
     .map(wish => ({ ...wish }))
 }
 
+export async function deleteWish(id: string): Promise<{ id: string }> {
+  await delay(60)
+  const wishes = loadWishes()
+  const index = wishes.findIndex(item => item.id === id)
+  if (index === -1) {
+    throw new Error('愿望不存在')
+  }
+  wishes.splice(index, 1)
+  saveWishes()
+  return { id }
+}
+
 export async function updateWish(payload: {
   id: string
   status?: WishStatus

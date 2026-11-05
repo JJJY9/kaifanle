@@ -579,6 +579,14 @@ async function run() {
   assert.strictEqual(res.data.status, 'planned')
   assert.strictEqual(res.data.plannedDate, '明天晚餐')
 
+  // 愿望删除：别人不能删，本人和管理员可以
+  res = await call('deleteWish', { id: wishId }, 'stranger-openid')
+  assert.strictEqual(res.ok, false)
+  res = await call('createWish', { content: '想喝奶茶' }, 'girl-openid')
+  const tempWishId = res.data.id
+  res = await call('deleteWish', { id: tempWishId }, 'girl-openid')
+  assert.strictEqual(res.ok, true)
+
   // 营业设置：非管理员不能改；关掉的餐次不能下单；截单时间后不能下单
   res = await call(
     'updateBusiness',

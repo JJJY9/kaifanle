@@ -137,6 +137,8 @@ async function route(action, payload, openid) {
       return getWishes(openid)
     case 'updateWish':
       return updateWish(payload, openid)
+    case 'deleteWish':
+      return deleteWish(payload, openid)
     default:
       throw new Error('未知操作: ' + action)
   }
@@ -1439,6 +1441,21 @@ async function updateWish(payload, openid) {
   data.updatedAt = Date.now()
   await db.collection('wishes').doc(id).update({ data })
   return withId(Object.assign({}, wish, data))
+}
+
+async function deleteWish(payload, openid) {
+  const id = String((payload && payload.id) || '')
+  if (!id) {
+    throw new Error('缺少愿望 ID')
+  }
+  const res = await db.collection('wishes').doc(id).get()
+  const wish = res.data
+  const admin = await isAdminOpenid(openid)
+  if (wish._openid !== openid && !admin) {
+    throw new Error('没有权限删除这个愿望')
+  }
+  await db.collection('wishes').doc(id).remove()
+  return { id }
 }
 
 // 一次性初始化：写入默认菜单并确定管理员。

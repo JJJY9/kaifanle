@@ -106,7 +106,7 @@ node scripts/init-cloud-db.js ws://127.0.0.1:9420
 `getCategories` / `saveCategory` / `deleteCategory` / `getDishes` / `getDish` / `getOrders` / `getAllOrders` / `getActiveOrders` / `getOrder` /
 `createOrder` / `cancelOrder` / `urgeOrder` / `updateOrderStatus` / `toggleDishStatus` / `saveDish` / `deleteDish` / `moveDish` /
 `getBusiness` / `updateBusiness` / `getMenuForDate` / `saveMenu` / `deleteMenu` /
-`getMyProfile` / `saveMyProfile` / `getStats` / `createWish` / `getWishes` / `updateWish` /
+`getMyProfile` / `saveMyProfile` / `getStats` / `createWish` / `getWishes` / `updateWish` / `deleteWish` /
 `createCoupon` / `getCoupons` / `claimCoupon` / `useCoupon` / `deleteCoupon` / `getMe` / `initDb`
 
 ### 订阅消息

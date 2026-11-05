@@ -21,7 +21,7 @@
 
   <view class="card block">
     <view class="block-title">你的权利</view>
-    <view class="p">可以随时在「口味与地址」里修改资料，在许愿池和爱心券里删除自己的内容。需要清空账号数据时，联系掌勺人处理。</view>
+    <view class="p">可以随时在「口味与地址」里修改资料，在许愿池撤回自己还没被安排的愿望；需要清空账号数据时，联系掌勺人处理。</view>
   </view>
 
   <view class="card block">
