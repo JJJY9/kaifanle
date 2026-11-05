@@ -828,6 +828,22 @@ async function run() {
   const limitedId = res.data.id
   assert.strictEqual(res.data.stock, 5)
 
+  // 违规备注在扣库存前被拦截，库存不变
+  res = await call(
+    'createOrder',
+    {
+      items: [{ dishId: limitedId, qty: 2, specs: [] }],
+      meal: 'lunch',
+      expectedTime: '12:00',
+      mode: '在家吃',
+      note: '违规备注'
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, false)
+  res = await call('getDish', { id: limitedId }, 'admin-openid')
+  assert.strictEqual(res.data.stock, 5)
+
   res = await call(
     'createOrder',
     {
