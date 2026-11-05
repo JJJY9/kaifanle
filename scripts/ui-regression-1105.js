@@ -185,7 +185,7 @@ function invoke(mp, body) {
     })
     await invoke(
       mp,
-      `page.setData({ order: Object.assign({}, page.data.order, { items: [${line}] }) })`
+      `page.setData({ order: Object.assign({}, page.data.order, { meal: '${sampleDish.meals[0]}', items: [${line}] }) })`
     )
     await sleep(300)
   }
