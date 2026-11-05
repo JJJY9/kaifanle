@@ -260,7 +260,9 @@ Page({
                   .filter(Boolean)
                   .join(' · ')
               : '',
-          actionText: NEXT_ACTION[order.status] || ''
+          actionText: NEXT_ACTION[order.status] || '',
+          actionLabel:
+            ((NEXT_ACTION[order.status] || '') as string) + ' →'
         }
       }
       const view = active.map(toView)

@@ -131,7 +131,7 @@
           data-id="{{item.id}}"
           data-status="{{item.status}}"
           bindtap="onAdvance"
-        >{{busyId === item.id ? '处理中…' : item.actionText + ' →'}}</view>
+        >{{busyId === item.id ? '处理中…' : item.actionLabel}}</view>
       </view>
     </view>
 
