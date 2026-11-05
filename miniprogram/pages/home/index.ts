@@ -39,7 +39,8 @@ Page({
     notice: '',
     keyword: '',
     searchResults: [] as Dish[],
-    emptyDesc: '换个餐次看看，或者去许愿池点个菜'
+    emptyDesc: '换个餐次看看，或者去许愿池点个菜',
+    emptyAction: ''
   },
 
   _unsub: null as null | (() => void),
@@ -158,6 +159,7 @@ Page({
         mealNotice,
         notice: business && business.notice ? business.notice : '',
         searchResults: this.filterDishes(this.data.keyword),
+        emptyAction: sections.length ? '' : '去许愿',
         emptyDesc:
           USE_CLOUD && sections.length === 0
             ? menuActive
@@ -178,6 +180,7 @@ Page({
         message.indexOf('exceed request limit') > -1
       this.setData({
         loading: false,
+        emptyAction: '',
         emptyDesc: quotaExceeded
           ? '今天的云端读取额度用完了，0 点后自动恢复'
           : USE_CLOUD
@@ -313,6 +316,10 @@ Page({
     wx.navigateTo({
       url: `/pages/checkout/index?meal=${this.data.selectedMeal}`
     })
+  },
+
+  onGoWish() {
+    wx.navigateTo({ url: '/pages/wishes/index' })
   },
 
   onPullDownRefresh() {

@@ -111,6 +111,8 @@
     wx:else
     title="这一餐还没开火"
     desc="{{emptyDesc}}"
+    actionText="{{emptyAction}}"
+    bind:action="onGoWish"
   />
 </view>
 
