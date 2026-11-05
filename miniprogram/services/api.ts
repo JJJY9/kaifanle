@@ -30,7 +30,16 @@ async function callApi<T>(action: string, payload?: any): Promise<T> {
   })
   const result = (res && res.result) || {}
   if (result.ok === false) {
-    throw new Error(result.error || '云函数调用失败')
+    const message = String(result.error || '云函数调用失败')
+    // 把云端额度错误翻译成人话
+    if (
+      /EXCEED_REQUEST_LIMIT|OutOfReadRequestQuota|exceed request limit/i.test(
+        message
+      )
+    ) {
+      throw new Error('今天的云端读取额度用完了，0 点后恢复')
+    }
+    throw new Error(message)
   }
   return result.data as T
 }
