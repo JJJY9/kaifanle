@@ -18,7 +18,8 @@ Page({
     newNote: '',
     creating: false,
     claimingId: '',
-    usingId: ''
+    usingId: '',
+    deletingId: ''
   },
 
   onShow() {
@@ -143,6 +144,9 @@ Page({
   },
 
   async onDelete(e: any) {
+    if (this.data.deletingId) {
+      return
+    }
     const id = e.currentTarget.dataset.id
     const res: any = await wx.showModal({
       title: '删除这张券？',
@@ -153,6 +157,7 @@ Page({
     if (!res.confirm) {
       return
     }
+    this.setData({ deletingId: id })
     try {
       await deleteCoupon(id)
       wx.showToast({ title: '已删除', icon: 'none' })
@@ -162,6 +167,8 @@ Page({
         title: String((err && err.message) || '删除失败').slice(0, 40),
         icon: 'none'
       })
+    } finally {
+      this.setData({ deletingId: '' })
     }
   }
 })
