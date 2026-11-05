@@ -1,5 +1,7 @@
 # 开饭咯 · 点单小程序
 
+> 线上小程序名称：**张饱饭堂**（项目代号：开饭咯）
+
 一个只有一口锅的私厨点单小程序：**她点单，你掌勺。**
 
 给女朋友点早餐 / 午餐 / 晚餐用的微信小程序，也可以作为对外开放点单产品的起点。
@@ -77,14 +79,24 @@ node scripts/init-cloud-db.js ws://127.0.0.1:9420
 `getCategories` / `getDishes` / `getDish` / `getOrders` / `getAllOrders` / `getOrder` /
 `createOrder` / `updateOrderStatus` / `toggleDishStatus` / `getMe` / `initDb`
 
-### 订阅消息（可选）
+### 订阅消息
 
-已接入两类通知，模板 ID 留空时会静默跳过，不影响下单：
+当前已在「张饱饭堂」小程序中开通订阅消息，并配置好两个一次性订阅模板（类目：工具 > 预约/报名）：
+
+| 用途 | 模板 | 字段 |
+|---|---|---|
+| 新订单提醒（发给管理员） | 顾客下单提醒 | `thing11` / `number2` / `amount3` / `thing4` / `time36` |
+| 出锅提醒（发给顾客） | 订单状态提醒 | `thing1` / `phrase2` / `character_string6` / `time16` / `thing5` |
+
+模板 ID 已填入 `miniprogram/config.ts` 和 `cloudfunctions/api/templates.js`。
+模板 ID 留空或模板被删除时，通知会自动跳过，不影响下单。
+
+交互位置：
 
 - **新订单提醒**（发给管理员）：在厨房端点「订阅新订单提醒」
 - **出锅提醒**（发给顾客）：下单时授权，或在订单详情点「出锅时提醒我」
 
-配置步骤：
+重新配置或更换模板的步骤：
 
 1. 微信公众平台 → 功能 → 订阅消息 → 我的模板 → 选用模板。
    建议选「新订单提醒」「订单状态通知」类模板；可用模板取决于小程序类目
@@ -98,6 +110,8 @@ node scripts/init-cloud-db.js ws://127.0.0.1:9420
 
 > 私用小程序只能使用**一次性订阅**：一次授权只能发一条消息。
 > 所以顾客每次下单都会重新请求授权；管理员点一次提醒按钮，能收到下一单的通知。
+>
+> `templates.js` 里的 `MINIPROGRAM_STATE` 默认是 `trial`（体验版）。用开发版调试时改成 `developer`，正式发布后改成 `formal`。
 
 ## 目录结构
 

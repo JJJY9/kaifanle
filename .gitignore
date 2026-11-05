@@ -4,3 +4,5 @@ project.private.config.json
 .DS_Store
 *.log
 dist/
+
+.tmp/

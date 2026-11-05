@@ -8,5 +8,7 @@ export const USE_CLOUD = true
 
 // 订阅消息模板 ID：与 cloudfunctions/api/templates.js 中保持一致。
 // 留空时不会拉起订阅授权，也不会有推送，下单流程不受影响。
-export const TEMPLATE_ORDER_STATUS = ''
-export const TEMPLATE_NEW_ORDER = ''
+export const TEMPLATE_ORDER_STATUS =
+  'PULu2vsaJn2Ud9LwtWtCr5OdtZUJRAQBWo-AJiQ9wy0'
+export const TEMPLATE_NEW_ORDER =
+  'sUm9QOzqcjtl7gQCiU1c3tV0yB2C-CZhfrW1aqRvzC0'

@@ -239,6 +239,11 @@ async function run() {
   assert.strictEqual(sentMessages[0].templateId, 'tpl-new-order')
   assert.strictEqual(sentMessages[0].page, 'pages/kitchen/index')
   assert.strictEqual(sentMessages[0].miniprogramState, 'trial')
+  assert.strictEqual(sentMessages[0].data.number2.value, '1')
+  assert.strictEqual(sentMessages[0].data.amount3.value, '¥40.00')
+  assert.ok(
+    sentMessages[0].data.thing11.value.includes('番茄牛腩饭')
+  )
 
   res = await call('getOrders', {}, 'girl-openid')
   assert.strictEqual(res.data.length, 1)
@@ -278,7 +283,10 @@ async function run() {
   )
   assert.ok(readyMessage)
   assert.strictEqual(readyMessage.touser, 'girl-openid')
-  assert.strictEqual(readyMessage.data.phrase3.value, '已出锅')
+  assert.strictEqual(readyMessage.data.phrase2.value, '已出锅')
+  assert.strictEqual(readyMessage.data.character_string6.value, '001')
+  assert.ok(readyMessage.data.thing1.value.includes('番茄牛腩饭'))
+  assert.ok(readyMessage.data.time16.value)
   assert.strictEqual(
     readyMessage.page,
     'pages/order-detail/index?id=' + created.data.id
