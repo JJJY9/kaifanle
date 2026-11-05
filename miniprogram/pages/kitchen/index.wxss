@@ -53,6 +53,10 @@
   color: #FFFFFF;
 }
 
+.notify-btn.menu {
+  background: #FF5C8A;
+}
+
 .notify-hint {
   color: #5C5C5C;
   font-size: 22rpx;

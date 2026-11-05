@@ -189,6 +189,10 @@ Page({
     wx.navigateTo({ url: '/pages/business/index' })
   },
 
+  onMenu() {
+    wx.navigateTo({ url: '/pages/menu-edit/index' })
+  },
+
   onEditDish(e: any) {
     const id = e.currentTarget.dataset.id
     if (id) {

@@ -3,9 +3,11 @@ import type {
   Category,
   Coupon,
   CreateOrderPayload,
+  DailyMenu,
   Dish,
   DishInput,
   InitResult,
+  MealId,
   MeInfo,
   Order,
   OrderStatus,
@@ -23,6 +25,7 @@ const WISHES_KEY = 'kfl_wishes_v1'
 const BUSINESS_KEY = 'kfl_business_v1'
 const PROFILE_KEY = 'kfl_profile_v1'
 const COUPONS_KEY = 'kfl_coupons_v1'
+const MENUS_KEY = 'kfl_menus_v1'
 
 const DEFAULT_BUSINESS: Business = {
   breakfast: { open: true, deadline: '09:30' },
@@ -247,6 +250,7 @@ let wishCache: Wish[] | null = null
 let businessCache: Business | null = null
 let profileCache: UserProfile | null = null
 let couponCache: Coupon[] | null = null
+let menuCache: Record<string, DailyMenu> | null = null
 const dishStatusOverrides: Record<string, Dish['status']> = loadOverrides()
 
 const dishes: Dish[] = DISHES.map(dish => ({
@@ -403,6 +407,32 @@ function loadCoupons(): Coupon[] {
 function saveCoupons(): void {
   try {
     wx.setStorageSync(COUPONS_KEY, JSON.stringify(couponCache || []))
+  } catch (e) {
+    // 忽略存储失败
+  }
+}
+
+function loadMenus(): Record<string, DailyMenu> {
+  if (menuCache) {
+    return menuCache
+  }
+  try {
+    const raw = wx.getStorageSync(MENUS_KEY)
+    if (raw) {
+      menuCache = JSON.parse(raw)
+      return menuCache as Record<string, DailyMenu>
+    }
+  } catch (e) {
+    // 读取失败则使用空菜单
+  }
+  menuCache = {}
+  saveMenus()
+  return menuCache
+}
+
+function saveMenus(): void {
+  try {
+    wx.setStorageSync(MENUS_KEY, JSON.stringify(menuCache || {}))
   } catch (e) {
     // 忽略存储失败
   }
@@ -598,6 +628,11 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
     throw new Error('这一餐已经截单啦，下次早点来')
   }
 
+  const menu = loadMenus()[`${scheduledDate}_${payload.meal}`]
+  if (menu && menu.open === false) {
+    throw new Error('这一餐还没排菜单')
+  }
+
   const stockChanges: Array<{ dish: Dish; qty: number }> = []
   const orderItems = payload.items.map(item => {
     const dish = dishes.find(entry => entry.id === item.dishId)
@@ -606,6 +641,9 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
     }
     if (dish.status !== 'on') {
       throw new Error(`${dish.name} 已售罄`)
+    }
+    if (menu && menu.dishIds.indexOf(item.dishId) === -1) {
+      throw new Error(`${dish.name} 这一餐不供应`)
     }
     const limited = typeof dish.stock === 'number' && dish.stock >= 0
     if (limited && dish.stock < item.qty) {
@@ -902,4 +940,47 @@ export async function deleteCoupon(id: string): Promise<{ id: string }> {
   coupons.splice(index, 1)
   saveCoupons()
   return { id }
+}
+
+export async function deleteMenu(
+  date: string,
+  meal: MealId
+): Promise<{ date: string; meal: MealId }> {
+  await delay(60)
+  const menus = loadMenus()
+  delete menus[`${date}_${meal}`]
+  saveMenus()
+  return { date, meal }
+}
+
+export async function getMenuForDate(
+  date: string,
+  meal: MealId
+): Promise<DailyMenu> {
+  await delay(60)
+  const menu = loadMenus()[`${date}_${meal}`]
+  if (!menu) {
+    return { exists: false, date, meal, dishIds: [], open: true }
+  }
+  return JSON.parse(JSON.stringify(menu))
+}
+
+export async function saveMenu(payload: {
+  date: string
+  meal: MealId
+  dishIds: string[]
+  open: boolean
+}): Promise<DailyMenu> {
+  await delay(80)
+  const menus = loadMenus()
+  const data: DailyMenu = {
+    exists: true,
+    date: payload.date,
+    meal: payload.meal,
+    dishIds: (payload.dishIds || []).slice(),
+    open: payload.open !== false
+  }
+  menus[`${payload.date}_${payload.meal}`] = data
+  saveMenus()
+  return JSON.parse(JSON.stringify(data))
 }

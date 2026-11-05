@@ -1,0 +1,160 @@
+.page {
+  min-height: 100vh;
+  padding: 24rpx 24rpx 80rpx;
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  padding: 8rpx 4rpx 24rpx;
+}
+
+.title {
+  font-size: 52rpx;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.sub {
+  margin-top: 4rpx;
+  color: #5C5C5C;
+  font-size: 24rpx;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14rpx;
+  margin-bottom: 18rpx;
+}
+
+.chip {
+  padding: 10rpx 26rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
+.chip.active {
+  background: #FFD23F;
+  box-shadow: 3rpx 3rpx 0 #111111;
+  transform: rotate(-1deg);
+}
+
+.open-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 24rpx;
+  margin-bottom: 20rpx;
+}
+
+.open-label {
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+.dish-card {
+  padding: 6rpx 22rpx;
+}
+
+.dish-row {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  padding: 18rpx 0;
+  border-bottom: 3rpx dashed rgba(17, 17, 17, 0.15);
+}
+
+.dish-row:last-child {
+  border-bottom: none;
+}
+
+.dish-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72rpx;
+  height: 72rpx;
+  border: 3rpx solid #111111;
+  border-radius: 18rpx;
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 32rpx;
+  font-weight: 800;
+}
+
+.dish-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.dish-name {
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+.dish-sub {
+  margin-top: 2rpx;
+  color: #5C5C5C;
+  font-size: 22rpx;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48rpx;
+  height: 48rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.check.on {
+  background: #2FBF71;
+}
+
+.save-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 96rpx;
+  margin-top: 26rpx;
+  background: #FF6B35;
+  border: 4rpx solid #111111;
+  border-radius: 999rpx;
+  box-shadow: 7rpx 7rpx 0 #111111;
+  font-size: 32rpx;
+  font-weight: 800;
+}
+
+.save-btn:active {
+  transform: translate(7rpx, 7rpx);
+  box-shadow: none;
+}
+
+.save-btn.disabled {
+  opacity: 0.6;
+}
+
+.reset-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 76rpx;
+  margin-top: 20rpx;
+  border: 3rpx dashed #111111;
+  border-radius: 999rpx;
+  color: #5C5C5C;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
+.sk {
+  height: 500rpx;
+}

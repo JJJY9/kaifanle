@@ -172,3 +172,11 @@ export interface Coupon {
   claimedAt: number
   usedAt: number
 }
+
+export interface DailyMenu {
+  exists: boolean
+  date: string
+  meal: MealId
+  dishIds: string[]
+  open: boolean
+}

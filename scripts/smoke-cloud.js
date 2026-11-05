@@ -583,6 +583,80 @@ async function run() {
   )
   assert.strictEqual(res.ok, true)
 
+  // 每日菜单
+  const todayKey = chinaDate(0)
+  res = await call(
+    'getMenuForDate',
+    { date: todayKey, meal: 'lunch' },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.exists, false)
+
+  res = await call(
+    'saveMenu',
+    { date: todayKey, meal: 'lunch', dishIds: ['d02'], open: true },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, false)
+
+  res = await call(
+    'saveMenu',
+    { date: todayKey, meal: 'lunch', dishIds: ['d02'], open: true },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.deepStrictEqual(res.data.dishIds, ['d02'])
+
+  res = await call(
+    'getMenuForDate',
+    { date: todayKey, meal: 'lunch' },
+    'girl-openid'
+  )
+  assert.strictEqual(res.data.exists, true)
+  assert.deepStrictEqual(res.data.dishIds, ['d02'])
+
+  res = await call(
+    'createOrder',
+    {
+      items: [{ dishId: 'd09', qty: 1, specs: [] }],
+      meal: 'lunch',
+      expectedTime: '12:00',
+      mode: '在家吃',
+      note: ''
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, false)
+
+  res = await call(
+    'createOrder',
+    {
+      items: [{ dishId: 'd02', qty: 1, specs: [] }],
+      meal: 'lunch',
+      expectedTime: '12:00',
+      mode: '在家吃',
+      note: ''
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  res = await call('cancelOrder', { id: res.data.id }, 'girl-openid')
+  assert.strictEqual(res.ok, true)
+
+  res = await call(
+    'deleteMenu',
+    { date: todayKey, meal: 'lunch' },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  res = await call(
+    'getMenuForDate',
+    { date: todayKey, meal: 'lunch' },
+    'admin-openid'
+  )
+  assert.strictEqual(res.data.exists, false)
+
   // 库存扣减与取消回补
   res = await call(
     'saveDish',
@@ -715,7 +789,7 @@ async function run() {
   assert.strictEqual(res.ok, true)
 
   console.log(
-    '云函数冒烟测试通过：初始化、菜单、菜品 CRUD、下单计价、权限、状态流转、取消订单、许愿池、营业设置、口味档案、今日看板、爱心券、售罄拦截、订阅消息。'
+    '云函数冒烟测试通过：初始化、菜单、菜品 CRUD、下单计价、权限、状态流转、取消订单、许愿池、营业设置、每日菜单、口味档案、今日看板、爱心券、售罄拦截、订阅消息。'
   )
 }
 

@@ -1,5 +1,10 @@
 import type { Category, Dish, MealId } from '../../services/types'
-import { getCategories, getDishes, getBusiness } from '../../services/api'
+import {
+  getCategories,
+  getDishes,
+  getBusiness,
+  getMenuForDate
+} from '../../services/api'
 import { cart } from '../../store/cart'
 import { MEALS } from '../../utils/constants'
 import { USE_CLOUD } from '../../config'
@@ -7,7 +12,8 @@ import {
   currentMeal,
   formatDate,
   greeting,
-  isOpenNow
+  isOpenNow,
+  dateInputString
 } from '../../utils/format'
 
 interface Section extends Category {
@@ -79,14 +85,20 @@ Page({
       this.setData({ loading: true })
     }
     try {
-      const [categories, dishes, business] = await Promise.all([
+      const meal = this.data.selectedMeal
+      const today = dateInputString()
+      const [categories, dishes, business, menu] = await Promise.all([
         getCategories(),
         getDishes(),
-        getBusiness().catch(() => null)
+        getBusiness().catch(() => null),
+        getMenuForDate(today, meal).catch(() => null)
       ])
-      const meal = this.data.selectedMeal
+      const menuActive = Boolean(menu && menu.exists)
       const available = dishes.filter(
-        dish => dish.status !== 'off' && dish.meals.indexOf(meal) > -1
+        dish =>
+          dish.status !== 'off' &&
+          dish.meals.indexOf(meal) > -1 &&
+          (!menuActive || menu!.dishIds.indexOf(dish.id) > -1)
       )
       const sections = categories
         .map(category => ({
@@ -100,7 +112,10 @@ Page({
       let isOpen = isOpenNow()
       let mealNotice = ''
       const mealSetting = business ? business[meal] : null
-      if (mealSetting) {
+      if (menuActive && menu!.open === false) {
+        isOpen = false
+        mealNotice = '这一餐还没排菜单'
+      } else if (mealSetting) {
         const now = new Date()
         const nowMinutes = now.getHours() * 60 + now.getMinutes()
         const [deadlineHour, deadlineMinute] = mealSetting.deadline
@@ -124,7 +139,9 @@ Page({
         mealNotice,
         emptyDesc:
           USE_CLOUD && sections.length === 0
-            ? '云数据库可能还没初始化，去「我的」看一眼'
+            ? menuActive
+              ? '这一餐还没排菜单，晚点再来看看'
+              : '云数据库可能还没初始化，去「我的」看一眼'
             : '换个餐次看看，或者去许愿池点个菜'
       })
     } catch (e) {

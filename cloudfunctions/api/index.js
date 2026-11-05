@@ -103,6 +103,12 @@ async function route(action, payload, openid) {
       return useCoupon(payload, openid)
     case 'deleteCoupon':
       return deleteCoupon(payload, openid)
+    case 'getMenuForDate':
+      return getMenuForDate(payload)
+    case 'saveMenu':
+      return saveMenu(payload, openid)
+    case 'deleteMenu':
+      return deleteMenu(payload, openid)
     case 'createWish':
       return createWish(payload, openid)
     case 'getWishes':
@@ -411,6 +417,108 @@ async function deleteCoupon(payload, openid) {
   return { id: payload.id }
 }
 
+function normalizeMenuDate(value) {
+  const todayKey = chinaDateString()
+  let date = String(value || '').slice(0, 10)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    date = todayKey
+  }
+  const todayStart = Date.parse(todayKey + 'T00:00:00+08:00')
+  const start = Date.parse(date + 'T00:00:00+08:00')
+  if (
+    !isFinite(start) ||
+    start < todayStart ||
+    start > todayStart + 7 * 24 * 60 * 60 * 1000
+  ) {
+    throw new Error('只能安排今天到 7 天内的菜单')
+  }
+  return date
+}
+
+function menuDocId(date, meal) {
+  return date + '_' + meal
+}
+
+async function getMenuDoc(date, meal) {
+  await ensureCollection('menus')
+  try {
+    const res = await db.collection('menus').doc(menuDocId(date, meal)).get()
+    return Object.assign(
+      { exists: true, date, meal, dishIds: [], open: true },
+      res.data
+    )
+  } catch (e) {
+    return { exists: false, date, meal, dishIds: [], open: true }
+  }
+}
+
+async function getMenuForDate(payload) {
+  const date = normalizeMenuDate(payload && payload.date)
+  const meal =
+    payload && MEALS.indexOf(payload.meal) > -1 ? payload.meal : 'lunch'
+  return getMenuDoc(date, meal)
+}
+
+async function saveMenu(payload, openid) {
+  await requireAdmin(openid)
+  if (!payload) {
+    throw new Error('参数不完整')
+  }
+  const date = normalizeMenuDate(payload.date)
+  const meal = MEALS.indexOf(payload.meal) > -1 ? payload.meal : ''
+  if (!meal) {
+    throw new Error('请选择餐次')
+  }
+  const rawIds = Array.isArray(payload.dishIds) ? payload.dishIds : []
+  const ids = []
+  rawIds.forEach(id => {
+    const value = String(id || '')
+    if (value && ids.indexOf(value) === -1) {
+      ids.push(value)
+    }
+  })
+  let validIds = []
+  if (ids.length) {
+    const dishRes = await db
+      .collection('dishes')
+      .where({ _id: _.in(ids.slice(0, 50)) })
+      .get()
+    validIds = dishRes.data.map(dish => dish._id)
+  }
+  const data = {
+    date,
+    meal,
+    dishIds: validIds,
+    open: payload.open !== false,
+    updatedAt: Date.now()
+  }
+  await ensureCollection('menus')
+  await db
+    .collection('menus')
+    .doc(menuDocId(date, meal))
+    .set({ data })
+  return Object.assign({ exists: true }, data)
+}
+
+async function deleteMenu(payload, openid) {
+  await requireAdmin(openid)
+  if (!payload) {
+    throw new Error('参数不完整')
+  }
+  const date = normalizeMenuDate(payload.date)
+  const meal = MEALS.indexOf(payload.meal) > -1 ? payload.meal : ''
+  if (!meal) {
+    throw new Error('请选择餐次')
+  }
+  await ensureCollection('menus')
+  try {
+    await db.collection('menus').doc(menuDocId(date, meal)).remove()
+  } catch (e) {
+    // 菜单本来就不存在
+  }
+  return { date, meal }
+}
+
 async function requireAdmin(openid) {
   const ok = await isAdminOpenid(openid)
   if (!ok) {
@@ -535,6 +643,11 @@ async function createOrder(payload, openid) {
     }
   }
 
+  const menu = await getMenuDoc(scheduledDate, meal)
+  if (menu.exists && menu.open === false) {
+    throw new Error('这一餐还没排菜单')
+  }
+
   if (!payload || !Array.isArray(payload.items) || payload.items.length === 0) {
     throw new Error('订单是空的')
   }
@@ -564,6 +677,9 @@ async function createOrder(payload, openid) {
       }
       if (dish.status !== 'on') {
         throw new Error(`${dish.name} 已售罄，换一道吧`)
+      }
+      if (menu.exists && menu.dishIds.indexOf(raw.dishId) === -1) {
+        throw new Error(`${dish.name} 这一餐不供应`)
       }
       const qty = Number(raw.qty)
       if (!Number.isInteger(qty) || qty < 1 || qty > 20) {

@@ -5,9 +5,11 @@ import type {
   Category,
   Coupon,
   CreateOrderPayload,
+  DailyMenu,
   Dish,
   DishInput,
   InitResult,
+  MealId,
   MeInfo,
   Order,
   OrderStatus,
@@ -233,4 +235,39 @@ export async function deleteCoupon(id: string): Promise<{ id: string }> {
     return callApi<{ id: string }>('deleteCoupon', { id })
   }
   return mock.deleteCoupon(id)
+}
+
+export async function getMenuForDate(
+  date: string,
+  meal: MealId
+): Promise<DailyMenu> {
+  if (USE_CLOUD) {
+    return callApi<DailyMenu>('getMenuForDate', { date, meal })
+  }
+  return mock.getMenuForDate(date, meal)
+}
+
+export async function saveMenu(payload: {
+  date: string
+  meal: MealId
+  dishIds: string[]
+  open: boolean
+}): Promise<DailyMenu> {
+  if (USE_CLOUD) {
+    return callApi<DailyMenu>('saveMenu', payload)
+  }
+  return mock.saveMenu(payload)
+}
+
+export async function deleteMenu(
+  date: string,
+  meal: MealId
+): Promise<{ date: string; meal: MealId }> {
+  if (USE_CLOUD) {
+    return callApi<{ date: string; meal: MealId }>('deleteMenu', {
+      date,
+      meal
+    })
+  }
+  return mock.deleteMenu(date, meal)
 }
