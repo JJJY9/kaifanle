@@ -40,6 +40,7 @@ Page({
   },
 
   _watchTimer: null as any,
+  _watching: false,
   _knownPending: [] as string[],
   _statsAt: 0,
   _rawOrders: [] as any[],
@@ -57,23 +58,34 @@ Page({
     this.stopWatch()
   },
 
-  // 每 25 秒静默刷新一次，有新订单就震动提醒
+  // 轮询新订单：有未完成订单时 20 秒一次，空闲时 45 秒一次，省云端读取
   startWatch() {
     this.stopWatch()
-    this._watchTimer = setInterval(() => {
-      if (
-        !this.data.forbidden &&
-        !this.data.error &&
-        !this.data.busyId
-      ) {
-        this.load(true)
+    this._watching = true
+    const schedule = () => {
+      if (!this._watching) {
+        return
       }
-    }, 25000)
+      const delay = this.data.orders.length ? 20000 : 45000
+      this._watchTimer = setTimeout(async () => {
+        if (
+          this._watching &&
+          !this.data.forbidden &&
+          !this.data.error &&
+          !this.data.busyId
+        ) {
+          await this.load(true)
+        }
+        schedule()
+      }, delay)
+    }
+    schedule()
   },
 
   stopWatch() {
+    this._watching = false
     if (this._watchTimer) {
-      clearInterval(this._watchTimer)
+      clearTimeout(this._watchTimer)
       this._watchTimer = null
     }
   },
