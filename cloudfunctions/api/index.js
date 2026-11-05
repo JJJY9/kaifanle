@@ -1411,6 +1411,11 @@ async function saveDish(payload, openid) {
     payload.image === undefined
       ? null
       : String(payload.image || '').trim().slice(0, 300)
+  // 做法步骤：每行一步；编辑时不传表示保持原做法
+  const recipe =
+    payload.recipe === undefined
+      ? null
+      : String(payload.recipe || '').trim().slice(0, 1200)
 
   const fields = {
     name,
@@ -1429,6 +1434,9 @@ async function saveDish(payload, openid) {
   }
   if (image !== null) {
     fields.image = image
+  }
+  if (recipe !== null) {
+    fields.recipe = recipe
   }
 
   if (payload.id) {

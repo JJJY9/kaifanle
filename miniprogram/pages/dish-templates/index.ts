@@ -77,7 +77,8 @@ Page({
       meals: template.meals,
       status: template.status,
       stock: template.stock,
-      isRecommended: template.isRecommended
+      isRecommended: template.isRecommended,
+      recipe: template.recipe
     }
   },
 

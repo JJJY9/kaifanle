@@ -24,6 +24,7 @@ const dishes = [
     color: '#FFD23F',
     meals: ['lunch', 'dinner'],
     isRecommended: true,
+    recipe: '牛腩切块冷水下锅焯水，撇去浮沫\n番茄切块炒出汁，下牛腩、姜片、八角、生抽翻炒\n加热水没过，小火炖 60 分钟\n加盐和少许糖收汁，浇在热米饭上',
     sort: 10
   },
   {
@@ -39,6 +40,7 @@ const dishes = [
     status: 'on',
     color: '#2D9CFF',
     meals: ['lunch', 'dinner'],
+    recipe: '鸡腿去骨，用盐和黑胡椒腌 10 分钟\n鸡皮朝下小火煎到金黄\n加生抽、蜂蜜、清水调成的照烧汁，小火煮 5 分钟收汁\n切块铺在米饭上，淋汁',
     sort: 20
   },
   {
@@ -54,6 +56,7 @@ const dishes = [
     status: 'soldout',
     color: '#FF6B35',
     meals: ['lunch', 'dinner'],
+    recipe: '五花肉切块冷水焯水\n锅里少油小火炒糖色，下肉块翻炒上色\n加姜片、生抽、老抽、料酒和热水没过\n小火炖 50 分钟，大火收汁',
     sort: 30
   },
   {
@@ -69,6 +72,7 @@ const dishes = [
     status: 'on',
     color: '#FF5C8A',
     meals: ['breakfast', 'lunch'],
+    recipe: '小葱切段，冷油下锅小火炸到焦黄\n捞出葱段，热油里加生抽、老抽和一点糖\n面条煮熟捞出，拌上葱油和葱段',
     sort: 40
   },
   {
@@ -84,6 +88,7 @@ const dishes = [
     status: 'on',
     color: '#2FBF71',
     meals: ['breakfast'],
+    recipe: '大米提前泡 30 分钟\n瘦肉切丝，用盐和淀粉腌 10 分钟\n水开下米煮 30 分钟\n加皮蛋丁和肉丝再煮 5 分钟，调盐、白胡椒，撒葱花',
     sort: 50
   },
   {
@@ -99,6 +104,7 @@ const dishes = [
     status: 'on',
     color: '#FFD23F',
     meals: ['breakfast'],
+    recipe: '吐司烤到微脆\n煎一个蛋，撒盐；火腿片煎香\n按吐司、生菜、火腿、煎蛋、吐司的顺序叠好\n对角切开',
     sort: 60
   },
   {
@@ -114,6 +120,7 @@ const dishes = [
     status: 'on',
     color: '#2FBF71',
     meals: ['lunch', 'dinner'],
+    recipe: '西兰花掰小朵，沸水焯 1 分钟捞出\n蒜末小火爆香\n下西兰花大火翻炒，加盐和少许蚝油，炒匀出锅',
     sort: 70
   },
   {
@@ -129,6 +136,7 @@ const dishes = [
     status: 'on',
     color: '#2D9CFF',
     meals: ['lunch', 'dinner'],
+    recipe: '土豆切细丝，泡水洗去淀粉\n热油爆香蒜末和花椒\n下土豆丝大火炒 2 分钟\n加青椒丝、醋和盐，再炒 1 分钟',
     sort: 80
   },
   {
@@ -144,6 +152,7 @@ const dishes = [
     status: 'on',
     color: '#FF5C8A',
     meals: ['lunch', 'dinner'],
+    recipe: '鸡翅两面划刀，冷水焯水\n平底锅少油煎到两面金黄\n加姜片、生抽、老抽和可乐没过鸡翅\n中火炖 15 分钟，大火收汁',
     sort: 90
   },
   {
@@ -159,6 +168,7 @@ const dishes = [
     status: 'on',
     color: '#FFD23F',
     meals: ['lunch', 'dinner'],
+    recipe: '番茄切块炒软，加水煮开\n鸡蛋打散，沿锅边转圈淋入\n加盐、香油，撒葱花关火',
     sort: 100
   },
   {
@@ -174,6 +184,7 @@ const dishes = [
     status: 'on',
     color: '#FF6B35',
     meals: ['lunch', 'dinner'],
+    recipe: '排骨冷水焯水\n加姜片和足量水炖 40 分钟\n下冬瓜块再炖 15 分钟\n加盐和白胡椒调味',
     sort: 110
   },
   {
@@ -189,6 +200,7 @@ const dishes = [
     status: 'on',
     color: '#2D9CFF',
     meals: ['lunch', 'dinner'],
+    recipe: '柠檬洗净切片\n加凉白开和蜂蜜搅匀\n冷藏 30 分钟\n喝之前加冰块',
     sort: 120
   },
   {
@@ -204,6 +216,7 @@ const dishes = [
     status: 'on',
     color: '#FF5C8A',
     meals: ['breakfast'],
+    recipe: '牛奶倒入小锅，小火加热到冒热气\n按口味加一勺蜂蜜或糖，搅匀',
     sort: 130
   },
   {
@@ -219,6 +232,7 @@ const dishes = [
     status: 'on',
     color: '#FF6B35',
     meals: ['lunch', 'dinner'],
+    recipe: '鸡蛋加牛奶和糖搅匀，过筛两遍\n倒入小模具\n烤箱 160 度烤 30 分钟\n冷藏后淋上焦糖',
     sort: 140
   }
 ]

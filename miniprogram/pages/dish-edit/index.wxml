@@ -97,6 +97,18 @@
     </view>
 
     <view class="card block">
+      <view class="block-title">做法</view>
+      <textarea
+        class="recipe-input"
+        placeholder="每行一步，比如：牛腩切块焯水 / 番茄炒出汁再下牛腩 / 小火炖 60 分钟"
+        value="{{recipe}}"
+        maxlength="1200"
+        bindinput="onRecipe"
+      ></textarea>
+      <view class="recipe-tip">点单时可以在「怎么做」里展开查看，留空则不显示</view>
+    </view>
+
+    <view class="card block">
       <view class="block-title">加料</view>
       <view wx:for="{{addons}}" wx:key="key" class="addon-row">
         <input

@@ -355,7 +355,8 @@ async function run() {
     meals: ['lunch'],
     status: 'on',
     isRecommended: false,
-    image: 'cloud://test.env/dishes/test.jpg'
+    image: 'cloud://test.env/dishes/test.jpg',
+    recipe: '第一步切菜\n第二步开火'
   }
 
   res = await call('saveDish', dishPayload, 'girl-openid')
@@ -366,6 +367,7 @@ async function run() {
   const createdDishId = res.data.id
   assert.strictEqual(res.data.char, '测')
   assert.strictEqual(res.data.image, 'cloud://test.env/dishes/test.jpg')
+  assert.strictEqual(res.data.recipe, '第一步切菜\n第二步开火')
 
   res = await call(
     'saveDish',
@@ -388,6 +390,8 @@ async function run() {
   assert.strictEqual(res.ok, true)
   assert.strictEqual(res.data.price, 15)
   assert.strictEqual(res.data.status, 'off')
+  // 编辑时不传 recipe 表示保持原做法
+  assert.strictEqual(res.data.recipe, '第一步切菜\n第二步开火')
 
   res = await call('getDishes', {}, 'admin-openid')
   assert.ok(

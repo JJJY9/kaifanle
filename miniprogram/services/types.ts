@@ -30,6 +30,7 @@ export interface Dish {
   stock?: number
   isRecommended?: boolean
   image?: string
+  recipe?: string
 }
 
 export interface Category {
@@ -53,6 +54,7 @@ export interface DishInput {
   stock: number
   isRecommended: boolean
   image?: string
+  recipe?: string
 }
 
 export interface CartLine {

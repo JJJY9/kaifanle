@@ -44,6 +44,7 @@ Page({
     colors: COLORS,
     colorIndex: 0,
     image: '',
+    recipe: '',
     uploading: false,
     statuses: [
       { id: 'on', name: '供应中' },
@@ -105,6 +106,7 @@ Page({
         })),
         colorIndex: colorIndex > -1 ? colorIndex : 0,
         image: dish.image || '',
+        recipe: dish.recipe || '',
         status: dish.status,
         isRecommended: Boolean(dish.isRecommended),
         loading: false
@@ -199,6 +201,10 @@ Page({
 
   onRecommended(e: any) {
     this.setData({ isRecommended: Boolean(e.detail.value) })
+  },
+
+  onRecipe(e: any) {
+    this.setData({ recipe: e.detail.value })
   },
 
   async onChooseImage() {
@@ -312,7 +318,8 @@ Page({
       status: this.data.status as DishInput['status'],
       stock: Math.floor(stock),
       isRecommended: this.data.isRecommended,
-      image: this.data.image
+      image: this.data.image,
+      recipe: this.data.recipe.trim()
     }
 
     this.setData({ saving: true })

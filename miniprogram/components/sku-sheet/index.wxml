@@ -60,6 +60,20 @@
         value="{{note}}"
         bindinput="onNote"
       />
+
+      <block wx:if="{{recipeLines.length}}">
+        <view class="recipe-head" bindtap="onToggleRecipe">
+          <text class="field-label recipe-label">怎么做</text>
+          <text class="recipe-toggle">{{recipeOpen ? '收起' : '展开'}}</text>
+        </view>
+        <view wx:if="{{recipeOpen}}" class="recipe">
+          <view
+            wx:for="{{recipeLines}}"
+            wx:key="index"
+            class="recipe-line"
+          >{{item}}</view>
+        </view>
+      </block>
     </scroll-view>
 
     <view class="foot">

@@ -15,7 +15,8 @@ export const DISH_TEMPLATES: DishInput[] = [
     meals: ['lunch', 'dinner'],
     status: 'on',
     stock: -1,
-    isRecommended: false
+    isRecommended: false,
+    recipe: '鸡腿肉切块，用生抽和淀粉腌 10 分钟\n香菇泡软切片\n爆香姜蒜，下鸡块炒到变色\n加香菇、蚝油和半碗水焖 8 分钟\n浇在热米饭上'
   },
   {
     name: '咖喱牛肉饭',
@@ -29,7 +30,8 @@ export const DISH_TEMPLATES: DishInput[] = [
     meals: ['lunch', 'dinner'],
     status: 'on',
     stock: -1,
-    isRecommended: false
+    isRecommended: false,
+    recipe: '牛肉切块焯水\n炒香洋葱，下牛肉和咖喱块\n加水没过，炖 40 分钟\n加土豆和胡萝卜再炖 15 分钟\n浇饭'
   },
   {
     name: '蛋炒饭',
@@ -46,7 +48,8 @@ export const DISH_TEMPLATES: DishInput[] = [
     meals: ['lunch', 'dinner'],
     status: 'on',
     stock: -1,
-    isRecommended: false
+    isRecommended: false,
+    recipe: '隔夜饭提前打散\n鸡蛋炒散盛出\n爆香葱花，下米饭大火翻炒\n加鸡蛋、盐和少许生抽，炒到粒粒分明'
   },
   {
     name: '火腿鸡蛋面',
@@ -60,7 +63,8 @@ export const DISH_TEMPLATES: DishInput[] = [
     meals: ['breakfast', 'lunch'],
     status: 'on',
     stock: -1,
-    isRecommended: false
+    isRecommended: false,
+    recipe: '水开下面条煮 3 分钟\n另起锅煎蛋和火腿\n面条捞进碗里，加汤、盐和生抽\n铺上煎蛋和火腿'
   },
   {
     name: '肉酱意大利面',
@@ -74,7 +78,8 @@ export const DISH_TEMPLATES: DishInput[] = [
     meals: ['lunch', 'dinner'],
     status: 'on',
     stock: -1,
-    isRecommended: false
+    isRecommended: false,
+    recipe: '意面煮 8 分钟捞出\n肉末炒变色，加洋葱丁炒香\n下番茄丁和番茄酱，小火熬 10 分钟\n拌面，撒黑胡椒'
   },
   {
     name: '宫保鸡丁',
@@ -88,7 +93,8 @@ export const DISH_TEMPLATES: DishInput[] = [
     meals: ['lunch', 'dinner'],
     status: 'on',
     stock: -1,
-    isRecommended: false
+    isRecommended: false,
+    recipe: '鸡丁用生抽和淀粉腌 10 分钟\n调糖醋汁（醋、糖、生抽、淀粉、水）\n炒香干辣椒和花椒，下鸡丁炒熟\n倒汁翻匀，最后加花生米'
   },
   {
     name: '鱼香肉丝',
@@ -102,7 +108,8 @@ export const DISH_TEMPLATES: DishInput[] = [
     meals: ['lunch', 'dinner'],
     status: 'on',
     stock: -1,
-    isRecommended: false
+    isRecommended: false,
+    recipe: '肉丝用生抽和淀粉腌 10 分钟\n调鱼香汁（醋、糖、生抽、豆瓣酱、淀粉）\n炒散肉丝盛出，爆香蒜末下配菜\n回锅倒汁，大火翻匀'
   },
   {
     name: '手撕包菜',
@@ -116,7 +123,8 @@ export const DISH_TEMPLATES: DishInput[] = [
     meals: ['lunch', 'dinner'],
     status: 'on',
     stock: -1,
-    isRecommended: false
+    isRecommended: false,
+    recipe: '包菜手撕成小块洗净沥干\n热锅下蒜末和干辣椒\n大火下包菜炒 2 分钟\n加生抽、醋和盐，翻匀出锅'
   },
   {
     name: '香煎豆腐',
@@ -130,7 +138,8 @@ export const DISH_TEMPLATES: DishInput[] = [
     meals: ['lunch', 'dinner'],
     status: 'on',
     stock: -1,
-    isRecommended: false
+    isRecommended: false,
+    recipe: '豆腐切厚片，用厨房纸吸干水\n少油中火煎到两面金黄\n淋生抽和少许糖水\n撒葱花，收汁出锅'
   },
   {
     name: '清炒时蔬',
@@ -144,7 +153,8 @@ export const DISH_TEMPLATES: DishInput[] = [
     meals: ['lunch', 'dinner'],
     status: 'on',
     stock: -1,
-    isRecommended: false
+    isRecommended: false,
+    recipe: '时蔬洗净切段\n蒜末爆香\n大火翻炒 2 分钟\n加盐和少许蚝油，炒匀出锅'
   },
   {
     name: '虾仁滑蛋',
@@ -158,7 +168,8 @@ export const DISH_TEMPLATES: DishInput[] = [
     meals: ['lunch', 'dinner'],
     status: 'on',
     stock: -1,
-    isRecommended: false
+    isRecommended: false,
+    recipe: '虾仁用盐和料酒腌 5 分钟\n鸡蛋加少许牛奶打散\n虾仁炒到变色\n倒入蛋液，小火推炒到刚刚凝固'
   },
   {
     name: '紫菜蛋花汤',
@@ -172,7 +183,8 @@ export const DISH_TEMPLATES: DishInput[] = [
     meals: ['lunch', 'dinner'],
     status: 'on',
     stock: -1,
-    isRecommended: false
+    isRecommended: false,
+    recipe: '水开撕入紫菜，加盐和虾皮\n鸡蛋打散沿锅边淋入\n滴香油，撒葱花关火'
   },
   {
     name: '玉米胡萝卜汤',
@@ -186,7 +198,8 @@ export const DISH_TEMPLATES: DishInput[] = [
     meals: ['lunch', 'dinner'],
     status: 'on',
     stock: -1,
-    isRecommended: false
+    isRecommended: false,
+    recipe: '玉米切段，胡萝卜切块\n加水煮开转小火 30 分钟\n加盐调味即可'
   },
   {
     name: '酸辣汤',
@@ -200,7 +213,8 @@ export const DISH_TEMPLATES: DishInput[] = [
     meals: ['lunch', 'dinner'],
     status: 'on',
     stock: -1,
-    isRecommended: false
+    isRecommended: false,
+    recipe: '木耳和豆腐切丝\n水开下食材煮 3 分钟\n加醋、白胡椒、生抽，用水淀粉勾芡\n淋蛋液，撒香菜'
   },
   {
     name: '蜂蜜柚子茶',
@@ -214,7 +228,8 @@ export const DISH_TEMPLATES: DishInput[] = [
     meals: ['breakfast', 'lunch', 'dinner'],
     status: 'on',
     stock: -1,
-    isRecommended: false
+    isRecommended: false,
+    recipe: '柚子茶酱两勺放入杯中\n用温水冲开搅匀\n喜欢凉的加冰块，也可以加一片柠檬'
   },
   {
     name: '冰美式',
@@ -228,7 +243,8 @@ export const DISH_TEMPLATES: DishInput[] = [
     meals: ['breakfast', 'lunch'],
     status: 'on',
     stock: -1,
-    isRecommended: false
+    isRecommended: false,
+    recipe: '杯子里加满冰\n倒入 150ml 冷水\n淋入一份浓缩咖啡液\n搅匀即可'
   },
   {
     name: '现磨豆浆',
@@ -242,7 +258,8 @@ export const DISH_TEMPLATES: DishInput[] = [
     meals: ['breakfast'],
     status: 'on',
     stock: -1,
-    isRecommended: false
+    isRecommended: false,
+    recipe: '黄豆提前泡 8 小时\n加水打浆后用滤网过滤\n煮沸后再小火煮 5 分钟\n按口味加糖'
   },
   {
     name: '红豆双皮奶',
@@ -256,7 +273,8 @@ export const DISH_TEMPLATES: DishInput[] = [
     meals: ['lunch', 'dinner'],
     status: 'on',
     stock: -1,
-    isRecommended: false
+    isRecommended: false,
+    recipe: '牛奶加热后放凉，表面结出奶皮\n蛋清加糖和牛奶搅匀，过筛\n倒回碗里蒸 12 分钟\n铺上蜜红豆'
   },
   {
     name: '水果酸奶杯',
@@ -270,6 +288,7 @@ export const DISH_TEMPLATES: DishInput[] = [
     meals: ['breakfast', 'lunch', 'dinner'],
     status: 'on',
     stock: -1,
-    isRecommended: false
+    isRecommended: false,
+    recipe: '当季水果切块\n杯底铺一层酸奶\n分层放水果和燕麦\n最后淋一点蜂蜜'
   }
 ]

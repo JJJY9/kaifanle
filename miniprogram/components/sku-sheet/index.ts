@@ -12,7 +12,9 @@ Component({
     note: '',
     qty: 1,
     unitPrice: 0,
-    totalPrice: 0
+    totalPrice: 0,
+    recipeLines: [] as string[],
+    recipeOpen: false
   },
 
   observers: {
@@ -30,6 +32,10 @@ Component({
         ? dish.spicyLevels
         : []
       const addons = Array.isArray(dish.addons) ? dish.addons : []
+      const recipeLines = String(dish.recipe || '')
+        .split('\n')
+        .map((line: string) => line.trim())
+        .filter(Boolean)
       this.setData({
         spicyIndex: 0,
         spicyLevels,
@@ -38,7 +44,9 @@ Component({
         note: '',
         qty: 1,
         unitPrice: dish.price,
-        totalPrice: dish.price
+        totalPrice: dish.price,
+        recipeLines,
+        recipeOpen: false
       })
     },
 
@@ -67,6 +75,10 @@ Component({
 
     onNote(e: any) {
       this.setData({ note: e.detail.value })
+    },
+
+    onToggleRecipe() {
+      this.setData({ recipeOpen: !this.data.recipeOpen })
     },
 
     onMinus() {
