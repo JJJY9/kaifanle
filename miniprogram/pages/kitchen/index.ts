@@ -308,13 +308,25 @@ Page({
         const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
         const valid = orders.filter(order => order.status !== 'cancelled')
         const weekOrders = valid.filter(order => order.createdAt >= weekAgo)
+        const weekDishCount: Record<string, number> = {}
+        weekOrders.forEach(order => {
+          order.items.forEach((item: any) => {
+            weekDishCount[item.name] =
+              (weekDishCount[item.name] || 0) + Number(item.qty || 0)
+          })
+        })
+        const weekTopDish =
+          Object.keys(weekDishCount).sort(
+            (a, b) => weekDishCount[b] - weekDishCount[a]
+          )[0] || ''
         weekStats = {
           count: weekOrders.length,
           revenue: weekOrders.reduce(
             (sum, order) => sum + Number(order.amount || 0),
             0
           ),
-          totalCount: valid.length
+          totalCount: valid.length,
+          topDish: weekTopDish
         }
 
         // 近 7 天营收柱状图，按预约日期归组

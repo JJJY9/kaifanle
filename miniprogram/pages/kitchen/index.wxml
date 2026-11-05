@@ -50,6 +50,7 @@
 
     <view wx:if="{{weekStats}}" class="week-line">
       近 7 天 {{weekStats.count}} 单 · ¥{{weekStats.revenue}} · 累计 {{weekStats.totalCount}} 单
+      <text wx:if="{{weekStats.topDish}}"> · 本周最爱 {{weekStats.topDish}}</text>
     </view>
 
     <view wx:if="{{weekBarTotal > 0}}" class="chart card">
