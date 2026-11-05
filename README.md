@@ -45,10 +45,10 @@
 3. **部署云函数**：在开发者工具里右键 `cloudfunctions/api` → **上传并部署：云端安装依赖**
 4. **初始化数据库**：编译小程序 → 「我的」→「云环境初始化」。
    第一次点击的账号会自动成为管理员，并写入 5 个分类、14 道默认菜品
-5. **设置集合权限**：到云开发控制台 → 数据库，把 `categories`、`dishes`、`orders`、`config` 四个集合的权限设为「所有用户不可读写」。
-   所有读写都走云函数，客户端无需直接访问
+5. **设置集合权限**：到云开发控制台 → 数据库，把 `categories`、`dishes`、`orders`、`config`、`wishes`、`users`、`coupons`、`menus` 的权限设为「所有用户不可读写」。
+   所有读写都走云函数，客户端无需直接访问。新增集合会在对应功能首次使用时自动创建；没有出现就手动建一下
 
-> 如果初始化提示集合不存在，在云开发控制台手动创建 `categories`、`dishes`、`orders`、`config` 四个集合，再点一次初始化即可。
+> 如果初始化提示集合不存在，在云开发控制台手动创建 `categories`、`dishes`、`orders`、`config` 四个基础集合，再点一次初始化即可。
 
 ### 自动化辅助（可选）
 
@@ -74,15 +74,22 @@ node scripts/init-cloud-db.js ws://127.0.0.1:9420
 |---|---|
 | `categories` | 分类（主食 / 小炒 / 汤羹 / 饮品 / 甜品） |
 | `dishes` | 菜品、价格、规格、加料、售罄状态 |
-| `orders` | 订单（含 `_openid`、状态、时间轴） |
-| `config` | 初始化标记、管理员 openid、订单序号 |
+| `orders` | 订单（含 `_openid`、状态、时间轴、日期、地址、口味快照） |
+| `config` | 初始化标记、管理员 openid、订单序号、营业设置 |
+| `wishes` | 许愿池 |
+| `users` | 口味、忌口、常用地址档案（文档 ID 为 openid） |
+| `coupons` | 爱心券 |
+| `menus` | 每日菜单（文档 ID 为 `date_meal`） |
 
 订单金额和菜品单价由云函数按数据库中的菜价重新计算，不信任客户端传值；售罄菜品会被拒绝。
 
 ### 云函数动作
 
 `getCategories` / `getDishes` / `getDish` / `getOrders` / `getAllOrders` / `getOrder` /
-`createOrder` / `updateOrderStatus` / `toggleDishStatus` / `getMe` / `initDb`
+`createOrder` / `cancelOrder` / `updateOrderStatus` / `toggleDishStatus` / `saveDish` / `deleteDish` /
+`getBusiness` / `updateBusiness` / `getMenuForDate` / `saveMenu` / `deleteMenu` /
+`getMyProfile` / `saveMyProfile` / `getStats` / `createWish` / `getWishes` / `updateWish` /
+`createCoupon` / `getCoupons` / `claimCoupon` / `useCoupon` / `deleteCoupon` / `getMe` / `initDb`
 
 ### 订阅消息
 
