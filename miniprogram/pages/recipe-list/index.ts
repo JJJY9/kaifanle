@@ -97,5 +97,18 @@ Page({
     if (id) {
       wx.navigateTo({ url: `/pages/recipe/index?id=${id}` })
     }
+  },
+
+  onShareAppMessage() {
+    return {
+      title: '张饱饭堂 · 菜谱大全',
+      path: '/pages/recipe-list/index'
+    }
+  },
+
+  onShareTimeline() {
+    return {
+      title: '张饱饭堂 · 菜谱大全'
+    }
   }
 })

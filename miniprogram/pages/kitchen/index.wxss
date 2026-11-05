@@ -560,6 +560,11 @@
   font-weight: 800;
 }
 
+.missing-recipe {
+  color: #D9431C;
+  font-weight: 800;
+}
+
 .dish-move {
   display: flex;
   flex-direction: column;

@@ -185,7 +185,7 @@
         <view class="dish-dot" style="background: {{item.color}};">{{item.char}}</view>
         <view class="dish-info">
           <view class="dish-name">{{item.name}}</view>
-          <view class="dish-price {{item.stock >= 0 && item.stock <= 3 ? 'low' : ''}}">¥{{item.price}}<text wx:if="{{item.stock >= 0}}"> · 剩 {{item.stock}} 份</text></view>
+          <view class="dish-price {{item.stock >= 0 && item.stock <= 3 ? 'low' : ''}}">¥{{item.price}}<text wx:if="{{item.stock >= 0}}"> · 剩 {{item.stock}} 份</text><text wx:if="{{!item.recipe}}" class="missing-recipe"> · 缺做法</text></view>
         </view>
         <view class="dish-move">
           <view class="move-btn {{movingId === item.id ? 'busy' : ''}}" data-id="{{item.id}}" data-direction="up" catchtap="onMoveDish">↑</view>
