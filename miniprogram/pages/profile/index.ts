@@ -116,7 +116,7 @@ Page({
     entries.push({
       key: 'about',
       label: '关于开饭咯',
-      desc: 'v0.1.0 · 还在长大',
+      desc: 'v0.2.0 · 还在长大',
       icon: '关',
       color: '#2FBF71'
     })
@@ -264,7 +264,7 @@ Page({
 
     if (key === 'about') {
       wx.showModal({
-        title: '开饭咯 v0.1.0',
+        title: '开饭咯 v0.2.0',
         content: '一个只有一口锅的私厨点单小程序。她点单，你掌勺。',
         showCancel: false,
         confirmText: '好嘞'
