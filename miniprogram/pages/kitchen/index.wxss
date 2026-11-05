@@ -302,6 +302,22 @@
   color: #5C5C5C;
 }
 
+.order-top-right {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.order-wait {
+  padding: 4rpx 16rpx;
+  background: #FFFDF6;
+  border: 3rpx dashed #D9431C;
+  border-radius: 999rpx;
+  color: #D9431C;
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
 .status {
   padding: 4rpx 20rpx;
   background: #FFD23F;

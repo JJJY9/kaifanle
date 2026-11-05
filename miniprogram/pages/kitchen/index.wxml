@@ -93,7 +93,10 @@
     <view wx:for="{{orders}}" wx:key="id" class="order card">
       <view class="order-top">
         <text class="no">#{{item.no}}</text>
-        <view class="status {{item.status}}">{{item.statusText}}</view>
+        <view class="order-top-right">
+          <text wx:if="{{item.waitText}}" class="order-wait">{{item.waitText}}</text>
+          <view class="status {{item.status}}">{{item.statusText}}</view>
+        </view>
       </view>
       <view class="order-summary">{{item.summary}}</view>
       <view wx:if="{{item.urged}}" class="urge-badge">她催啦{{item.urgeCount > 1 ? ' · ' + item.urgeCount + ' 次' : ''}}</view>

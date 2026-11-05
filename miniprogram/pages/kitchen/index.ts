@@ -193,6 +193,12 @@ Page({
             order.urgedAt && Date.now() - order.urgedAt < 30 * 60 * 1000
           ),
           urgeCount: Number(order.urgeCount || 0),
+          waitText: (() => {
+            const minutes = Math.floor(
+              (Date.now() - Number(order.createdAt || 0)) / 60000
+            )
+            return minutes >= 10 ? `等了 ${minutes} 分钟` : ''
+          })(),
           totalQty,
           itemLines: order.items.map((item: any, index: number) => ({
             key: `${order.id}-${index}`,
