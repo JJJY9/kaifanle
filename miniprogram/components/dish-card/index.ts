@@ -15,6 +15,12 @@ Component({
 
     onAdd() {
       this.triggerEvent('add', { dish: this.data.dish })
+    },
+
+    onRecipe() {
+      if (this.data.dish && this.data.dish.recipe) {
+        this.triggerEvent('recipe', { dish: this.data.dish })
+      }
     }
   }
 })

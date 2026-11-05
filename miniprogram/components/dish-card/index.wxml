@@ -13,7 +13,14 @@
   </view>
 
   <view class="body">
-    <view class="name">{{dish.name}}</view>
+    <view class="name-row">
+      <view class="name">{{dish.name}}</view>
+      <view
+        wx:if="{{dish.recipe}}"
+        class="recipe-pill"
+        catchtap="onRecipe"
+      >做法</view>
+    </view>
     <view class="desc">{{dish.desc}}</view>
     <view wx:if="{{dish.stock >= 0 && dish.stock > 0 && dish.stock <= 5}}" class="stock-hint">仅剩 {{dish.stock}} 份</view>
     <view class="foot">

@@ -281,6 +281,13 @@ Page({
     wx.showToast({ title: '已加购', icon: 'none' })
   },
 
+  onRecipeTap(e: any) {
+    const dish = e.detail && e.detail.dish
+    if (dish && dish.id) {
+      wx.navigateTo({ url: `/pages/recipe/index?id=${dish.id}` })
+    }
+  },
+
   openSku(dish: Dish | null) {
     if (!dish) {
       return

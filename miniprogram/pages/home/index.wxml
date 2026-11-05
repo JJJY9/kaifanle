@@ -60,6 +60,7 @@
         dish="{{item}}"
         bind:select="onDishTap"
         bind:add="onQuickAdd"
+        bind:recipe="onRecipeTap"
       />
     </view>
     <empty-state
@@ -102,6 +103,7 @@
           dish="{{item}}"
           bind:select="onDishTap"
           bind:add="onQuickAdd"
+          bind:recipe="onRecipeTap"
         />
       </view>
     </view>
