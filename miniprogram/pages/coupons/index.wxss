@@ -43,6 +43,26 @@
   font-size: 26rpx;
 }
 
+.preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin: -2rpx 0 14rpx;
+}
+
+.preset-chip {
+  padding: 6rpx 20rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.preset-chip:active {
+  background: #FFD23F;
+}
+
 .create-btn {
   display: flex;
   align-items: center;

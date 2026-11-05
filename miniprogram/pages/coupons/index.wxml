@@ -13,6 +13,15 @@
       maxlength="20"
       bindinput="onTitle"
     />
+    <view class="preset-row">
+      <view
+        wx:for="{{presetTitles}}"
+        wx:key="*this"
+        class="preset-chip"
+        data-title="{{item}}"
+        bindtap="onPresetTitle"
+      >{{item}}</view>
+    </view>
     <input
       class="create-input"
       placeholder="备注，比如：攒够 3 次换一次"

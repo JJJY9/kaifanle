@@ -16,6 +16,7 @@ Page({
     loading: true,
     newTitle: '',
     newNote: '',
+    presetTitles: ['洗碗券', '奶茶券', '夸夸卡'],
     creating: false,
     claimingId: '',
     usingId: '',
@@ -63,6 +64,10 @@ Page({
 
   onTitle(e: any) {
     this.setData({ newTitle: e.detail.value })
+  },
+
+  onPresetTitle(e: any) {
+    this.setData({ newTitle: e.currentTarget.dataset.title })
   },
 
   onNote(e: any) {
