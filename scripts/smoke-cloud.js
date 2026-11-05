@@ -283,6 +283,33 @@ async function run() {
   assert.strictEqual(res.ok, true)
   assert.strictEqual(res.data.length, 5)
 
+  // 分类管理：权限、增改删、有菜品的分类不能删
+  res = await call(
+    'saveCategory',
+    { name: '夜宵', color: '#2D9CFF' },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, false)
+  res = await call(
+    'saveCategory',
+    { name: '夜宵', color: '#2D9CFF' },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  const newCategoryId = res.data.id
+  res = await call('getCategories', {}, 'girl-openid')
+  assert.ok(res.data.some(item => item.id === newCategoryId))
+  res = await call(
+    'saveCategory',
+    { id: newCategoryId, name: '夜宵啦', color: '#FF5C8A' },
+    'admin-openid'
+  )
+  assert.strictEqual(res.data.name, '夜宵啦')
+  res = await call('deleteCategory', { id: 'staple' }, 'admin-openid')
+  assert.strictEqual(res.ok, false)
+  res = await call('deleteCategory', { id: newCategoryId }, 'admin-openid')
+  assert.strictEqual(res.ok, true)
+
   res = await call('getDishes', {}, 'girl-openid')
   assert.strictEqual(res.ok, true)
   assert.strictEqual(res.data.length, 14)

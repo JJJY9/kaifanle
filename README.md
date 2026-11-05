@@ -15,7 +15,7 @@
 
 - v0.1.0 · MVP
 - **默认接入微信云开发**；把 `miniprogram/config.ts` 里的 `USE_CLOUD` 改成 `false` 即可切回本地 mock 数据
-- 已实现：今日菜单、餐次切换、菜品搜索、帮我选、菜品图片（云存储上传，缺省用色块占位）、菜品详情 / 加料弹层、购物车、结算下单（备注快捷短语）、订单列表（全部 / 进行中 / 已结束筛选）、订单状态时间轴、催单、再来一单、厨房端（接单 / 状态流转 / 新订单轮询提醒 / 今日备菜清单 / 近 7 天统计 / 历史订单 / 一键复制今日清单 / 菜品 CRUD / 库存 / 营业设置（开关 / 截单 / 今日公告）/ 每日菜单编排及一键复制到未来 7 天）、管理员权限、云数据库初始化、订阅消息、内容安全检测、未来 7 天预订、订单取消、许愿池、爱心券、口味与地址档案、今日看板、分享、隐私说明页
+- 已实现：今日菜单、餐次切换、菜品搜索、帮我选、菜品图片（云存储上传，缺省用色块占位）、菜品详情 / 加料弹层、购物车、结算下单（备注快捷短语）、订单列表（全部 / 进行中 / 已结束筛选）、订单状态时间轴、催单、再来一单、厨房端（接单 / 状态流转 / 新订单轮询提醒 / 今日备菜清单 / 近 7 天统计 / 历史订单 / 一键复制今日清单 / 菜品 CRUD / 分类管理 / 库存 / 营业设置（开关 / 截单 / 今日公告）/ 每日菜单编排及一键复制到未来 7 天）、管理员权限、云数据库初始化、订阅消息、内容安全检测、未来 7 天预订、订单取消、许愿池、爱心券、口味与地址档案、今日看板、分享、隐私说明页
 - 未实现：微信支付、小票打印（见路线图）
 
 > **云函数部署提示**：如果「上传并部署」报
@@ -96,7 +96,7 @@ node scripts/init-cloud-db.js ws://127.0.0.1:9420
 
 ### 云函数动作
 
-`getCategories` / `getDishes` / `getDish` / `getOrders` / `getAllOrders` / `getActiveOrders` / `getOrder` /
+`getCategories` / `saveCategory` / `deleteCategory` / `getDishes` / `getDish` / `getOrders` / `getAllOrders` / `getActiveOrders` / `getOrder` /
 `createOrder` / `cancelOrder` / `urgeOrder` / `updateOrderStatus` / `toggleDishStatus` / `saveDish` / `deleteDish` /
 `getBusiness` / `updateBusiness` / `getMenuForDate` / `saveMenu` / `deleteMenu` /
 `getMyProfile` / `saveMyProfile` / `getStats` / `createWish` / `getWishes` / `updateWish` /

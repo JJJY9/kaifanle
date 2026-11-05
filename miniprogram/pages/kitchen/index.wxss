@@ -181,6 +181,11 @@
   margin: 0;
 }
 
+.menu-actions {
+  display: flex;
+  gap: 12rpx;
+}
+
 .add-dish {
   display: flex;
   align-items: center;
@@ -193,6 +198,11 @@
   box-shadow: 4rpx 4rpx 0 #111111;
   font-size: 24rpx;
   font-weight: 800;
+}
+
+.add-dish.ghost {
+  background: #FFFFFF;
+  box-shadow: none;
 }
 
 .add-dish:active {

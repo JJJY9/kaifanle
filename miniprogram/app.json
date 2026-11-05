@@ -12,7 +12,8 @@
     "pages/preferences/index",
     "pages/coupons/index",
     "pages/privacy/index",
-    "pages/menu-edit/index"
+    "pages/menu-edit/index",
+    "pages/category-manage/index"
   ],
   "window": {
     "navigationBarBackgroundColor": "#FFFDF6",

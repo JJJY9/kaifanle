@@ -520,6 +520,50 @@ export async function getCategories(): Promise<Category[]> {
   return CATEGORIES.map(item => ({ ...item }))
 }
 
+export async function saveCategory(payload: {
+  id?: string
+  name: string
+  color: string
+}): Promise<Category> {
+  await delay(80)
+  const name = String(payload.name || '').trim()
+  if (!name) {
+    throw new Error('分类名称不能为空')
+  }
+  if (payload.id) {
+    const found = CATEGORIES.find(item => item.id === payload.id)
+    if (!found) {
+      throw new Error('分类不存在')
+    }
+    found.name = name
+    found.color = payload.color || found.color
+    return { ...found }
+  }
+  if (CATEGORIES.some(item => item.name === name)) {
+    throw new Error('已经有同名分类了')
+  }
+  const category: Category = {
+    id: `c${Date.now()}`,
+    name,
+    color: payload.color || '#FFD23F'
+  }
+  CATEGORIES.push(category)
+  return { ...category }
+}
+
+export async function deleteCategory(id: string): Promise<{ id: string }> {
+  await delay(80)
+  if (dishes.some(dish => dish.categoryId === id)) {
+    throw new Error('这个分类下还有菜品，先移走再删')
+  }
+  const index = CATEGORIES.findIndex(item => item.id === id)
+  if (index === -1) {
+    throw new Error('分类不存在')
+  }
+  CATEGORIES.splice(index, 1)
+  return { id }
+}
+
 export async function getDishes(): Promise<Dish[]> {
   await delay()
   return dishes.map(dish => ({ ...dish, addons: dish.addons.map(a => ({ ...a })) }))

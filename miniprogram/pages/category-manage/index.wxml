@@ -1,0 +1,56 @@
+<view class="page">
+  <view class="head">
+    <text class="title display">分类管理</text>
+    <text class="sub">首页菜单按分类分组展示</text>
+  </view>
+
+  <view class="card form">
+    <view class="form-title">{{editingId ? '编辑分类' : '新增分类'}}</view>
+    <input
+      class="input"
+      placeholder="分类名，比如：夜宵"
+      value="{{name}}"
+      maxlength="8"
+      bindinput="onName"
+    />
+    <view class="colors">
+      <view
+        wx:for="{{colors}}"
+        wx:key="*this"
+        class="color-dot {{color === item ? 'active' : ''}}"
+        style="background: {{item}};"
+        data-color="{{item}}"
+        bindtap="onSelectColor"
+      ></view>
+    </view>
+    <view class="form-actions">
+      <view wx:if="{{editingId}}" class="btn ghost" bindtap="onCancelEdit">取消</view>
+      <view class="btn {{saving ? 'disabled' : ''}}" bindtap="onSave">
+        {{saving ? '保存中…' : (editingId ? '保存修改' : '添加分类')}}
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{loading}}" class="skeleton sk"></view>
+
+  <block wx:elif="{{categories.length}}">
+    <view class="cat card">
+      <view wx:for="{{categories}}" wx:key="id" class="cat-row">
+        <view class="cat-dot" style="background: {{item.color}};"></view>
+        <view class="cat-name">{{item.name}}</view>
+        <view class="cat-btn" data-id="{{item.id}}" bindtap="onEdit">编辑</view>
+        <view
+          class="cat-btn danger {{deletingId === item.id ? 'disabled' : ''}}"
+          data-id="{{item.id}}"
+          bindtap="onDelete"
+        >{{deletingId === item.id ? '删除中' : '删除'}}</view>
+      </view>
+    </view>
+  </block>
+
+  <empty-state
+    wx:else
+    title="还没有分类"
+    desc="先添加一个分类，再往里面放菜"
+  />
+</view>

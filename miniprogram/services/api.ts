@@ -53,6 +53,28 @@ export async function getCategories(): Promise<Category[]> {
   return mock.getCategories()
 }
 
+export async function saveCategory(payload: {
+  id?: string
+  name: string
+  color: string
+}): Promise<Category> {
+  if (USE_CLOUD) {
+    const result = await callApi<Category>('saveCategory', payload)
+    categoriesCache = null
+    return result
+  }
+  return mock.saveCategory(payload)
+}
+
+export async function deleteCategory(id: string): Promise<{ id: string }> {
+  if (USE_CLOUD) {
+    const result = await callApi<{ id: string }>('deleteCategory', { id })
+    categoriesCache = null
+    return result
+  }
+  return mock.deleteCategory(id)
+}
+
 export async function getDishes(): Promise<Dish[]> {
   if (USE_CLOUD) {
     return callApi<Dish[]>('getDishes')

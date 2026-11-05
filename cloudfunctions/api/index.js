@@ -69,6 +69,10 @@ async function route(action, payload, openid) {
   switch (action) {
     case 'getCategories':
       return getCategories()
+    case 'saveCategory':
+      return saveCategory(payload, openid)
+    case 'deleteCategory':
+      return deleteCategory(payload, openid)
     case 'getDishes':
       return getDishes()
     case 'getDish':
@@ -673,6 +677,66 @@ async function getCategories() {
     .limit(100)
     .get()
   return res.data.map(withId)
+}
+
+async function saveCategory(payload, openid) {
+  await requireAdmin(openid)
+  if (!payload) {
+    throw new Error('参数不完整')
+  }
+  const name = String(payload.name || '').trim()
+  if (!name || name.length > 8) {
+    throw new Error('分类名称需要 1-8 个字')
+  }
+  const color = /^#[0-9a-fA-F]{6}$/.test(payload.color || '')
+    ? payload.color
+    : '#FFD23F'
+  const id = payload.id ? String(payload.id) : ''
+  if (id) {
+    const res = await db.collection('categories').doc(id).get()
+    await db
+      .collection('categories')
+      .doc(id)
+      .update({ data: { name, color } })
+    return withId(Object.assign({}, res.data, { name, color }))
+  }
+  const dup = await db.collection('categories').where({ name }).count()
+  if (dup.total > 0) {
+    throw new Error('已经有同名分类了')
+  }
+  const lastRes = await db
+    .collection('categories')
+    .orderBy('sort', 'desc')
+    .limit(1)
+    .get()
+  const sort = lastRes.data.length
+    ? Number(lastRes.data[0].sort || 0) + 10
+    : 10
+  const data = { name, color, sort }
+  const addRes = await db.collection('categories').add({ data })
+  return withId(Object.assign({}, data, { _id: addRes._id }))
+}
+
+async function deleteCategory(payload, openid) {
+  await requireAdmin(openid)
+  if (!payload || !payload.id) {
+    throw new Error('缺少分类 ID')
+  }
+  const id = String(payload.id)
+  const dishCount = await db
+    .collection('dishes')
+    .where({ categoryId: id })
+    .count()
+  if (dishCount.total > 0) {
+    throw new Error('这个分类下还有菜品，先移走再删')
+  }
+  try {
+    await db.collection('categories').doc(id).get()
+  } catch (e) {
+    throw new Error('分类不存在')
+  }
+  await db.collection('categories').doc(id).remove()
+  return { id }
 }
 
 async function getDishes() {

@@ -421,6 +421,10 @@ Page({
     wx.navigateTo({ url: '/pages/dish-edit/index' })
   },
 
+  onCategories() {
+    wx.navigateTo({ url: '/pages/category-manage/index' })
+  },
+
   onBusiness() {
     wx.navigateTo({ url: '/pages/business/index' })
   },
