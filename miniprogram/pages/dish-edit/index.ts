@@ -5,6 +5,7 @@ import type {
 } from '../../services/types'
 import { getCategories, getDish, saveDish, deleteDish } from '../../services/api'
 import { MEALS } from '../../utils/constants'
+import { USE_CLOUD } from '../../config'
 
 const COLORS = ['#FFD23F', '#2D9CFF', '#FF6B35', '#FF5C8A', '#2FBF71']
 
@@ -42,6 +43,8 @@ Page({
     }>,
     colors: COLORS,
     colorIndex: 0,
+    image: '',
+    uploading: false,
     statuses: [
       { id: 'on', name: '供应中' },
       { id: 'soldout', name: '售罄' },
@@ -101,6 +104,7 @@ Page({
           price: String(addon.price)
         })),
         colorIndex: colorIndex > -1 ? colorIndex : 0,
+        image: dish.image || '',
         status: dish.status,
         isRecommended: Boolean(dish.isRecommended),
         loading: false
@@ -197,6 +201,66 @@ Page({
     this.setData({ isRecommended: Boolean(e.detail.value) })
   },
 
+  async onChooseImage() {
+    if (this.data.uploading) {
+      return
+    }
+    let tempFilePath = ''
+    try {
+      const res: any = await wx.chooseMedia({
+        count: 1,
+        mediaType: ['image'],
+        sizeType: ['compressed'],
+        sourceType: ['album', 'camera']
+      })
+      tempFilePath =
+        res.tempFiles && res.tempFiles[0] ? res.tempFiles[0].tempFilePath : ''
+    } catch (e: any) {
+      if (e && e.errMsg && e.errMsg.indexOf('cancel') > -1) {
+        return
+      }
+      try {
+        const res: any = await wx.chooseImage({
+          count: 1,
+          sizeType: ['compressed'],
+          sourceType: ['album', 'camera']
+        })
+        tempFilePath = (res.tempFilePaths && res.tempFilePaths[0]) || ''
+      } catch (err) {
+        return
+      }
+    }
+    if (!tempFilePath) {
+      return
+    }
+    this.setData({ uploading: true })
+    try {
+      if (USE_CLOUD && wx.cloud) {
+        const match = tempFilePath.match(/\.(\w+)$/)
+        const ext = match ? match[1] : 'jpg'
+        const upload: any = await wx.cloud.uploadFile({
+          cloudPath: `dishes/${Date.now()}-${Math.floor(
+            Math.random() * 10000
+          )}.${ext}`,
+          filePath: tempFilePath
+        })
+        this.setData({ image: upload.fileID })
+      } else {
+        // mock 模式下临时预览，重进小程序后失效
+        this.setData({ image: tempFilePath })
+      }
+      wx.showToast({ title: '图片已上传', icon: 'none' })
+    } catch (e) {
+      wx.showToast({ title: '上传失败，稍后再试', icon: 'none' })
+    } finally {
+      this.setData({ uploading: false })
+    }
+  },
+
+  onRemoveImage() {
+    this.setData({ image: '' })
+  },
+
   async onSave() {
     if (this.data.saving) {
       return
@@ -247,7 +311,8 @@ Page({
       meals: this.data.selectedMeals,
       status: this.data.status as DishInput['status'],
       stock: Math.floor(stock),
-      isRecommended: this.data.isRecommended
+      isRecommended: this.data.isRecommended,
+      image: this.data.image
     }
 
     this.setData({ saving: true })

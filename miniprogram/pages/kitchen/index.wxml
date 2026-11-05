@@ -47,6 +47,27 @@
       </view>
     </view>
 
+    <view wx:if="{{weekStats}}" class="week-line">
+      近 7 天 {{weekStats.count}} 单 · ¥{{weekStats.revenue}} · 累计 {{weekStats.totalCount}} 单
+    </view>
+
+    <view class="prep card">
+      <view class="prep-head" bindtap="onTogglePrep">
+        <view class="prep-text">
+          <view class="prep-title">今日备菜</view>
+          <view class="prep-sub">所有未完成订单汇总</view>
+        </view>
+        <view class="prep-badge">{{prepTotal}} 份 {{showPrep ? '▾' : '▸'}}</view>
+      </view>
+      <block wx:if="{{showPrep}}">
+        <view wx:if="{{!prepItems.length}}" class="empty-line">今天还没有要备的菜</view>
+        <view wx:for="{{prepItems}}" wx:key="name" class="prep-row">
+          <text class="prep-name">{{item.name}}</text>
+          <text class="prep-qty">×{{item.qty}}</text>
+        </view>
+      </block>
+    </view>
+
     <view class="section-title display">待处理订单</view>
     <view wx:if="{{!orders.length}}" class="empty-line">暂时没有待处理的订单，歇会儿吧</view>
 

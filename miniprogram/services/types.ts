@@ -29,6 +29,7 @@ export interface Dish {
   meals: MealId[]
   stock?: number
   isRecommended?: boolean
+  image?: string
 }
 
 export interface Category {
@@ -51,6 +52,7 @@ export interface DishInput {
   status: 'on' | 'soldout' | 'off'
   stock: number
   isRecommended: boolean
+  image?: string
 }
 
 export interface CartLine {

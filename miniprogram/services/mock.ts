@@ -566,7 +566,8 @@ export async function saveDish(payload: DishInput): Promise<Dish> {
       typeof payload.stock === 'number' && payload.stock >= -1
         ? Math.floor(payload.stock)
         : -1,
-    isRecommended: Boolean(payload.isRecommended)
+    isRecommended: Boolean(payload.isRecommended),
+    image: payload.image || ''
   }
   if (payload.id) {
     const existing = dishes.find(item => item.id === payload.id)

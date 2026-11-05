@@ -126,6 +126,87 @@
   gap: 20rpx;
 }
 
+.image-row {
+  display: flex;
+  align-items: center;
+  gap: 22rpx;
+}
+
+.image-preview {
+  position: relative;
+  width: 164rpx;
+  height: 164rpx;
+  border: 3rpx solid #111111;
+  border-radius: 22rpx;
+  overflow: hidden;
+}
+
+.image-thumb {
+  width: 100%;
+  height: 100%;
+}
+
+.image-remove {
+  position: absolute;
+  top: 6rpx;
+  right: 6rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40rpx;
+  height: 40rpx;
+  background: #FFFFFF;
+  border: 2rpx solid #111111;
+  border-radius: 50%;
+  font-size: 26rpx;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.image-add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6rpx;
+  width: 164rpx;
+  height: 164rpx;
+  background: #FFFDF6;
+  border: 3rpx dashed #111111;
+  border-radius: 22rpx;
+}
+
+.image-plus {
+  font-size: 54rpx;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.image-hint {
+  color: #5C5C5C;
+  font-size: 20rpx;
+}
+
+.image-replace {
+  padding: 10rpx 26rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  box-shadow: 3rpx 3rpx 0 #111111;
+  font-size: 23rpx;
+  font-weight: 800;
+}
+
+.image-replace:active {
+  transform: translate(3rpx, 3rpx);
+  box-shadow: none;
+}
+
+.image-tip {
+  color: #8A8A8A;
+  font-size: 20rpx;
+}
+
 .color-dot {
   width: 64rpx;
   height: 64rpx;

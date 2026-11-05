@@ -1054,6 +1054,13 @@ async function saveDish(payload, openid) {
       ? Math.floor(stockValue)
       : -1
 
+  // 云存储 fileID 或 https 图片地址；为空时前端用色块 + 首字占位。
+  // 编辑时不传 image 表示保持原图不变。
+  const image =
+    payload.image === undefined
+      ? null
+      : String(payload.image || '').trim().slice(0, 300)
+
   const fields = {
     name,
     char: name.slice(0, 1),
@@ -1068,6 +1075,9 @@ async function saveDish(payload, openid) {
     status,
     stock,
     isRecommended: Boolean(payload.isRecommended)
+  }
+  if (image !== null) {
+    fields.image = image
   }
 
   if (payload.id) {

@@ -27,7 +27,11 @@ Page({
     error: '',
     busyId: '',
     busyDishId: '',
-    showHistory: false
+    showHistory: false,
+    showPrep: false,
+    prepItems: [] as any[],
+    prepTotal: 0,
+    weekStats: null as any
   },
 
   _watchTimer: null as any,
@@ -175,11 +179,50 @@ Page({
         )
         .slice(0, 10)
         .map(toView)
+
+      // 今日备菜：把今天所有未完成订单按菜名汇总
+      const todayKey = dateInputString()
+      const prepMap: Record<string, number> = {}
+      active
+        .filter(
+          order =>
+            (order.scheduledDate ||
+              dateInputString(new Date(order.createdAt))) === todayKey
+        )
+        .forEach(order => {
+          order.items.forEach((item: any) => {
+            const name = String(item.name || '')
+            if (name) {
+              prepMap[name] = (prepMap[name] || 0) + Number(item.qty || 0)
+            }
+          })
+        })
+      const prepItems = Object.keys(prepMap)
+        .map(name => ({ name, qty: prepMap[name] }))
+        .sort((a, b) => b.qty - a.qty)
+      const prepTotal = prepItems.reduce((sum, item) => sum + item.qty, 0)
+
+      // 近 7 天经营概况（不含已取消订单）
+      const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
+      const valid = orders.filter(order => order.status !== 'cancelled')
+      const weekOrders = valid.filter(order => order.createdAt >= weekAgo)
+      const weekStats = {
+        count: weekOrders.length,
+        revenue: weekOrders.reduce(
+          (sum, order) => sum + Number(order.amount || 0),
+          0
+        ),
+        totalCount: valid.length
+      }
+
       this.setData({
         orders: view,
         history,
         dishes,
         stats,
+        prepItems,
+        prepTotal,
+        weekStats,
         loading: false,
         error: ''
       })
@@ -270,6 +313,10 @@ Page({
 
   onToggleHistory() {
     this.setData({ showHistory: !this.data.showHistory })
+  },
+
+  onTogglePrep() {
+    this.setData({ showPrep: !this.data.showPrep })
   },
 
   onHistoryTap(e: any) {

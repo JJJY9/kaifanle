@@ -10,7 +10,8 @@
 
     <view class="head">
       <view class="media" style="background: {{dish.color}};">
-        <text class="media-char">{{dish.char}}</text>
+        <image wx:if="{{dish.image}}" class="media-img" src="{{dish.image}}" mode="aspectFill" />
+        <text wx:else class="media-char">{{dish.char}}</text>
       </view>
       <view class="head-info">
         <view class="name">{{dish.name}}</view>

@@ -123,6 +123,24 @@
       <view class="block-title">展示</view>
 
       <view class="field field-column">
+        <text class="label">菜品图片</text>
+        <view class="image-row">
+          <view wx:if="{{image}}" class="image-preview">
+            <image class="image-thumb" src="{{image}}" mode="aspectFill" />
+            <view class="image-remove" bindtap="onRemoveImage">×</view>
+          </view>
+          <view wx:else class="image-add" bindtap="onChooseImage">
+            <text class="image-plus">{{uploading ? '…' : '+'}}</text>
+            <text class="image-hint">{{uploading ? '上传中' : '拍照 / 相册'}}</text>
+          </view>
+          <view wx:if="{{image}}" class="image-replace" bindtap="onChooseImage">
+            {{uploading ? '上传中…' : '换一张'}}
+          </view>
+        </view>
+        <text class="image-tip">不传图片时用色块 + 首字占位</text>
+      </view>
+
+      <view class="field field-column">
         <text class="label">色块</text>
         <view class="colors">
           <view

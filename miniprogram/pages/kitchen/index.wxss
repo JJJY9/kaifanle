@@ -99,6 +99,67 @@
   font-size: 21rpx;
 }
 
+.week-line {
+  margin: 12rpx 6rpx 0;
+  color: #5C5C5C;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.prep {
+  margin-top: 20rpx;
+  padding: 20rpx 24rpx;
+}
+
+.prep-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.prep-title {
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+.prep-sub {
+  margin-top: 2rpx;
+  color: #5C5C5C;
+  font-size: 21rpx;
+}
+
+.prep-badge {
+  padding: 6rpx 20rpx;
+  background: #FFD23F;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
+.prep-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14rpx 0;
+  border-bottom: 3rpx dashed rgba(17, 17, 17, 0.12);
+}
+
+.prep-row:last-child {
+  border-bottom: none;
+}
+
+.prep-name {
+  font-size: 26rpx;
+  font-weight: 700;
+}
+
+.prep-qty {
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
 .section-title {
   margin: 30rpx 4rpx 18rpx;
   font-size: 36rpx;

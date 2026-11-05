@@ -65,7 +65,8 @@
   <block wx:elif="{{sections.length}}">
     <view wx:if="{{hero}}" class="hero" bindtap="onHeroTap">
       <view class="hero-media" style="background: {{hero.color}};">
-        <text class="hero-char">{{hero.char}}</text>
+        <image wx:if="{{hero.image}}" class="hero-img" src="{{hero.image}}" mode="aspectFill" />
+        <text wx:else class="hero-char">{{hero.char}}</text>
         <view class="hero-sticker">今日推荐</view>
       </view>
       <view class="hero-body">

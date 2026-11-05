@@ -289,7 +289,8 @@ async function run() {
     color: '#FFD23F',
     meals: ['lunch'],
     status: 'on',
-    isRecommended: false
+    isRecommended: false,
+    image: 'cloud://test.env/dishes/test.jpg'
   }
 
   res = await call('saveDish', dishPayload, 'girl-openid')
@@ -299,6 +300,7 @@ async function run() {
   assert.strictEqual(res.ok, true)
   const createdDishId = res.data.id
   assert.strictEqual(res.data.char, '测')
+  assert.strictEqual(res.data.image, 'cloud://test.env/dishes/test.jpg')
 
   res = await call(
     'saveDish',

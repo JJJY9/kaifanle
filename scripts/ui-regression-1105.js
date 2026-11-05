@@ -68,6 +68,20 @@ function invoke(mp, body) {
   data = await page.data()
   check('清空搜索恢复菜单', data.keyword === '' && data.sections.length > 0)
 
+  // 推荐位图片分支
+  await invoke(
+    mp,
+    "page.setData({ hero: Object.assign({}, page.data.hero, { image: 'cloud://test.env/hero.jpg' }) })"
+  )
+  await sleep(300)
+  page = await current()
+  check('推荐位图片渲染', (await page.$$('.hero-img')).length === 1)
+  await invoke(
+    mp,
+    "page.setData({ hero: Object.assign({}, page.data.hero, { image: '' }) })"
+  )
+  await sleep(200)
+
   // ---------- 订单筛选 ----------
   await mp.switchTab('/pages/orders/index')
   await sleep(2000)
@@ -178,6 +192,36 @@ function invoke(mp, body) {
   page = await current()
   data = await page.data()
   check('历史展开', data.showHistory === true)
+
+  check(
+    '今日备菜汇总',
+    Array.isArray(data.prepItems) &&
+      typeof data.prepTotal === 'number' &&
+      data.prepTotal ===
+        data.prepItems.reduce((sum, item) => sum + item.qty, 0),
+    `${data.prepItems.length} 道 / ${data.prepTotal} 份`
+  )
+  check(
+    '近 7 天统计',
+    Boolean(data.weekStats) &&
+      typeof data.weekStats.count === 'number' &&
+      typeof data.weekStats.revenue === 'number',
+    data.weekStats &&
+      `近 7 天 ${data.weekStats.count} 单 / ¥${data.weekStats.revenue}`
+  )
+  await invoke(mp, 'page.onTogglePrep()')
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  check('备菜清单展开', data.showPrep === true)
+
+  // ---------- 菜品图片入口 ----------
+  await mp.navigateTo(`/pages/dish-edit/index?id=${sampleDish.id}`)
+  await sleep(2200)
+  page = await current()
+  data = await page.data()
+  check('菜品编辑加载', Boolean(data.name), data.name)
+  check('图片选择入口', (await page.$$('.image-add')).length === 1)
 
   const failed = results.filter(r => !r.ok)
   console.log(`\n结论：${results.length - failed.length}/${results.length} 通过`)
