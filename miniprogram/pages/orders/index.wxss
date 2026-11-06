@@ -120,6 +120,16 @@
   font-weight: 800;
 }
 
+.replied-chip {
+  padding: 4rpx 16rpx;
+  background: #2FBF71;
+  color: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
 .no {
   font-family: 'SmileySans', 'PingFang SC', sans-serif;
   font-size: 32rpx;

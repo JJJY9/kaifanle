@@ -51,7 +51,8 @@ Page({
         ),
         summary: itemSummary(order.items.map(item => item.name)),
         totalQty: order.items.reduce((sum, item) => sum + item.qty, 0),
-        rated: Boolean(order.rating)
+        rated: Boolean(order.rating),
+        replied: Boolean(order.ownerReply)
       }))
       const counts = {
         all: view.length,

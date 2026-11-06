@@ -64,6 +64,7 @@
           <text class="no">#{{item.no}}</text>
           <view class="order-top-right">
             <text wx:if="{{item.rated}}" class="rated-chip">已评</text>
+            <text wx:if="{{item.replied}}" class="replied-chip">已回复</text>
             <view class="status {{item.status}}">{{item.statusText}}</view>
           </view>
         </view>

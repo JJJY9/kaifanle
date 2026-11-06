@@ -778,6 +778,19 @@ function invoke(mp, body) {
   await mp.navigateBack()
   await sleep(600)
 
+  await mp.switchTab('/pages/orders/index')
+  await sleep(1500)
+  page = await current()
+  data = await page.data()
+  const repliedOrder = (data.orders || []).find(
+    order => order.id === 'seed-2'
+  )
+  check(
+    'mock 订单已回复标记',
+    Boolean(repliedOrder && repliedOrder.replied),
+    repliedOrder ? repliedOrder.replied : '没找到订单'
+  )
+
   const failed = results.filter(r => !r.ok)
   console.log(`\n结论：${results.length - failed.length}/${results.length} 通过`)
   await mp.disconnect()
