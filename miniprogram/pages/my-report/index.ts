@@ -83,6 +83,7 @@ Page({
         : 0
       this.setData({
         loading: false,
+        posterPath: '',
         monthText: `${now.getFullYear()} 年 ${now.getMonth() + 1} 月`,
         monthOrders: active.length,
         monthSpend: Number(spend.toFixed(2)),

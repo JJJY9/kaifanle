@@ -11,6 +11,7 @@ interface ParsedRow {
   meals: MealId[]
   mealsText: string
   stock: number
+  stockText: string
   error: string
 }
 
@@ -64,26 +65,37 @@ Page({
       .split('\n')
       .map(line => line.trim())
       .filter(Boolean)
-      .slice(0, 50)
       .map(line => {
         const parts = line.split(/[,，\t]/).map(part => part.trim())
         const name = String(parts[0] || '').slice(0, 20)
-        const price = Number(parts[1])
+        const priceRaw = String(parts[1] || '').trim()
+        const price = Number(priceRaw)
         const categoryName = String(parts[2] || '主食').slice(0, 8)
         const category = categoryMap[categoryName]
         const meals = parseMeals(parts[3] || '')
-        const stockValue = Number(parts[4])
-        const stock =
-          isFinite(stockValue) && stockValue >= 0
-            ? Math.floor(stockValue)
-            : -1
+        const stockRaw = String(parts[4] || '').trim()
+        const stockValue = Number(stockRaw)
+        const stock = !stockRaw
+          ? -1
+          : isFinite(stockValue) &&
+            stockValue >= 0 &&
+            stockValue <= 9999
+          ? Math.floor(stockValue)
+          : -1
         let error = ''
         if (!name) {
           error = '缺少菜名'
+        } else if (!priceRaw) {
+          error = '缺少价格'
         } else if (!isFinite(price) || price < 0 || price > 999) {
           error = '价格不对'
         } else if (!category) {
           error = `分类「${categoryName}」不存在`
+        } else if (
+          stockRaw &&
+          (!isFinite(stockValue) || stockValue < 0 || stockValue > 9999)
+        ) {
+          error = '库存不对'
         }
         return {
           name,
@@ -97,6 +109,7 @@ Page({
             )
             .join('/'),
           stock,
+          stockText: stock < 0 ? '不限量' : `${stock} 份`,
           error
         }
       })

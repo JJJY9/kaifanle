@@ -783,7 +783,15 @@ export async function saveDish(payload: DishInput): Promise<Dish> {
     }
     const beforeStock =
       typeof existing.stock === 'number' ? Number(existing.stock) : null
-    if (Number(existing.price) !== Number(fields.price)) {
+    const priceBaseValue = Number(payload.priceBase)
+    const priceBase =
+      isFinite(priceBaseValue) && priceBaseValue >= 0 ? priceBaseValue : null
+    const priceApplied =
+      priceBase !== null && priceBase === Number(existing.price)
+    if (!priceApplied) {
+      fields.price = Number(existing.price)
+    }
+    if (priceApplied && Number(existing.price) !== Number(fields.price)) {
       fields.priceHistory = (existing.priceHistory || [])
         .concat([
           {
@@ -1127,8 +1135,62 @@ export async function updateOrderSlot(
   if (!/^\d{4}-\d{2}-\d{2}$/.test(scheduledDate)) {
     throw new Error('日期不正确')
   }
+  const today = dateInputString()
+  const max = new Date()
+  max.setDate(max.getDate() + 7)
+  const maxDate = dateInputString(max)
+  if (scheduledDate < today || scheduledDate > maxDate) {
+    throw new Error('只能改到今天到 7 天内')
+  }
+  const business = loadBusiness()
+  const setting = (business as any)[meal]
+  if (!setting || setting.open === false) {
+    throw new Error('这一餐还没开火，换一餐吧')
+  }
+  if (scheduledDate === today) {
+    const now = new Date()
+    const [hour, minute] = String(setting.deadline || '23:59')
+      .split(':')
+      .map(Number)
+    if (now.getHours() * 60 + now.getMinutes() > hour * 60 + minute) {
+      throw new Error('这一餐已经截单啦')
+    }
+  }
+  const closedDates = Array.isArray(business.closedDates)
+    ? business.closedDates
+    : []
+  const weekday = new Date(scheduledDate + 'T00:00:00').getDay()
+  const weeklyClosed = Array.isArray(business.weeklyClosed)
+    ? business.weeklyClosed
+    : []
+  if (
+    closedDates.indexOf(scheduledDate) > -1 ||
+    weeklyClosed.indexOf(weekday) > -1
+  ) {
+    throw new Error('这一天休息，换个日子吧')
+  }
+  const menu = loadMenus()[`${scheduledDate}_${meal}`]
+  if (menu && menu.open === false) {
+    throw new Error('这一餐还没排菜单')
+  }
+  for (const item of order.items) {
+    const dish = dishes.find(entry => entry.id === item.dishId)
+    if (!dish || dish.status === 'off') {
+      throw new Error(`${item.name} 已经下架了`)
+    }
+    if (!Array.isArray(dish.meals) || dish.meals.indexOf(meal) === -1) {
+      throw new Error(`${item.name} 这一餐不供应`)
+    }
+    if (menu && menu.dishIds && menu.dishIds.indexOf(item.dishId) === -1) {
+      throw new Error(`${item.name} 不在这一餐的菜单里`)
+    }
+  }
+  const changedMeal = meal !== order.meal
   order.meal = meal
   order.scheduledDate = scheduledDate
+  if (changedMeal) {
+    order.expectedTime = '尽快'
+  }
   order.slotUpdatedAt = Date.now()
   saveOrders()
   return { ...order }
@@ -1487,12 +1549,8 @@ export async function getDishSales(name: string): Promise<DishSales> {
   let orders = 0
   const start = Date.now() - 29 * 24 * 60 * 60 * 1000
   const dailyMap: Record<string, { date: string; qty: number }> = {}
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
   for (let i = 6; i >= 0; i--) {
-    const date = dateInputString(
-      new Date(today.getTime() - i * 24 * 60 * 60 * 1000)
-    )
+    const date = chinaDateKey(Date.now() - i * 24 * 60 * 60 * 1000)
     dailyMap[date] = { date, qty: 0 }
   }
   loadOrders()
@@ -1511,7 +1569,7 @@ export async function getDishSales(name: string): Promise<DishSales> {
       })
       if (matched > 0) {
         orders++
-        const key = dateInputString(new Date(order.createdAt))
+        const key = chinaDateKey(Number(order.createdAt))
         if (dailyMap[key]) {
           dailyMap[key].qty += matched
         }

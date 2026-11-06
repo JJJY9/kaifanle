@@ -2196,7 +2196,16 @@ async function updateOrderSlot(payload, openid) {
     scheduledDate: date,
     slotUpdatedAt: Date.now()
   }
-  await db.collection('orders').doc(id).update({ data })
+  if (meal !== order.meal) {
+    data.expectedTime = '尽快'
+  }
+  const upd = await db
+    .collection('orders')
+    .where({ _id: id, status: 'pending' })
+    .update({ data })
+  if (!upd.stats || upd.stats.updated !== 1) {
+    throw new Error('订单状态刚刚变了，刷新看看')
+  }
   return withId(Object.assign({}, order, data))
 }
 
@@ -2550,6 +2559,11 @@ async function saveDish(payload, openid) {
   if (!isFinite(price) || price < 0 || price > 999) {
     throw new Error('价格需要是 0-999 之间的数字')
   }
+  const priceBaseValue = Number(payload.priceBase)
+  const priceBase =
+    isFinite(priceBaseValue) && priceBaseValue >= 0 && priceBaseValue <= 999
+      ? priceBaseValue
+      : null
   const categoryId = String(payload.categoryId || '')
   if (!categoryId) {
     throw new Error('请选择分类')
@@ -2656,8 +2670,14 @@ async function saveDish(payload, openid) {
             : Math.max(0, currentStock + (stock - stockBase))
           : stock
     }
+    // 非菜品编辑页（补库存/上下架）不传 priceBase，避免把旧价格覆盖回来
+    const priceApplied =
+      priceBase !== null && priceBase === Number(dish.price)
+    if (!priceApplied) {
+      delete fields.price
+    }
     await db.collection('dishes').doc(id).update({ data: fields })
-    if (Number(dish.price) !== price) {
+    if (priceApplied && Number(dish.price) !== price) {
       const priceHistory = Array.isArray(dish.priceHistory)
         ? dish.priceHistory.slice()
         : []

@@ -456,6 +456,7 @@ async function run() {
       name: '测试菜改',
       desc: '改',
       price: 15,
+      priceBase: 12,
       categoryId: 'staple',
       tags: [],
       spicyLevels: [],
@@ -477,6 +478,33 @@ async function run() {
   assert.strictEqual(res.data.priceHistory.length, 1)
   assert.strictEqual(res.data.priceHistory[0].from, 12)
   assert.strictEqual(res.data.priceHistory[0].to, 15)
+
+  // 厨房补库存/上下架不带 priceBase，不能把旧价格覆盖回来
+  res = await call(
+    'saveDish',
+    {
+      id: createdDishId,
+      name: '测试菜改',
+      desc: '改',
+      price: 12,
+      categoryId: 'staple',
+      tags: [],
+      spicyLevels: [],
+      addons: [],
+      color: '#2D9CFF',
+      meals: ['lunch', 'dinner'],
+      status: 'off',
+      stock: 5,
+      stockBase: -1,
+      isRecommended: false
+    },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  res = await call('getDish', { id: createdDishId }, 'admin-openid')
+  assert.strictEqual(res.data.price, 15)
+  assert.strictEqual(res.data.stock, 5)
+  assert.strictEqual(res.data.priceHistory.length, 1)
 
   res = await call('getDishes', {}, 'admin-openid')
   assert.ok(
@@ -1873,6 +1901,19 @@ async function run() {
   assert.ok(res.data.avgRating > 0)
   assert.ok(Array.isArray(res.data.topTags))
   assert.ok(res.data.topTags.length <= 5)
+  assert.strictEqual(res.data.mealStats.length, 3)
+  assert.strictEqual(
+    res.data.mealStats.reduce((sum, item) => sum + item.count, 0),
+    res.data.totalOrders
+  )
+  assert.strictEqual(
+    Number(
+      res.data.mealStats
+        .reduce((sum, item) => sum + item.revenue, 0)
+        .toFixed(2)
+    ),
+    res.data.revenue
+  )
 
   // 单品近 30 天销量
   const topName = res.data.topDishes[0].name
@@ -1884,6 +1925,9 @@ async function run() {
   assert.ok(res.data.qty >= 1)
   assert.ok(res.data.orders >= 1)
   assert.strictEqual(res.data.daily.length, 7)
+  assert.ok(
+    res.data.daily.reduce((sum, day) => sum + day.qty, 0) >= 1
+  )
   res = await call('getDishSales', { name: '不存在的菜' }, 'admin-openid')
   assert.strictEqual(res.data.qty, 0)
 

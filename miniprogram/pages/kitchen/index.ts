@@ -229,6 +229,7 @@ Page({
       // 统计最多每 5 分钟刷新一次，节省云端读取
       let dishes = this.data.dishes
       let stats = this.data.stats
+      let statsRefreshed = false
       if (!silent || !dishes.length) {
         const [dishList, categories] = await Promise.all([
           getDishes(),
@@ -246,6 +247,7 @@ Page({
       ) {
         stats = await getStats().catch(() => stats)
         this._statsAt = Date.now()
+        statsRefreshed = true
       }
       const STATUS_RANK: Record<string, number> = {
         pending: 0,
@@ -299,6 +301,13 @@ Page({
         dishById[dish.id] = dish
       })
       const toView = (order: any) => {
+        const createdDate = dateInputString(new Date(order.createdAt))
+        const today = dateInputString()
+        const createdToday = createdDate === today
+        // 提前下的预订单不算「已等」，避免凌晨把今天的预订标成超时
+        const trackWait =
+          createdToday &&
+          (order.scheduledDate || createdDate) === today
         const totalQty = order.items.reduce(
           (sum: number, item: any) => sum + Number(item.qty || 0),
           0
@@ -344,12 +353,18 @@ Page({
             order.status === 'completed' &&
             [1, 2, 3].indexOf(Number(order.rating)) > -1,
           waitText: (() => {
+            if (!trackWait) {
+              return ''
+            }
             const minutes = Math.floor(
               (Date.now() - Number(order.createdAt || 0)) / 60000
             )
             return minutes >= 10 ? `等了 ${minutes} 分钟` : ''
           })(),
           urgent: (() => {
+            if (!trackWait) {
+              return false
+            }
             const minutes = Math.floor(
               (Date.now() - Number(order.createdAt || 0)) / 60000
             )
@@ -625,6 +640,7 @@ Page({
         prepIngredients,
         prepTotal,
         todo,
+        posterPath: statsRefreshed ? '' : this.data.posterPath,
         weekStats,
         weekBars,
         weekBarTotal,

@@ -48,6 +48,7 @@ export interface DishInput {
   name: string
   desc: string
   price: number
+  priceBase?: number
   categoryId: string
   tags: string[]
   spicyLevels: string[]
