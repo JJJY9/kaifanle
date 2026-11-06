@@ -89,6 +89,21 @@ export async function deleteCategory(id: string): Promise<{ id: string }> {
   return mock.deleteCategory(id)
 }
 
+export async function moveCategory(
+  id: string,
+  direction: 'up' | 'down'
+): Promise<{ moved: boolean }> {
+  if (USE_CLOUD) {
+    const result = await callApi<{ moved: boolean }>('moveCategory', {
+      id,
+      direction
+    })
+    categoriesCache = null
+    return result
+  }
+  return mock.moveCategory(id, direction)
+}
+
 // 给菜品补一个卡通插画和 emoji，用作没有上传图片时的占位
 function decorateDish(dish: Dish): Dish {
   if (dish) {

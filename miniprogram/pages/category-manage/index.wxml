@@ -38,6 +38,20 @@
       <view wx:for="{{categories}}" wx:key="id" class="cat-row">
         <view class="cat-dot" style="background: {{item.color}};"></view>
         <view class="cat-name">{{item.name}}</view>
+        <view class="cat-move">
+          <view
+            class="cat-move-btn {{movingId === item.id ? 'disabled' : ''}}"
+            data-id="{{item.id}}"
+            data-direction="up"
+            bindtap="onMove"
+          >↑</view>
+          <view
+            class="cat-move-btn {{movingId === item.id ? 'disabled' : ''}}"
+            data-id="{{item.id}}"
+            data-direction="down"
+            bindtap="onMove"
+          >↓</view>
+        </view>
         <view class="cat-btn" data-id="{{item.id}}" bindtap="onEdit">编辑</view>
         <view
           class="cat-btn danger {{deletingId === item.id ? 'disabled' : ''}}"

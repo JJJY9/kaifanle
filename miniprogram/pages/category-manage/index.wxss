@@ -124,6 +124,29 @@
   font-weight: 800;
 }
 
+.cat-move {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.cat-move-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40rpx;
+  height: 36rpx;
+  background: #EFE9DC;
+  border: 2rpx solid #111111;
+  border-radius: 8rpx;
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
+.cat-move-btn.disabled {
+  opacity: 0.4;
+}
+
 .cat-btn {
   padding: 8rpx 22rpx;
   background: #FFFFFF;

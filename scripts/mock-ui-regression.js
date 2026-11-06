@@ -242,6 +242,24 @@ function invoke(mp, body) {
   const added = (data.categories || []).find(item => item.name === '夜宵')
   check('mock 分类新增', Boolean(added))
   if (added) {
+    const beforeIndex = (data.categories || []).findIndex(
+      item => item.id === added.id
+    )
+    await invoke(
+      mp,
+      `page.onMove({ currentTarget: { dataset: { id: '${added.id}', direction: 'up' } } })`
+    )
+    await sleep(900)
+    page = await current()
+    data = await page.data()
+    const afterIndex = (data.categories || []).findIndex(
+      item => item.id === added.id
+    )
+    check(
+      'mock 分类排序',
+      beforeIndex > 0 && afterIndex === beforeIndex - 1,
+      `${beforeIndex} → ${afterIndex}`
+    )
     await invoke(
       mp,
       `page.onDelete({ currentTarget: { dataset: { id: '${added.id}' } } })`

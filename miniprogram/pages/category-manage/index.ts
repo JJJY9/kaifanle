@@ -1,5 +1,10 @@
 import type { Category } from '../../services/types'
-import { deleteCategory, getCategories, saveCategory } from '../../services/api'
+import {
+  deleteCategory,
+  getCategories,
+  moveCategory,
+  saveCategory
+} from '../../services/api'
 
 const COLORS = [
   '#FFD23F',
@@ -19,7 +24,8 @@ Page({
     editingId: '',
     loading: true,
     saving: false,
-    deletingId: ''
+    deletingId: '',
+    movingId: ''
   },
 
   onShow() {
@@ -62,6 +68,28 @@ Page({
 
   onCancelEdit() {
     this.setData({ editingId: '', name: '', color: COLORS[0] })
+  },
+
+  async onMove(e: any) {
+    if (this.data.movingId) {
+      return
+    }
+    const id = e.currentTarget.dataset.id
+    const direction = e.currentTarget.dataset.direction === 'up' ? 'up' : 'down'
+    this.setData({ movingId: id })
+    try {
+      const result = await moveCategory(id, direction)
+      if (result.moved) {
+        await this.load()
+      }
+    } catch (err: any) {
+      wx.showToast({
+        title: String((err && err.message) || '调整失败').slice(0, 40),
+        icon: 'none'
+      })
+    } finally {
+      this.setData({ movingId: '' })
+    }
   },
 
   async onSave() {

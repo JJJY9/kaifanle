@@ -571,6 +571,25 @@ export async function deleteCategory(id: string): Promise<{ id: string }> {
   return { id }
 }
 
+export async function moveCategory(
+  id: string,
+  direction: 'up' | 'down'
+): Promise<{ moved: boolean }> {
+  await delay(60)
+  const index = CATEGORIES.findIndex(item => item.id === id)
+  if (index === -1) {
+    throw new Error('分类不存在')
+  }
+  const target = index + (direction === 'up' ? -1 : 1)
+  if (target < 0 || target >= CATEGORIES.length) {
+    return { moved: false }
+  }
+  const current = CATEGORIES[index]
+  CATEGORIES[index] = CATEGORIES[target]
+  CATEGORIES[target] = current
+  return { moved: true }
+}
+
 export async function getDishes(): Promise<Dish[]> {
   await delay()
   return dishes.map(dish => ({ ...dish, addons: dish.addons.map(a => ({ ...a })) }))

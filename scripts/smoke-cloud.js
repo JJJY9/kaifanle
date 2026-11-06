@@ -327,6 +327,36 @@ async function run() {
   const newCategoryId = res.data.id
   res = await call('getCategories', {}, 'girl-openid')
   assert.ok(res.data.some(item => item.id === newCategoryId))
+  const categoryIndex = res.data.findIndex(item => item.id === newCategoryId)
+  res = await call(
+    'moveCategory',
+    { id: newCategoryId, direction: 'up' },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, false)
+  res = await call(
+    'moveCategory',
+    { id: newCategoryId, direction: 'up' },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.moved, true)
+  res = await call('getCategories', {}, 'admin-openid')
+  assert.strictEqual(
+    res.data.findIndex(item => item.id === newCategoryId),
+    categoryIndex - 1
+  )
+  res = await call(
+    'moveCategory',
+    { id: newCategoryId, direction: 'down' },
+    'admin-openid'
+  )
+  assert.strictEqual(res.data.moved, true)
+  res = await call('getCategories', {}, 'admin-openid')
+  assert.strictEqual(
+    res.data.findIndex(item => item.id === newCategoryId),
+    categoryIndex
+  )
   res = await call(
     'saveCategory',
     { id: newCategoryId, name: '夜宵啦', color: '#FF5C8A' },

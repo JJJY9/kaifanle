@@ -78,6 +78,8 @@ async function route(action, payload, openid) {
       return getCategories()
     case 'saveCategory':
       return saveCategory(payload, openid)
+    case 'moveCategory':
+      return moveCategory(payload, openid)
     case 'deleteCategory':
       return deleteCategory(payload, openid)
     case 'getDishes':
@@ -1081,6 +1083,47 @@ async function saveCategory(payload, openid) {
   const data = { name, color, sort }
   const addRes = await db.collection('categories').add({ data })
   return withId(Object.assign({}, data, { _id: addRes._id }))
+}
+
+async function moveCategory(payload, openid) {
+  await requireAdmin(openid)
+  if (!payload || !payload.id) {
+    throw new Error('缺少分类 ID')
+  }
+  const direction = payload.direction === 'up' ? -1 : 1
+  const res = await db
+    .collection('categories')
+    .orderBy('sort', 'asc')
+    .limit(100)
+    .get()
+  const list = res.data || []
+  const index = list.findIndex(item => item._id === payload.id)
+  if (index === -1) {
+    throw new Error('分类不存在')
+  }
+  const target = index + direction
+  if (target < 0 || target >= list.length) {
+    return { moved: false }
+  }
+  const current = list[index]
+  const neighbor = list[target]
+  const currentSort = Number(current.sort || 0)
+  const neighborSort = Number(neighbor.sort || 0)
+  let nextCurrent = neighborSort
+  let nextNeighbor = currentSort
+  if (currentSort === neighborSort) {
+    nextCurrent = neighborSort + (direction > 0 ? 1 : -1)
+    nextNeighbor = currentSort
+  }
+  await db
+    .collection('categories')
+    .doc(current._id)
+    .update({ data: { sort: nextCurrent } })
+  await db
+    .collection('categories')
+    .doc(neighbor._id)
+    .update({ data: { sort: nextNeighbor } })
+  return { moved: true }
 }
 
 async function deleteCategory(payload, openid) {
