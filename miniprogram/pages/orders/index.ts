@@ -1,4 +1,4 @@
-import { getOrdersPage } from '../../services/api'
+import { getMyStats, getOrdersPage } from '../../services/api'
 import { STATUS_TEXT, mealName } from '../../utils/constants'
 import {
   formatTime,
@@ -14,6 +14,7 @@ Page({
     loading: true,
     loadingMore: false,
     hasMore: false,
+    monthText: '',
     error: '',
     keyword: '',
     filter: 'all' as 'all' | 'active' | 'done' | 'rate',
@@ -36,10 +37,20 @@ Page({
     const seq = ++this._loadSeq
     this.setData({ error: '' })
     try {
-      const page = await getOrdersPage(undefined, 50)
+      const [page, stats] = await Promise.all([
+        getOrdersPage(undefined, 50),
+        getMyStats().catch(() => null)
+      ])
       if (seq !== this._loadSeq) {
         return
       }
+      this.setData({
+        monthText: stats
+          ? `本月 ${Number(stats.month || 0)} 单 · ¥${Number(
+              stats.monthSpend || 0
+            )}`
+          : ''
+      })
       this.applyOrders(page.orders, page.hasMore)
     } catch (e: any) {
       if (seq !== this._loadSeq) {

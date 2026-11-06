@@ -21,6 +21,13 @@
   font-size: 24rpx;
 }
 
+.month-line {
+  margin-top: 8rpx;
+  color: #FF6B35;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
 .filter-row {
   display: flex;
   gap: 14rpx;

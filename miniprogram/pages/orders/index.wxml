@@ -2,6 +2,7 @@
   <view class="head">
     <text class="title display">我的订单</text>
     <text class="sub">她点的每一顿，都记在这儿</text>
+    <view wx:if="{{monthText}}" class="month-line">{{monthText}}</view>
   </view>
 
   <view class="filter-row">

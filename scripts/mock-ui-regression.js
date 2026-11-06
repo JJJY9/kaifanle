@@ -1416,6 +1416,12 @@ function invoke(mp, body) {
   data = await page.data()
   check('mock 订单列表', (data.orders || []).length > 0, `${data.orders.length} 单`)
   check(
+    'mock 订单本月汇总',
+    String(data.monthText || '').indexOf('本月') === 0 &&
+      String(data.monthText || '').indexOf('¥') > -1,
+    data.monthText
+  )
+  check(
     'mock 订单分页初始态',
     data.hasMore === false && data.loadingMore === false,
     data.hasMore ? '还有更多' : '已全部加载'

@@ -63,6 +63,7 @@ let lastOrderCache: { at: number; data: Order | null } | null = null
 let activeOrderCache: { at: number; data: Order | null } | null = null
 let expiringCouponsCache: { at: number; count: number } | null = null
 let pendingReviewCache: { at: number; count: number } | null = null
+let myStatsCache: { at: number; data: MyStats } | null = null
 const BUSINESS_CACHE_TTL = 60 * 1000
 const MENU_CACHE_TTL = 60 * 1000
 const KITCHEN_STATUS_TTL = 30 * 1000
@@ -70,6 +71,7 @@ const LAST_ORDER_CACHE_TTL = 2 * 60 * 1000
 const ACTIVE_ORDER_CACHE_TTL = 30 * 1000
 const EXPIRING_COUPONS_TTL = 2 * 60 * 1000
 const PENDING_REVIEW_TTL = 2 * 60 * 1000
+const MY_STATS_TTL = 5 * 60 * 1000
 
 function cloneData<T>(value: T): T {
   return JSON.parse(JSON.stringify(value))
@@ -372,6 +374,7 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
     : await mock.createOrder(payload)
   lastOrderCache = null
   activeOrderCache = null
+  myStatsCache = null
   return order
 }
 
@@ -384,6 +387,7 @@ export async function cancelOrder(
     : await mock.cancelOrder(id, reason)
   lastOrderCache = null
   activeOrderCache = null
+  myStatsCache = null
   return order
 }
 
@@ -602,7 +606,12 @@ export async function getStockLogs(
 
 export async function getMyStats(): Promise<MyStats> {
   if (USE_CLOUD) {
-    return callApi<MyStats>('getMyStats')
+    if (myStatsCache && Date.now() - myStatsCache.at < MY_STATS_TTL) {
+      return cloneData(myStatsCache.data)
+    }
+    const data = await callApi<MyStats>('getMyStats')
+    myStatsCache = { at: Date.now(), data }
+    return cloneData(data)
   }
   return mock.getMyStats()
 }
