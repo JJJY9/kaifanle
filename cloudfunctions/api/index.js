@@ -167,7 +167,10 @@ function withId(doc) {
   if (!doc) {
     return null
   }
-  return Object.assign({}, doc, { id: doc._id })
+  const result = Object.assign({}, doc, { id: doc._id })
+  // _openid 只在服务端做归属校验用，不需要发给客户端
+  delete result._openid
+  return result
 }
 
 // 只有「文档/集合不存在」才算未初始化；额度、网络等错误要往上抛，
@@ -1411,7 +1414,7 @@ async function createOrder(payload, openid) {
       }
     }
 
-    return Object.assign({}, order, { id: addRes._id })
+    return withId(Object.assign({}, order, { _id: addRes._id }))
   } catch (err) {
     // 取号或写入订单失败时，把已经扣掉的库存补回去
     await rollbackStock(decremented)

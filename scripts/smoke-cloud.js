@@ -438,6 +438,7 @@ async function run() {
     'girl-openid'
   )
   assert.strictEqual(created.ok, true)
+  assert.strictEqual(created.data._openid, undefined)
   assert.strictEqual(created.data.amount, 40)
   assert.strictEqual(created.data.items[0].price, 20)
   assert.strictEqual(created.data.status, 'pending')
@@ -488,6 +489,7 @@ async function run() {
 
   res = await call('getOrder', { id: created.data.id }, 'girl-openid')
   assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data._openid, undefined)
 
   res = await call('updateOrderStatus', { id: created.data.id, status: 'accepted' }, 'girl-openid')
   assert.strictEqual(res.ok, false)
