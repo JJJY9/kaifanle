@@ -1,6 +1,7 @@
 import * as mock from './mock'
 import { USE_CLOUD } from '../config'
 import { dishEmoji } from '../utils/dish-emoji'
+import { DISH_ART } from '../utils/dish-art-map'
 import type {
   Business,
   Category,
@@ -86,11 +87,12 @@ export async function deleteCategory(id: string): Promise<{ id: string }> {
   return mock.deleteCategory(id)
 }
 
-// 给菜品补一个卡通 emoji，用作没有图片时的占位
+// 给菜品补一个卡通插画和 emoji，用作没有上传图片时的占位
 function decorateDish(dish: Dish): Dish {
   if (dish) {
     return Object.assign({}, dish, {
-      emoji: dishEmoji(dish.name, dish.categoryId)
+      emoji: dishEmoji(dish.name, dish.categoryId),
+      cartoon: DISH_ART[dish.name] || ''
     })
   }
   return dish

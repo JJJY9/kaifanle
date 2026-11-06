@@ -14,7 +14,7 @@
 <view wx:elif="{{dish}}" class="page">
   <view class="hero card">
     <view class="hero-media" style="background: {{dish.color}};">
-      <image wx:if="{{dish.image}}" class="hero-img" src="{{dish.image}}" mode="aspectFill" />
+      <image wx:if="{{dish.image || dish.cartoon}}" class="hero-img" src="{{dish.image || dish.cartoon}}" mode="aspectFill" />
       <text wx:else class="hero-char">{{dish.emoji || dish.char}}</text>
     </view>
     <view class="hero-info">

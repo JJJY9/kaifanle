@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><ellipse cx="100" cy="170" rx="58" ry="9" fill="rgba(17,17,17,0.12)"/>
+    
+    <path d="M38 100 Q40 160 100 160 Q160 160 162 100 Z" fill="#FFFFFF" stroke="#111111" stroke-width="6" stroke-linejoin="round"/>
+    <ellipse cx="100" cy="100" rx="62" ry="17" fill="#FFFFFF" stroke="#111111" stroke-width="6"/>
+  
+    <ellipse cx="100" cy="98" rx="52" ry="13" fill="#F4E3B2" stroke="#111111" stroke-width="4"/>
+  <path d="M80 66 q-6 -10 0 -18 q6 -8 0 -16" fill="none" stroke="#111111" stroke-width="4" stroke-linecap="round" opacity="0.5"/><path d="M100 60 q-6 -10 0 -18 q6 -8 0 -16" fill="none" stroke="#111111" stroke-width="4" stroke-linecap="round" opacity="0.5"/><path d="M120 66 q-6 -10 0 -18 q6 -8 0 -16" fill="none" stroke="#111111" stroke-width="4" stroke-linecap="round" opacity="0.5"/><path d="M76.8 94 q0 -12 11.200000000000001 -12 q11.200000000000001 0 11.200000000000001 12 q0 12 -11.200000000000001 12 q-11.200000000000001 0 -11.200000000000001 -12 Z" fill="#B4632C" stroke="#111111" stroke-width="4"/><path d="M102.2 98 q0 -12 9.799999999999999 -12 q9.799999999999999 0 9.799999999999999 12 q0 12 -9.799999999999999 12 q-9.799999999999999 0 -9.799999999999999 -12 Z" fill="#B4632C" stroke="#111111" stroke-width="4"/><path d="M112 96 q-2 -14 12 -18 q4 12 -2 18 Z" fill="#2FBF71" stroke="#111111" stroke-width="4" stroke-linejoin="round"/><path d="M128 98 q0 -14 14 -16 q2 12 -6 16 Z" fill="#2FBF71" stroke="#111111" stroke-width="4" stroke-linejoin="round"/></svg>
