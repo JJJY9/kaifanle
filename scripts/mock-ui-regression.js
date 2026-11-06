@@ -826,6 +826,23 @@ function invoke(mp, body) {
       data.allFavorites.some(dish => dish.id === 'd01'),
     `${(data.allFavorites || []).length} 道`
   )
+  check('mock 收藏默认最近排序', data.sort === 'recent')
+  await invoke(
+    mp,
+    "page.onSort({ currentTarget: { dataset: { sort: 'price' } } })"
+  )
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 收藏按价格排序',
+    data.sort === 'price' &&
+      (data.display || []).every(
+        (dish, index, list) =>
+          index === 0 || Number(list[index - 1].price) <= Number(dish.price)
+      ),
+    `${(data.display || []).length} 道`
+  )
   await mp.navigateBack()
   await sleep(700)
   await invoke(mp, 'page.onToggleFavorite()')

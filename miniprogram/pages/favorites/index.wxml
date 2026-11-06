@@ -40,6 +40,19 @@
       <view wx:if="{{keyword}}" class="search-clear" bindtap="onClearSearch">×</view>
     </view>
 
+    <view class="sort-row">
+      <view
+        class="sort-chip {{sort === 'recent' ? 'active' : ''}}"
+        data-sort="recent"
+        bindtap="onSort"
+      >最近收藏</view>
+      <view
+        class="sort-chip {{sort === 'price' ? 'active' : ''}}"
+        data-sort="price"
+        bindtap="onSort"
+      >价格从低到高</view>
+    </view>
+
     <empty-state
       wx:if="{{!display.length}}"
       title="没搜到"

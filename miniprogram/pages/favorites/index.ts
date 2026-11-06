@@ -9,7 +9,8 @@ Page({
     allFavorites: [] as Dish[],
     display: [] as Dish[],
     keyword: '',
-    count: 0
+    count: 0,
+    sort: 'recent' as 'recent' | 'price'
   },
 
   _unsub: null as null | (() => void),
@@ -34,7 +35,17 @@ Page({
   async loadDishes() {
     try {
       const dishes = await getDishes()
-      const allFavorites = favorites.filter(dishes)
+      const dishMap: Record<string, any> = {}
+      dishes.forEach(dish => {
+        dishMap[dish.id] = dish
+      })
+      // 收藏 id 按收藏先后追加，倒序即最近收藏在前
+      const allFavorites = favorites
+        .getIds()
+        .slice()
+        .reverse()
+        .map(id => dishMap[id])
+        .filter(Boolean)
       this.setData(
         { allFavorites, count: allFavorites.length, loading: false, error: '' },
         () => this.applyFilter()
@@ -61,14 +72,26 @@ Page({
     const keyword = String(this.data.keyword || '')
       .trim()
       .toLowerCase()
-    const display = keyword
+    const matched = keyword
       ? this.data.allFavorites.filter(dish =>
           `${dish.name} ${dish.desc || ''}`
             .toLowerCase()
             .indexOf(keyword) > -1
         )
-      : this.data.allFavorites
+      : this.data.allFavorites.slice()
+    const display =
+      this.data.sort === 'price'
+        ? matched.sort((a, b) => Number(a.price) - Number(b.price))
+        : matched
     this.setData({ display })
+  },
+
+  onSort(e: any) {
+    const sort = e.currentTarget.dataset.sort === 'price' ? 'price' : 'recent'
+    if (sort === this.data.sort) {
+      return
+    }
+    this.setData({ sort }, () => this.applyFilter())
   },
 
   onTapDish(e: any) {
