@@ -22,6 +22,12 @@ import {
 import { formatTime, itemSummary, dateLabel, dateInputString, formatDate } from '../../utils/format'
 import { TEMPLATE_NEW_ORDER } from '../../config'
 
+const REPLY_PHRASES = [
+  '谢谢喜欢，下次多加点',
+  '收到，下次注意',
+  '抱歉翻车了，下次补偿'
+]
+
 Page({
   data: {
     orders: [] as any[],
@@ -930,12 +936,27 @@ Page({
       return
     }
     this._replyModalOpen = true
+    let draft = item.ownerReply || ''
+    if (!draft) {
+      try {
+        const sheet: any = await wx.showActionSheet({
+          itemList: REPLY_PHRASES.concat('自己写')
+        })
+        const index = Number(sheet.tapIndex)
+        if (index >= 0 && index < REPLY_PHRASES.length) {
+          draft = REPLY_PHRASES[index]
+        }
+      } catch (err) {
+        this._replyModalOpen = false
+        return
+      }
+    }
     let modal: any
     try {
       modal = await wx.showModal({
         title: '回复这条评价',
         editable: true,
-        content: item.ownerReply || '',
+        content: draft,
         placeholderText: '比如：谢谢你爱吃，下次给你多加个蛋',
         confirmText: item.ownerReply ? '更新' : '回复',
         cancelText: '算了'
