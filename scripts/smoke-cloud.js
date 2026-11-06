@@ -1376,6 +1376,42 @@ async function run() {
   res = await call('deleteDish', { id: limitedId }, 'admin-openid')
   assert.strictEqual(res.ok, true)
 
+  // 菜品在取消前被删掉时，取消订单仍要成功，库存回补只记日志
+  res = await call(
+    'saveDish',
+    {
+      name: '删菜回补测试',
+      desc: '',
+      price: 6,
+      categoryId: 'staple',
+      tags: [],
+      spicyLevels: [],
+      addons: [],
+      color: '#FFD23F',
+      meals: ['lunch'],
+      status: 'on',
+      stock: 3,
+      isRecommended: false
+    },
+    'admin-openid'
+  )
+  const goneDishId = res.data.id
+  const goneOrder = await call(
+    'createOrder',
+    {
+      items: [{ dishId: goneDishId, qty: 1, specs: [] }],
+      meal: 'lunch',
+      expectedTime: '12:00',
+      mode: '在家吃'
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(goneOrder.ok, true)
+  res = await call('deleteDish', { id: goneDishId }, 'admin-openid')
+  assert.strictEqual(res.ok, true)
+  res = await call('cancelOrder', { id: goneOrder.data.id }, 'girl-openid')
+  assert.strictEqual(res.ok, true)
+
   // 口味档案
   res = await call('getMyProfile', {}, 'girl-openid')
   assert.deepStrictEqual(res.data.dislikes, [])

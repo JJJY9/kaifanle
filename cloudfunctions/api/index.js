@@ -1470,7 +1470,8 @@ async function replyRating(payload, openid) {
   )
 }
 
-async function restoreStock(order) {  for (const item of order.items || []) {
+async function restoreStock(order) {
+  for (const item of order.items || []) {
     if (!item.stockDeducted) {
       continue
     }
@@ -1480,7 +1481,24 @@ async function restoreStock(order) {  for (const item of order.items || []) {
         .doc(item.dishId)
         .update({ data: { stock: _.inc(item.qty) } })
     } catch (e) {
-      // 菜品可能已删除，忽略库存回补失败
+      if (isMissingDocError(e)) {
+        // 菜品被删掉了，库存没有可回补的目标
+        console.warn('[api] restoreStock dish missing:', {
+          orderId: order._id,
+          no: order.no,
+          dishId: item.dishId,
+          qty: item.qty
+        })
+        continue
+      }
+      // 网络/额度等错误必须留下可追踪记录，方便事后补库存
+      console.error('[api] restoreStock failed:', {
+        orderId: order._id,
+        no: order.no,
+        dishId: item.dishId,
+        qty: item.qty,
+        error: e
+      })
     }
   }
 }
