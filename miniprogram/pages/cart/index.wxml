@@ -1,0 +1,81 @@
+<view class="page">
+  <view class="head">
+    <text class="title display">购物车</text>
+    <text class="sub">按餐次分开，想改哪顿就改哪顿</text>
+  </view>
+
+  <block wx:if="{{groups.length}}">
+    <view class="cart-summary card">
+      <text>全部 {{count}} 份</text>
+      <text class="summary-total">¥{{total}}</text>
+    </view>
+
+    <view wx:for="{{groups}}" wx:key="key" class="group card">
+      <view class="group-head">
+        <view class="group-title">{{item.dateText}} · {{item.mealText}}</view>
+        <view
+          class="group-clear"
+          data-meal="{{item.meal}}"
+          data-date="{{item.date}}"
+          bindtap="onClearGroup"
+        >清空这顿</view>
+      </view>
+
+      <view
+        wx:for="{{item.items}}"
+        wx:for-item="line"
+        wx:key="key"
+        class="line"
+      >
+        <view class="line-char" style="background: {{line.color}};">{{line.char}}</view>
+        <view class="line-info">
+          <view class="line-name">{{line.name}}</view>
+          <view wx:if="{{line.specText}}" class="line-spec">{{line.specText}}</view>
+          <view wx:if="{{line.note}}" class="line-note">备注：{{line.note}}</view>
+          <view class="line-foot">
+            <text class="line-price">¥{{line.price}}</text>
+            <view class="qty">
+              <view
+                class="qbtn"
+                data-key="{{line.key}}"
+                data-delta="-1"
+                bindtap="onChangeQty"
+              >−</view>
+              <text class="qnum">{{line.qty}}</text>
+              <view
+                class="qbtn"
+                data-key="{{line.key}}"
+                data-delta="1"
+                bindtap="onChangeQty"
+              >+</view>
+            </view>
+            <view
+              class="line-remove"
+              data-key="{{line.key}}"
+              bindtap="onRemove"
+            >删</view>
+          </view>
+        </view>
+        <view class="line-total">¥{{line.lineTotal}}</view>
+      </view>
+
+      <view class="group-foot">
+        <text class="group-sum">{{item.count}} 份 · ¥{{item.total}}</text>
+        <view
+          class="group-go"
+          data-meal="{{item.meal}}"
+          data-date="{{item.date}}"
+          bindtap="onCheckout"
+        >去结算 →</view>
+      </view>
+    </view>
+  </block>
+
+  <empty-state
+    wx:else
+    title="购物车是空的"
+    desc="去首页挑一顿，锅已经热好了"
+    actionText="去点餐"
+    bind:action="onGoHome"
+  />
+</view>

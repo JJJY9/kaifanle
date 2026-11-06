@@ -92,6 +92,14 @@
   font-weight: 800;
 }
 
+.overview {
+  padding: 0 12rpx;
+  color: #2D9CFF;
+  font-size: 20rpx;
+  font-weight: 800;
+  text-decoration: underline;
+}
+
 .go:active {
   transform: translate(4rpx, 4rpx);
   box-shadow: none;

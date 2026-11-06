@@ -1259,6 +1259,94 @@ function invoke(mp, body) {
     repliedOrder ? repliedOrder.replied : '没找到订单'
   )
 
+  // 购物车总览：跨餐次合并、改数量与结算入口
+  await mp.switchTab('/pages/home/index')
+  await sleep(1500)
+  await invoke(
+    mp,
+    "page.onSelectMeal({ currentTarget: { dataset: { meal: 'lunch' } } })"
+  )
+  await sleep(1500)
+  await invoke(
+    mp,
+    "page.onSkuAdd({ detail: { line: { key: '', dishId: 'd02', name: '照烧鸡腿饭', price: 16, qty: 1, specs: [], note: '', color: '#2D9CFF' } } })"
+  )
+  await sleep(400)
+  await invoke(
+    mp,
+    "page.onSelectMeal({ currentTarget: { dataset: { meal: 'dinner' } } })"
+  )
+  await sleep(1500)
+  await invoke(
+    mp,
+    "page.onSkuAdd({ detail: { line: { key: '', dishId: 'd01', name: '番茄牛腩饭', price: 18, qty: 1, specs: [], note: '', color: '#FFD23F' } } })"
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 首页其他餐次提示',
+    Number(data.otherCartCount) >= 1,
+    `其他餐次 ${data.otherCartCount} 份`
+  )
+  await invoke(mp, 'page.onCartOverview()')
+  await sleep(1600)
+  page = await current()
+  data = await page.data()
+  const cartGroups = data.groups || []
+  check(
+    'mock 购物车总览',
+    page.path === 'pages/cart/index' &&
+      cartGroups.length >= 2 &&
+      Number(data.count) >= 2 &&
+      Number(data.total) ===
+        cartGroups.reduce((sum, group) => sum + group.total, 0),
+    `${cartGroups.length} 组 · ${data.count} 份 · ¥${data.total}`
+  )
+  const firstGroup = cartGroups[0]
+  if (firstGroup) {
+    const beforeTotal = Number(data.total)
+    await invoke(
+      mp,
+      `page.onChangeQty({ currentTarget: { dataset: { key: ${JSON.stringify(
+        firstGroup.items[0].key
+      )}, delta: 1 } } })`
+    )
+    await sleep(400)
+    page = await current()
+    data = await page.data()
+    check(
+      'mock 购物车改数量',
+      Number(data.total) === beforeTotal + Number(firstGroup.items[0].price),
+      `¥${beforeTotal} → ¥${data.total}`
+    )
+    await invoke(
+      mp,
+      `page.onCheckout({ currentTarget: { dataset: { meal: ${JSON.stringify(
+        firstGroup.meal
+      )}, date: ${JSON.stringify(firstGroup.date)} } } })`
+    )
+    await sleep(1600)
+    page = await current()
+    check('mock 购物车去结算', page.path === 'pages/checkout/index')
+    await mp.navigateBack()
+    await sleep(900)
+  }
+  page = await current()
+  data = await page.data()
+  for (const group of data.groups || []) {
+    await invoke(
+      mp,
+      `page.onClearGroup({ currentTarget: { dataset: { meal: ${JSON.stringify(
+        group.meal
+      )}, date: ${JSON.stringify(group.date)} } } })`
+    )
+    await sleep(400)
+  }
+  page = await current()
+  data = await page.data()
+  check('mock 购物车清空', (data.groups || []).length === 0)
+
   const failed = results.filter(r => !r.ok)
   console.log(`\n结论：${results.length - failed.length}/${results.length} 通过`)
   await mp.disconnect()

@@ -1,5 +1,5 @@
-<view wx:if="{{count > 0}}" class="cartbar">
-  <view class="info">
+<view wx:if="{{count > 0 || otherCount > 0}}" class="cartbar">
+  <view wx:if="{{count > 0}}" class="info">
     <view class="badge">{{count}}</view>
     <view class="amount">
       <text class="label">已选 {{count}} 份</text>
@@ -9,5 +9,12 @@
       </view>
     </view>
   </view>
-  <view class="go" bindtap="onCheckout">去结算 →</view>
+  <view wx:else class="info">
+    <view class="amount">
+      <text class="label">其他餐次有 {{otherCount}} 份</text>
+    </view>
+  </view>
+  <view wx:if="{{count > 0 && otherCount > 0}}" class="overview" catchtap="onOverview">全部</view>
+  <view wx:if="{{count > 0}}" class="go" bindtap="onCheckout">去结算 →</view>
+  <view wx:else class="go" bindtap="onOverview">看购物车 →</view>
 </view>

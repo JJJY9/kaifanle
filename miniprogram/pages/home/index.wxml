@@ -172,7 +172,9 @@
 <cart-bar
   count="{{cartCount}}"
   total="{{cartTotal}}"
+  otherCount="{{otherCartCount}}"
   bind:checkout="onCheckout"
+  bind:overview="onCartOverview"
 />
 
 <sku-sheet

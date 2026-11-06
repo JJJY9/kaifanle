@@ -4,6 +4,7 @@
     "pages/orders/index",
     "pages/profile/index",
     "pages/checkout/index",
+    "pages/cart/index",
     "pages/order-detail/index",
     "pages/kitchen/index",
     "pages/dish-edit/index",

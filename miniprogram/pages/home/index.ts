@@ -42,6 +42,7 @@ Page({
     sections: [] as Section[],
     cartCount: 0,
     cartTotal: 0,
+    otherCartCount: 0,
     skuVisible: false,
     activeDish: null as Dish | null,
     loading: true,
@@ -372,7 +373,19 @@ Page({
     )
     const count = lines.reduce((sum, line) => sum + line.qty, 0)
     const total = lines.reduce((sum, line) => sum + line.qty * line.price, 0)
-    this.setData({ cartCount: count, cartTotal: total })
+    const allCount = (this._cartLines || []).reduce(
+      (sum, line) => sum + line.qty,
+      0
+    )
+    this.setData({
+      cartCount: count,
+      cartTotal: total,
+      otherCartCount: Math.max(0, allCount - count)
+    })
+  },
+
+  onCartOverview() {
+    wx.navigateTo({ url: '/pages/cart/index' })
   },
 
   renderSections() {
