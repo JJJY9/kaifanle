@@ -966,6 +966,33 @@ function invoke(mp, body) {
     data.templates[0] && data.templates[0].name
   )
 
+  // 批量导入菜品
+  await mp.navigateTo('/pages/dish-import/index')
+  await sleep(1500)
+  await invoke(
+    mp,
+    "page.onText({ detail: { value: '批量测试菜,9.9,主食,午晚,5' } })"
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 批量导入预览',
+    (data.parsed || []).length === 1 && !data.parsed[0].error,
+    data.parsed[0] ? data.parsed[0].name : '没有解析结果'
+  )
+  await invoke(mp, 'page.onImport()')
+  await sleep(1400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 批量导入执行',
+    String(data.result || '').indexOf('成功导入 1 道') > -1,
+    data.result
+  )
+  await mp.navigateBack()
+  await sleep(800)
+
   // 菜谱页
   await mp.navigateTo('/pages/recipe/index?id=d01')
   await sleep(1600)

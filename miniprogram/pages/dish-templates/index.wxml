@@ -73,4 +73,6 @@
     title="没找到匹配的模板"
     desc="换个关键词或分类试试，也可以点「自定义新增」自己写"
   />
+
+  <view class="import-entry" bindtap="onImport">批量导入菜品 →</view>
 </view>

@@ -126,8 +126,11 @@ Page({
     this.setData({ displayTemplates })
   },
 
-  onCustomAdd() {
-    wx.navigateTo({ url: '/pages/dish-edit/index' })
+  onImport() {
+    wx.navigateTo({ url: '/pages/dish-import/index' })
+  },
+
+  onCustomAdd() {    wx.navigateTo({ url: '/pages/dish-edit/index' })
   },
 
   toInput(template: any): DishInput {

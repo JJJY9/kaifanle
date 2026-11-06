@@ -16,6 +16,7 @@
     "pages/menu-edit/index",
     "pages/category-manage/index",
     "pages/dish-templates/index",
+    "pages/dish-import/index",
     "pages/recipe/index",
     "pages/recipe-list/index",
     "pages/week-menus/index",

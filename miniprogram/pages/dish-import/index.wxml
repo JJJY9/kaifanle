@@ -1,0 +1,35 @@
+<view class="page">
+  <view class="head">
+    <text class="title display">批量导入菜品</text>
+    <text class="sub">每行一道菜：菜名,价格,分类,餐次,库存</text>
+  </view>
+
+  <view class="card block">
+    <textarea
+      class="import-input"
+      placeholder="番茄炒蛋,12,小炒,午晚,20&#10;紫菜蛋花汤,6,汤羹,午晚&#10;豆浆,3,饮品,早,50"
+      value="{{text}}"
+      maxlength="2000"
+      bindinput="onText"
+    ></textarea>
+    <view class="import-tip">餐次可写：早 / 午 / 晚 / 午晚，留空默认午晚；库存留空表示不限量</view>
+  </view>
+
+  <view wx:if="{{parsed.length}}" class="preview card">
+    <view class="preview-head">预览 {{parsed.length}} 道</view>
+    <view wx:for="{{parsed}}" wx:key="index" class="preview-row">
+      <view class="preview-main">
+        <text class="preview-name">{{item.name || '（空）'}}</text>
+        <text class="preview-meta">¥{{item.price}} · {{item.categoryName}} · {{item.mealsText}}</text>
+      </view>
+      <text wx:if="{{item.error}}" class="preview-error">{{item.error}}</text>
+      <text wx:else class="preview-ok">可导入</text>
+    </view>
+  </view>
+
+  <view
+    class="import-btn {{importing ? 'disabled' : ''}}"
+    bindtap="onImport"
+  >{{importing ? '导入中…' : '开始导入'}}</view>
+  <view wx:if="{{result}}" class="import-result">{{result}}</view>
+</view>

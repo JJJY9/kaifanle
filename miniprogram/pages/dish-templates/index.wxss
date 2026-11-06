@@ -242,6 +242,15 @@
   font-size: 21rpx;
 }
 
+.import-entry {
+  margin-top: 20rpx;
+  padding: 20rpx;
+  text-align: center;
+  color: #2D9CFF;
+  font-size: 23rpx;
+  font-weight: 800;
+}
+
 .sk {
   height: 500rpx;
 }
