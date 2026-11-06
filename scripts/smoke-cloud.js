@@ -514,6 +514,66 @@ async function run() {
   assert.strictEqual(res.data.stock, 5)
   assert.strictEqual(res.data.priceHistory.length, 1)
 
+  // 批量改价时价格基线已过期：不能覆盖别人刚改的价格，也不写价格历史
+  res = await call(
+    'saveDish',
+    {
+      id: createdDishId,
+      name: '测试菜改',
+      desc: '改',
+      price: 18,
+      priceBase: 12,
+      categoryId: 'staple',
+      tags: [],
+      spicyLevels: [],
+      addons: [],
+      color: '#2D9CFF',
+      meals: ['lunch', 'dinner'],
+      status: 'off',
+      isRecommended: false
+    },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.price, 15)
+  res = await call('getDish', { id: createdDishId }, 'admin-openid')
+  assert.strictEqual(res.data.price, 15)
+  assert.strictEqual(res.data.priceHistory.length, 1)
+
+  // 批量改价只写价格：不覆盖图片、状态、名称等其他字段
+  res = await call(
+    'saveDish',
+    {
+      id: createdDishId,
+      price: 18,
+      priceBase: 15,
+      priceOnly: true
+    },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.price, 18)
+  assert.strictEqual(res.data.name, '测试菜改')
+  assert.strictEqual(res.data.status, 'off')
+  assert.strictEqual(res.data.image, 'cloud://test.env/dishes/test.jpg')
+  assert.strictEqual(res.data.priceHistory.length, 2)
+  // 价格基线过期时，priceOnly 也不改价
+  res = await call(
+    'saveDish',
+    {
+      id: createdDishId,
+      price: 22,
+      priceBase: 15,
+      priceOnly: true
+    },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.price, 18)
+  res = await call('getDish', { id: createdDishId }, 'admin-openid')
+  assert.strictEqual(res.data.price, 18)
+  assert.strictEqual(res.data.priceHistory.length, 2)
+
   res = await call('getDishes', {}, 'admin-openid')
   assert.ok(
     res.data.some(dish => dish.id === createdDishId && dish.status === 'off')

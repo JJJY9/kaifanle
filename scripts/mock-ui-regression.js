@@ -1167,6 +1167,161 @@ function invoke(mp, body) {
       ? `¥${importedDish.price} · 库存 ${importedDish.stock}`
       : '没找到导入的菜'
   )
+  // 批量改价：筛选到导入的菜，按 +10% 调整并确认预览
+  const unaffected = (data.dishes || []).find(
+    dish => dish.name !== '批量测试菜' && Number(dish.price) > 0
+  )
+  const unaffectedPrice = unaffected ? Number(unaffected.price) : null
+  await invoke(mp, "page.onDishSearch({ detail: { value: '批量测试菜' } })")
+  await sleep(300)
+  await mp.mockWxMethod('showActionSheet', { tapIndex: 2 })
+  await mp.mockWxMethod('showModal', { confirm: true, content: '10' })
+  await invoke(mp, 'page.onBatchStatus()')
+  await sleep(1800)
+  await invoke(mp, 'page.load()')
+  await sleep(1400)
+  page = await current()
+  data = await page.data()
+  let pricedDish = (data.displayDishes || [])[0]
+  const pricedHistory = (pricedDish && pricedDish.priceHistory) || []
+  const lastPriceLog = pricedHistory[pricedHistory.length - 1]
+  const unaffectedAfter = unaffected
+    ? (data.dishes || []).find(dish => dish.id === unaffected.id)
+    : null
+  check(
+    'mock 厨房按筛选批量改价',
+    Boolean(pricedDish) &&
+      Number(pricedDish.price) === 10.89 &&
+      Boolean(lastPriceLog) &&
+      Number(lastPriceLog.from) === 9.9 &&
+      Number(lastPriceLog.to) === 10.89,
+    pricedDish
+      ? `¥${pricedDish.price} · 历史 ${pricedHistory.length} 条`
+      : '没找到菜'
+  )
+  check(
+    'mock 批量改价不影响筛选外的菜',
+    Boolean(unaffectedAfter) &&
+      Number(unaffectedAfter.price) === unaffectedPrice,
+    unaffectedAfter
+      ? `${unaffectedAfter.name} ¥${unaffectedAfter.price}`
+      : '没有对照菜'
+  )
+  // 降价：10.89 → 9.8
+  await mp.mockWxMethod('showModal', { confirm: true, content: '-10' })
+  await invoke(mp, 'page.onBatchStatus()')
+  await sleep(1800)
+  page = await current()
+  data = await page.data()
+  pricedDish = (data.displayDishes || [])[0]
+  check(
+    'mock 批量改价支持降价',
+    Boolean(pricedDish) && Number(pricedDish.price) === 9.8,
+    pricedDish ? `¥${pricedDish.price}` : '没找到菜'
+  )
+  // 两次确认：第一次输入、第二次预览；取消第二次不改价
+  await invoke(
+    mp,
+    `
+    (() => {
+      const calls = []
+      wx.__batchPriceOriginalModal = wx.showModal
+      wx.showModal = function (options) {
+        calls.push({
+          title: String((options && options.title) || ''),
+          content: String((options && options.content) || ''),
+          editable: Boolean(options && options.editable)
+        })
+        if (options && options.editable) {
+          return Promise.resolve({ confirm: true, content: '10' })
+        }
+        return Promise.resolve({ confirm: false })
+      }
+      wx.__batchPriceCalls = calls
+      return true
+    })()
+    `
+  )
+  await invoke(mp, 'page.onBatchStatus()')
+  await sleep(600)
+  const modalCalls = await mp.evaluate(() => ({
+    calls: wx.__batchPriceCalls || []
+  }))
+  page = await current()
+  data = await page.data()
+  const inputCall = modalCalls.calls[0] || {}
+  const confirmCall = modalCalls.calls[1] || {}
+  check(
+    'mock 批量改价二次确认预览',
+    modalCalls.calls.length === 2 &&
+      inputCall.editable === true &&
+      inputCall.content === '' &&
+      confirmCall.editable === false &&
+      confirmCall.title.indexOf('涨价 10%') > -1 &&
+      confirmCall.content.indexOf('批量测试菜') > -1 &&
+      confirmCall.content.indexOf('¥9.8→¥10.78') > -1,
+    `${inputCall.title || '无输入弹窗'} / ${confirmCall.title || '无确认弹窗'}`
+  )
+  check(
+    'mock 批量改价取消第二次确认',
+    Number((data.displayDishes || [])[0]?.price) === 9.8,
+    String((data.displayDishes || [])[0]?.price)
+  )
+  await invoke(
+    mp,
+    'wx.showModal = wx.__batchPriceOriginalModal; delete wx.__batchPriceOriginalModal; true'
+  )
+  await mp.mockWxMethod('showModal', { confirm: true, content: 'abc' })
+  await invoke(mp, 'page.onBatchStatus()')
+  await sleep(600)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 批量改价拒绝非法百分比',
+    Number((data.displayDishes || [])[0]?.price) === 9.8,
+    String((data.displayDishes || [])[0]?.price)
+  )
+  await mp.mockWxMethod('showModal', { confirm: true, content: '-91' })
+  await invoke(mp, 'page.onBatchStatus()')
+  await sleep(600)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 批量改价超范围拦截',
+    Number((data.displayDishes || [])[0]?.price) === 9.8,
+    String((data.displayDishes || [])[0]?.price)
+  )
+  // 本地价格过期：服务端价格已变，批量不覆盖
+  await invoke(
+    mp,
+    `page.setData({ dishes: page.data.dishes.map(dish => dish.name === '批量测试菜' ? { ...dish, price: 9.9 } : dish) }, () => page.applyDishFilter())`
+  )
+  await mp.mockWxMethod('showModal', { confirm: true, content: '10' })
+  await invoke(mp, 'page.onBatchStatus()')
+  await sleep(1800)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 批量改价不覆盖已变价格',
+    Number((data.displayDishes || [])[0]?.price) === 9.8,
+    String((data.displayDishes || [])[0]?.price)
+  )
+  await invoke(
+    mp,
+    `page.setData({ displayDishes: Array.from({ length: 51 }, (_, index) => ({ id: 'fake-' + index, name: '模拟菜', price: 1 })) })`
+  )
+  await mp.mockWxMethod('showModal', { confirm: true, content: '10' })
+  await invoke(mp, 'page.onBatchStatus()')
+  await sleep(600)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 批量改价最多 50 道',
+    (data.displayDishes || []).length === 51 && !data.batchBusy,
+    `${(data.displayDishes || []).length} 道`
+  )
+  await invoke(mp, 'page.onClearDishSearch()')
+  await sleep(300)
   await mp.navigateBack()
   await sleep(800)
   await mp.navigateBack()
@@ -1454,6 +1609,7 @@ function invoke(mp, body) {
         data.dishes[0].id
       )} } } })`
     )
+    await mp.mockWxMethod('showActionSheet', { tapIndex: 0 })
     await invoke(mp, 'page.onApplyTemplate()')
     await sleep(600)
     page = await current()
