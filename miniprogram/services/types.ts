@@ -30,6 +30,7 @@ export interface Dish {
   stock?: number
   isRecommended?: boolean
   image?: string
+  emoji?: string
   recipe?: string
 }
 

@@ -180,20 +180,19 @@ Page({
       if (seq !== this._loadSeq) {
         return
       }
-      // 静默轮询只拉订单；菜品和统计沿用上次结果，省云端读取次数
+      // 静默轮询只拉订单；菜品只在非静默加载时刷新；
+      // 统计最多每 5 分钟刷新一次，节省云端读取
       let dishes = this.data.dishes
       let stats = this.data.stats
+      if (!silent || !dishes.length) {
+        dishes = await getDishes()
+      }
       if (
         !silent ||
-        !dishes.length ||
+        !stats ||
         Date.now() - this._statsAt > 5 * 60 * 1000
       ) {
-        const [freshDishes, freshStats] = await Promise.all([
-          getDishes(),
-          getStats().catch(() => null)
-        ])
-        dishes = freshDishes
-        stats = freshStats
+        stats = await getStats().catch(() => stats)
         this._statsAt = Date.now()
       }
       const STATUS_RANK: Record<string, number> = {

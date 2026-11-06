@@ -40,7 +40,7 @@
         data-id="{{item.id}}"
         bindtap="onToggleDish"
       >
-        <view class="dish-dot" style="background: {{item.color}};">{{item.char}}</view>
+        <view class="dish-dot" style="background: {{item.color}};">{{item.emoji || item.char}}</view>
         <view class="dish-info">
           <view class="dish-name">{{item.name}}</view>
           <view class="dish-sub">{{item.categoryName}} · ¥{{item.price}}</view>

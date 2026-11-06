@@ -1,5 +1,6 @@
 import * as mock from './mock'
 import { USE_CLOUD } from '../config'
+import { dishEmoji } from '../utils/dish-emoji'
 import type {
   Business,
   Category,
@@ -85,18 +86,79 @@ export async function deleteCategory(id: string): Promise<{ id: string }> {
   return mock.deleteCategory(id)
 }
 
+// 给菜品补一个卡通 emoji，用作没有图片时的占位
+function decorateDish(dish: Dish): Dish {
+  if (dish) {
+    return Object.assign({}, dish, {
+      emoji: dishEmoji(dish.name, dish.categoryId)
+    })
+  }
+  return dish
+}
+
+const DISH_CACHE_KEY = 'kfl_dishes_cache_v1'
+
+function readDishCache(): Dish[] {
+  try {
+    const raw = wx.getStorageSync(DISH_CACHE_KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (parsed && Array.isArray(parsed.data) && parsed.data.length) {
+        return parsed.data
+      }
+    }
+  } catch (e) {
+    // 缓存损坏时忽略
+  }
+  return []
+}
+
+function writeDishCache(dishes: Dish[]) {
+  try {
+    wx.setStorageSync(
+      DISH_CACHE_KEY,
+      JSON.stringify({ at: Date.now(), data: dishes })
+    )
+  } catch (e) {
+    // 存储失败不影响使用
+  }
+}
+
 export async function getDishes(): Promise<Dish[]> {
   if (USE_CLOUD) {
-    return callApi<Dish[]>('getDishes')
+    try {
+      const data = await callApi<Dish[]>('getDishes')
+      const decorated = (data || []).map(decorateDish)
+      writeDishCache(decorated)
+      return decorated
+    } catch (e) {
+      // 云端读取失败（例如额度用尽）时，退回上次成功的菜单缓存
+      const cached = readDishCache()
+      if (cached.length) {
+        return cached
+      }
+      throw e
+    }
   }
-  return mock.getDishes()
+  const data = await mock.getDishes()
+  return data.map(decorateDish)
 }
 
 export async function getDish(id: string): Promise<Dish | null> {
   if (USE_CLOUD) {
-    return callApi<Dish | null>('getDish', { id })
+    try {
+      const data = await callApi<Dish | null>('getDish', { id })
+      return data ? decorateDish(data) : null
+    } catch (e) {
+      const cached = readDishCache().find(item => item.id === id)
+      if (cached) {
+        return cached
+      }
+      throw e
+    }
   }
-  return mock.getDish(id)
+  const dish = await mock.getDish(id)
+  return dish ? decorateDish(dish) : null
 }
 
 export async function toggleDishStatus(id: string): Promise<Dish | null> {

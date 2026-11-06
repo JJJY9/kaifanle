@@ -182,7 +182,7 @@
         data-id="{{item.id}}"
         bindtap="onEditDish"
       >
-        <view class="dish-dot" style="background: {{item.color}};">{{item.char}}</view>
+        <view class="dish-dot" style="background: {{item.color}};">{{item.emoji || item.char}}</view>
         <view class="dish-info">
           <view class="dish-name">{{item.name}}</view>
           <view class="dish-price {{item.stock >= 0 && item.stock <= 3 ? 'low' : ''}}">¥{{item.price}}<text wx:if="{{item.stock >= 0}}"> · 剩 {{item.stock}} 份</text><text wx:if="{{!item.recipe}}" class="missing-recipe"> · 缺做法</text></view>

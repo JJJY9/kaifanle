@@ -1460,8 +1460,12 @@ async function saveDish(payload, openid) {
     return withId(Object.assign({}, dish, fields))
   }
 
-  const dup = await db.collection('dishes').where({ name }).count()
-  if (dup.total > 0) {
+  const dupRes = await db
+    .collection('dishes')
+    .where({ name })
+    .limit(1)
+    .get()
+  if (dupRes.data.length) {
     throw new Error('已经有同名菜品了')
   }
 

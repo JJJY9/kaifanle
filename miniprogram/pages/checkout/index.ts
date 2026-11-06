@@ -3,6 +3,7 @@ import { createOrder, getBusiness, getMyProfile } from '../../services/api'
 import { cart } from '../../store/cart'
 import { MEALS } from '../../utils/constants'
 import { currentMeal, dateInputString, dateLabel } from '../../utils/format'
+import { dishEmoji } from '../../utils/dish-emoji'
 import { TEMPLATE_ORDER_STATUS } from '../../config'
 
 const TIME_OPTIONS: Record<MealId, string[]> = {
@@ -17,7 +18,7 @@ const NOTE_PRESETS = ['少放辣', '多加点饭', '不要香菜', '早点送']
 function buildLines(): any[] {
   return cart.getLines().map(line => ({
     ...line,
-    char: line.name.slice(0, 1),
+    char: dishEmoji(line.name),
     specText: line.specs.join(' / '),
     lineTotal: line.price * line.qty
   }))
