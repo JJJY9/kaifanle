@@ -34,7 +34,9 @@ const sleep = ms => new Promise(r => setTimeout(r, ms))
         seenAdding = true
       }
       console.log(
-        `进度：剩余 ${data.missingCount} 道 ${data.addingText || ''}`
+        `进度：剩余 ${data.missingCount} 道 ${data.addingText || ''}${
+          data.lastErrorText ? ' 错误：' + data.lastErrorText : ''
+        }`
       )
       if (data.missingCount === 0) {
         break
@@ -46,6 +48,9 @@ const sleep = ms => new Promise(r => setTimeout(r, ms))
   }
 
   console.log(`完成：剩余 ${data.missingCount} 道未添加`)
+  if (data.lastErrorText) {
+    console.log('最后一条错误：' + data.lastErrorText)
+  }
   await mp.disconnect()
   process.exit(data.missingCount === 0 ? 0 : 1)
 })().catch(err => {

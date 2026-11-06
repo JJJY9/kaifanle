@@ -369,6 +369,10 @@ async function run() {
   assert.strictEqual(res.data.image, 'cloud://test.env/dishes/test.jpg')
   assert.strictEqual(res.data.recipe, '第一步切菜\n第二步开火')
 
+  // 同名菜品不能重复创建
+  res = await call('saveDish', dishPayload, 'admin-openid')
+  assert.strictEqual(res.ok, false)
+
   res = await call(
     'saveDish',
     {

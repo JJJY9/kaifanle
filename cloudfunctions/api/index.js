@@ -867,7 +867,7 @@ async function getDishes() {
   const res = await db
     .collection('dishes')
     .orderBy('sort', 'asc')
-    .limit(100)
+    .limit(1000)
     .get()
   return res.data.map(withId)
 }
@@ -1458,6 +1458,11 @@ async function saveDish(payload, openid) {
       }
     }
     return withId(Object.assign({}, dish, fields))
+  }
+
+  const dup = await db.collection('dishes').where({ name }).count()
+  if (dup.total > 0) {
+    throw new Error('已经有同名菜品了')
   }
 
   const lastRes = await db

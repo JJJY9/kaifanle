@@ -23,7 +23,8 @@ Page({
     addingText: '',
     loading: true,
     adding: false,
-    addingName: ''
+    addingName: '',
+    lastErrorText: ''
   },
 
   onShow() {
@@ -159,13 +160,17 @@ Page({
     this.setData({
       adding: true,
       addingName: template.name,
-      addingText: `正在添加：${template.name}`
+      addingText: `正在添加：${template.name}`,
+      lastErrorText: ''
     })
     try {
       await saveDish(this.toInput(template))
       wx.showToast({ title: '已添加', icon: 'none' })
       this.load()
     } catch (err: any) {
+      this.setData({
+        lastErrorText: String((err && err.message) || err || '添加失败')
+      })
       wx.showToast({
         title: String((err && err.message) || '添加失败').slice(0, 40),
         icon: 'none'
@@ -195,14 +200,16 @@ Page({
     }
     this.setData({ adding: true, addingName: '', addingText: '正在添加…' })
     let done = 0
+    let lastError = ''
     const failed: string[] = []
     for (const template of missing) {
       this.setData({ addingText: `正在添加：${template.name}` })
       try {
         await saveDish(this.toInput(template))
         done++
-      } catch (err) {
+      } catch (err: any) {
         failed.push(template.name)
+        lastError = String((err && err.message) || err || '添加失败')
       }
     }
     if (failed.length) {
@@ -217,7 +224,12 @@ Page({
     } else {
       wx.showToast({ title: `已添加 ${done} 道菜`, icon: 'none' })
     }
-    this.setData({ adding: false, addingName: '', addingText: '' })
+    this.setData({
+      adding: false,
+      addingName: '',
+      addingText: '',
+      lastErrorText: lastError
+    })
     this.load()
   }
 })
