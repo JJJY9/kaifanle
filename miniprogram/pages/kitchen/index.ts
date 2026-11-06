@@ -8,6 +8,7 @@ import {
   moveDish,
   replyRating,
   rollMenu,
+  saveDish,
   toggleDishStatus,
   updateOrderStatus
 } from '../../services/api'
@@ -32,6 +33,7 @@ Page({
     busyId: '',
     busyDishId: '',
     replyingId: '',
+    restockingId: '',
     movingId: '',
     showHistory: false,
     showPrep: false,
@@ -552,7 +554,8 @@ Page({
     }
   },
 
-  async onToggleDish(e: any) {    if (this.data.busyDishId) {
+  async onToggleDish(e: any) {
+    if (this.data.busyDishId) {
       return
     }
     const id = e.currentTarget.dataset.id
@@ -567,6 +570,48 @@ Page({
       })
     } finally {
       this.setData({ busyDishId: '' })
+    }
+  },
+
+  async onRestock(e: any) {
+    if (this.data.restockingId) {
+      return
+    }
+    const id = e.currentTarget.dataset.id
+    const dish = (this.data.dishes || []).find(item => item.id === id)
+    if (!dish || typeof dish.stock !== 'number') {
+      return
+    }
+    const nextStock = Math.max(0, Number(dish.stock)) + 5
+    this.setData({ restockingId: id })
+    try {
+      const updated = await saveDish({ ...dish, stock: nextStock } as any)
+      const stock =
+        updated && typeof updated.stock === 'number'
+          ? updated.stock
+          : nextStock
+      const dishes = this.data.dishes.map(item =>
+        item.id === id ? { ...item, stock } : item
+      )
+      const lowStock = dishes.filter(
+        item =>
+          item.status === 'on' &&
+          typeof item.stock === 'number' &&
+          item.stock >= 0 &&
+          item.stock <= 3
+      ).length
+      this.setData({
+        dishes,
+        todo: { ...this.data.todo, lowStock }
+      })
+      wx.showToast({ title: `已补到 ${stock} 份`, icon: 'none' })
+    } catch (err: any) {
+      wx.showToast({
+        title: String((err && err.message) || '补库存失败').slice(0, 40),
+        icon: 'none'
+      })
+    } finally {
+      this.setData({ restockingId: '' })
     }
   },
 

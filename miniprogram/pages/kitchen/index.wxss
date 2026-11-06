@@ -714,6 +714,28 @@
   margin-right: 10rpx;
 }
 
+.restock-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 52rpx;
+  padding: 0 14rpx;
+  margin-right: 4rpx;
+  background: #FFD23F;
+  border: 3rpx solid #111111;
+  border-radius: 12rpx;
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
+.restock-btn:active {
+  transform: translate(2rpx, 2rpx);
+}
+
+.restock-btn.busy {
+  opacity: 0.6;
+}
+
 .move-btn {
   display: flex;
   align-items: center;

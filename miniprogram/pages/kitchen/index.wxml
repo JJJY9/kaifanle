@@ -229,6 +229,12 @@
           <view class="dish-name">{{item.name}}</view>
           <view class="dish-price {{item.stock >= 0 && item.stock <= 3 ? 'low' : ''}}">¥{{item.price}}<text wx:if="{{item.stock >= 0}}"> · 剩 {{item.stock}} 份</text><text wx:if="{{!item.recipe}}" class="missing-recipe"> · 缺做法</text></view>
         </view>
+        <view
+          wx:if="{{item.stock >= 0 && item.stock <= 3}}"
+          class="restock-btn {{restockingId === item.id ? 'busy' : ''}}"
+          data-id="{{item.id}}"
+          catchtap="onRestock"
+        >{{restockingId === item.id ? '补…' : '补5'}}</view>
         <view class="dish-move">
           <view class="move-btn {{movingId === item.id ? 'busy' : ''}}" data-id="{{item.id}}" data-direction="up" catchtap="onMoveDish">↑</view>
           <view class="move-btn {{movingId === item.id ? 'busy' : ''}}" data-id="{{item.id}}" data-direction="down" catchtap="onMoveDish">↓</view>
