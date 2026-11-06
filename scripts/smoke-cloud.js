@@ -1908,6 +1908,24 @@ async function run() {
   res = await call('deleteCoupon', { id: couponId }, 'admin-openid')
   assert.strictEqual(res.ok, true)
 
+  // 首页提醒：只统计自己 3 天内到期的未使用券
+  res = await call(
+    'createCoupon',
+    { title: '快过期测试券', note: '', expiresInDays: 1 },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  const soonId = res.data.id
+  res = await call('claimCoupon', { id: soonId }, 'girl-openid')
+  assert.strictEqual(res.ok, true)
+  res = await call('getMyExpiringCoupons', {}, 'girl-openid')
+  assert.strictEqual(res.ok, true)
+  assert.ok(res.data.count >= 1)
+  res = await call('getMyExpiringCoupons', {}, 'admin-openid')
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.count, 0)
+  await call('deleteCoupon', { id: soonId }, 'admin-openid')
+
   // 过期券不能领取，也不能使用
   res = await call(
     'createCoupon',

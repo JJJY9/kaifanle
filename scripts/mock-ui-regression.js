@@ -67,6 +67,11 @@ function invoke(mp, body) {
       : '没有进行中订单'
   )
   check(
+    'mock 首页券到期提醒',
+    Number(data.couponExpiring) >= 1,
+    `${data.couponExpiring} 张`
+  )
+  check(
     'mock 首页厨房忙闲',
     !data.isOpen || String(data.busyText || '').length > 0,
     data.busyText || (data.isOpen ? '没有提示' : '休息中')

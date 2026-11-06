@@ -57,6 +57,9 @@
       </view>
       <text class="active-order-arrow">查看 ›</text>
     </view>
+    <view wx:if="{{couponExpiring}}" class="coupon-reminder" bindtap="onCouponReminder">
+      🎟 有 {{couponExpiring}} 张券 3 天内到期，去用掉 ›
+    </view>
     <view wx:if="{{busyText}}" class="busy-line">{{busyText}}</view>
     <view wx:if="{{mealNotice}}" class="meal-notice">{{mealNotice}}</view>
     <view wx:if="{{notice}}" class="notice-box">

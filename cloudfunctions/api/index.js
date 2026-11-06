@@ -155,6 +155,8 @@ async function route(action, payload, openid) {
       return createCoupon(payload, openid)
     case 'getCoupons':
       return getCoupons(openid)
+    case 'getMyExpiringCoupons':
+      return getMyExpiringCoupons(openid)
     case 'claimCoupon':
       return claimCoupon(payload, openid)
     case 'useCoupon':
@@ -812,6 +814,24 @@ async function getCoupons(openid) {
     .sort((a, b) => b.createdAt - a.createdAt)
     .slice(0, 50)
     .map(withId)
+}
+
+// 首页提醒：我手里 3 天内到期、还没用的券
+async function getMyExpiringCoupons(openid) {
+  await ensureCollection('coupons')
+  const now = Date.now()
+  const soon = now + 3 * 24 * 60 * 60 * 1000
+  const res = await db
+    .collection('coupons')
+    .where({ owner: openid, status: 'unused' })
+    .limit(50)
+    .get()
+  const count = (res.data || []).filter(
+    coupon =>
+      Number(coupon.expiresAt || 0) >= now &&
+      Number(coupon.expiresAt || 0) <= soon
+  ).length
+  return { count }
 }
 
 async function claimCoupon(payload, openid) {

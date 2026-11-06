@@ -60,11 +60,13 @@ let menuCache: Record<string, { at: number; data: DailyMenu }> = {}
 let kitchenStatusCache: { at: number; data: KitchenStatus } | null = null
 let lastOrderCache: { at: number; data: Order | null } | null = null
 let activeOrderCache: { at: number; data: Order | null } | null = null
+let expiringCouponsCache: { at: number; count: number } | null = null
 const BUSINESS_CACHE_TTL = 60 * 1000
 const MENU_CACHE_TTL = 60 * 1000
 const KITCHEN_STATUS_TTL = 30 * 1000
 const LAST_ORDER_CACHE_TTL = 2 * 60 * 1000
 const ACTIVE_ORDER_CACHE_TTL = 30 * 1000
+const EXPIRING_COUPONS_TTL = 2 * 60 * 1000
 
 function cloneData<T>(value: T): T {
   return JSON.parse(JSON.stringify(value))
@@ -568,10 +570,11 @@ export async function createCoupon(payload: {
   note: string
   expiresInDays?: number
 }): Promise<Coupon> {
-  if (USE_CLOUD) {
-    return callApi<Coupon>('createCoupon', payload)
-  }
-  return mock.createCoupon(payload)
+  const coupon = USE_CLOUD
+    ? await callApi<Coupon>('createCoupon', payload)
+    : await mock.createCoupon(payload)
+  expiringCouponsCache = null
+  return coupon
 }
 
 export async function getCoupons(): Promise<Coupon[]> {
@@ -581,25 +584,43 @@ export async function getCoupons(): Promise<Coupon[]> {
   return mock.getCoupons()
 }
 
-export async function claimCoupon(id: string): Promise<Coupon> {
+export async function getMyExpiringCoupons(): Promise<{ count: number }> {
   if (USE_CLOUD) {
-    return callApi<Coupon>('claimCoupon', { id })
+    if (
+      expiringCouponsCache &&
+      Date.now() - expiringCouponsCache.at < EXPIRING_COUPONS_TTL
+    ) {
+      return { count: expiringCouponsCache.count }
+    }
+    const data = await callApi<{ count: number }>('getMyExpiringCoupons')
+    expiringCouponsCache = { at: Date.now(), count: Number(data.count || 0) }
+    return { count: expiringCouponsCache.count }
   }
-  return mock.claimCoupon(id)
+  return mock.getMyExpiringCoupons()
+}
+
+export async function claimCoupon(id: string): Promise<Coupon> {
+  const coupon = USE_CLOUD
+    ? await callApi<Coupon>('claimCoupon', { id })
+    : await mock.claimCoupon(id)
+  expiringCouponsCache = null
+  return coupon
 }
 
 export async function useCoupon(id: string): Promise<Coupon> {
-  if (USE_CLOUD) {
-    return callApi<Coupon>('useCoupon', { id })
-  }
-  return mock.useCoupon(id)
+  const coupon = USE_CLOUD
+    ? await callApi<Coupon>('useCoupon', { id })
+    : await mock.useCoupon(id)
+  expiringCouponsCache = null
+  return coupon
 }
 
 export async function deleteCoupon(id: string): Promise<{ id: string }> {
-  if (USE_CLOUD) {
-    return callApi<{ id: string }>('deleteCoupon', { id })
-  }
-  return mock.deleteCoupon(id)
+  const result = USE_CLOUD
+    ? await callApi<{ id: string }>('deleteCoupon', { id })
+    : await mock.deleteCoupon(id)
+  expiringCouponsCache = null
+  return result
 }
 
 export async function getMenuForDate(

@@ -1528,6 +1528,20 @@ export async function getCoupons(): Promise<Coupon[]> {
     .map(coupon => ({ ...coupon }))
 }
 
+export async function getMyExpiringCoupons(): Promise<{ count: number }> {
+  await delay(40)
+  const now = Date.now()
+  const soon = now + 3 * 24 * 60 * 60 * 1000
+  const count = loadCoupons().filter(
+    coupon =>
+      coupon.owner === 'mock-openid' &&
+      coupon.status === 'unused' &&
+      Number(coupon.expiresAt || 0) >= now &&
+      Number(coupon.expiresAt || 0) <= soon
+  ).length
+  return { count }
+}
+
 export async function claimCoupon(id: string): Promise<Coupon> {
   await delay(80)
   const coupon = loadCoupons().find(item => item.id === id)

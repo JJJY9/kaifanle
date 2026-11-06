@@ -6,7 +6,8 @@ import {
   getKitchenStatus,
   getLastOrder,
   getMenuForDate,
-  getMyActiveOrder
+  getMyActiveOrder,
+  getMyExpiringCoupons
 } from '../../services/api'
 import { cart } from '../../store/cart'
 import { favorites } from '../../store/favorites'
@@ -91,6 +92,7 @@ Page({
     onlyAvailable: false,
     lastOrder: null as any,
     activeOrder: null as any,
+    couponExpiring: 0,
     spiceFilter: 'all',
     spiceFilters: [] as { key: string; label: string }[],
     tagFilter: 'all',
@@ -198,6 +200,7 @@ Page({
     this.loadMenu()
     this.loadLastOrder()
     this.loadActiveOrder()
+    this.loadCouponReminder()
   },
 
   onUnload() {
@@ -580,6 +583,19 @@ Page({
       this.renderSections()
       this.setData({ searchResults: this.filterDishes(this.data.keyword) })
     })
+  },
+
+  async loadCouponReminder() {
+    try {
+      const result = await getMyExpiringCoupons()
+      this.setData({ couponExpiring: Number(result.count || 0) })
+    } catch (e) {
+      // 券提醒失败不影响首页
+    }
+  },
+
+  onCouponReminder() {
+    wx.navigateTo({ url: '/pages/coupons/index' })
   },
 
   async loadActiveOrder() {
