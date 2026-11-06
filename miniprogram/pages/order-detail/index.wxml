@@ -58,6 +58,11 @@
       <text class="item-price">¥{{item.lineTotal}}</text>
     </view>
     <view wx:if="{{order.note}}" class="order-note">整单备注：{{order.note}}</view>
+    <view
+      wx:if="{{order.status === 'pending' || order.status === 'accepted'}}"
+      class="edit-note"
+      bindtap="onEditNote"
+    >{{order.note ? '改整单备注' : '+ 加整单备注'}}</view>
     <view class="total-row">
       <text>合计</text>
       <text class="total-price">¥{{order.amount}}</text>

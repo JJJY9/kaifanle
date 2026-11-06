@@ -505,6 +505,29 @@ async function run() {
   assert.strictEqual(res.ok, true)
   assert.strictEqual(res.data, null)
 
+  // 改整单备注：本人、开火前、内容安全
+  res = await call(
+    'updateOrderNote',
+    { id: created.data.id, note: '多加饭' },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.note, '多加饭')
+  res = await call(
+    'updateOrderNote',
+    { id: created.data.id, note: '违规备注' },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, false)
+  res = await call(
+    'updateOrderNote',
+    { id: created.data.id, note: '别人改的' },
+    'stranger-openid'
+  )
+  assert.strictEqual(res.ok, false)
+  res = await call('getOrder', { id: created.data.id }, 'girl-openid')
+  assert.strictEqual(res.data.note, '多加饭')
+
   // 早餐专属菜品不能点成午餐（即使没有排菜单）
   res = await call(
     'createOrder',

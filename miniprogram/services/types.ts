@@ -97,6 +97,7 @@ export interface Order {
   expectedTime: string
   mode: string
   note: string
+  noteUpdatedAt?: number
   address?: string
   scheduledDate?: string
   profile?: {

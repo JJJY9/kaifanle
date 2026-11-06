@@ -940,6 +940,25 @@ export async function cancelOrder(
   return { ...order }
 }
 
+export async function updateOrderNote(
+  id: string,
+  note: string
+): Promise<Order | null> {
+  await delay(60)
+  const orders = loadOrders()
+  const order = orders.find(item => item.id === id)
+  if (!order) {
+    return null
+  }
+  if (['pending', 'accepted'].indexOf(order.status) === -1) {
+    throw new Error('开火后就不能改备注啦')
+  }
+  order.note = String(note || '').trim().slice(0, 100)
+  order.noteUpdatedAt = Date.now()
+  saveOrders()
+  return { ...order }
+}
+
 export async function urgeOrder(id: string): Promise<Order | null> {
   await delay(60)
   const orders = loadOrders()

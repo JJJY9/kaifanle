@@ -107,6 +107,8 @@ async function route(action, payload, openid) {
       return createOrder(payload, openid)
     case 'cancelOrder':
       return cancelOrder(payload, openid)
+    case 'updateOrderNote':
+      return updateOrderNote(payload, openid)
     case 'urgeOrder':
       return urgeOrder(payload, openid)
     case 'rateOrder':
@@ -1750,6 +1752,40 @@ async function cancelOrder(payload, openid) {
       timeline: (order.timeline || []).concat([entry])
     })
   )
+}
+
+// 顾客改整单备注：开火前都可以补一句，厨房端看到的是最新备注
+async function updateOrderNote(payload, openid) {
+  const id = String((payload && payload.id) || '')
+  if (!id) {
+    throw new Error('缺少订单 ID')
+  }
+  let order
+  try {
+    const res = await db.collection('orders').doc(id).get()
+    order = res.data
+  } catch (e) {
+    if (isMissingDocError(e)) {
+      throw new Error('订单不存在')
+    }
+    throw e
+  }
+  if (order._openid !== openid) {
+    throw new Error('只能改自己的订单')
+  }
+  if (['pending', 'accepted'].indexOf(order.status) === -1) {
+    throw new Error('开火后就不能改备注啦')
+  }
+  const note = Array.from(String((payload && payload.note) || '').trim())
+    .slice(0, 100)
+    .join('')
+  if (note === String(order.note || '')) {
+    return withId(order)
+  }
+  await checkContentSafety(openid, note)
+  const data = { note, noteUpdatedAt: Date.now() }
+  await db.collection('orders').doc(id).update({ data })
+  return withId(Object.assign({}, order, data))
 }
 
 // 顾客催单：只记录时间，厨房端展示「她催了」；5 分钟内不能重复催。

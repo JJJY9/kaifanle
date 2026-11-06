@@ -322,6 +322,16 @@ export async function cancelOrder(
   return mock.cancelOrder(id, reason)
 }
 
+export async function updateOrderNote(
+  id: string,
+  note: string
+): Promise<Order | null> {
+  if (USE_CLOUD) {
+    return callApi<Order | null>('updateOrderNote', { id, note })
+  }
+  return mock.updateOrderNote(id, note)
+}
+
 export async function urgeOrder(id: string): Promise<Order | null> {
   if (USE_CLOUD) {
     return callApi<Order | null>('urgeOrder', { id })

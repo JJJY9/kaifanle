@@ -1,5 +1,5 @@
 import type { Dish, Order, OrderStatus } from '../../services/types'
-import { getOrder, cancelOrder, getDishes, getKitchenStatus, urgeOrder, rateOrder } from '../../services/api'
+import { getOrder, cancelOrder, getDishes, getKitchenStatus, urgeOrder, rateOrder, updateOrderNote } from '../../services/api'
 import { addOrderToCart } from '../../utils/reorder'
 import { STATUS_STEP_TEXT, STATUS_TEXT, mealName } from '../../utils/constants'
 import {
@@ -341,6 +341,41 @@ Page({
       })
     } finally {
       this.setData({ submittingRating: false })
+    }
+  },
+
+  async onEditNote() {
+    const order = this.data.order
+    if (
+      !order ||
+      ['pending', 'accepted'].indexOf(order.status) === -1
+    ) {
+      return
+    }
+    const res: any = await wx.showModal({
+      title: '整单备注',
+      editable: true,
+      content: order.note || '',
+      placeholderText: '比如：少放辣、晚点送',
+      confirmText: '保存',
+      cancelText: '算了'
+    })
+    if (!res.confirm) {
+      return
+    }
+    const note = String(res.content || '').trim().slice(0, 100)
+    try {
+      const updated = await updateOrderNote(order.id, note)
+      if (!updated) {
+        throw new Error('订单不存在')
+      }
+      this.setData({ 'order.note': updated.note || '' })
+      wx.showToast({ title: '备注已更新', icon: 'none' })
+    } catch (e: any) {
+      wx.showToast({
+        title: String((e && e.message) || '改备注失败').slice(0, 40),
+        icon: 'none'
+      })
     }
   },
 

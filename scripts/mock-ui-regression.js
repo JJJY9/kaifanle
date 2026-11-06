@@ -30,6 +30,26 @@ function invoke(mp, body) {
   await mp.mockWxMethod('showActionSheet', { tapIndex: 0 })
   const current = () => mp.currentPage()
 
+  // 清空上一轮残留的购物车，保证跨次运行结果稳定
+  await mp.reLaunch('/pages/cart/index')
+  await sleep(1000)
+  let resetPage = await current()
+  let resetData = await resetPage.data()
+  for (const group of resetData.groups || []) {
+    await invoke(
+      mp,
+      `page.onClearGroup({ currentTarget: { dataset: { meal: ${JSON.stringify(
+        group.meal
+      )}, date: ${JSON.stringify(group.date)} } } })`
+    )
+    await sleep(300)
+  }
+  resetPage = await current()
+  resetData = await resetPage.data()
+  if ((resetData.groups || []).length) {
+    console.log('警告：购物车未能完全清空')
+  }
+
   // 首页
   await mp.reLaunch('/pages/home/index')
   await sleep(2500)
@@ -953,6 +973,20 @@ function invoke(mp, body) {
       data.order.status === 'pending' &&
       String(data.queueText || '').length > 0,
     data.queueText
+  )
+  await mp.mockWxMethod('showModal', {
+    confirm: true,
+    cancel: false,
+    content: '少放辣'
+  })
+  await invoke(mp, 'page.onEditNote()')
+  await sleep(700)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 改整单备注',
+    Boolean(data.order) && data.order.note === '少放辣',
+    data.order && data.order.note
   )
   await mp.navigateBack()
   await sleep(900)

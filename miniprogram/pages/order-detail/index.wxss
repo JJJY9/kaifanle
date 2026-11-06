@@ -265,6 +265,14 @@
   font-weight: 700;
 }
 
+.edit-note {
+  margin-top: 10rpx;
+  align-self: flex-start;
+  color: #2D9CFF;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
 .total-row {
   display: flex;
   align-items: center;
