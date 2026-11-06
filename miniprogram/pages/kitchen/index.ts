@@ -1,5 +1,6 @@
 import type { OrderStatus } from '../../services/types'
 import {
+  acceptPendingOrders,
   getAllOrders,
   getActiveOrders,
   getCategories,
@@ -83,6 +84,8 @@ Page({
     error: '',
     busyId: '',
     busyDishId: '',
+    acceptingAll: false,
+    pendingCount: 0,
     replyingId: '',
     restockingId: '',
     restockingAll: false,
@@ -562,6 +565,7 @@ Page({
       this.setData({
         orders: view,
         preorders,
+        pendingCount: active.filter(order => order.status === 'pending').length,
         history,
         historyView: this.filterHistory(history),
         dishes,
@@ -592,6 +596,37 @@ Page({
         loading: false,
         error: this.errorText(e)
       })
+    }
+  },
+
+  async onAcceptAll() {
+    if (this.data.acceptingAll || !this.data.pendingCount) {
+      return
+    }
+    const res: any = await wx.showModal({
+      title: '全部接单？',
+      content: `把今天 ${this.data.pendingCount} 单待接单标记为已接单`,
+      confirmText: '接单',
+      cancelText: '算了'
+    })
+    if (!res.confirm) {
+      return
+    }
+    this.setData({ acceptingAll: true })
+    try {
+      const result = await acceptPendingOrders()
+      wx.showToast({
+        title: result.done ? `已接 ${result.done} 单` : '没有可接的单',
+        icon: 'none'
+      })
+      await this.load()
+    } catch (err: any) {
+      wx.showToast({
+        title: String((err && err.message) || '接单失败').slice(0, 40),
+        icon: 'none'
+      })
+    } finally {
+      this.setData({ acceptingAll: false })
     }
   },
 

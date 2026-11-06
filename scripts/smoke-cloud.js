@@ -1906,6 +1906,34 @@ async function run() {
     await call('deleteCoupon', { id }, 'admin-openid')
   }
 
+  // 厨房一键接单：管理员专属，只处理今天及逾期的待接单
+  const batchOrder = await call(
+    'createOrder',
+    {
+      items: [{ dishId: 'd02', qty: 1, specs: [] }],
+      meal: 'lunch',
+      expectedTime: '12:00',
+      mode: '在家吃'
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(batchOrder.ok, true)
+  res = await call('acceptPendingOrders', {}, 'girl-openid')
+  assert.strictEqual(res.ok, false)
+  res = await call('acceptPendingOrders', {}, 'admin-openid')
+  assert.strictEqual(res.ok, true)
+  assert.ok(res.data.done >= 1)
+  assert.strictEqual(res.data.done, res.data.total)
+  res = await call(
+    'getOrder',
+    { id: batchOrder.data.id },
+    'admin-openid'
+  )
+  assert.strictEqual(res.data.status, 'accepted')
+  assert.ok(
+    (res.data.timeline || []).some(entry => entry.status === 'accepted')
+  )
+
   console.log(
     '云函数冒烟测试通过：初始化、菜单、菜品 CRUD、下单计价、权限、状态流转、取消订单、订单评价与回复、许愿池、营业设置、每日菜单、口味档案、今日看板、爱心券、售罄拦截、订阅消息。'
   )

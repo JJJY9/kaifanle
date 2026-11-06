@@ -101,6 +101,8 @@ async function route(action, payload, openid) {
       return exportData(openid)
     case 'getActiveOrders':
       return getActiveOrders(openid)
+    case 'acceptPendingOrders':
+      return acceptPendingOrders(openid)
     case 'getOrder':
       return getOrder(payload.id, openid)
     case 'createOrder':
@@ -1419,9 +1421,45 @@ async function exportData(openid) {
   }
 }
 
-// 厨房轮询专用：只取未完成订单，减少每次刷新读取的文档数
-async function getActiveOrders(openid) {
+// 厨房一键接单：只处理今天及逾期的待接单订单，逐单条件更新
+async function acceptPendingOrders(openid) {
   await requireAdmin(openid)
+  const today = chinaDateString()
+  const res = await db
+    .collection('orders')
+    .where({ status: 'pending' })
+    .limit(50)
+    .get()
+  const targets = (res.data || []).filter(
+    order =>
+      (order.scheduledDate || chinaDateString(order.createdAt)) <= today
+  )
+  let done = 0
+  for (const order of targets) {
+    const entry = {
+      status: 'accepted',
+      title: STEP_TITLES.accepted,
+      time: Date.now()
+    }
+    try {
+      const upd = await db
+        .collection('orders')
+        .where({ _id: order._id, status: 'pending' })
+        .update({
+          data: { status: 'accepted', timeline: _.push([entry]) }
+        })
+      if (upd.stats && upd.stats.updated === 1) {
+        done++
+      }
+    } catch (e) {
+      console.warn('[api] acceptPendingOrders skip:', order._id, e)
+    }
+  }
+  return { done, total: targets.length }
+}
+
+// 厨房轮询专用：只取未完成订单，减少每次刷新读取的文档数
+async function getActiveOrders(openid) {  await requireAdmin(openid)
   const res = await db
     .collection('orders')
     .where({ status: _.in(['pending', 'accepted', 'cooking', 'ready']) })

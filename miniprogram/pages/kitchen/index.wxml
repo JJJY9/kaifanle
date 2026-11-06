@@ -152,11 +152,18 @@
 
     <view class="orders-head">
       <view class="section-title display" id="orders-section">待处理订单</view>
-      <view
-        wx:if="{{orders.length}}"
-        class="copy-receipts {{copyingReceipts ? 'disabled' : ''}}"
-        bindtap="onCopyActiveReceipts"
-      >{{copyingReceipts ? '复制中…' : '复制小票'}}</view>
+      <view class="orders-tools">
+        <view
+          wx:if="{{pendingCount}}"
+          class="copy-receipts accept-all {{acceptingAll ? 'disabled' : ''}}"
+          bindtap="onAcceptAll"
+        >{{acceptingAll ? '接单中…' : '全部接单'}}</view>
+        <view
+          wx:if="{{orders.length}}"
+          class="copy-receipts {{copyingReceipts ? 'disabled' : ''}}"
+          bindtap="onCopyActiveReceipts"
+        >{{copyingReceipts ? '复制中…' : '复制小票'}}</view>
+      </view>
     </view>
     <view wx:if="{{!orders.length}}" class="empty-line">暂时没有待处理的订单，歇会儿吧</view>
 

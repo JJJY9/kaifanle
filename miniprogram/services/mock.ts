@@ -564,7 +564,10 @@ function loadOrders(): Order[] {
         // 种子订单是当天的演示数据；隔天打开时换一批新的，避免排队提示等
         // 依赖“今天”的界面在旧数据上表现异常
         const today = dateInputString()
+        const seed1 = stored.find((order: Order) => order.id === 'seed-1')
+        const seedBroken = Boolean(seed1 && seed1.status !== 'pending')
         const staleSeed =
+          seedBroken ||
           !stored.some((order: Order) => order.id === 'seed-3') ||
           stored.some(
             (order: Order) =>
@@ -808,6 +811,30 @@ export async function getActiveOrders(): Promise<Order[]> {
     )
     .sort((a, b) => b.createdAt - a.createdAt)
     .map(order => ({ ...order }))
+}
+
+export async function acceptPendingOrders(): Promise<{
+  done: number
+  total: number
+}> {
+  await delay(100)
+  const today = dateInputString()
+  const targets = loadOrders().filter(
+    order =>
+      order.status === 'pending' &&
+      (order.scheduledDate ||
+        dateInputString(new Date(order.createdAt))) <= today
+  )
+  targets.forEach(order => {
+    order.status = 'accepted'
+    order.timeline.push({
+      status: 'accepted',
+      title: STATUS_STEP_TEXT.accepted,
+      time: Date.now()
+    })
+  })
+  saveOrders()
+  return { done: targets.length, total: targets.length }
 }
 
 export async function getOrder(id: string): Promise<Order | null> {

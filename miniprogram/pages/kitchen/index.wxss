@@ -1105,6 +1105,12 @@
   gap: 16rpx;
 }
 
+.orders-tools {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
 .copy-receipts {
   padding: 6rpx 18rpx;
   background: #FFFFFF;
@@ -1113,6 +1119,10 @@
   box-shadow: 2rpx 2rpx 0 #111111;
   font-size: 21rpx;
   font-weight: 800;
+}
+
+.copy-receipts.accept-all {
+  background: #FFD23F;
 }
 
 .copy-receipts.disabled {

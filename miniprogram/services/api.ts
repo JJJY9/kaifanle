@@ -283,6 +283,16 @@ export async function getActiveOrders(): Promise<Order[]> {
   return mock.getActiveOrders()
 }
 
+export async function acceptPendingOrders(): Promise<{
+  done: number
+  total: number
+}> {
+  if (USE_CLOUD) {
+    return callApi<{ done: number; total: number }>('acceptPendingOrders')
+  }
+  return mock.acceptPendingOrders()
+}
+
 export async function getAllOrders(): Promise<Order[]> {
   if (USE_CLOUD) {
     return callApi<Order[]>('getAllOrders')

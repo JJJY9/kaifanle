@@ -1427,6 +1427,32 @@ function invoke(mp, body) {
     `${data.selectedMeal} · ${data.cartCount} 份`
   )
 
+  // 厨房一键接单（放在最后，下一轮 mock 种子会自动恢复待接单状态）
+  await mp.navigateTo('/pages/kitchen/index')
+  await sleep(2200)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 厨房待接单数',
+    Number(data.pendingCount) >= 1,
+    `${data.pendingCount} 单`
+  )
+  await mp.mockWxMethod('showModal', {
+    confirm: true,
+    cancel: false,
+    content: ''
+  })
+  await invoke(mp, 'page.onAcceptAll()')
+  await sleep(1800)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 厨房全部接单',
+    Number(data.pendingCount) === 0 &&
+      (data.orders || []).every(order => order.status !== 'pending'),
+    `剩余待接 ${data.pendingCount} 单`
+  )
+
   const failed = results.filter(r => !r.ok)
   console.log(`\n结论：${results.length - failed.length}/${results.length} 通过`)
   await mp.disconnect()
