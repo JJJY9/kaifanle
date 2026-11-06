@@ -306,6 +306,21 @@ function invoke(mp, body) {
     )
   }
 
+  // 许愿池「做成菜」预填菜名
+  await mp.navigateTo(
+    '/pages/dish-edit/index?name=' + encodeURIComponent('许愿菜')
+  )
+  await sleep(1600)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 许愿菜名预填',
+    page.path === 'pages/dish-edit/index' && data.name === '许愿菜',
+    data.name
+  )
+  await mp.navigateBack()
+  await sleep(900)
+
   // 菜品模板
   await mp.navigateTo('/pages/dish-templates/index')
   await sleep(1800)

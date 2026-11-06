@@ -19,6 +19,7 @@ function splitList(text: string): string[] {
 }
 
 Page({
+  _presetName: '',
   data: {
     id: '',
     isEdit: false,
@@ -58,6 +59,15 @@ Page({
 
   onLoad(options: any) {
     const id = options.id || ''
+    let presetName = ''
+    try {
+      presetName = options.name
+        ? decodeURIComponent(options.name).trim().slice(0, 12)
+        : ''
+    } catch (e) {
+      presetName = String(options.name || '').slice(0, 12)
+    }
+    this._presetName = presetName
     this.setData({ id, isEdit: Boolean(id) })
     wx.setNavigationBarTitle({
       title: id ? '编辑菜品' : '新增菜品'
@@ -73,6 +83,7 @@ Page({
       if (!id) {
         this.setData({
           loading: false,
+          name: this._presetName || '',
           categoryId: categories[0] ? categories[0].id : '',
           selectedMeals: ['lunch', 'dinner'],
           mealChecked: { lunch: true, dinner: true }

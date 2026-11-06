@@ -154,6 +154,18 @@ Page({
     }
   },
 
+  onMakeDish(e: any) {
+    const name = String(e.currentTarget.dataset.content || '')
+      .trim()
+      .slice(0, 12)
+    if (!name) {
+      return
+    }
+    wx.navigateTo({
+      url: '/pages/dish-edit/index?name=' + encodeURIComponent(name)
+    })
+  },
+
   async onReply(e: any) {
     const id = e.currentTarget.dataset.id
     const wish = (this.data.wishes || []).find((item: any) => item.id === id)

@@ -59,6 +59,11 @@
           bindtap="onReply"
         >回一句</view>
         <view
+          class="wish-btn"
+          data-content="{{item.content}}"
+          bindtap="onMakeDish"
+        >做成菜</view>
+        <view
           class="wish-btn danger"
           data-id="{{item.id}}"
           bindtap="onDeleteWish"
