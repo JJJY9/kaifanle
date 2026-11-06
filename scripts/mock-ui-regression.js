@@ -376,10 +376,29 @@ function invoke(mp, body) {
   )
   check(
     'mock 厨房菜品筛选',
-    (data.dishFilters || []).length === 4 &&
+    (data.dishFilters || []).length === 5 &&
       (data.displayDishes || []).length === (data.dishes || []).length,
     `${(data.displayDishes || []).length} 道`
   )
+  await invoke(
+    mp,
+    "page.onDishFilter({ currentTarget: { dataset: { filter: 'missing' } } })"
+  )
+  await sleep(500)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 厨房缺做法筛选',
+    data.dishFilter === 'missing' &&
+      (data.displayDishes || []).length > 0 &&
+      data.displayDishes.every(dish => !dish.recipe),
+    `${(data.displayDishes || []).length} 道`
+  )
+  await invoke(
+    mp,
+    "page.onDishFilter({ currentTarget: { dataset: { filter: 'all' } } })"
+  )
+  await sleep(300)
   await invoke(mp, "page.onDishSearch({ detail: { value: '番茄' } })")
   await sleep(400)
   page = await current()
@@ -1193,7 +1212,23 @@ function invoke(mp, body) {
     data.backupReady === true && Number(data.backupCount) >= 1,
     `${data.backupCount} 项`
   )
+  await invoke(
+    mp,
+    "page.onHealthJump({ currentTarget: { dataset: { filter: 'missing' } } })"
+  )
+  await sleep(2200)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 体检查看缺做法',
+    page.path === 'pages/kitchen/index' &&
+      data.dishFilter === 'missing' &&
+      (data.displayDishes || []).length > 0 &&
+      data.displayDishes.every(dish => !dish.recipe),
+    `${(data.displayDishes || []).length} 道`
+  )
   await mp.navigateBack()
+  await sleep(900)
   await sleep(600)
 
   // 干饭足迹

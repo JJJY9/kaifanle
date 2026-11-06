@@ -144,6 +144,16 @@ Page({
     this.load()
   },
 
+  onHealthJump(e: any) {
+    const filter = String(e.currentTarget.dataset.filter || '')
+    if (!filter) {
+      return
+    }
+    wx.navigateTo({
+      url: `/pages/kitchen/index?filter=${filter}`
+    })
+  },
+
   async onExportFile() {
     if (this.data.exportingFile) {
       return

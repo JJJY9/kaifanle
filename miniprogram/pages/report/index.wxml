@@ -44,21 +44,37 @@
         <text class="health-sub">共 {{health.total}} 道菜</text>
       </view>
       <view class="health-row">
-        <view class="health-item {{health.noRecipe ? 'warn' : ''}}">
+        <view
+          class="health-item jump {{health.noRecipe ? 'warn' : ''}}"
+          data-filter="missing"
+          bindtap="onHealthJump"
+        >
           <text class="health-num">{{health.noRecipe}}</text>
-          <text class="health-label">缺做法</text>
+          <text class="health-label">缺做法 ›</text>
         </view>
-        <view class="health-item {{health.lowStock ? 'warn' : ''}}">
+        <view
+          class="health-item jump {{health.lowStock ? 'warn' : ''}}"
+          data-filter="low"
+          bindtap="onHealthJump"
+        >
           <text class="health-num">{{health.lowStock}}</text>
-          <text class="health-label">低库存</text>
+          <text class="health-label">低库存 ›</text>
         </view>
-        <view class="health-item">
+        <view
+          class="health-item jump"
+          data-filter="soldout"
+          bindtap="onHealthJump"
+        >
           <text class="health-num">{{health.soldout}}</text>
-          <text class="health-label">售罄</text>
+          <text class="health-label">售罄 ›</text>
         </view>
-        <view class="health-item">
+        <view
+          class="health-item jump"
+          data-filter="off"
+          bindtap="onHealthJump"
+        >
           <text class="health-num">{{health.off}}</text>
-          <text class="health-label">已下架</text>
+          <text class="health-label">已下架 ›</text>
         </view>
       </view>
     </view>

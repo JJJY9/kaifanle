@@ -199,6 +199,11 @@
   font-size: 18rpx;
 }
 
+.health-item.jump:active {
+  transform: translateY(2rpx);
+  opacity: 0.8;
+}
+
 .export-btn {
   display: flex;
   align-items: center;

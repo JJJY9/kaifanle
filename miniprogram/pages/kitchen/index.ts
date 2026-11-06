@@ -103,7 +103,7 @@ Page({
     weekBarTotal: 0,
     todo: { pending: 0, replies: 0, lowStock: 0 },
     dishKeyword: '',
-    dishFilter: 'all' as 'all' | 'low' | 'soldout' | 'off',
+    dishFilter: 'all' as 'all' | 'low' | 'soldout' | 'off' | 'missing',
     dishCategory: 'all',
     dishFilters: [] as any[],
     dishCategoryOptions: [] as any[],
@@ -872,6 +872,13 @@ Page({
     })
   },
 
+  onLoad(options: any) {
+    const filter = String((options && options.filter) || '')
+    if (['low', 'soldout', 'off', 'missing'].indexOf(filter) > -1) {
+      this.setData({ dishFilter: filter })
+    }
+  },
+
   applyDishFilter() {
     const dishes = this.data.dishes || []
     const keyword = String(this.data.dishKeyword || '')
@@ -907,6 +914,9 @@ Page({
       if (filter === 'off') {
         return dish.status === 'off'
       }
+      if (filter === 'missing') {
+        return !dish.recipe
+      }
       return true
     })
     this.setData({
@@ -935,6 +945,11 @@ Page({
           key: 'off',
           label: '已下架',
           count: dishes.filter(dish => dish.status === 'off').length
+        },
+        {
+          key: 'missing',
+          label: '缺做法',
+          count: dishes.filter(dish => !dish.recipe).length
         }
       ]
     })
