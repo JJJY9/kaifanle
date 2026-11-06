@@ -110,6 +110,29 @@
   margin-top: 28rpx;
 }
 
+.date-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 14rpx;
+}
+
+.date-pill {
+  padding: 8rpx 20rpx;
+  background: #FFF7DA;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  box-shadow: 3rpx 3rpx 0 #111111;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
+.date-hint {
+  color: #5C5C5C;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
 .meal-tab {
   flex: 1;
   display: flex;

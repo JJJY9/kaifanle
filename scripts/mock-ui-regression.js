@@ -397,7 +397,23 @@ function invoke(mp, body) {
     ),
     `今天 ${savedDate}`
   )
-  await mp.navigateBack()
+  await invoke(
+    mp,
+    `page.onBook({ currentTarget: { dataset: { meal: ${JSON.stringify(
+      savedMeal
+    )}, date: ${JSON.stringify(savedDate)} } } })`
+  )
+  await sleep(1900)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 本周饭表预订跳转',
+    page.path === 'pages/home/index' &&
+      data.selectedMeal === savedMeal &&
+      data.selectedDate === savedDate,
+    `${data.selectedDate} · ${data.selectedMeal}`
+  )
+  await mp.switchTab('/pages/home/index')
   await sleep(900)
   // 恢复默认，保持 mock 状态干净
   await mp.navigateTo('/pages/menu-edit/index')
