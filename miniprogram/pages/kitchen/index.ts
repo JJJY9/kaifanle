@@ -28,6 +28,17 @@ const REPLY_PHRASES = [
   '抱歉翻车了，下次补偿'
 ]
 
+function orderReceiptLines(order: any): any[] {
+  return (order.items || []).map((item: any, index: number) => ({
+    key: `${index}-${item.dishId || item.name}`,
+    name: item.name,
+    qty: Number(item.qty || 0),
+    lineTotal: Number(item.price || 0) * Number(item.qty || 0),
+    specText: Array.isArray(item.specs) ? item.specs.join(' / ') : '',
+    note: item.note || ''
+  }))
+}
+
 function receiptText(order: any, lines: any[]): string {
   const head = [`【张饱饭堂】#${order.no || ''}`]
   const meta = [order.dateText, order.mealText, order.mode, order.expectedTime]
@@ -80,6 +91,7 @@ Page({
     receiptVisible: false,
     receipt: null as any,
     receiptLines: [] as any[],
+    copyingReceipts: false,
     movingId: '',
     showHistory: false,
     showPrep: false,
@@ -1094,16 +1106,7 @@ Page({
     if (!order) {
       return
     }
-    const receiptLines = (order.items || []).map(
-      (item: any, index: number) => ({
-        key: `${index}-${item.dishId || item.name}`,
-        name: item.name,
-        qty: Number(item.qty || 0),
-        lineTotal: Number(item.price || 0) * Number(item.qty || 0),
-        specText: Array.isArray(item.specs) ? item.specs.join(' / ') : '',
-        note: item.note || ''
-      })
-    )
+    const receiptLines = orderReceiptLines(order)
     this.setData({
       receiptVisible: true,
       receipt: order,
@@ -1128,6 +1131,33 @@ Page({
       data: receiptText(order, this.data.receiptLines || []),
       success: () => {
         wx.showToast({ title: '小票已复制', icon: 'none' })
+      }
+    })
+  },
+
+  onCopyActiveReceipts() {
+    if (this.data.copyingReceipts) {
+      return
+    }
+    const orders = (this.data.orders || []).slice(0, 20)
+    if (!orders.length) {
+      wx.showToast({ title: '今天还没有待处理的单', icon: 'none' })
+      return
+    }
+    this.setData({ copyingReceipts: true })
+    const text = orders
+      .map((order: any) => receiptText(order, orderReceiptLines(order)))
+      .join('\n\n---\n\n')
+    wx.setClipboardData({
+      data: text,
+      success: () => {
+        wx.showToast({ title: `已复制 ${orders.length} 张小票`, icon: 'none' })
+      },
+      fail: () => {
+        wx.showToast({ title: '复制失败，再试一次', icon: 'none' })
+      },
+      complete: () => {
+        this.setData({ copyingReceipts: false })
       }
     })
   },

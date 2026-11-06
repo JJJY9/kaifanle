@@ -1070,3 +1070,24 @@
   font-size: 22rpx;
   word-break: break-all;
 }
+
+.orders-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.copy-receipts {
+  padding: 6rpx 18rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  box-shadow: 2rpx 2rpx 0 #111111;
+  font-size: 21rpx;
+  font-weight: 800;
+}
+
+.copy-receipts.disabled {
+  opacity: 0.5;
+}

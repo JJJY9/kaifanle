@@ -340,6 +340,20 @@ function invoke(mp, body) {
   check('mock 厨房预订展开', data.showPreorders === true)
   await invoke(mp, 'page.onTogglePreorders()')
   await sleep(200)
+  await invoke(mp, 'page.onCopyActiveReceipts()')
+  await sleep(700)
+  const receiptClip = await mp.evaluate(
+    new Function(
+      "return new Promise(resolve => wx.getClipboardData({ success: r => resolve(r.data || ''), fail: () => resolve('') }))"
+    )
+  )
+  check(
+    'mock 批量复制小票',
+    typeof receiptClip === 'string' &&
+      receiptClip.indexOf('【张饱饭堂】') > -1 &&
+      receiptClip.indexOf('合计') > -1,
+    `${String(receiptClip || '').length} 字`
+  )
   check(
     'mock 近7天柱状图',
     Array.isArray(data.weekBars) && data.weekBars.length === 7,
