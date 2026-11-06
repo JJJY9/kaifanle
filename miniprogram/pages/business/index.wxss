@@ -128,6 +128,12 @@
   font-size: 26rpx;
 }
 
+.note-hint {
+  margin-top: 6rpx;
+  color: #5C5C5C;
+  font-size: 20rpx;
+}
+
 .date-chips {
   display: flex;
   flex-wrap: wrap;

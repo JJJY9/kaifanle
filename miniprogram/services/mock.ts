@@ -42,6 +42,7 @@ const DEFAULT_BUSINESS: Business = {
   closedNote: '今天休息，明天见',
   notice: '',
   recommendText: '今日推荐',
+  lowStockThreshold: 3,
   closedDates: [],
   weeklyClosed: []
 }
@@ -352,6 +353,16 @@ function saveWishes(): void {
   }
 }
 
+function normalizeLowStockThreshold(value: any): number {
+  if (value === undefined || value === null || String(value).trim() === '') {
+    return 3
+  }
+  const number = Number(value)
+  return isFinite(number) && number >= 0 && number <= 99
+    ? Math.floor(number)
+    : 3
+}
+
 function loadBusiness(): Business {
   if (businessCache) {
     return businessCache
@@ -360,6 +371,10 @@ function loadBusiness(): Business {
     const raw = wx.getStorageSync(BUSINESS_KEY)
     if (raw) {
       businessCache = JSON.parse(raw)
+      businessCache.lowStockThreshold = normalizeLowStockThreshold(
+        businessCache.lowStockThreshold
+      )
+      saveBusiness()
       return businessCache as Business
     }
   } catch (e) {
@@ -1464,12 +1479,23 @@ export async function getBusiness(): Promise<Business> {
   data.weeklyClosed = Array.isArray(data.weeklyClosed)
     ? data.weeklyClosed
     : []
+  data.lowStockThreshold = normalizeLowStockThreshold(
+    data.lowStockThreshold
+  )
   return data
 }
 
 export async function updateBusiness(payload: Business): Promise<Business> {
   await delay(80)
-  businessCache = JSON.parse(JSON.stringify(payload))
+  const existing = loadBusiness()
+  const next = JSON.parse(JSON.stringify(payload))
+  if (next.lowStockThreshold === undefined) {
+    next.lowStockThreshold = existing.lowStockThreshold
+  }
+  next.lowStockThreshold = normalizeLowStockThreshold(
+    next.lowStockThreshold
+  )
+  businessCache = next
   saveBusiness()
   return JSON.parse(JSON.stringify(businessCache))
 }

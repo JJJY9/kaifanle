@@ -62,6 +62,7 @@ Page({
     closedNote: '',
     notice: '',
     recommendText: '',
+    lowStockThreshold: '3',
     dateOptions: [] as DateView[],
     weekdays: [] as WeekdayView[]
   },
@@ -102,6 +103,11 @@ Page({
         closedNote: business.closedNote,
         notice: business.notice || '',
         recommendText: business.recommendText || '',
+        lowStockThreshold: String(
+          typeof business.lowStockThreshold === 'number'
+            ? business.lowStockThreshold
+            : 3
+        ),
         dateOptions,
         weekdays,
         loading: false,
@@ -153,6 +159,10 @@ Page({
     this.setData({ recommendText: e.detail.value })
   },
 
+  onLowStockThreshold(e: any) {
+    this.setData({ lowStockThreshold: e.detail.value })
+  },
+
   onToggleClosedDate(e: any) {
     const value = e.currentTarget.dataset.value
     const dateOptions = this.data.dateOptions.map(option =>
@@ -183,6 +193,13 @@ Page({
       notice: this.data.notice.trim().slice(0, 60),
       recommendText:
         this.data.recommendText.trim().slice(0, 12) || '今日推荐',
+      lowStockThreshold: (() => {
+        const raw = String(this.data.lowStockThreshold || '').trim()
+        const value = Number(raw)
+        return raw && isFinite(value) && value >= 0 && value <= 99
+          ? Math.floor(value)
+          : 3
+      })(),
       closedDates: this.data.dateOptions
         .filter(option => option.closed)
         .map(option => option.value),

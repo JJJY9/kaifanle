@@ -2,6 +2,7 @@ import type { KitchenReport } from '../../services/types'
 import {
   exportData,
   getAllOrders,
+  getBusiness,
   getDishes,
   getKitchenReport
 } from '../../services/api'
@@ -47,15 +48,26 @@ Page({
     const seq = ++this._loadSeq
     this.setData({ loading: true, error: '' })
     try {
-      const [report, dishes] = await Promise.all([
+      const [report, dishes, business] = await Promise.all([
         getKitchenReport(),
-        getDishes()
+        getDishes(),
+        getBusiness().catch(() => null)
       ])
       if (seq !== this._loadSeq) {
         return
       }
+      const thresholdValue = business
+        ? Number(business.lowStockThreshold)
+        : 3
+      const lowStockThreshold =
+        isFinite(thresholdValue) &&
+        thresholdValue >= 0 &&
+        thresholdValue <= 99
+          ? Math.floor(thresholdValue)
+          : 3
       const health = {
         total: dishes.length,
+        lowStockThreshold,
         noRecipe: dishes.filter(dish => !dish.recipe).length,
         soldout: dishes.filter(
           dish => dish.status === 'soldout' || dish.stock === 0
@@ -66,7 +78,7 @@ Page({
             dish.status === 'on' &&
             typeof dish.stock === 'number' &&
             dish.stock >= 0 &&
-            dish.stock <= 3
+            dish.stock <= lowStockThreshold
         ).length
       }
       const maxAmount = Math.max(

@@ -73,6 +73,16 @@
         maxlength="12"
         bindinput="onRecommendText"
       />
+
+      <view class="block-title">低库存提醒阈值</view>
+      <input
+        class="note"
+        type="number"
+        placeholder="默认 3 份"
+        value="{{lowStockThreshold}}"
+        bindinput="onLowStockThreshold"
+      />
+      <view class="note-hint">厨房低库存筛选、补货和月报体检按这个份数提醒</view>
     </view>
 
     <view class="card block">

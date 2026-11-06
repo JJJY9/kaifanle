@@ -37,6 +37,7 @@ const DEFAULT_BUSINESS = {
   closedNote: '今天休息，明天见',
   notice: '',
   recommendText: '今日推荐',
+  lowStockThreshold: 3,
   closedDates: [],
   weeklyClosed: []
 }
@@ -350,6 +351,16 @@ function normalizeBusiness(value) {
       String(source.recommendText || '')
         .trim()
         .slice(0, 12) || DEFAULT_BUSINESS.recommendText,
+    lowStockThreshold: (() => {
+      const raw = source.lowStockThreshold
+      if (raw === undefined || raw === null || String(raw).trim() === '') {
+        return DEFAULT_BUSINESS.lowStockThreshold
+      }
+      const value = Number(raw)
+      return isFinite(value) && value >= 0 && value <= 99
+        ? Math.floor(value)
+        : DEFAULT_BUSINESS.lowStockThreshold
+    })(),
     // 指定休息日（YYYY-MM-DD），最多 14 天
     closedDates: Array.isArray(source.closedDates)
       ? source.closedDates
@@ -428,7 +439,13 @@ async function updateBusiness(payload, openid) {
   if (!config || !config.initialized) {
     throw new Error('云数据库还没初始化')
   }
-  const business = normalizeBusiness(payload)
+  const source = Object.assign({}, payload)
+  if (source.lowStockThreshold === undefined) {
+    // 旧客户端不带这个字段时保留已配置的阈值
+    source.lowStockThreshold =
+      config.business && config.business.lowStockThreshold
+  }
+  const business = normalizeBusiness(source)
   await db
     .collection('config')
     .doc(CONFIG_ID)

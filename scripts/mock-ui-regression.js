@@ -559,6 +559,11 @@ function invoke(mp, body) {
   data = await page.data()
   check('mock 厨房加载', (data.dishes || []).length > 0, `${data.dishes.length} 道菜`)
   check(
+    'mock 低库存阈值默认',
+    Number(data.lowStockThreshold) === 3,
+    `${data.lowStockThreshold} 份`
+  )
+  check(
     'mock 今日营业开关初始',
     data.todayClosed === false,
     data.todayClosed ? '休息中' : '营业中'
@@ -1090,7 +1095,7 @@ function invoke(mp, body) {
   await sleep(1500)
   await invoke(
     mp,
-    "page.onText({ detail: { value: '批量测试菜,9.9,主食,午晚,5' } })"
+    "page.onText({ detail: { value: '批量测试菜,9.9,主食,午晚,2' } })"
   )
   await sleep(400)
   page = await current()
@@ -1134,7 +1139,7 @@ function invoke(mp, body) {
     'mock 批量导入菜品数据',
     Boolean(importedDish) &&
       Number(importedDish.price) === 9.9 &&
-      Number(importedDish.stock) === 5 &&
+      Number(importedDish.stock) === 2 &&
       importedDish.meals.indexOf('lunch') > -1 &&
       importedDish.meals.indexOf('dinner') > -1,
     importedDish
@@ -1262,6 +1267,11 @@ function invoke(mp, body) {
   data = await page.data()
   check('mock 营业设置加载', Array.isArray(data.mealViews) && data.mealViews.length === 3)
   check(
+    'mock 低库存阈值设置加载',
+    String(data.lowStockThreshold) === '3',
+    `${data.lowStockThreshold} 份`
+  )
+  check(
     'mock 休息日选项',
     Array.isArray(data.dateOptions) && data.dateOptions.length === 8
   )
@@ -1323,6 +1333,54 @@ function invoke(mp, body) {
   )
   await invoke(mp, 'page.onSave()')
   await sleep(1100)
+
+  // 低库存阈值：营业设置可改，厨房筛选跟随
+  await mp.navigateTo('/pages/business/index')
+  await sleep(1200)
+  await invoke(mp, "page.setData({ lowStockThreshold: '0' })")
+  await invoke(mp, 'page.onSave()')
+  await sleep(1000)
+  await mp.navigateTo('/pages/kitchen/index')
+  await sleep(2300)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 低库存阈值生效',
+    Number(data.lowStockThreshold) === 0,
+    `${data.lowStockThreshold} 份`
+  )
+  await invoke(
+    mp,
+    "page.onDishFilter({ currentTarget: { dataset: { filter: 'low' } } })"
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  const lowAtZero = (data.displayDishes || []).length
+  await mp.navigateBack()
+  await sleep(800)
+  await mp.navigateTo('/pages/business/index')
+  await sleep(1200)
+  await invoke(mp, "page.setData({ lowStockThreshold: '3' })")
+  await invoke(mp, 'page.onSave()')
+  await sleep(1000)
+  await mp.navigateTo('/pages/kitchen/index')
+  await sleep(2300)
+  await invoke(
+    mp,
+    "page.onDishFilter({ currentTarget: { dataset: { filter: 'low' } } })"
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 低库存阈值恢复',
+    Number(data.lowStockThreshold) === 3 &&
+      (data.displayDishes || []).length > lowAtZero,
+    `阈值0 ${lowAtZero} 道 → 阈值3 ${(data.displayDishes || []).length} 道`
+  )
+  await mp.navigateBack()
+  await sleep(800)
 
   // 排菜单
   await mp.navigateTo('/pages/menu-edit/index')
@@ -1833,7 +1891,8 @@ function invoke(mp, body) {
       data.report.totalOrders >= 1 &&
       (data.report.topDishes || []).length >= 1 &&
       Boolean(data.health) &&
-      data.health.total >= 1,
+      data.health.total >= 1 &&
+      data.health.lowStock >= 1,
     data.report
       ? `${data.report.totalOrders} 单 / ¥${data.report.revenue}`
       : '没有数据'

@@ -175,6 +175,7 @@ export interface Business {
   closedNote: string
   notice?: string
   recommendText?: string
+  lowStockThreshold?: number
   closedDates?: string[]
   weeklyClosed?: number[]
 }

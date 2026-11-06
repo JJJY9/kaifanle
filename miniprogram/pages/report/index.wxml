@@ -58,7 +58,7 @@
           bindtap="onHealthJump"
         >
           <text class="health-num">{{health.lowStock}}</text>
-          <text class="health-label">低库存 ›</text>
+          <text class="health-label">低库存 ≤{{health.lowStockThreshold}} ›</text>
         </view>
         <view
           class="health-item jump"

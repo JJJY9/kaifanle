@@ -47,6 +47,7 @@ Page({
     stats: null as any,
     loading: true,
     todayClosed: false,
+    lowStockThreshold: 3,
     forbidden: false,
     error: '',
     busyId: '',
@@ -236,6 +237,7 @@ Page({
       let stats = this.data.stats
       let statsRefreshed = false
       let todayClosed = this.data.todayClosed
+      let lowStockThreshold = this.data.lowStockThreshold || 3
       if (!silent) {
         const business = await getBusiness().catch(() => null)
         if (business) {
@@ -243,6 +245,10 @@ Page({
             ? business.closedDates
             : []
           todayClosed = closedDates.indexOf(dateInputString()) > -1
+          const threshold = Number(business.lowStockThreshold)
+          if (isFinite(threshold) && threshold >= 0 && threshold <= 99) {
+            lowStockThreshold = Math.floor(threshold)
+          }
         }
       }
       if (!silent || !dishes.length) {
@@ -639,7 +645,7 @@ Page({
                 dish.status === 'on' &&
                 typeof dish.stock === 'number' &&
                 dish.stock >= 0 &&
-                dish.stock <= 3
+                dish.stock <= lowStockThreshold
             ).length
           }
 
@@ -658,6 +664,7 @@ Page({
         prepTotal,
         todo,
         todayClosed,
+        lowStockThreshold,
         posterPath: statsRefreshed ? '' : this.data.posterPath,
         weekStats,
         weekBars,
@@ -888,7 +895,7 @@ Page({
           item.status === 'on' &&
           typeof item.stock === 'number' &&
           item.stock >= 0 &&
-          item.stock <= 3
+          item.stock <= this.lowStockLimit()
       ).length
       this.setData(
         {
@@ -917,7 +924,7 @@ Page({
         dish.status === 'on' &&
         typeof dish.stock === 'number' &&
         dish.stock >= 0 &&
-        dish.stock <= 3
+        dish.stock <= this.lowStockLimit()
     )
     if (!low.length) {
       wx.showToast({ title: '没有低库存的菜', icon: 'none' })
@@ -925,7 +932,7 @@ Page({
     }
     const res: any = await wx.showModal({
       title: '全部补 5 份？',
-      content: `有 ${low.length} 道菜库存 ≤3 份，会给每道菜加 5 份。`,
+      content: `有 ${low.length} 道菜库存 ≤${this.data.lowStockThreshold || 3} 份，会给每道菜加 5 份。`,
       confirmText: '补货',
       cancelText: '算了'
     })
@@ -962,7 +969,7 @@ Page({
         dish.status === 'on' &&
         typeof dish.stock === 'number' &&
         dish.stock >= 0 &&
-        dish.stock <= 3
+        dish.stock <= this.lowStockLimit()
     ).length
     this.setData(
       {
@@ -1044,7 +1051,7 @@ Page({
         item.status === 'on' &&
         typeof item.stock === 'number' &&
         item.stock >= 0 &&
-        item.stock <= 3
+        item.stock <= this.lowStockLimit()
     ).length
     this.setData(
       {
@@ -1080,7 +1087,7 @@ Page({
       dish.status === 'on' &&
       typeof dish.stock === 'number' &&
       dish.stock >= 0 &&
-      dish.stock <= 3
+      dish.stock <= this.lowStockLimit()
     const soldout = (dish: any) =>
       dish.status === 'soldout' || dish.stock === 0
     const displayDishes = dishes.filter(dish => {
@@ -1194,6 +1201,13 @@ Page({
     this.setData({ orderSort: sort, orders: sorted }, () => {
       this.setData({ ordersView: this.filterOrders(sorted) })
     })
+  },
+
+  lowStockLimit(): number {
+    const value = Number(this.data.lowStockThreshold)
+    return isFinite(value) && value >= 0 && value <= 99
+      ? Math.floor(value)
+      : 3
   },
 
   filterOrders(list: any[]): any[] {
