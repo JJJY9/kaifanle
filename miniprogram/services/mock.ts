@@ -417,18 +417,22 @@ function loadCoupons(): Coupon[] {
       usedAt: 0
     })
   }
-  // 快过期示例券：过期或缺失时续上一张，方便演示提醒
+  // 快过期示例券：过期、缺失或不是当前用户持有时续上一张，方便演示提醒
   const seed2 = couponCache.find(item => item.id === 'coupon-seed-2')
-  if (!seed2 || Number(seed2.expiresAt || 0) < now) {
+  if (
+    !seed2 ||
+    Number(seed2.expiresAt || 0) < now ||
+    seed2.owner !== 'mock-openid'
+  ) {
     couponCache = couponCache.filter(item => item.id !== 'coupon-seed-2')
     couponCache.push({
       id: 'coupon-seed-2',
       title: '奶茶券',
       note: '三天内用掉，过期作废',
       status: 'unused',
-      owner: '',
+      owner: 'mock-openid',
       createdAt: now - 20 * 60 * 60 * 1000,
-      claimedAt: 0,
+      claimedAt: now - 20 * 60 * 60 * 1000,
       usedAt: 0,
       expiresAt: now + 2 * 24 * 60 * 60 * 1000
     })

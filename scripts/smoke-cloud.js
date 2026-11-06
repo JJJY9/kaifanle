@@ -43,6 +43,15 @@ const command = {
   gte(value) {
     return { __op: 'gte', value }
   },
+  lt(value) {
+    return { __op: 'lt', value }
+  },
+  lte(value) {
+    return { __op: 'lte', value }
+  },
+  exists(value) {
+    return { __op: 'exists', value }
+  },
   neq(value) {
     return { __op: 'neq', value }
   },
@@ -60,6 +69,15 @@ function matches(doc, cond) {
     }
     if (expected && expected.__op === 'gte') {
       return actual >= expected.value
+    }
+    if (expected && expected.__op === 'lt') {
+      return actual < expected.value
+    }
+    if (expected && expected.__op === 'lte') {
+      return actual <= expected.value
+    }
+    if (expected && expected.__op === 'exists') {
+      return expected.value ? actual !== undefined : actual === undefined
     }
     if (expected && expected.__op === 'neq') {
       return actual !== expected.value
@@ -1929,6 +1947,23 @@ async function run() {
     'girl-openid'
   )
   assert.strictEqual(batchOrder.ok, true)
+  const futureOrder = await call(
+    'createOrder',
+    {
+      items: [{ dishId: 'd02', qty: 1, specs: [] }],
+      meal: 'lunch',
+      expectedTime: '12:00',
+      mode: '在家吃',
+      scheduledDate: chinaDate(1)
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(futureOrder.ok, true)
+  // 未来预订单不能占掉「上次吃」「今天这单」的名额
+  res = await call('getLastOrder', {}, 'girl-openid')
+  assert.strictEqual(res.data.id, batchOrder.data.id)
+  res = await call('getMyActiveOrder', {}, 'girl-openid')
+  assert.strictEqual(res.data.id, batchOrder.data.id)
   res = await call('acceptPendingOrders', {}, 'girl-openid')
   assert.strictEqual(res.ok, false)
   res = await call('acceptPendingOrders', {}, 'admin-openid')
@@ -1944,6 +1979,32 @@ async function run() {
   assert.ok(
     (res.data.timeline || []).some(entry => entry.status === 'accepted')
   )
+  res = await call(
+    'getOrder',
+    { id: futureOrder.data.id },
+    'admin-openid'
+  )
+  assert.strictEqual(res.data.status, 'pending')
+
+  // 备注只能在开火前改：已接单可以改，开火后条件更新失败
+  res = await call(
+    'updateOrderNote',
+    { id: batchOrder.data.id, note: '开火前改一句' },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  res = await call(
+    'updateOrderStatus',
+    { id: batchOrder.data.id, status: 'cooking' },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  res = await call(
+    'updateOrderNote',
+    { id: batchOrder.data.id, note: '开火后改不了' },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, false)
 
   console.log(
     '云函数冒烟测试通过：初始化、菜单、菜品 CRUD、下单计价、权限、状态流转、取消订单、订单评价与回复、许愿池、营业设置、每日菜单、口味档案、今日看板、爱心券、售罄拦截、订阅消息。'

@@ -8,6 +8,12 @@ import {
 } from '../../services/api'
 import { formatDate } from '../../utils/format'
 
+// 按北京时间取日期，判断券是不是「今天」到期
+function chinaDateKey(value: number): string {
+  const d = new Date(Number(value) + 8 * 60 * 60 * 1000)
+  return `${d.getUTCFullYear()}-${d.getUTCMonth() + 1}-${d.getUTCDate()}`
+}
+
 Page({
   data: {
     coupons: [] as any[],
@@ -47,22 +53,29 @@ Page({
           coupon.expiresAt && Number(coupon.expiresAt) < now
         )
         const expiringSoon = Boolean(
-          !expired &&
+          mine &&
+            !expired &&
             coupon.status === 'unused' &&
             coupon.expiresAt &&
             Number(coupon.expiresAt) - now <= soonMs
         )
-        const leftHours = coupon.expiresAt
-          ? (Number(coupon.expiresAt) - now) / (60 * 60 * 1000)
-          : 0
+        const expiringToday = Boolean(
+          expiringSoon &&
+            chinaDateKey(Number(coupon.expiresAt)) === chinaDateKey(now)
+        )
         return {
           ...coupon,
           expired,
           expiringSoon,
           expiringText: expiringSoon
-            ? leftHours <= 24
+            ? expiringToday
               ? '今天到期'
-              : `还剩 ${Math.ceil(leftHours / 24)} 天`
+              : `还剩 ${Math.max(
+                  1,
+                  Math.ceil(
+                    (Number(coupon.expiresAt) - now) / (24 * 60 * 60 * 1000)
+                  )
+                )} 天`
             : '',
           statusText: expired
             ? '已过期'

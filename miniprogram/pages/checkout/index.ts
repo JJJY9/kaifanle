@@ -359,6 +359,7 @@ Page({
       () => {
         this.checkClosed(this.data.meal)
         this.checkSlot(this.data.meal, date)
+        this.loadKitchenHint()
       }
     )
   },

@@ -59,10 +59,11 @@ function invoke(mp, body) {
   check(
     'mock 首页进行中订单',
     Boolean(data.activeOrder) &&
+      data.activeOrder.id === 'seed-1' &&
       String(data.activeOrder.statusText || '').length > 0 &&
       String(data.activeOrder.summary || '').length > 0,
     data.activeOrder
-      ? `${data.activeOrder.mealText} · ${data.activeOrder.statusText}`
+      ? `${data.activeOrder.id} · ${data.activeOrder.mealText} · ${data.activeOrder.statusText}`
       : '没有进行中订单'
   )
   check(
@@ -221,6 +222,32 @@ function invoke(mp, body) {
   check(
     'mock 结算厨房提示',
     String(data.kitchenHint || '').indexOf('厨房') > -1,
+    data.kitchenHint
+  )
+  const hintToday = data.todayDate
+  await invoke(
+    mp,
+    `page.onDateChange({ detail: { value: '${tomorrowForCart}' } })`
+  )
+  await sleep(1400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 切到预订隐藏排队',
+    data.scheduledDate === tomorrowForCart && data.kitchenHint === '',
+    data.kitchenHint || '已隐藏'
+  )
+  await invoke(
+    mp,
+    `page.onDateChange({ detail: { value: '${hintToday}' } })`
+  )
+  await sleep(1400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 切回今天恢复排队',
+    data.scheduledDate === hintToday &&
+      String(data.kitchenHint || '').indexOf('厨房') > -1,
     data.kitchenHint
   )
   if (porridgeLine) {
@@ -1647,7 +1674,9 @@ function invoke(mp, body) {
   data = await page.data()
   check(
     'mock 上次吃入口',
-    Boolean(data.lastOrder) && String(data.lastOrder.summary || '').length > 0,
+    Boolean(data.lastOrder) &&
+      data.lastOrder.id === 'seed-1' &&
+      String(data.lastOrder.summary || '').length > 0,
     data.lastOrder ? `${data.lastOrder.mealText} · ${data.lastOrder.summary}` : '没有记录'
   )
   await invoke(mp, 'page.onRepeatLast()')
@@ -1696,6 +1725,13 @@ function invoke(mp, body) {
     Number(data.pendingCount) === 0 &&
       (data.orders || []).every(order => order.status !== 'pending'),
     `剩余待接 ${data.pendingCount} 单`
+  )
+  check(
+    'mock 全部接单不动预订单',
+    (data.preorders || []).some(
+      order => order.id === 'seed-3' && order.status === 'pending'
+    ),
+    `预订单 ${(data.preorders || []).length} 单`
   )
 
   const failed = results.filter(r => !r.ok)

@@ -304,10 +304,12 @@ export async function acceptPendingOrders(): Promise<{
   done: number
   total: number
 }> {
-  if (USE_CLOUD) {
-    return callApi<{ done: number; total: number }>('acceptPendingOrders')
-  }
-  return mock.acceptPendingOrders()
+  const result = USE_CLOUD
+    ? await callApi<{ done: number; total: number }>('acceptPendingOrders')
+    : await mock.acceptPendingOrders()
+  activeOrderCache = null
+  lastOrderCache = null
+  return result
 }
 
 export async function getAllOrders(): Promise<Order[]> {
