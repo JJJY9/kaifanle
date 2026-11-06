@@ -100,6 +100,7 @@ export interface Order {
   mode: string
   note: string
   noteUpdatedAt?: number
+  slotUpdatedAt?: number
   address?: string
   scheduledDate?: string
   profile?: {

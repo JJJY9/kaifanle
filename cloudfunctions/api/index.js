@@ -115,6 +115,8 @@ async function route(action, payload, openid) {
       return cancelOrder(payload, openid)
     case 'updateOrderNote':
       return updateOrderNote(payload, openid)
+    case 'updateOrderSlot':
+      return updateOrderSlot(payload, openid)
     case 'urgeOrder':
       return urgeOrder(payload, openid)
     case 'rateOrder':
@@ -2018,6 +2020,104 @@ async function updateOrderNote(payload, openid) {
   if (!upd.stats || upd.stats.updated !== 1) {
     throw new Error('订单状态刚刚变了，刷新看看')
   }
+  return withId(Object.assign({}, order, data))
+}
+
+// 顾客改餐次/日期：仅未接单时，重新校验营业状态与菜单供应
+async function updateOrderSlot(payload, openid) {
+  const id = String((payload && payload.id) || '')
+  const meal = MEALS.indexOf(payload && payload.meal) > -1
+    ? payload.meal
+    : ''
+  if (!id || !meal) {
+    throw new Error('参数不完整')
+  }
+  let order
+  try {
+    const res = await db.collection('orders').doc(id).get()
+    order = res.data
+  } catch (e) {
+    if (isMissingDocError(e)) {
+      throw new Error('订单不存在')
+    }
+    throw e
+  }
+  if (order._openid !== openid) {
+    throw new Error('只能改自己的订单')
+  }
+  if (order.status !== 'pending') {
+    throw new Error('接单后就不能改时间啦')
+  }
+  const today = chinaDateString()
+  const date = String((payload && payload.scheduledDate) || '').slice(0, 10)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new Error('日期不正确')
+  }
+  const todayStart = Date.parse(today + 'T00:00:00+08:00')
+  const targetStart = Date.parse(date + 'T00:00:00+08:00')
+  if (
+    !isFinite(targetStart) ||
+    targetStart < todayStart ||
+    targetStart > todayStart + 7 * 24 * 60 * 60 * 1000
+  ) {
+    throw new Error('只能改到今天到 7 天内')
+  }
+  const config = await getConfig()
+  const business = normalizeBusiness(config && config.business)
+  const setting = business[meal]
+  if (!setting.open) {
+    throw new Error('这一餐还没开火，换一餐吧')
+  }
+  if (date === today) {
+    const current = chinaNow()
+    const [hour, minute] = setting.deadline.split(':').map(Number)
+    if (current.h * 60 + current.m > hour * 60 + minute) {
+      throw new Error('这一餐已经截单啦')
+    }
+  }
+  if (
+    Array.isArray(business.closedDates) &&
+    business.closedDates.indexOf(date) > -1
+  ) {
+    throw new Error('这一天休息，换个日子吧')
+  }
+  if (
+    Array.isArray(business.weeklyClosed) &&
+    business.weeklyClosed.indexOf(chinaWeekday(date)) > -1
+  ) {
+    throw new Error('这一天固定休息，换个日子吧')
+  }
+  const menu = await getMenuDoc(date, meal)
+  if (menu.exists && menu.open === false) {
+    throw new Error('这一餐还没排菜单')
+  }
+  const ids = order.items.map(item => item.dishId)
+  const dishRes = await db
+    .collection('dishes')
+    .where({ _id: _.in(ids) })
+    .get()
+  const dishMap = {}
+  dishRes.data.forEach(dish => {
+    dishMap[dish._id] = dish
+  })
+  for (const item of order.items) {
+    const dish = dishMap[item.dishId]
+    if (!dish || dish.status === 'off') {
+      throw new Error(`${item.name} 已经下架了`)
+    }
+    if (!Array.isArray(dish.meals) || dish.meals.indexOf(meal) === -1) {
+      throw new Error(`${item.name} 这一餐不供应`)
+    }
+    if (menu.exists && menu.dishIds.indexOf(item.dishId) === -1) {
+      throw new Error(`${item.name} 不在这一餐的菜单里`)
+    }
+  }
+  const data = {
+    meal,
+    scheduledDate: date,
+    slotUpdatedAt: Date.now()
+  }
+  await db.collection('orders').doc(id).update({ data })
   return withId(Object.assign({}, order, data))
 }
 

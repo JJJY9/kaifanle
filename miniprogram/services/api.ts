@@ -380,6 +380,21 @@ export async function updateOrderNote(
   return mock.updateOrderNote(id, note)
 }
 
+export async function updateOrderSlot(
+  id: string,
+  meal: MealId,
+  scheduledDate: string
+): Promise<Order | null> {
+  if (USE_CLOUD) {
+    return callApi<Order | null>('updateOrderSlot', {
+      id,
+      meal,
+      scheduledDate
+    })
+  }
+  return mock.updateOrderSlot(id, meal, scheduledDate)
+}
+
 export async function urgeOrder(id: string): Promise<Order | null> {
   if (USE_CLOUD) {
     return callApi<Order | null>('urgeOrder', { id })

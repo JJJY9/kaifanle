@@ -2144,6 +2144,61 @@ async function run() {
   )
   assert.strictEqual(res.ok, false)
 
+  // 待接单改餐次/日期，接单后不能再改
+  await call(
+    'deleteMenu',
+    { date: chinaDate(1), meal: 'lunch' },
+    'admin-openid'
+  )
+  const slotOrder = await call(
+    'createOrder',
+    {
+      items: [{ dishId: 'd02', qty: 1, specs: [] }],
+      meal: 'lunch',
+      expectedTime: '12:00',
+      mode: '在家吃'
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(slotOrder.ok, true)
+  res = await call(
+    'updateOrderSlot',
+    {
+      id: slotOrder.data.id,
+      meal: 'lunch',
+      scheduledDate: chinaDate(1)
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.scheduledDate, chinaDate(1))
+  res = await call(
+    'updateOrderSlot',
+    {
+      id: slotOrder.data.id,
+      meal: 'lunch',
+      scheduledDate: chinaDate(1)
+    },
+    'stranger-openid'
+  )
+  assert.strictEqual(res.ok, false)
+  res = await call(
+    'updateOrderStatus',
+    { id: slotOrder.data.id, status: 'accepted' },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  res = await call(
+    'updateOrderSlot',
+    {
+      id: slotOrder.data.id,
+      meal: 'lunch',
+      scheduledDate: chinaDate(0)
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, false)
+
   console.log(
     '云函数冒烟测试通过：初始化、菜单、菜品 CRUD、下单计价、权限、状态流转、取消订单、订单评价与回复、许愿池、营业设置、每日菜单、口味档案、今日看板、爱心券、售罄拦截、订阅消息。'
   )

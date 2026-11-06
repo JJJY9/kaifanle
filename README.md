@@ -112,7 +112,7 @@ node scripts/init-cloud-db.js ws://127.0.0.1:9420
 
 ### 云函数动作
 
-`getCategories` / `saveCategory` / `moveCategory` / `deleteCategory` / `getDishes` / `getDish` / `getOrders` / `getOrdersPage` / `getLastOrder` / `getMyActiveOrder` / `getAllOrders` / `getActiveOrders` / `acceptPendingOrders` / `getOrder` /`createOrder` / `cancelOrder` / `updateOrderNote` / `urgeOrder` / `rateOrder` / `replyRating` / `updateOrderStatus` / `toggleDishStatus` / `saveDish` / `deleteDish` / `moveDish` /
+`getCategories` / `saveCategory` / `moveCategory` / `deleteCategory` / `getDishes` / `getDish` / `getOrders` / `getOrdersPage` / `getLastOrder` / `getMyActiveOrder` / `getAllOrders` / `getActiveOrders` / `acceptPendingOrders` / `getOrder` /`createOrder` / `cancelOrder` / `updateOrderNote` / `updateOrderSlot` / `urgeOrder` / `rateOrder` / `replyRating` / `updateOrderStatus` / `toggleDishStatus` / `saveDish` / `deleteDish` / `moveDish` /
 `getBusiness` / `updateBusiness` / `getMenuForDate` / `getWeekMenus` / `saveMenu` / `deleteMenu` / `rollMenu` / `getMenuTemplates` / `saveMenuTemplates` /
 `getMyProfile` / `saveMyProfile` / `getStats` / `getKitchenReport` / `getKitchenStatus` / `getDishSales` / `getStockLogs` / `getMyStats` / `createWish` / `getWishes` / `updateWish` / `deleteWish` /
 `createCoupon` / `getCoupons` / `getMyExpiringCoupons` / `claimCoupon` / `useCoupon` / `deleteCoupon` / `exportData` / `getMe` / `initDb`

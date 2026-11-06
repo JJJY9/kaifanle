@@ -26,6 +26,35 @@
       bindtap="onCancelOrder"
     >取消订单</view>
     <view class="copy-order" bindtap="onCopyOrderReceipt">复制小票</view>
+    <view wx:if="{{order.status === 'pending'}}" class="reschedule">
+      <view class="reschedule-toggle" bindtap="onToggleSlotEdit">{{slotEditVisible ? '收起改时间' : '改餐次 / 日期'}}</view>
+      <view wx:if="{{slotEditVisible}}" class="reschedule-panel">
+        <view class="reschedule-label">餐次</view>
+        <view class="reschedule-meals">
+          <view
+            wx:for="{{meals}}"
+            wx:key="id"
+            class="reschedule-meal {{slotMeal === item.id ? 'active' : ''}}"
+            data-meal="{{item.id}}"
+            bindtap="onSelectSlotMeal"
+          >{{item.name}}</view>
+        </view>
+        <view class="reschedule-label">日期</view>
+        <picker
+          mode="date"
+          start="{{todayDate}}"
+          end="{{maxDate}}"
+          value="{{slotDate}}"
+          bindchange="onSlotDateChange"
+        >
+          <view class="reschedule-date">📅 {{slotDateText}}</view>
+        </picker>
+        <view
+          class="reschedule-save {{slotSaving ? 'disabled' : ''}}"
+          bindtap="onSaveSlot"
+        >{{slotSaving ? '保存中…' : '保存时间'}}</view>
+      </view>
+    </view>
   </view>
 
   <view class="block card">

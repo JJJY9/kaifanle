@@ -1806,6 +1806,28 @@ function invoke(mp, body) {
     `${data.selectedMeal} · ${data.cartCount} 份`
   )
 
+  // 待接单订单改餐次
+  await mp.navigateTo('/pages/order-detail/index?id=seed-3')
+  await sleep(1600)
+  page = await current()
+  data = await page.data()
+  await invoke(mp, 'page.onToggleSlotEdit()')
+  await invoke(
+    mp,
+    "page.onSelectSlotMeal({ currentTarget: { dataset: { meal: 'dinner' } } })"
+  )
+  await invoke(mp, 'page.onSaveSlot()')
+  await sleep(1000)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 订单修改餐次',
+    Boolean(data.order) && data.order.meal === 'dinner',
+    data.order ? data.order.meal : '没有订单'
+  )
+  await mp.navigateBack()
+  await sleep(900)
+
   // 厨房一键接单（放在最后，下一轮 mock 种子会自动恢复待接单状态）
   await mp.switchTab('/pages/profile/index')
   await sleep(1800)

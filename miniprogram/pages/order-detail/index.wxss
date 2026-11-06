@@ -166,6 +166,86 @@
   transform: translate(3rpx, 3rpx);
 }
 
+.reschedule {
+  margin-top: 14rpx;
+}
+
+.reschedule-toggle {
+  display: inline-block;
+  padding: 8rpx 20rpx;
+  background: #E9F1FF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  color: #2D6FD9;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
+.reschedule-panel {
+  margin-top: 14rpx;
+  padding: 18rpx;
+  background: #FFFDF6;
+  border: 3rpx dashed #111111;
+  border-radius: 18rpx;
+}
+
+.reschedule-label {
+  margin-bottom: 8rpx;
+  color: #5C5C5C;
+  font-size: 21rpx;
+  font-weight: 700;
+}
+
+.reschedule-meals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  margin-bottom: 14rpx;
+}
+
+.reschedule-meal {
+  padding: 6rpx 18rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 21rpx;
+  font-weight: 800;
+}
+
+.reschedule-meal.active {
+  background: #FFD23F;
+  box-shadow: 2rpx 2rpx 0 #111111;
+}
+
+.reschedule-date {
+  display: inline-block;
+  margin-bottom: 14rpx;
+  padding: 8rpx 20rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
+.reschedule-save {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 68rpx;
+  background: #2D9CFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  box-shadow: 3rpx 3rpx 0 #111111;
+  color: #FFFFFF;
+  font-size: 23rpx;
+  font-weight: 800;
+}
+
+.reschedule-save.disabled {
+  opacity: 0.6;
+}
+
 .block {
   padding: 28rpx;
   margin-top: 24rpx;

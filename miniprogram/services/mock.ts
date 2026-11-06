@@ -1087,6 +1087,32 @@ export async function updateOrderNote(
   return { ...order }
 }
 
+export async function updateOrderSlot(
+  id: string,
+  meal: MealId,
+  scheduledDate: string
+): Promise<Order | null> {
+  await delay(80)
+  const order = loadOrders().find(item => item.id === id)
+  if (!order) {
+    return null
+  }
+  if (order.status !== 'pending') {
+    throw new Error('接单后就不能改时间啦')
+  }
+  if (['breakfast', 'lunch', 'dinner'].indexOf(meal) === -1) {
+    throw new Error('餐次不正确')
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(scheduledDate)) {
+    throw new Error('日期不正确')
+  }
+  order.meal = meal
+  order.scheduledDate = scheduledDate
+  order.slotUpdatedAt = Date.now()
+  saveOrders()
+  return { ...order }
+}
+
 export async function urgeOrder(id: string): Promise<Order | null> {
   await delay(60)
   const orders = loadOrders()

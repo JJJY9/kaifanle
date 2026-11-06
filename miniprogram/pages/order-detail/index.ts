@@ -1,10 +1,10 @@
 import type { Dish, Order, OrderStatus } from '../../services/types'
-import { getOrder, cancelOrder, getDishes, getKitchenStatus, urgeOrder, rateOrder, updateOrderNote } from '../../services/api'
+import { getOrder, cancelOrder, getDishes, getKitchenStatus, urgeOrder, rateOrder, updateOrderNote, updateOrderSlot } from '../../services/api'
 import { addOrderToCart } from '../../utils/reorder'
 import { orderReceiptLines, receiptText } from '../../utils/receipt'
 import { prepareImageForUpload } from '../../utils/image'
 import { USE_CLOUD } from '../../config'
-import { STATUS_STEP_TEXT, STATUS_TEXT, mealName } from '../../utils/constants'
+import { MEALS, STATUS_STEP_TEXT, STATUS_TEXT, mealName } from '../../utils/constants'
 import {
   formatDate,
   formatTime,
@@ -38,6 +38,14 @@ Page({
     ratingTagOptions: RATING_TAGS.map(name => ({ name, active: false })),
     ratingImages: [] as string[],
     uploadingRatingImage: false,
+    meals: MEALS,
+    slotEditVisible: false,
+    slotMeal: 'lunch',
+    slotDate: '',
+    slotDateText: '',
+    todayDate: '',
+    maxDate: '',
+    slotSaving: false,
     submittingRating: false,
     ratingOptions: [
       { value: 3, emoji: '😋', label: '好吃' },
@@ -53,6 +61,15 @@ Page({
 
   onLoad(options: any) {
     this.orderId = options.id || ''
+    const today = dateInputString()
+    const max = new Date()
+    max.setDate(max.getDate() + 7)
+    this.setData({
+      todayDate: today,
+      maxDate: dateInputString(max),
+      slotDate: today,
+      slotDateText: '今天'
+    })
   },
 
   onShow() {
@@ -187,6 +204,18 @@ Page({
         ratingImages: Array.isArray(order.ratingImages)
           ? order.ratingImages.slice(0, 3)
           : [],
+        ...(this.data.slotEditVisible
+          ? {}
+          : {
+              slotMeal: order.meal,
+              slotDate:
+                order.scheduledDate ||
+                dateInputString(new Date(order.createdAt)),
+              slotDateText: dateLabel(
+                order.scheduledDate ||
+                  dateInputString(new Date(order.createdAt))
+              )
+            }),
         loading: false
       })
     } catch (e: any) {
@@ -414,6 +443,81 @@ Page({
       })
     } finally {
       this.setData({ submittingRating: false })
+    }
+  },
+
+  onToggleSlotEdit() {
+    const order = this.data.order
+    if (!order || order.status !== 'pending') {
+      return
+    }
+    if (this.data.slotEditVisible) {
+      this.setData({ slotEditVisible: false })
+      return
+    }
+    const date =
+      order.scheduledDate || dateInputString(new Date(order.createdAt))
+    this.setData({
+      slotEditVisible: true,
+      slotMeal: order.meal,
+      slotDate: date,
+      slotDateText: dateLabel(date)
+    })
+  },
+
+  onSelectSlotMeal(e: any) {
+    this.setData({ slotMeal: e.currentTarget.dataset.meal })
+  },
+
+  onSlotDateChange(e: any) {
+    const date = e.detail.value
+    this.setData({
+      slotDate: date,
+      slotDateText: dateLabel(date)
+    })
+  },
+
+  async onSaveSlot() {
+    const order = this.data.order
+    if (!order || this.data.slotSaving) {
+      return
+    }
+    if (
+      this.data.slotMeal === order.meal &&
+      this.data.slotDate ===
+        (order.scheduledDate || dateInputString(new Date(order.createdAt)))
+    ) {
+      this.setData({ slotEditVisible: false })
+      return
+    }
+    this.setData({ slotSaving: true })
+    try {
+      const updated = await updateOrderSlot(
+        order.id,
+        this.data.slotMeal,
+        this.data.slotDate
+      )
+      if (!updated) {
+        throw new Error('订单不存在')
+      }
+      this.setData({
+        'order.meal': updated.meal,
+        'order.mealText': mealName(updated.meal),
+        'order.scheduledDate': updated.scheduledDate,
+        'order.scheduledText': dateLabel(updated.scheduledDate || ''),
+        slotEditVisible: false,
+        slotMeal: updated.meal,
+        slotDate: updated.scheduledDate || this.data.slotDate,
+        slotDateText: dateLabel(updated.scheduledDate || '')
+      })
+      wx.showToast({ title: '时间改好啦', icon: 'none' })
+    } catch (e: any) {
+      wx.showToast({
+        title: String((e && e.message) || '改时间失败').slice(0, 40),
+        icon: 'none'
+      })
+    } finally {
+      this.setData({ slotSaving: false })
     }
   },
 
