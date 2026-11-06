@@ -239,6 +239,14 @@ function invoke(mp, body) {
   await sleep(1800)
   page = await current()
   data = await page.data()
+  // 固定到午餐，避免跨午夜后默认餐次变成早餐导致菜品集合不同
+  await invoke(
+    mp,
+    "page.onSelectMeal({ currentTarget: { dataset: { meal: 'lunch' } } })"
+  )
+  await sleep(1500)
+  page = await current()
+  data = await page.data()
 
   await invoke(mp, "page.onSearchInput({ detail: { value: '饭' } })")
   await sleep(400)
@@ -257,6 +265,42 @@ function invoke(mp, body) {
     `${(data.searchResults || []).length} 条`
   )
 
+  await invoke(mp, 'page.onClearSearch()')
+  await sleep(300)
+
+  // 搜索历史：确认搜索后记录，可点回填、可清空
+  await invoke(mp, "page.onSearchInput({ detail: { value: '饭' } })")
+  await invoke(
+    mp,
+    "page.onSearchConfirm({ detail: { value: '饭' } })"
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 搜索历史记录',
+    (data.searchHistory || [])[0] === '饭' && data.keyword === '饭',
+    (data.searchHistory || []).join('、')
+  )
+  await invoke(mp, 'page.onClearSearch()')
+  await sleep(300)
+  await invoke(
+    mp,
+    "page.onHistoryTap({ currentTarget: { dataset: { keyword: '饭' } } })"
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 搜索历史回填',
+    data.keyword === '饭' && (data.searchResults || []).length > 0,
+    `${(data.searchResults || []).length} 条`
+  )
+  await invoke(mp, 'page.onClearHistory()')
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  check('mock 搜索历史清空', (data.searchHistory || []).length === 0)
   await invoke(mp, 'page.onClearSearch()')
   await sleep(300)
 

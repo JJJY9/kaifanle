@@ -27,6 +27,29 @@ interface Section extends Category {
   dishes: Dish[]
 }
 
+const SEARCH_HISTORY_KEY = 'kfl_search_history_v1'
+const SEARCH_HISTORY_MAX = 6
+
+function readSearchHistory(): string[] {
+  try {
+    const raw = wx.getStorageSync(SEARCH_HISTORY_KEY)
+    const list = raw ? JSON.parse(raw) : []
+    return Array.isArray(list)
+      ? list.filter(item => typeof item === 'string').slice(0, SEARCH_HISTORY_MAX)
+      : []
+  } catch (e) {
+    return []
+  }
+}
+
+function writeSearchHistory(list: string[]) {
+  try {
+    wx.setStorageSync(SEARCH_HISTORY_KEY, JSON.stringify(list))
+  } catch (e) {
+    // 忽略存储失败
+  }
+}
+
 Page({
   data: {
     navPad: 44,
@@ -57,6 +80,7 @@ Page({
     recommendText: '今日推荐',
     keyword: '',
     searchResults: [] as Dish[],
+    searchHistory: [] as string[],
     emptyDesc: '换个餐次看看，或者去许愿池点个菜',
     emptyAction: '',
     emptyTitle: '这一餐还没开火',
@@ -102,7 +126,8 @@ Page({
       todayDate: today,
       tomorrowDate: dateInputString(tomorrow),
       maxDate: dateInputString(max),
-      menuDateLabel: '今天'
+      menuDateLabel: '今天',
+      searchHistory: readSearchHistory()
     })
 
     this._unsub = cart.subscribe(lines => {
@@ -735,6 +760,42 @@ Page({
 
   onClearSearch() {
     this.setData({ keyword: '', searchResults: [] })
+  },
+
+  onSearchConfirm(e: any) {
+    const value = String(
+      (e && e.detail && e.detail.value) || this.data.keyword || ''
+    )
+      .trim()
+      .slice(0, 20)
+    if (!value) {
+      return
+    }
+    const history = [value]
+      .concat((this.data.searchHistory || []).filter(item => item !== value))
+      .slice(0, SEARCH_HISTORY_MAX)
+    writeSearchHistory(history)
+    this.setData({
+      keyword: value,
+      searchResults: this.filterDishes(value),
+      searchHistory: history
+    })
+  },
+
+  onHistoryTap(e: any) {
+    const keyword = String(e.currentTarget.dataset.keyword || '')
+    if (!keyword) {
+      return
+    }
+    this.setData({
+      keyword,
+      searchResults: this.filterDishes(keyword)
+    })
+  },
+
+  onClearHistory() {
+    writeSearchHistory([])
+    this.setData({ searchHistory: [] })
   },
 
   onWeekMenus() {

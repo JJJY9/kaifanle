@@ -473,7 +473,10 @@ function saveMenus(): void {
 
 function seedOrders(): Order[] {
   const now = Date.now()
-  const t1 = now - 20 * 60 * 1000
+  const dayStart = new Date()
+  dayStart.setHours(0, 0, 0, 0)
+  // 凌晨打开时 20 分钟前可能还是昨天，示例进行中订单要落在今天
+  const t1 = Math.max(now - 20 * 60 * 1000, dayStart.getTime() + 60 * 1000)
   const t2 = now - 3 * 60 * 60 * 1000
   return [
     {
