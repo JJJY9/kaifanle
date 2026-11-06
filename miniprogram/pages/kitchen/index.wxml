@@ -124,6 +124,8 @@
       <block wx:if="{{showPrep}}">
         <view wx:if="{{!prepGroups.length}}" class="empty-line">今天还没有要备的菜</view>
         <view wx:if="{{prepGroups.length}}" class="prep-copy" bindtap="onCopyPrep">复制采购清单</view>
+        <view wx:if="{{prepGroups.length}}" class="prep-copy" bindtap="onSharePrepPoster">{{prepPosterMaking ? '生成中…' : '生成采购图'}}</view>
+        <view wx:if="{{prepPosterPath}}" class="prep-copy" bindtap="onPreviewPrepPoster">预览采购图</view>
         <view wx:for="{{prepGroups}}" wx:key="meal" wx:for-item="group" class="prep-group">
           <view class="prep-group-title">{{group.mealText}} · {{group.total}} 份</view>
           <view wx:for="{{group.items}}" wx:key="name" wx:for-item="dish" class="prep-row">
@@ -438,4 +440,5 @@
     </view>
   </view>
   <canvas type="2d" id="dailyPoster" class="daily-poster-canvas"></canvas>
+  <canvas type="2d" id="prepPoster" class="prep-poster-canvas"></canvas>
 </view>

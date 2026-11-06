@@ -609,14 +609,23 @@ function invoke(mp, body) {
     Boolean(data.posterPath),
     data.posterPath ? '已生成' : '未生成'
   )
+  await invoke(mp, 'page.onSharePrepPoster()')
+  await sleep(2200)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 采购清单图',
+    Boolean(data.prepPosterPath),
+    data.prepPosterPath ? '已生成' : '未生成'
+  )
   await invoke(mp, 'page.load()')
   await sleep(1500)
   page = await current()
   data = await page.data()
   check(
     'mock 小结图刷新失效',
-    data.posterPath === '',
-    data.posterPath || '已清空'
+    data.posterPath === '' && data.prepPosterPath === '',
+    `${data.posterPath || '已清空'} / ${data.prepPosterPath || '已清空'}`
   )
   const prepGroups = data.prepGroups || []
   check(

@@ -67,6 +67,8 @@ Page({
     copyingReceipts: false,
     posterMaking: false,
     posterPath: '',
+    prepPosterMaking: false,
+    prepPosterPath: '',
     movingId: '',
     showHistory: false,
     showPrep: false,
@@ -666,6 +668,7 @@ Page({
         todayClosed,
         lowStockThreshold,
         posterPath: statsRefreshed ? '' : this.data.posterPath,
+        prepPosterPath: silent ? this.data.prepPosterPath : '',
         weekStats,
         weekBars,
         weekBarTotal,
@@ -1508,6 +1511,127 @@ Page({
   onPreviewDailyPoster() {
     const path = this.data.posterPath
     if (!path) {
+      return
+    }
+    if (typeof (wx as any).showShareImageMenu === 'function') {
+      ;(wx as any).showShareImageMenu({
+        path,
+        fail: () => {
+          wx.previewImage({ urls: [path] })
+        }
+      })
+    } else {
+      wx.previewImage({ urls: [path] })
+    }
+  },
+
+  async onSharePrepPoster() {
+    if (this.data.prepPosterMaking) {
+      return
+    }
+    const items = this.data.prepItems || []
+    if (!items.length) {
+      wx.showToast({ title: '今天还没有要备的菜', icon: 'none' })
+      return
+    }
+    this.setData({ prepPosterMaking: true })
+    try {
+      const canvas: any = await new Promise((resolve, reject) => {
+        wx.createSelectorQuery()
+          .in(this)
+          .select('#prepPoster')
+          .fields({ node: true, size: true })
+          .exec(res => {
+            const node = res && res[0] && res[0].node
+            if (node) {
+              resolve(node)
+            } else {
+              reject(new Error('画布还没准备好'))
+            }
+          })
+      })
+      const dpr = (wx.getWindowInfo && wx.getWindowInfo().pixelRatio) || 2
+      const width = 600
+      const height = 900
+      canvas.width = width * dpr
+      canvas.height = height * dpr
+      const ctx = canvas.getContext('2d')
+      ctx.scale(dpr, dpr)
+
+      ctx.fillStyle = '#FFFDF6'
+      ctx.fillRect(0, 0, width, height)
+      ctx.strokeStyle = '#111111'
+      ctx.lineWidth = 8
+      ctx.strokeRect(24, 24, width - 48, height - 48)
+
+      ctx.fillStyle = '#2FBF71'
+      ctx.fillRect(24, 24, width - 48, 110)
+      ctx.fillStyle = '#FFFFFF'
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'middle'
+      ctx.font = 'bold 38px "PingFang SC", sans-serif'
+      ctx.fillText('今日采购清单', 48, 78)
+      ctx.fillStyle = '#111111'
+      ctx.font = '24px "PingFang SC", sans-serif'
+      ctx.fillText(`${formatDate()} · 共 ${this.data.prepTotal} 份`, 48, 170)
+
+      ctx.font = '26px "PingFang SC", sans-serif'
+      ctx.fillStyle = '#111111'
+      ctx.font = '26px "PingFang SC", sans-serif'
+      const dishLines = items.slice(0, 8)
+      dishLines.forEach((item: any, index: number) => {
+        ctx.fillText(`${item.name} × ${item.qty}`, 48, 220 + index * 38)
+      })
+      if (items.length > 8) {
+        ctx.fillStyle = '#5C5C5C'
+        ctx.font = '22px "PingFang SC", sans-serif'
+        ctx.fillText(`…还有 ${items.length - 8} 道菜`, 48, 530)
+      }
+
+      const ingredients = (this.data.prepIngredients || []).slice(0, 6)
+      ctx.fillStyle = '#111111'
+      ctx.font = 'bold 26px "PingFang SC", sans-serif'
+      ctx.fillText('食材', 48, 570)
+      ctx.font = '23px "PingFang SC", sans-serif'
+      ingredients.forEach((item: any, index: number) => {
+        ctx.fillText(`${item.name} ${item.text}`, 48, 612 + index * 32)
+      })
+      if ((this.data.prepIngredients || []).length > 6) {
+        ctx.fillStyle = '#5C5C5C'
+        ctx.font = '20px "PingFang SC", sans-serif'
+        ctx.fillText('…食材较多，完整清单请复制采购清单', 48, 820)
+      }
+
+      ctx.fillStyle = '#5C5C5C'
+      ctx.font = '22px "PingFang SC", sans-serif'
+      ctx.fillText('她点单，你掌勺', 48, height - 60)
+      ctx.textAlign = 'right'
+      ctx.fillText('开饭咯', width - 48, height - 60)
+
+      const path: string = await new Promise((resolve, reject) => {
+        wx.canvasToTempFilePath({
+          canvas,
+          destWidth: canvas.width,
+          destHeight: canvas.height,
+          success: res => resolve(res.tempFilePath),
+          fail: reject
+        } as any)
+      })
+      this.setData({ prepPosterMaking: false, prepPosterPath: path })
+      wx.showToast({ title: '采购图已生成', icon: 'none' })
+    } catch (e: any) {
+      this.setData({ prepPosterMaking: false })
+      wx.showToast({
+        title: String((e && e.message) || '生成失败').slice(0, 40),
+        icon: 'none'
+      })
+    }
+  },
+
+  onPreviewPrepPoster() {
+    const path = this.data.prepPosterPath
+    if (!path) {
+      this.onSharePrepPoster()
       return
     }
     if (typeof (wx as any).showShareImageMenu === 'function') {

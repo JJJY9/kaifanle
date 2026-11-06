@@ -251,6 +251,15 @@
   pointer-events: none;
 }
 
+.prep-poster-canvas {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  width: 600px;
+  height: 900px;
+  pointer-events: none;
+}
+
 .chart {
   margin-top: 20rpx;
   padding: 20rpx 24rpx 16rpx;
