@@ -481,18 +481,19 @@ Page({
         .map(key => {
           const parts = key.split('|')
           return {
+            key,
             name: parts[0],
             text: `${formatAmount(ingNum[key])}${parts[1] || ''}`
           }
         })
         .concat(
           Object.keys(ingText).map(key => ({
+            key,
             name: ingText[key].name,
             text: `${ingText[key].amount}（${ingText[key].portions} 份）`
           }))
         )
         .sort((a, b) => a.name.localeCompare(b.name))
-        .slice(0, 24)
 
       // 近 7 天经营概况（不含已取消订单）；静默轮询沿用上次结果
       let weekStats = this.data.weekStats

@@ -803,6 +803,11 @@ function invoke(mp, body) {
     dish =>
       typeof dish.stock === 'number' && dish.stock >= 0 && dish.stock <= 3
   )
+  check(
+    'mock 低库存菜品存在',
+    Boolean(restockDish),
+    restockDish ? restockDish.name : '没有低库存菜'
+  )
   if (restockDish) {
     await invoke(
       mp,
@@ -1246,6 +1251,19 @@ function invoke(mp, body) {
     data.hasMore === false && data.loadingMore === false,
     data.hasMore ? '还有更多' : '已全部加载'
   )
+  const ordersBeforeMore = (data.orders || []).length
+  await invoke(mp, 'page.setData({ hasMore: true })')
+  await invoke(mp, 'page.onLoadMore()')
+  await sleep(900)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 订单加载更多路径',
+    data.hasMore === false &&
+      data.loadingMore === false &&
+      (data.orders || []).length === ordersBeforeMore,
+    `${(data.orders || []).length} 单`
+  )
   check(
     'mock 订单预订标记',
     (data.orders || []).some(order => order.isPreorder),
@@ -1390,7 +1408,7 @@ function invoke(mp, body) {
     )
     await invoke(
       mp,
-      "page.setData({ ratingImages: ['/tmp/review-test.png'] })"
+      "page.setData({ ratingImages: ['http://tmp/review-test.png'] })"
     )
     await invoke(mp, 'page.onSubmitRating()')
     await sleep(900)
@@ -1408,7 +1426,7 @@ function invoke(mp, body) {
       'mock 评价晒图',
       Boolean(data.order) &&
         Array.isArray(data.order.ratingImages) &&
-        data.order.ratingImages.indexOf('/tmp/review-test.png') > -1,
+        data.order.ratingImages.indexOf('http://tmp/review-test.png') > -1,
       data.order ? (data.order.ratingImages || []).join('、') : '没有订单'
     )
 
