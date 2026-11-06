@@ -7,6 +7,7 @@ Page({
     steps: [] as string[],
     isAdmin: false,
     favorite: false,
+    imageFailed: false,
     loading: true,
     error: '',
     posterMaking: false,
@@ -46,6 +47,7 @@ Page({
         steps,
         isAdmin: Boolean(me && me.isAdmin),
         favorite: favorites.has(dish.id),
+        imageFailed: false,
         loading: false
       })
     } catch (e: any) {
@@ -59,6 +61,10 @@ Page({
   onRetry() {
     this.setData({ loading: true })
     this.load()
+  },
+
+  onImageError() {
+    this.setData({ imageFailed: true })
   },
 
   onEdit() {

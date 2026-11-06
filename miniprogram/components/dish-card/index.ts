@@ -4,7 +4,21 @@ Component({
     showAdd: { type: Boolean, value: true }
   },
 
+  data: {
+    imageFailed: false
+  },
+
+  observers: {
+    dish() {
+      this.setData({ imageFailed: false })
+    }
+  },
+
   methods: {
+    onImageError() {
+      this.setData({ imageFailed: true })
+    },
+
     onTap() {
       const dish = this.data.dish
       if (!dish || dish.status === 'off') {

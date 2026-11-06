@@ -44,6 +44,7 @@ Page({
     busyText: '',
     hero: null as Dish | null,
     heroTag: '今日推荐',
+    heroImageFailed: false,
     sections: [] as Section[],
     cartCount: 0,
     cartTotal: 0,
@@ -486,6 +487,7 @@ Page({
     this.setData({
       sections,
       hero,
+      heroImageFailed: false,
       spiceFilters,
       heroTag: favoriteHero ? '你收藏的' : this.data.recommendText || '今日推荐',
       emptyDesc:
@@ -758,6 +760,10 @@ Page({
 
   onHeroAdd() {
     this.quickAdd(this.data.hero)
+  },
+
+  onHeroImageError() {
+    this.setData({ heroImageFailed: true })
   },
 
   quickAdd(dish: Dish | null) {

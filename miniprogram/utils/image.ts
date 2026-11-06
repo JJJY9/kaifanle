@@ -18,6 +18,10 @@ function fileSize(path: string): Promise<number> {
 
 function compressOnce(path: string, quality: number): Promise<string> {
   return new Promise(resolve => {
+    if (typeof (wx as any).compressImage !== 'function') {
+      resolve(path)
+      return
+    }
     wx.compressImage({
       src: path,
       quality,

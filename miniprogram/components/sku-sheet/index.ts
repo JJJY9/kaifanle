@@ -17,7 +17,8 @@ Component({
     totalPrice: 0,
     recipeLines: [] as string[],
     recipeOpen: false,
-    favorite: false
+    favorite: false,
+    imageFailed: false
   },
 
   observers: {
@@ -50,8 +51,13 @@ Component({
         totalPrice: dish.price,
         recipeLines,
         recipeOpen: false,
-        favorite: favorites.has(dish.id)
+        favorite: favorites.has(dish.id),
+        imageFailed: false
       })
+    },
+
+    onImageError() {
+      this.setData({ imageFailed: true })
     },
 
     recompute() {

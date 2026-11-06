@@ -149,7 +149,7 @@
   <block wx:elif="{{sections.length}}">
     <view wx:if="{{hero}}" class="hero" bindtap="onHeroTap">
       <view class="hero-media" style="background: {{hero.color}};">
-        <image wx:if="{{hero.image || hero.cartoon}}" class="hero-img" src="{{hero.image || hero.cartoon}}" mode="{{hero.cartoon && !hero.image ? 'aspectFit' : 'aspectFill'}}" />
+        <image wx:if="{{(hero.image || hero.cartoon) && !heroImageFailed}}" class="hero-img" src="{{hero.image || hero.cartoon}}" mode="{{hero.cartoon && !hero.image ? 'aspectFit' : 'aspectFill'}}" binderror="onHeroImageError" />
         <text wx:else class="hero-char">{{hero.emoji || hero.char}}</text>
         <view class="hero-sticker">{{heroTag}}</view>
       </view>
