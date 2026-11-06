@@ -34,6 +34,7 @@ Page({
     todayDate: '',
     maxDate: '',
     menuDateLabel: '今天',
+    deadlineText: '',
     hero: null as Dish | null,
     sections: [] as Section[],
     cartCount: 0,
@@ -197,6 +198,9 @@ Page({
 
       let isOpen = isToday ? isOpenNow() : true
       let mealNotice = ''
+      let deadlineText = ''
+      const now = new Date()
+      const nowMinutes = now.getHours() * 60 + now.getMinutes()
       const closedDate = Boolean(
         business &&
           ((Array.isArray(business.closedDates) &&
@@ -214,19 +218,25 @@ Page({
         isOpen = false
         mealNotice = '这一餐还没排菜单'
       } else if (mealSetting) {
-        const now = new Date()
-        const nowMinutes = now.getHours() * 60 + now.getMinutes()
         const [deadlineHour, deadlineMinute] = mealSetting.deadline
           .split(':')
           .map(Number)
-        const pastDeadline =
-          isToday && nowMinutes > deadlineHour * 60 + deadlineMinute
+        const deadlineMinutes = deadlineHour * 60 + deadlineMinute
+        const pastDeadline = isToday && nowMinutes > deadlineMinutes
         isOpen = mealSetting.open && !pastDeadline
         mealNotice = !mealSetting.open
           ? business!.closedNote || '今天休息，明天见'
           : pastDeadline
           ? '这一餐已经截单啦，下次早点来'
           : ''
+        if (mealSetting.open && !pastDeadline) {
+          const left = deadlineMinutes - nowMinutes
+          deadlineText = isToday
+            ? left <= 120
+              ? `还有 ${left} 分钟截单`
+              : `${mealSetting.deadline} 截单`
+            : `${mealSetting.deadline} 截单`
+        }
       }
 
       this.setData(
@@ -234,6 +244,7 @@ Page({
           loading: false,
           loadFailed: false,
           emptyTitle: '这一餐还没开火',
+          deadlineText,
           isOpen,
           mealNotice,
           notice: business && business.notice ? business.notice : '',
@@ -259,6 +270,7 @@ Page({
         loading: false,
         loadFailed: true,
         emptyTitle: '菜单加载失败',
+        deadlineText: '',
         sections: [],
         hero: null,
         searchResults: [],

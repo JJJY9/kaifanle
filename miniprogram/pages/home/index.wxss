@@ -134,6 +134,13 @@
   font-weight: 700;
 }
 
+.deadline-hint {
+  margin: 10rpx 4rpx 0;
+  color: #FF6B35;
+  font-size: 21rpx;
+  font-weight: 800;
+}
+
 .meal-tab {
   flex: 1;
   display: flex;
