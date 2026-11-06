@@ -45,6 +45,19 @@ function invoke(mp, body) {
   await invoke(mp, 'page.onClearSearch()')
   await sleep(300)
 
+  // 收藏筛选
+  await invoke(mp, 'page.onToggleFavorites()')
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 收藏筛选空态',
+    data.onlyFavorites === true && String(data.emptyDesc).indexOf('收藏') > -1,
+    data.emptyDesc
+  )
+  await invoke(mp, 'page.onToggleFavorites()')
+  await sleep(300)
+
   // 厨房与菜品排序
   await mp.navigateTo('/pages/kitchen/index')
   await sleep(2200)
@@ -171,6 +184,10 @@ function invoke(mp, body) {
     'mock 休息日选项',
     Array.isArray(data.dateOptions) && data.dateOptions.length === 8
   )
+  check(
+    'mock 每周休息选项',
+    Array.isArray(data.weekdays) && data.weekdays.length === 7
+  )
   await invoke(mp, "page.setData({ notice: '今天只有一锅炖菜' })")
   await invoke(mp, 'page.onSave()')
   await sleep(1000)
@@ -209,6 +226,28 @@ function invoke(mp, body) {
   page = await current()
   data = await page.data()
   check('mock 订单列表', (data.orders || []).length > 0, `${data.orders.length} 单`)
+
+  // 订单评价
+  await mp.navigateTo('/pages/order-detail/index?id=seed-2')
+  await sleep(1600)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 订单评价入口',
+    (data.ratingOptions || []).length === 3,
+    data.order && data.order.status
+  )
+  if (data.order && data.order.status === 'completed') {
+    await invoke(
+      mp,
+      'page.onRate({ currentTarget: { dataset: { value: 3 } } })'
+    )
+    await invoke(mp, 'page.onSubmitRating()')
+    await sleep(900)
+    page = await current()
+    data = await page.data()
+    check('mock 提交评价', data.rating === 3, `评分 ${data.rating}`)
+  }
 
   const failed = results.filter(r => !r.ok)
   console.log(`\n结论：${results.length - failed.length}/${results.length} 通过`)
