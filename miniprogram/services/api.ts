@@ -314,12 +314,13 @@ export async function urgeOrder(id: string): Promise<Order | null> {
 export async function rateOrder(
   id: string,
   rating: number,
-  feedback: string
+  feedback: string,
+  tags: string[] = []
 ): Promise<Order | null> {
   if (USE_CLOUD) {
-    return callApi<Order | null>('rateOrder', { id, rating, feedback })
+    return callApi<Order | null>('rateOrder', { id, rating, feedback, tags })
   }
-  return mock.rateOrder(id, rating, feedback)
+  return mock.rateOrder(id, rating, feedback, tags)
 }
 
 export async function replyRating(

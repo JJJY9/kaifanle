@@ -924,11 +924,26 @@ function invoke(mp, body) {
       mp,
       'page.onRate({ currentTarget: { dataset: { value: 3 } } })'
     )
+    await invoke(
+      mp,
+      'page.setData({ ratingTagOptions: page.data.ratingTagOptions.map(item => ({ name: item.name, active: false })) })'
+    )
+    await invoke(
+      mp,
+      'page.onToggleRatingTag({ currentTarget: { dataset: { index: 0 } } })'
+    )
     await invoke(mp, 'page.onSubmitRating()')
     await sleep(900)
     page = await current()
     data = await page.data()
     check('mock 提交评价', data.rating === 3, `评分 ${data.rating}`)
+    check(
+      'mock 评价标签',
+      Boolean(data.order) &&
+        Array.isArray(data.order.ratingTags) &&
+        data.order.ratingTags.indexOf('好吃') > -1,
+      data.order ? (data.order.ratingTags || []).join('、') : '没有订单'
+    )
 
     // 我的评价页：汇总评分与筛选
     await mp.navigateTo('/pages/reviews/index')
@@ -940,6 +955,13 @@ function invoke(mp, body) {
       (data.reviews || []).length >= 1 &&
         Number((data.stats || {}).count || 0) >= 1,
       `${(data.reviews || []).length} 条`
+    )
+    check(
+      'mock 评价标签展示',
+      (data.reviews || []).some(
+        review => Array.isArray(review.tags) && review.tags.length > 0
+      ),
+      `${(data.reviews || []).filter(review => (review.tags || []).length).length} 条带标签`
     )
     await invoke(
       mp,

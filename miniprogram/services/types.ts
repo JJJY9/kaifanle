@@ -109,6 +109,7 @@ export interface Order {
   urgedAt?: number
   urgeCount?: number
   rating?: number
+  ratingTags?: string[]
   feedback?: string
   ratedAt?: number
   ownerReply?: string

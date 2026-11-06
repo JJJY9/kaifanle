@@ -167,6 +167,22 @@
   line-height: 1.5;
 }
 
+.review-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin-top: 10rpx;
+}
+
+.review-tag {
+  padding: 3rpx 14rpx;
+  background: #E8F8EE;
+  border: 2rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
 .review-feedback.muted {
   color: #B8B8B8;
 }

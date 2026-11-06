@@ -682,6 +682,22 @@
   font-size: 22rpx;
 }
 
+.order-rating-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin-top: 8rpx;
+}
+
+.order-rating-tag {
+  padding: 3rpx 14rpx;
+  background: #E8F8EE;
+  border: 2rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
 .order-cancel-reason {
   margin-top: 8rpx;
   color: #B85C38;

@@ -19,6 +19,8 @@ const FLOW: OrderStatus[] = [
   'completed'
 ]
 
+const RATING_TAGS = ['好吃', '分量足', '准时', '有点辣', '下次还想吃']
+
 Page({
   data: {
     order: null as any,
@@ -30,6 +32,7 @@ Page({
     reordering: false,
     rating: 0,
     feedbackDraft: '',
+    ratingTagOptions: RATING_TAGS.map(name => ({ name, active: false })),
     submittingRating: false,
     ratingOptions: [
       { value: 3, emoji: '😋', label: '好吃' },
@@ -172,6 +175,10 @@ Page({
         queueText,
         rating: Number(order.rating || 0),
         feedbackDraft: order.feedback || '',
+        ratingTagOptions: RATING_TAGS.map(name => ({
+          name,
+          active: (order.ratingTags || []).indexOf(name) > -1
+        })),
         loading: false
       })
     } catch (e: any) {
@@ -337,6 +344,19 @@ Page({
     this.setData({ feedbackDraft: e.detail.value })
   },
 
+  onToggleRatingTag(e: any) {
+    const index = Number(e.currentTarget.dataset.index)
+    const options = this.data.ratingTagOptions.map((item, i) =>
+      i === index ? { ...item, active: !item.active } : item
+    )
+    const activeCount = options.filter(item => item.active).length
+    if (activeCount > 4) {
+      wx.showToast({ title: '最多选 4 个标签', icon: 'none' })
+      return
+    }
+    this.setData({ ratingTagOptions: options })
+  },
+
   async onSubmitRating() {
     const order = this.data.order
     if (!order || this.data.submittingRating) {
@@ -348,7 +368,15 @@ Page({
     }
     this.setData({ submittingRating: true })
     try {
-      await rateOrder(order.id, this.data.rating, this.data.feedbackDraft)
+      const tags = (this.data.ratingTagOptions || [])
+        .filter((item: any) => item.active)
+        .map((item: any) => item.name)
+      await rateOrder(
+        order.id,
+        this.data.rating,
+        this.data.feedbackDraft,
+        tags
+      )
       wx.showToast({ title: '评价收到啦', icon: 'none' })
       this.load()
     } catch (e: any) {

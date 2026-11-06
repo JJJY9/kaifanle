@@ -238,6 +238,9 @@
         </view>
         <view class="order-summary">{{item.summary}}</view>
         <view wx:if="{{item.status === 'cancelled' && item.cancelReason}}" class="order-cancel-reason">取消原因：{{item.cancelReason}}</view>
+        <view wx:if="{{item.ratingTags.length}}" class="order-rating-tags">
+          <text wx:for="{{item.ratingTags}}" wx:for-item="tag" wx:key="*this" class="order-rating-tag">{{tag}}</text>
+        </view>
         <view wx:if="{{item.feedback}}" class="order-feedback">“{{item.feedback}}”</view>
         <view wx:if="{{item.ownerReply}}" class="order-reply">
           <text class="order-reply-label">掌勺人</text>

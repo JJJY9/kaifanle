@@ -360,6 +360,9 @@ Page({
               ? '😵 翻车'
               : '',
           feedback: order.feedback || '',
+          ratingTags: Array.isArray(order.ratingTags)
+            ? order.ratingTags.slice(0, 4)
+            : [],
           canReply:
             order.status === 'completed' &&
             [1, 2, 3].indexOf(Number(order.rating)) > -1,

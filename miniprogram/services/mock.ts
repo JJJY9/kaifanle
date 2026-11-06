@@ -928,7 +928,8 @@ export async function urgeOrder(id: string): Promise<Order | null> {
 export async function rateOrder(
   id: string,
   rating: number,
-  feedback: string
+  feedback: string,
+  tags: string[] = []
 ): Promise<Order | null> {
   await delay(60)
   const orders = loadOrders()
@@ -943,11 +944,29 @@ export async function rateOrder(
     throw new Error('评价不太对')
   }
   const feedbackText = String(feedback || '').trim().slice(0, 50)
+  const allowed = ['好吃', '分量足', '准时', '有点辣', '下次还想吃']
+  const ratingTags: string[] = []
+  ;(Array.isArray(tags) ? tags : []).forEach(tag => {
+    const name = String(tag || '').trim()
+    if (
+      allowed.indexOf(name) > -1 &&
+      ratingTags.indexOf(name) === -1 &&
+      ratingTags.length < 4
+    ) {
+      ratingTags.push(name)
+    }
+  })
+  const oldTags = Array.isArray(order.ratingTags) ? order.ratingTags : []
+  const tagsChanged =
+    ratingTags.length !== oldTags.length ||
+    ratingTags.some(tag => oldTags.indexOf(tag) === -1)
   const changed =
     Number(order.rating) !== Number(rating) ||
-    String(order.feedback || '') !== feedbackText
+    String(order.feedback || '') !== feedbackText ||
+    tagsChanged
   order.rating = Number(rating)
   order.feedback = feedbackText
+  order.ratingTags = ratingTags
   order.ratedAt = Date.now()
   if (changed && order.ownerReply) {
     order.ownerReply = ''

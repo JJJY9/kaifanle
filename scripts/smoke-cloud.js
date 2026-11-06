@@ -596,12 +596,18 @@ async function run() {
   assert.strictEqual(res.ok, false)
   res = await call(
     'rateOrder',
-    { id: created.data.id, rating: 3, feedback: '超好吃' },
+    {
+      id: created.data.id,
+      rating: 3,
+      feedback: '超好吃',
+      tags: ['好吃', '分量足', '不存在的标签']
+    },
     'girl-openid'
   )
   assert.strictEqual(res.ok, true)
   assert.strictEqual(res.data.rating, 3)
   assert.strictEqual(res.data.feedback, '超好吃')
+  assert.deepStrictEqual(res.data.ratingTags, ['好吃', '分量足'])
   res = await call(
     'rateOrder',
     { id: created.data.id, rating: 3, feedback: '违规评价' },
@@ -708,6 +714,7 @@ async function run() {
   assert.strictEqual(res.ok, true)
   assert.strictEqual(res.data.ownerReply, '')
   assert.strictEqual(res.data.ownerReplyAt, 0)
+  assert.deepStrictEqual(res.data.ratingTags, [])
   const newRatedAt = res.data.ratedAt
   res = await call('getOrder', { id: created.data.id }, 'admin-openid')
   assert.strictEqual(res.data.rating, 1)

@@ -78,6 +78,15 @@
         <text class="rating-label">{{item.label}}</text>
       </view>
     </view>
+    <view class="rating-tags">
+      <view
+        wx:for="{{ratingTagOptions}}"
+        wx:key="name"
+        class="rating-tag {{item.active ? 'active' : ''}}"
+        data-index="{{index}}"
+        bindtap="onToggleRatingTag"
+      >{{item.name}}</view>
+    </view>
     <input
       class="rating-input"
       placeholder="想对掌勺的说点什么（选填）"

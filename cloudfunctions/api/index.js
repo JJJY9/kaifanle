@@ -10,6 +10,8 @@ const _ = db.command
 const CONFIG_ID = 'app'
 const COLLECTIONS = ['categories', 'dishes', 'orders', 'config', 'wishes']
 
+const RATING_TAGS = ['好吃', '分量足', '准时', '有点辣', '下次还想吃']
+
 const STEP_TITLES = {
   pending: '已下单',
   accepted: '已接单 · 锅已热',
@@ -1792,11 +1794,27 @@ async function rateOrder(payload, openid) {
   }
   const feedback = String(payload.feedback || '').trim().slice(0, 50)
   await checkContentSafety(openid, feedback)
+  const tags = []
+  ;(Array.isArray(payload.tags) ? payload.tags : []).forEach(tag => {
+    const name = String(tag || '').trim()
+    if (
+      RATING_TAGS.indexOf(name) > -1 &&
+      tags.indexOf(name) === -1 &&
+      tags.length < 4
+    ) {
+      tags.push(name)
+    }
+  })
   const now = Date.now()
+  const oldTags = Array.isArray(order.ratingTags) ? order.ratingTags : []
+  const tagsChanged =
+    tags.length !== oldTags.length ||
+    tags.some(tag => oldTags.indexOf(tag) === -1)
   const changed =
     Number(order.rating) !== rating ||
-    String(order.feedback || '') !== feedback
-  const data = { rating, feedback, ratedAt: now }
+    String(order.feedback || '') !== feedback ||
+    tagsChanged
+  const data = { rating, feedback, ratingTags: tags, ratedAt: now }
   // 评价变了，旧回复不再对应这条评价，清掉避免错配
   if (changed && order.ownerReply) {
     data.ownerReply = ''

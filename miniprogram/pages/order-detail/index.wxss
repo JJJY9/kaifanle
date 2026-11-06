@@ -319,6 +319,27 @@
   margin-bottom: 18rpx;
 }
 
+.rating-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  margin-bottom: 18rpx;
+}
+
+.rating-tag {
+  padding: 6rpx 18rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 21rpx;
+  font-weight: 700;
+}
+
+.rating-tag.active {
+  background: #2FBF71;
+  box-shadow: 2rpx 2rpx 0 #111111;
+}
+
 .rating-option {
   flex: 1;
   display: flex;

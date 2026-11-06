@@ -25,6 +25,7 @@ interface ReviewView {
   label: string
   tone: string
   feedback: string
+  tags: string[]
   reply: string
   replyTime: string
   dishes: string
@@ -92,6 +93,9 @@ Page({
             label: rating.label,
             tone: rating.tone,
             feedback: String(order.feedback || '').trim(),
+            tags: Array.isArray(order.ratingTags)
+              ? order.ratingTags.slice(0, 4)
+              : [],
             reply: String(order.ownerReply || '').trim(),
             replyTime: order.ownerReplyAt
               ? formatTime(order.ownerReplyAt)
