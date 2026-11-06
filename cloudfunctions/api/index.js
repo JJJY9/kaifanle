@@ -715,6 +715,14 @@ async function claimCoupon(payload, openid) {
     throw new Error('这张券已经被领走了')
   }
   if (!coupon.owner) {
+    // 手里的未使用券太多时先别领，避免把券池占满
+    const held = await db
+      .collection('coupons')
+      .where({ owner: openid, status: 'unused' })
+      .count()
+    if ((held.total || 0) >= 5) {
+      throw new Error('手里的券还没用完，先用掉再领')
+    }
     // 条件更新保证同一张券只会被一个人领走（且只能领未使用的券）
     const upd = await db
       .collection('coupons')

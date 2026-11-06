@@ -1588,6 +1588,27 @@ async function run() {
   res = await call('deleteCoupon', { id: couponId }, 'admin-openid')
   assert.strictEqual(res.ok, true)
 
+  // 未使用的券最多同时持有 5 张
+  const hoardedIds = []
+  for (let i = 0; i < 6; i++) {
+    res = await call(
+      'createCoupon',
+      { title: `限领测试券${i}`, note: '' },
+      'admin-openid'
+    )
+    hoardedIds.push(res.data.id)
+    res = await call('claimCoupon', { id: res.data.id }, 'hopper-openid')
+    if (i < 5) {
+      assert.strictEqual(res.ok, true)
+    } else {
+      assert.strictEqual(res.ok, false)
+      assert.ok(String(res.error).indexOf('还没用完') > -1)
+    }
+  }
+  for (const id of hoardedIds) {
+    await call('deleteCoupon', { id }, 'admin-openid')
+  }
+
   console.log(
     '云函数冒烟测试通过：初始化、菜单、菜品 CRUD、下单计价、权限、状态流转、取消订单、订单评价与回复、许愿池、营业设置、每日菜单、口味档案、今日看板、爱心券、售罄拦截、订阅消息。'
   )
