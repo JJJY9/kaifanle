@@ -18,6 +18,7 @@ import type {
   OrderStatus,
   StoreStats,
   UserProfile,
+  WeekMenus,
   Wish,
   WishStatus
 } from './types'
@@ -431,6 +432,13 @@ export async function getMenuForDate(
     return callApi<DailyMenu>('getMenuForDate', { date, meal })
   }
   return mock.getMenuForDate(date, meal)
+}
+
+export async function getWeekMenus(): Promise<WeekMenus> {
+  if (USE_CLOUD) {
+    return callApi<WeekMenus>('getWeekMenus')
+  }
+  return mock.getWeekMenus()
 }
 
 export async function saveMenu(payload: {

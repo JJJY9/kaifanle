@@ -8,6 +8,7 @@
 视觉走「多巴胺潮玩 / 新丑风」：米白底、高饱和色块、4rpx 黑描边、硬投影、贴纸元素。
 
 ![首页预览](docs/home-preview.png)
+![本周饭表](docs/week-menus-preview.png)
 
 ---
 
@@ -15,7 +16,7 @@
 
 - v0.2.0 · 家庭投喂版
 - **默认接入微信云开发**；把 `miniprogram/config.ts` 里的 `USE_CLOUD` 改成 `false` 即可切回本地 mock 数据
-- 已实现：今日菜单、餐次切换、菜品搜索、帮我选、菜品收藏、卡通菜品插画（按菜名生成 SVG，可上传图片覆盖）、菜品做法（点单时展开查看步骤）、菜品详情 / 加料弹层、购物车、结算下单（备注快捷短语）、订单列表（全部 / 进行中 / 已结束筛选、订单号 / 菜名 / 日期搜索）、订单状态时间轴、催单、再来一单、订单评价（😋/🙂/😵 + 留言）、厨房端（接单 / 状态流转 / 新订单轮询提醒 / 今日备菜清单 / 近 7 天统计 / 历史订单 / 评价展示 / 一键复制今日清单 / 菜品 CRUD / 菜品模板库（136 道）/ 分类管理 / 库存 / 营业设置（开关 / 截单 / 今日公告 / 指定休息日 / 每周固定休息）/ 每日菜单编排、菜单模板及一键复制到未来 7 天）、管理员权限、云数据库初始化、订阅消息、内容安全检测、未来 7 天预订、订单取消、许愿池、爱心券、口味与地址档案、今日看板、分享、隐私说明页
+- 已实现：今日菜单、餐次切换、菜品搜索、帮我选、菜品收藏、卡通菜品插画（按菜名生成 SVG，可上传图片覆盖）、菜品做法（点单时展开查看步骤）、菜品详情 / 加料弹层、购物车、结算下单（备注快捷短语）、订单列表（全部 / 进行中 / 已结束筛选、订单号 / 菜名 / 日期搜索）、订单状态时间轴、催单、再来一单、订单评价（😋/🙂/😵 + 留言）、本周饭表（今天起 7 天早/午/晚安排与休息日）、厨房端（接单 / 状态流转 / 新订单轮询提醒 / 今日备菜清单 / 近 7 天统计 / 历史订单 / 评价展示 / 一键复制今日清单 / 菜品 CRUD / 菜品模板库（136 道）/ 分类管理 / 库存 / 营业设置（开关 / 截单 / 今日公告 / 指定休息日 / 每周固定休息）/ 每日菜单编排、菜单模板及一键复制到未来 7 天）、管理员权限、云数据库初始化、订阅消息、内容安全检测、未来 7 天预订、订单取消、许愿池、爱心券、口味与地址档案、今日看板、分享、隐私说明页
 - 未实现：微信支付、小票打印（见路线图）
 
 > **云函数部署提示**：如果「上传并部署」报
@@ -107,7 +108,7 @@ node scripts/init-cloud-db.js ws://127.0.0.1:9420
 ### 云函数动作
 
 `getCategories` / `saveCategory` / `deleteCategory` / `getDishes` / `getDish` / `getOrders` / `getAllOrders` / `getActiveOrders` / `getOrder` /`createOrder` / `cancelOrder` / `urgeOrder` / `rateOrder` / `updateOrderStatus` / `toggleDishStatus` / `saveDish` / `deleteDish` / `moveDish` /
-`getBusiness` / `updateBusiness` / `getMenuForDate` / `saveMenu` / `deleteMenu` / `rollMenu` /
+`getBusiness` / `updateBusiness` / `getMenuForDate` / `getWeekMenus` / `saveMenu` / `deleteMenu` / `rollMenu` /
 `getMyProfile` / `saveMyProfile` / `getStats` / `getMyStats` / `createWish` / `getWishes` / `updateWish` / `deleteWish` /
 `createCoupon` / `getCoupons` / `claimCoupon` / `useCoupon` / `deleteCoupon` / `getMe` / `initDb`
 
@@ -212,7 +213,7 @@ UI 回归与云端验收见 [docs/验收手册.md](docs/验收手册.md)。
 - [x] 每日菜单编排
 - [x] 许愿池、爱心券、口味与地址、今日看板、分享
 - [x] 隐私说明页
-- [ ] 每周菜单 / 定时触发器
+- [x] 每周菜单（本周饭表）/ 定时触发器
 - [ ] 内容安全与正式上架（个体户 + 食品经营许可证 + ICP 备案 + 微信支付）
 
 ## 说明

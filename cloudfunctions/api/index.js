@@ -138,6 +138,8 @@ async function route(action, payload, openid) {
       return deleteCoupon(payload, openid)
     case 'getMenuForDate':
       return getMenuForDate(payload)
+    case 'getWeekMenus':
+      return getWeekMenus()
     case 'rollMenu':
       return rollMenu(openid)
     case 'saveMenu':
@@ -701,6 +703,59 @@ async function getMenuForDate(payload) {
   const meal =
     payload && MEALS.indexOf(payload.meal) > -1 ? payload.meal : 'lunch'
   return getMenuDoc(date, meal)
+}
+
+// 周饭表固定展示北京时间今天起 7 天（今天..今天+6），共 21 个菜单文档；
+// 不接受客户端传入日期，避免被用来扫任意区间。
+async function getWeekMenus() {
+  const now = Date.now()
+  const dates = []
+  for (let i = 0; i < 7; i++) {
+    dates.push(chinaDateString(now + i * 24 * 60 * 60 * 1000))
+  }
+  const ids = []
+  dates.forEach(date => {
+    MEALS.forEach(meal => ids.push(menuDocId(date, meal)))
+  })
+  let docs = []
+  try {
+    const res = await db
+      .collection('menus')
+      .where({ _id: _.in(ids) })
+      .limit(50)
+      .get()
+    docs = res.data || []
+  } catch (e) {
+    // menus 集合还没创建过时视为整周都没排菜单
+    if (!isMissingDocError(e)) {
+      throw e
+    }
+  }
+  const map = {}
+  docs.forEach(doc => {
+    map[doc._id] = doc
+  })
+  return {
+    startDate: dates[0],
+    endDate: dates[dates.length - 1],
+    days: dates.map(date => ({
+      date,
+      weekday: chinaWeekday(date),
+      menus: MEALS.map(meal => {
+        const doc = map[menuDocId(date, meal)]
+        if (!doc) {
+          return { exists: false, date, meal, dishIds: [], open: true }
+        }
+        return {
+          exists: true,
+          date,
+          meal,
+          dishIds: Array.isArray(doc.dishIds) ? doc.dishIds : [],
+          open: doc.open !== false
+        }
+      })
+    }))
+  }
 }
 
 // 管理员补跑一次「每日滚动」：打开厨房时如果今天还没跑过，客户端会自动调用

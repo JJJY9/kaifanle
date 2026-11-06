@@ -205,6 +205,37 @@ function invoke(mp, body) {
   await invoke(mp, 'page.onSave()')
   await sleep(900)
 
+  // 三餐全部停火时，本周饭表应显示「都在休息」而不是「还没排菜单」
+  await mp.navigateTo('/pages/business/index')
+  await sleep(1200)
+  await invoke(
+    mp,
+    "page.onToggleAll({ currentTarget: { dataset: { open: 'false' } } })"
+  )
+  await invoke(mp, 'page.onSave()')
+  await sleep(1200)
+  await mp.navigateTo('/pages/week-menus/index')
+  await sleep(1800)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 本周饭表全周休息空态',
+    data.showEmpty === true &&
+      data.emptyTitle === '这一周都在休息' &&
+      data.emptyAction === '去营业设置',
+    `${data.emptyTitle} / ${data.emptyAction}`
+  )
+  await mp.navigateBack()
+  await sleep(800)
+  await mp.navigateTo('/pages/business/index')
+  await sleep(1200)
+  await invoke(
+    mp,
+    "page.onToggleAll({ currentTarget: { dataset: { open: 'true' } } })"
+  )
+  await invoke(mp, 'page.onSave()')
+  await sleep(1100)
+
   // 排菜单
   await mp.navigateTo('/pages/menu-edit/index')
   await sleep(1800)
@@ -245,10 +276,53 @@ function invoke(mp, body) {
     )
   }
 
+  page = await current()
+  data = await page.data()
+  const savedDate = data.selectedDate
+  const savedMeal = data.meal
+  const savedDishCount = data.dishes.filter(dish => dish.checked).length
+
   await invoke(mp, 'page.onSave()')
   await sleep(1400)
   page = await current()
   check('mock 排菜单保存返回', page.path === 'pages/home/index', page.path)
+
+  // 本周饭表：7 天、保存的那一餐能看到刚排的菜
+  await mp.navigateTo('/pages/week-menus/index')
+  await sleep(2000)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 本周饭表加载',
+    page.path === 'pages/week-menus/index' && (data.days || []).length === 7,
+    `${(data.days || []).length} 天`
+  )
+  const savedDay = (data.days || []).find(day => day.date === savedDate)
+  const savedMealRow =
+    savedDay && savedDay.meals.find(meal => meal.id === savedMeal)
+  check(
+    'mock 本周饭表展示已排菜单',
+    Boolean(savedMealRow) &&
+      (savedMealRow.state === 'ready' || savedMealRow.state === 'cutoff') &&
+      savedMealRow.dishes.length + savedMealRow.moreCount === savedDishCount,
+    savedMealRow
+      ? `${savedMealRow.state} · ${savedMealRow.dishes.length}+${savedMealRow.moreCount} 道`
+      : '没找到当天'
+  )
+  check(
+    'mock 本周饭表其余日期未排',
+    (data.days || []).every(
+      day =>
+        day.date === savedDate ||
+        day.closed ||
+        day.meals.every(
+          meal => meal.state === 'empty' || meal.state === 'off'
+        )
+    ),
+    `今天 ${savedDate}`
+  )
+  await mp.navigateBack()
+  await sleep(900)
   // 恢复默认，保持 mock 状态干净
   await mp.navigateTo('/pages/menu-edit/index')
   await sleep(1600)
