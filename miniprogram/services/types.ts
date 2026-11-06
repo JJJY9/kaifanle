@@ -188,6 +188,35 @@ export interface MyStats {
   favorite: string
 }
 
+export interface KitchenReportDay {
+  date: string
+  label: string
+  amount: number
+  count: number
+}
+
+export interface KitchenReportDish {
+  name: string
+  qty: number
+  revenue: number
+}
+
+export interface KitchenReport {
+  days: number
+  startDate: string
+  endDate: string
+  totalOrders: number
+  cancelled: number
+  completed: number
+  revenue: number
+  avgOrder: number
+  daily: KitchenReportDay[]
+  topDishes: KitchenReportDish[]
+  ratedCount: number
+  avgRating: number
+  goodRate: number
+}
+
 export type CouponStatus = 'unused' | 'used'
 
 export interface Coupon {

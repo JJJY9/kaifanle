@@ -1499,6 +1499,21 @@ async function run() {
   res = await call('getStats', {}, 'girl-openid')
   assert.strictEqual(res.ok, false)
 
+  // 经营月报：管理员专属，30 天明细与菜品排行
+  res = await call('getKitchenReport', {}, 'girl-openid')
+  assert.strictEqual(res.ok, false)
+  res = await call('getKitchenReport', {}, 'admin-openid')
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.days, 30)
+  assert.strictEqual(res.data.daily.length, 30)
+  assert.strictEqual(res.data.endDate, chinaDate(0))
+  assert.ok(res.data.totalOrders >= 1)
+  assert.ok(res.data.revenue >= 40)
+  assert.ok(res.data.topDishes.length >= 1)
+  assert.ok(res.data.topDishes[0].qty >= 1)
+  assert.ok(res.data.ratedCount >= 1)
+  assert.ok(res.data.avgRating > 0)
+
   // 爱心券
   res = await call(
     'createCoupon',
