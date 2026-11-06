@@ -111,7 +111,12 @@ Page({
         }
         if (kitchenStatus) {
           const ahead = Math.max(0, Number(kitchenStatus.active || 0) - 1)
-          queueText = ahead > 0 ? `厨房前面还有 ${ahead} 单` : '马上轮到你'
+          const minutes = Math.floor(
+            (Date.now() - Number(order.createdAt || 0)) / 60000
+          )
+          const wait = minutes >= 5 ? ` · 已等 ${minutes} 分钟` : ''
+          queueText =
+            (ahead > 0 ? `厨房前面还有 ${ahead} 单` : '马上轮到你') + wait
         }
       }
       const profile = order.profile

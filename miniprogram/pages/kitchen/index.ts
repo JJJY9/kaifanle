@@ -944,6 +944,20 @@ Page({
     this.setData({ showPrep: !this.data.showPrep })
   },
 
+  onCopyPrep() {
+    const items = this.data.prepItems || []
+    if (!items.length) {
+      wx.showToast({ title: '今天还没有要备的菜', icon: 'none' })
+      return
+    }
+    const text = [
+      '【张饱饭堂】今日采购清单',
+      `共 ${this.data.prepTotal} 份`,
+      ...items.map((item: any) => `${item.name} × ${item.qty}`)
+    ].join('\n')
+    wx.setClipboardData({ data: text })
+  },
+
   // 把今天的订单整理成一段文字，方便记账或发给家人
   onCopySummary() {
     const todayKey = dateInputString()

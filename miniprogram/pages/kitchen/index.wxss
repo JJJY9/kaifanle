@@ -295,6 +295,23 @@
   font-weight: 800;
 }
 
+.prep-copy {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 58rpx;
+  margin-top: 12rpx;
+  background: #EFE9DC;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 21rpx;
+  font-weight: 800;
+}
+
+.prep-copy:active {
+  transform: translate(2rpx, 2rpx);
+}
+
 .prep-sub {
   margin-top: 2rpx;
   color: #5C5C5C;
