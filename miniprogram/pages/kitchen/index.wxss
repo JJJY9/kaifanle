@@ -1142,6 +1142,27 @@
   box-shadow: 3rpx 3rpx 0 #111111;
 }
 
+.order-meals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  margin: 6rpx 0 12rpx;
+}
+
+.order-meal {
+  padding: 6rpx 18rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
+.order-meal.active {
+  background: #FFD23F;
+  box-shadow: 2rpx 2rpx 0 #111111;
+}
+
 .order-search-icon {
   font-size: 22rpx;
 }

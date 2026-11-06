@@ -169,6 +169,20 @@
         >{{copyingReceipts ? '复制中…' : '复制小票'}}</view>
       </view>
     </view>
+    <view wx:if="{{orders.length}}" class="order-meals">
+      <view
+        class="order-meal {{orderMeal === 'all' ? 'active' : ''}}"
+        data-meal="all"
+        bindtap="onOrderMeal"
+      >全部</view>
+      <view
+        wx:for="{{mealOptions}}"
+        wx:key="id"
+        class="order-meal {{orderMeal === item.id ? 'active' : ''}}"
+        data-meal="{{item.id}}"
+        bindtap="onOrderMeal"
+      >{{item.name}}</view>
+    </view>
     <view wx:if="{{orders.length}}" class="order-search">
       <text class="order-search-icon">🔍</text>
       <input

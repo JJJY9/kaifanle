@@ -404,6 +404,27 @@ function invoke(mp, body) {
   await sleep(300)
   page = await current()
   data = await page.data()
+  await invoke(
+    mp,
+    "page.onOrderMeal({ currentTarget: { dataset: { meal: 'lunch' } } })"
+  )
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 厨房按餐次筛选订单',
+    data.orderMeal === 'lunch' &&
+      (data.ordersView || []).length >= 1 &&
+      data.ordersView.every(order => order.meal === 'lunch'),
+    `${(data.ordersView || []).length} 单`
+  )
+  await invoke(
+    mp,
+    "page.onOrderMeal({ currentTarget: { dataset: { meal: 'all' } } })"
+  )
+  await sleep(300)
+  page = await current()
+  data = await page.data()
   if (receiptOrder) {
     await invoke(
       mp,

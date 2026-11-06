@@ -77,6 +77,8 @@ Page({
     orders: [] as any[],
     ordersView: [] as any[],
     orderKeyword: '',
+    orderMeal: 'all' as 'all' | 'breakfast' | 'lunch' | 'dinner',
+    mealOptions: MEALS,
     preorders: [] as any[],
     history: [] as any[],
     dishes: [] as any[],
@@ -1055,23 +1057,26 @@ Page({
     const keyword = String(this.data.orderKeyword || '')
       .trim()
       .toLowerCase()
-    if (!keyword) {
-      return list
-    }
-    return list.filter(order => {
-      const text = [
-        order.no,
-        order.summary,
-        order.note,
-        order.address,
-        order.mode,
-        (order.items || []).map((item: any) => item.name).join(' ')
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase()
-      return text.indexOf(keyword) > -1
-    })
+    const meal = this.data.orderMeal
+    return list
+      .filter(order => meal === 'all' || order.meal === meal)
+      .filter(order => {
+        if (!keyword) {
+          return true
+        }
+        const text = [
+          order.no,
+          order.summary,
+          order.note,
+          order.address,
+          order.mode,
+          (order.items || []).map((item: any) => item.name).join(' ')
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+        return text.indexOf(keyword) > -1
+      })
   },
 
   onOrderSearch(e: any) {
@@ -1083,8 +1088,23 @@ Page({
     )
   },
 
+  onOrderMeal(e: any) {
+    const meal = e.currentTarget.dataset.meal || 'all'
+    if (meal === this.data.orderMeal) {
+      return
+    }
+    this.setData({ orderMeal: meal }, () => {
+      this.setData({ ordersView: this.filterOrders(this.data.orders) })
+    })
+  },
+
   onClearOrderSearch() {
-    this.setData({ orderKeyword: '', ordersView: this.data.orders })
+    this.setData(
+      { orderKeyword: '' },
+      () => {
+        this.setData({ ordersView: this.filterOrders(this.data.orders) })
+      }
+    )
   },
 
   onToggleHistory() {
