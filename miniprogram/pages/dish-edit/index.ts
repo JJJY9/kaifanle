@@ -33,6 +33,7 @@ Page({
     name: '',
     desc: '',
     price: '',
+    priceBase: 0,
     stock: '-1',
     stockBase: -1,
     ingredientsText: '',
@@ -165,6 +166,7 @@ Page({
           : dish.name,
         desc: dish.desc,
         price: String(dish.price),
+        priceBase: Number(dish.price) || 0,
         stock: String(typeof dish.stock === 'number' ? dish.stock : -1),
         stockBase:
           typeof dish.stock === 'number' ? Number(dish.stock) : -1,
@@ -422,6 +424,7 @@ Page({
       name,
       desc: this.data.desc.trim(),
       price,
+      priceBase: this.data.priceBase,
       categoryId: this.data.categoryId,
       tags: splitList(this.data.tagsText),
       spicyLevels: splitList(this.data.spicyText),

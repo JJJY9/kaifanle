@@ -505,6 +505,7 @@ Page({
         'order.mealText': mealName(updated.meal),
         'order.scheduledDate': updated.scheduledDate,
         'order.scheduledText': dateLabel(updated.scheduledDate || ''),
+        'order.expectedTime': updated.expectedTime || this.data.order.expectedTime,
         slotEditVisible: false,
         slotMeal: updated.meal,
         slotDate: updated.scheduledDate || this.data.slotDate,

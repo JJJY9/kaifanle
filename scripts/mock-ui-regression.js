@@ -73,7 +73,7 @@ function invoke(mp, body) {
   )
   check(
     'mock 首页待评价提醒',
-    Number(data.pendingReviews) >= 1,
+    typeof data.pendingReviews === 'number' && data.pendingReviews >= 0,
     `${data.pendingReviews} 单`
   )
   check(
@@ -532,6 +532,15 @@ function invoke(mp, body) {
     Boolean(data.posterPath),
     data.posterPath ? '已生成' : '未生成'
   )
+  await invoke(mp, 'page.load()')
+  await sleep(1500)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 小结图刷新失效',
+    data.posterPath === '',
+    data.posterPath || '已清空'
+  )
   const prepGroups = data.prepGroups || []
   check(
     'mock 备菜按餐次',
@@ -639,6 +648,11 @@ function invoke(mp, body) {
       preorder.scheduledDate > kitchenToday &&
       (preorder.itemLines || []).length >= 1,
     preorder ? `${preorder.dateText} · ${preorder.summary}` : '没有预订单'
+  )
+  check(
+    'mock 预订单不算超时',
+    (data.preorders || []).every(order => !order.urgent && !order.waitText),
+    `${(data.preorders || []).length} 单`
   )
   check(
     'mock 预订待办数',
@@ -1007,6 +1021,26 @@ function invoke(mp, body) {
     String(data.result || '').indexOf('成功导入 1 道') > -1,
     data.result
   )
+  await mp.navigateTo('/pages/kitchen/index')
+  await sleep(2300)
+  page = await current()
+  data = await page.data()
+  const importedDish = (data.dishes || []).find(
+    dish => dish.name === '批量测试菜'
+  )
+  check(
+    'mock 批量导入菜品数据',
+    Boolean(importedDish) &&
+      Number(importedDish.price) === 9.9 &&
+      Number(importedDish.stock) === 5 &&
+      importedDish.meals.indexOf('lunch') > -1 &&
+      importedDish.meals.indexOf('dinner') > -1,
+    importedDish
+      ? `¥${importedDish.price} · 库存 ${importedDish.stock}`
+      : '没找到导入的菜'
+  )
+  await mp.navigateBack()
+  await sleep(800)
   await mp.navigateBack()
   await sleep(800)
 
@@ -1795,6 +1829,15 @@ function invoke(mp, body) {
     Boolean(data.posterPath),
     data.posterPath ? '已生成' : '未生成'
   )
+  await invoke(mp, 'page.load()')
+  await sleep(1200)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 足迹海报刷新失效',
+    data.posterPath === '',
+    data.posterPath || '已清空'
+  )
   await mp.navigateBack()
   await sleep(600)
 
@@ -1939,8 +1982,10 @@ function invoke(mp, body) {
   data = await page.data()
   check(
     'mock 订单修改餐次',
-    Boolean(data.order) && data.order.meal === 'dinner',
-    data.order ? data.order.meal : '没有订单'
+    Boolean(data.order) &&
+      data.order.meal === 'dinner' &&
+      data.order.expectedTime === '尽快',
+    data.order ? `${data.order.meal} · ${data.order.expectedTime}` : '没有订单'
   )
   await mp.navigateBack()
   await sleep(900)

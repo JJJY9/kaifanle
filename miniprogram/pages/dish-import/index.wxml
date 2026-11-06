@@ -20,7 +20,7 @@
     <view wx:for="{{parsed}}" wx:key="index" class="preview-row">
       <view class="preview-main">
         <text class="preview-name">{{item.name || '（空）'}}</text>
-        <text class="preview-meta">¥{{item.price}} · {{item.categoryName}} · {{item.mealsText}}</text>
+        <text class="preview-meta">¥{{item.price}} · {{item.categoryName}} · {{item.mealsText}} · {{item.stockText}}</text>
       </view>
       <text wx:if="{{item.error}}" class="preview-error">{{item.error}}</text>
       <text wx:else class="preview-ok">可导入</text>
