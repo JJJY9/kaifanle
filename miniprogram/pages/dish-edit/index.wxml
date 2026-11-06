@@ -64,6 +64,11 @@
 
       <view class="field field-column">
         <text class="label">餐次</text>
+        <view class="meal-quick">
+          <view class="quick-chip" data-preset="all" bindtap="onQuickMeals">三餐</view>
+          <view class="quick-chip" data-preset="lunchdinner" bindtap="onQuickMeals">午晚</view>
+          <view class="quick-chip" data-preset="none" bindtap="onQuickMeals">清空</view>
+        </view>
         <view class="chips">
           <view
             wx:for="{{meals}}"

@@ -167,6 +167,21 @@ Page({
     this.setData({ selectedMeals: selected, mealChecked: checked })
   },
 
+  onQuickMeals(e: any) {
+    const preset = e.currentTarget.dataset.preset
+    let selected: MealId[] = []
+    if (preset === 'all') {
+      selected = ['breakfast', 'lunch', 'dinner']
+    } else if (preset === 'lunchdinner') {
+      selected = ['lunch', 'dinner']
+    }
+    const mealChecked: Record<string, boolean> = {}
+    this.data.meals.forEach(meal => {
+      mealChecked[meal.id] = selected.indexOf(meal.id) > -1
+    })
+    this.setData({ selectedMeals: selected, mealChecked })
+  },
+
   onTags(e: any) {
     this.setData({ tagsText: e.detail.value })
   },

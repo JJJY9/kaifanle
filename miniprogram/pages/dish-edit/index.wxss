@@ -49,6 +49,25 @@
   font-size: 26rpx;
 }
 
+.meal-quick {
+  display: flex;
+  gap: 10rpx;
+  margin-bottom: 10rpx;
+}
+
+.quick-chip {
+  padding: 4rpx 16rpx;
+  background: #EFE9DC;
+  border: 2rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
+.quick-chip:active {
+  background: #FFD23F;
+}
+
 .chips {
   display: flex;
   flex-wrap: wrap;

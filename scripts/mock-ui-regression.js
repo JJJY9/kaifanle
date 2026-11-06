@@ -318,6 +318,20 @@ function invoke(mp, body) {
     page.path === 'pages/dish-edit/index' && data.name === '许愿菜',
     data.name
   )
+  await invoke(
+    mp,
+    "page.onQuickMeals({ currentTarget: { dataset: { preset: 'all' } } })"
+  )
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 餐次快捷选择',
+    data.mealChecked.breakfast &&
+      data.mealChecked.lunch &&
+      data.mealChecked.dinner,
+    `${(data.selectedMeals || []).length} 餐`
+  )
   await mp.navigateBack()
   await sleep(900)
 
