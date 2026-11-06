@@ -237,6 +237,19 @@ export interface DishSales {
   orders: number
 }
 
+export interface StockLog {
+  id: string
+  dishId: string
+  dishName: string
+  delta: number | null
+  before?: number
+  after?: number
+  source: 'order' | 'cancel' | 'edit'
+  orderId?: string
+  orderNo?: string
+  createdAt: number
+}
+
 export type CouponStatus = 'unused' | 'used'
 
 export interface Coupon {

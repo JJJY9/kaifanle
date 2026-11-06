@@ -26,6 +26,38 @@
   font-weight: 700;
 }
 
+.stock-logs {
+  margin: 6rpx 0 14rpx;
+  padding: 12rpx 16rpx;
+  background: #F7F7F2;
+  border: 3rpx dashed #111111;
+  border-radius: 14rpx;
+}
+
+.stock-logs-title {
+  margin-bottom: 6rpx;
+  color: #5C5C5C;
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
+.stock-log-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+  padding: 4rpx 0;
+  font-size: 20rpx;
+}
+
+.stock-log-text {
+  font-weight: 700;
+}
+
+.stock-log-time {
+  color: #9A9A9A;
+}
+
 .field {
   display: flex;
   align-items: center;

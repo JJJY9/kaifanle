@@ -789,6 +789,33 @@ function invoke(mp, body) {
     await sleep(1200)
   }
 
+  // 补库存后菜品编辑能看到库存变动记录
+  page = await current()
+  data = await page.data()
+  const restockDish = (data.dishes || []).find(
+    dish =>
+      typeof dish.stock === 'number' && dish.stock >= 0 && dish.stock <= 3
+  )
+  if (restockDish) {
+    await invoke(
+      mp,
+      `page.onRestock({ currentTarget: { dataset: { id: '${restockDish.id}' } } })`
+    )
+    await sleep(1400)
+    await mp.navigateTo('/pages/dish-edit/index?id=' + restockDish.id)
+    await sleep(1600)
+    page = await current()
+    data = await page.data()
+    check(
+      'mock 库存变动记录',
+      (data.stockLogs || []).length >= 1 &&
+        data.stockLogs.some(log => String(log.text).indexOf('手动调整') > -1),
+      `${(data.stockLogs || []).length} 条`
+    )
+    await mp.navigateBack()
+    await sleep(900)
+  }
+
   // 分类管理
   await mp.navigateTo('/pages/category-manage/index')
   await sleep(1600)

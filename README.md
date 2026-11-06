@@ -84,6 +84,7 @@ node scripts/init-cloud-db.js ws://127.0.0.1:9420
 | `users` | 口味、忌口、常用地址档案（文档 ID 为 openid） |
 | `coupons` | 爱心券 |
 | `menus` | 每日菜单（文档 ID 为 `date_meal`） |
+| `stock_logs` | 菜品库存变动记录（下单扣减 / 取消回补 / 手动调整） |
 
 订单金额和菜品单价由云函数按数据库中的菜价重新计算，不信任客户端传值；售罄菜品会被拒绝。
 
@@ -96,6 +97,7 @@ node scripts/init-cloud-db.js ws://127.0.0.1:9420
 - `orders`：`status`（升序）+ `createdAt`（降序）
 - `orders`：`createdAt`（降序）、`scheduledDate`（升序）
 - `dishes`：`sort`（升序）
+- `stock_logs`：`dishId`（升序）+ `createdAt`（降序）
 - `coupons`：`owner`（升序）
 
 ### 每日菜单自动滚动
@@ -112,7 +114,7 @@ node scripts/init-cloud-db.js ws://127.0.0.1:9420
 
 `getCategories` / `saveCategory` / `moveCategory` / `deleteCategory` / `getDishes` / `getDish` / `getOrders` / `getOrdersPage` / `getLastOrder` / `getMyActiveOrder` / `getAllOrders` / `getActiveOrders` / `acceptPendingOrders` / `getOrder` /`createOrder` / `cancelOrder` / `updateOrderNote` / `urgeOrder` / `rateOrder` / `replyRating` / `updateOrderStatus` / `toggleDishStatus` / `saveDish` / `deleteDish` / `moveDish` /
 `getBusiness` / `updateBusiness` / `getMenuForDate` / `getWeekMenus` / `saveMenu` / `deleteMenu` / `rollMenu` / `getMenuTemplates` / `saveMenuTemplates` /
-`getMyProfile` / `saveMyProfile` / `getStats` / `getKitchenReport` / `getKitchenStatus` / `getDishSales` / `getMyStats` / `createWish` / `getWishes` / `updateWish` / `deleteWish` /
+`getMyProfile` / `saveMyProfile` / `getStats` / `getKitchenReport` / `getKitchenStatus` / `getDishSales` / `getStockLogs` / `getMyStats` / `createWish` / `getWishes` / `updateWish` / `deleteWish` /
 `createCoupon` / `getCoupons` / `getMyExpiringCoupons` / `claimCoupon` / `useCoupon` / `deleteCoupon` / `exportData` / `getMe` / `initDb`
 
 ### 订阅消息

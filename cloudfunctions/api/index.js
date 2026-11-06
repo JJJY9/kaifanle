@@ -151,6 +151,8 @@ async function route(action, payload, openid) {
       return getKitchenReport(openid)
     case 'getDishSales':
       return getDishSales(payload, openid)
+    case 'getStockLogs':
+      return getStockLogs(payload, openid)
     case 'createCoupon':
       return createCoupon(payload, openid)
     case 'getCoupons':
@@ -300,6 +302,18 @@ async function ensureCollection(name) {
     await db.createCollection(name)
   } catch (e) {
     // 集合已存在时会报错，忽略即可
+  }
+}
+
+// 库存变动日志：失败不影响主流程，主要用于事后核对
+async function logStock(entry) {
+  try {
+    await ensureCollection('stock_logs')
+    await db.collection('stock_logs').add({
+      data: Object.assign({}, entry, { createdAt: Date.now() })
+    })
+  } catch (e) {
+    console.warn('[api] logStock failed:', entry, e)
   }
 }
 
@@ -568,6 +582,27 @@ function chinaStartOfMonth() {
 }
 
 // 厨房近 30 天经营概览：营收、订单、客单价、菜品排行与评分
+// 菜品库存变动记录（管理员）
+async function getStockLogs(payload, openid) {
+  await requireAdmin(openid)
+  const dishId = String((payload && payload.dishId) || '')
+  const limit = Math.min(
+    50,
+    Math.max(1, Number((payload && payload.limit) || 10))
+  )
+  try {
+    let query = db.collection('stock_logs')
+    if (dishId) {
+      query = query.where({ dishId })
+    }
+    const res = await query.orderBy('createdAt', 'desc').limit(limit).get()
+    return (res.data || []).map(withId)
+  } catch (e) {
+    // 集合还没建立时返回空
+    return []
+  }
+}
+
 async function getDishSales(payload, openid) {
   await requireAdmin(openid)
   const name = String((payload && payload.name) || '')
@@ -1848,6 +1883,19 @@ async function createOrder(payload, openid) {
 
     const addRes = await db.collection('orders').add({ data: order })
 
+    for (const item of items) {
+      if (item.stockDeducted) {
+        await logStock({
+          dishId: item.dishId,
+          dishName: item.name,
+          delta: -Number(item.qty || 0),
+          source: 'order',
+          orderId: addRes._id,
+          orderNo
+        })
+      }
+    }
+
     // 新订单提醒：只发给已订阅「新订单提醒」模板的管理员。
     // 发送失败（没订阅 / 模板未配置）不影响下单。
     if (tpl.NEW_ORDER_TEMPLATE_ID) {
@@ -2130,6 +2178,14 @@ async function restoreStock(order) {
         .collection('dishes')
         .doc(item.dishId)
         .update({ data: { stock: _.inc(item.qty) } })
+      await logStock({
+        dishId: item.dishId,
+        dishName: item.name,
+        delta: Number(item.qty || 0),
+        source: 'cancel',
+        orderId: order._id,
+        orderNo: order.no
+      })
     } catch (e) {
       if (isMissingDocError(e)) {
         // 菜品被删掉了，库存没有可回补的目标
@@ -2388,6 +2444,27 @@ async function saveDish(payload, openid) {
             ? stock
             : Math.max(0, currentStock + (stock - stockBase))
           : stock
+    }
+    const beforeStock =
+      typeof dish.stock === 'number' ? Number(dish.stock) : null
+    if (
+      typeof fields.stock === 'number' &&
+      beforeStock !== null &&
+      Number(fields.stock) !== beforeStock
+    ) {
+      const afterStock = Number(fields.stock)
+      await logStock({
+        dishId: id,
+        dishName: name,
+        before: beforeStock,
+        after: afterStock,
+        delta:
+          beforeStock >= 0 && afterStock >= 0
+            ? afterStock - beforeStock
+            : null,
+        source: 'edit',
+        openid
+      })
     }
     await db.collection('dishes').doc(id).update({ data: fields })
     // 换图后顺手删掉旧图，避免云存储堆积

@@ -1967,6 +1967,99 @@ async function run() {
     await call('deleteCoupon', { id }, 'admin-openid')
   }
 
+  // 库存变动日志：下单扣减、取消回补、手动调整
+  const stockDish = await call(
+    'saveDish',
+    {
+      name: '库存测试菜',
+      desc: '',
+      price: 10,
+      categoryId: 'staple',
+      tags: [],
+      spicyLevels: [],
+      addons: [],
+      color: '#FFD23F',
+      meals: ['lunch'],
+      status: 'on',
+      stock: 5,
+      isRecommended: false
+    },
+    'admin-openid'
+  )
+  assert.strictEqual(stockDish.ok, true)
+  // 清掉今天午餐菜单，避免新测试菜不在菜单里被拦截
+  await call(
+    'deleteMenu',
+    { date: chinaDate(0), meal: 'lunch' },
+    'admin-openid'
+  )
+  const stockLogOrder = await call(
+    'createOrder',
+    {
+      items: [{ dishId: stockDish.data.id, qty: 1, specs: [] }],
+      meal: 'lunch',
+      expectedTime: '12:00',
+      mode: '在家吃'
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(stockLogOrder.ok, true)
+  let stockLogs = await call(
+    'getStockLogs',
+    { dishId: stockDish.data.id },
+    'admin-openid'
+  )
+  assert.strictEqual(stockLogs.ok, true)
+  assert.ok(
+    stockLogs.data.some(log => log.source === 'order' && log.delta === -1)
+  )
+  await call('cancelOrder', { id: stockLogOrder.data.id }, 'girl-openid')
+  stockLogs = await call(
+    'getStockLogs',
+    { dishId: stockDish.data.id },
+    'admin-openid'
+  )
+  assert.ok(
+    stockLogs.data.some(log => log.source === 'cancel' && log.delta === 1)
+  )
+  res = await call(
+    'saveDish',
+    {
+      id: stockDish.data.id,
+      name: '库存测试菜',
+      desc: '',
+      price: 10,
+      categoryId: 'staple',
+      tags: [],
+      spicyLevels: [],
+      addons: [],
+      color: '#FFD23F',
+      meals: ['lunch'],
+      status: 'on',
+      stock: 8,
+      stockBase: 5,
+      isRecommended: false
+    },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.stock, 8)
+  stockLogs = await call(
+    'getStockLogs',
+    { dishId: stockDish.data.id },
+    'admin-openid'
+  )
+  assert.ok(
+    stockLogs.data.some(log => log.source === 'edit' && log.delta === 3)
+  )
+  res = await call(
+    'getStockLogs',
+    { dishId: stockDish.data.id },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, false)
+  await call('deleteDish', { id: stockDish.data.id }, 'admin-openid')
+
   // 厨房一键接单：管理员专属，只处理今天及逾期的待接单
   const batchOrder = await call(
     'createOrder',

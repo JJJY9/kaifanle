@@ -21,6 +21,7 @@ import type {
   MyStats,
   Order,
   OrderStatus,
+  StockLog,
   StoreStats,
   UserProfile,
   WeekMenus,
@@ -547,6 +548,16 @@ export async function getDishSales(name: string): Promise<DishSales> {
     return callApi<DishSales>('getDishSales', { name })
   }
   return mock.getDishSales(name)
+}
+
+export async function getStockLogs(
+  dishId: string,
+  limit = 10
+): Promise<StockLog[]> {
+  if (USE_CLOUD) {
+    return callApi<StockLog[]>('getStockLogs', { dishId, limit })
+  }
+  return mock.getStockLogs(dishId, limit)
 }
 
 export async function getMyStats(): Promise<MyStats> {

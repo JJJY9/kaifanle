@@ -17,6 +17,7 @@ import type {
   MyStats,
   Order,
   OrderStatus,
+  StockLog,
   StoreStats,
   UserProfile,
   WeekMenus,
@@ -100,7 +101,8 @@ const DISHES: Dish[] = [
     addons: [{ id: 'a2', name: '加饭', price: 1 }],
     status: 'soldout',
     color: '#FF6B35',
-    meals: ['lunch', 'dinner']
+    meals: ['lunch', 'dinner'],
+    stock: 0
   },
   {
     id: 'd04',
@@ -265,6 +267,17 @@ let profileCache: UserProfile | null = null
 let couponCache: Coupon[] | null = null
 let menuCache: Record<string, DailyMenu> | null = null
 const dishStatusOverrides: Record<string, Dish['status']> = loadOverrides()
+
+let stockLogs: StockLog[] = []
+
+function addStockLog(entry: Omit<StockLog, 'id' | 'createdAt'>) {
+  stockLogs.unshift({
+    ...entry,
+    id: 'sl' + Date.now() + Math.random().toString(36).slice(2, 6),
+    createdAt: Date.now()
+  })
+  stockLogs = stockLogs.slice(0, 200)
+}
 
 const dishes: Dish[] = DISHES.map(dish => ({
   ...dish,
@@ -762,7 +775,27 @@ export async function saveDish(payload: DishInput): Promise<Dish> {
     } else {
       fields.stock = Number(existing.stock)
     }
+    const beforeStock =
+      typeof existing.stock === 'number' ? Number(existing.stock) : null
     Object.assign(existing, fields)
+    if (
+      beforeStock !== null &&
+      typeof existing.stock === 'number' &&
+      Number(existing.stock) !== beforeStock
+    ) {
+      const afterStock = Number(existing.stock)
+      addStockLog({
+        dishId: payload.id,
+        dishName: name,
+        before: beforeStock,
+        after: afterStock,
+        delta:
+          beforeStock >= 0 && afterStock >= 0
+            ? afterStock - beforeStock
+            : null,
+        source: 'edit'
+      })
+    }
     return { ...existing }
   }
   dishes.push(fields)
@@ -971,6 +1004,18 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
     createdAt: now
   }
   orders.unshift(order)
+  orderItems.forEach(item => {
+    if (item.stockDeducted) {
+      addStockLog({
+        dishId: item.dishId,
+        dishName: item.name,
+        delta: -Number(item.qty || 0),
+        source: 'order',
+        orderId: order.id,
+        orderNo: order.no
+      })
+    }
+  })
   saveOrders()
   return { ...order }
 }
@@ -1003,6 +1048,14 @@ export async function cancelOrder(
     const dish = dishes.find(entry => entry.id === item.dishId)
     if (dish && typeof dish.stock === 'number') {
       dish.stock = Number(dish.stock) + item.qty
+      addStockLog({
+        dishId: item.dishId,
+        dishName: item.name,
+        delta: Number(item.qty || 0),
+        source: 'cancel',
+        orderId: order.id,
+        orderNo: order.no
+      })
     }
   }
   saveOrders()
@@ -1143,6 +1196,8 @@ export async function updateOrderStatus(
   if (!order) {
     return null
   }
+  const cancellableBefore =
+    order.status === 'pending' || order.status === 'accepted'
   order.status = status
   if (status === 'cancelled') {
     order.cancelReason = String(reason || '').trim().slice(0, 50)
@@ -1153,6 +1208,25 @@ export async function updateOrderStatus(
     title: STATUS_STEP_TEXT[status],
     time: Date.now()
   })
+  if (status === 'cancelled' && cancellableBefore) {
+    for (const item of order.items as any[]) {
+      if (!item.stockDeducted) {
+        continue
+      }
+      const dish = dishes.find(entry => entry.id === item.dishId)
+      if (dish && typeof dish.stock === 'number') {
+        dish.stock = Number(dish.stock) + Number(item.qty || 0)
+        addStockLog({
+          dishId: item.dishId,
+          dishName: item.name,
+          delta: Number(item.qty || 0),
+          source: 'cancel',
+          orderId: order.id,
+          orderNo: order.no
+        })
+      }
+    }
+  }
   saveOrders()
   return { ...order }
 }
@@ -1353,6 +1427,18 @@ export async function getDishSales(name: string): Promise<DishSales> {
     }
   })
   return { name: target, qty, orders }
+}
+
+export async function getStockLogs(
+  dishId: string,
+  limit = 10
+): Promise<StockLog[]> {
+  await delay(40)
+  const size = Math.min(50, Math.max(1, Number(limit) || 10))
+  return stockLogs
+    .filter(log => !dishId || log.dishId === dishId)
+    .slice(0, size)
+    .map(log => ({ ...log }))
 }
 
 export async function getKitchenReport(): Promise<KitchenReport> {

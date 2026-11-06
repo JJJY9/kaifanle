@@ -57,6 +57,13 @@
           bindinput="onStock"
         />
       </view>
+      <view wx:if="{{stockLogs.length}}" class="stock-logs">
+        <view class="stock-logs-title">最近库存变动</view>
+        <view wx:for="{{stockLogs}}" wx:key="id" class="stock-log-row">
+          <text class="stock-log-text">{{item.text}}</text>
+          <text class="stock-log-time">{{item.timeText}}</text>
+        </view>
+      </view>
 
       <view class="field field-column">
         <text class="label">分类</text>

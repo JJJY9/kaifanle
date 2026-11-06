@@ -3,8 +3,9 @@ import type {
   DishInput,
   MealId
 } from '../../services/types'
-import { getCategories, getDish, getDishSales, saveDish, deleteDish } from '../../services/api'
+import { getCategories, getDish, getDishSales, getStockLogs, saveDish, deleteDish } from '../../services/api'
 import { MEALS } from '../../utils/constants'
+import { formatDate } from '../../utils/format'
 import { backAfter } from '../../utils/nav'
 import { prepareImageForUpload } from '../../utils/image'
 import { USE_CLOUD } from '../../config'
@@ -58,7 +59,8 @@ Page({
     ],
     status: 'on',
     isRecommended: false,
-    salesText: ''
+    salesText: '',
+    stockLogs: [] as any[]
   },
 
   onLoad(options: any) {
@@ -108,6 +110,31 @@ Page({
               salesText: sales.qty
                 ? `近 30 天卖出 ${sales.qty} 份 · ${sales.orders} 单`
                 : '近 30 天还没卖过'
+            })
+          })
+          .catch(() => {})
+        getStockLogs(dish.id, 5)
+          .then(logs => {
+            this.setData({
+              stockLogs: (logs || []).map(log => {
+                const label =
+                  log.source === 'order'
+                    ? '下单扣减'
+                    : log.source === 'cancel'
+                    ? '取消回补'
+                    : '手动调整'
+                const delta =
+                  log.delta === null
+                    ? `改为 ${log.after}`
+                    : `${log.delta > 0 ? '+' : ''}${log.delta}`
+                return {
+                  id: log.id,
+                  text: `${delta} · ${label}${
+                    log.orderNo ? ` #${log.orderNo}` : ''
+                  }`,
+                  timeText: formatDate(log.createdAt)
+                }
+              })
             })
           })
           .catch(() => {})
