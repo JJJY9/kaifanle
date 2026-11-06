@@ -514,8 +514,26 @@ function loadOrders(): Order[] {
   try {
     const raw = wx.getStorageSync(ORDERS_KEY)
     if (raw) {
-      orderCache = JSON.parse(raw)
-      return orderCache as Order[]
+      const stored = JSON.parse(raw)
+      if (Array.isArray(stored)) {
+        // 种子订单是当天的演示数据；隔天打开时换一批新的，避免排队提示等
+        // 依赖“今天”的界面在旧数据上表现异常
+        const today = dateInputString()
+        const staleSeed = stored.some(
+          (order: Order) =>
+            /^seed-/.test(order.id) &&
+            dateInputString(new Date(order.createdAt)) !== today
+        )
+        orderCache = staleSeed
+          ? stored
+              .filter((order: Order) => !/^seed-/.test(order.id))
+              .concat(seedOrders())
+          : stored
+        if (staleSeed) {
+          saveOrders()
+        }
+        return orderCache
+      }
     }
   } catch (e) {
     // 读取失败则使用种子数据
@@ -667,6 +685,25 @@ export async function saveDish(payload: DishInput): Promise<Dish> {
     const existing = dishes.find(item => item.id === payload.id)
     if (!existing) {
       throw new Error('菜品不存在')
+    }
+    const stockBase = Number(payload.stockBase)
+    if (isFinite(stockBase) && stockBase >= -1) {
+      const target = Number(fields.stock)
+      if (target === stockBase) {
+        fields.stock = Number(existing.stock)
+      } else if (target === -1 || stockBase === -1) {
+        fields.stock = target
+      } else {
+        const current = Number(existing.stock)
+        fields.stock =
+          isFinite(current) && current >= 0
+            ? current === stockBase
+              ? target
+              : Math.max(0, current + (target - stockBase))
+            : target
+      }
+    } else {
+      fields.stock = Number(existing.stock)
     }
     Object.assign(existing, fields)
     return { ...existing }
@@ -1112,9 +1149,12 @@ export async function getStats(): Promise<StoreStats> {
 
 export async function getKitchenStatus(): Promise<KitchenStatus> {
   await delay(40)
+  const today = dateInputString()
   const active = loadOrders().filter(
     order =>
-      ['pending', 'accepted', 'cooking', 'ready'].indexOf(order.status) > -1
+      ['pending', 'accepted', 'cooking'].indexOf(order.status) > -1 &&
+      (order.scheduledDate ||
+        dateInputString(new Date(order.createdAt))) === today
   ).length
   return { active, busy: active > 0 }
 }
@@ -1124,7 +1164,10 @@ export async function getDishSales(name: string): Promise<DishSales> {
   const target = String(name || '').trim()
   let qty = 0
   let orders = 0
-  loadOrders().forEach(order => {
+  const start = Date.now() - 29 * 24 * 60 * 60 * 1000
+  loadOrders()
+    .filter(order => Number(order.createdAt) >= start)
+    .forEach(order => {
     if (order.status === 'cancelled') {
       return
     }

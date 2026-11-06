@@ -21,10 +21,13 @@ const TIME_OPTIONS: Record<MealId, string[]> = {
 const MODES = ['在家吃', '送过来', '自取']
 const NOTE_PRESETS = ['少放辣', '多加点饭', '不要香菜', '早点送']
 
-function buildLines(meal?: MealId): any[] {
+function buildLines(meal?: MealId, date?: string): any[] {
   return cart
     .getLines()
-    .filter(line => !meal || line.meal === meal)
+    .filter(
+      line =>
+        (!meal || line.meal === meal) && (!date || line.date === date)
+    )
     .map(line => ({
       ...line,
       char: dishEmoji(line.name),
@@ -87,7 +90,7 @@ Page({
       requestedDate && requestedDate >= todayDate && requestedDate <= maxDate
         ? requestedDate
         : todayDate
-    const lines = buildLines(meal)
+    const lines = buildLines(meal, scheduledDate)
     this.setData({
       lines,
       total: totalOf(lines),
@@ -104,8 +107,8 @@ Page({
     this.newRequestId()
   },
 
-  applySlot(meal: MealId): any[] {
-    return buildLines(meal).map(line => ({
+  applySlot(meal: MealId, date: string): any[] {
+    return buildLines(meal, date).map(line => ({
       ...line,
       invalid: Boolean(this._slotInvalid[line.key]),
       invalidText: this._slotInvalid[line.key] || ''
@@ -114,7 +117,7 @@ Page({
 
   async checkSlot(meal: MealId, date: string) {
     const seq = ++this._slotSeq
-    const lines = buildLines(meal)
+    let lines = buildLines(meal, date)
     if (!lines.length) {
       this._slotInvalid = {}
       this.setData({
@@ -143,6 +146,18 @@ Page({
       dishes.forEach(dish => {
         dishMap[dish.id] = dish
       })
+      // 菜品改价后同步购物车单价，避免结算显示价和服务端实收不一致
+      lines.forEach(line => {
+        const dish = dishMap[line.dishId]
+        if (!dish) {
+          return
+        }
+        const addonSum = (dish.addons || [])
+          .filter((addon: any) => line.specs.indexOf(addon.name) > -1)
+          .reduce((sum: number, addon: any) => sum + Number(addon.price || 0), 0)
+        cart.updatePrice(line.key, dish.price + addonSum)
+      })
+      lines = buildLines(meal, date)
       const paused = Boolean(menu.exists && menu.open === false)
       const invalid: Record<string, string> = {}
       lines.forEach(line => {
@@ -167,7 +182,7 @@ Page({
         }
       })
       this._slotInvalid = invalid
-      const decorated = this.applySlot(meal)
+      const decorated = this.applySlot(meal, date)
       this.setData({
         lines: decorated,
         total: totalOf(decorated),
@@ -185,7 +200,7 @@ Page({
       }
       // 校验失败不拦下单，服务端会做最终校验
       this._slotInvalid = {}
-      const decorated = this.applySlot(meal)
+      const decorated = this.applySlot(meal, date)
       this.setData({
         lines: decorated,
         total: totalOf(decorated),
@@ -264,7 +279,7 @@ Page({
       return
     }
     this._slotInvalid = {}
-    const lines = buildLines(meal)
+    const lines = buildLines(meal, this.data.scheduledDate)
     this.newRequestId()
     this.setData(
       {
@@ -297,10 +312,16 @@ Page({
     }
     const date = e.detail.value
     this.newRequestId()
+    this._slotInvalid = {}
+    const lines = buildLines(this.data.meal, date)
     this.setData(
       {
         scheduledDate: date,
-        dateDisplay: dateLabel(date, this.data.todayDate)
+        dateDisplay: dateLabel(date, this.data.todayDate),
+        lines,
+        total: totalOf(lines),
+        slotInvalidCount: 0,
+        slotError: ''
       },
       () => {
         this.checkClosed(this.data.meal)
@@ -338,7 +359,7 @@ Page({
       wx.navigateBack({ delta: 1 })
       return
     }
-    const lines = this.applySlot(this.data.meal)
+    const lines = this.applySlot(this.data.meal, this.data.scheduledDate)
     this.setData({
       lines,
       total: totalOf(lines),
@@ -358,7 +379,7 @@ Page({
       wx.navigateBack({ delta: 1 })
       return
     }
-    const lines = this.applySlot(this.data.meal)
+    const lines = this.applySlot(this.data.meal, this.data.scheduledDate)
     this.setData({
       lines,
       total: totalOf(lines),
@@ -379,7 +400,7 @@ Page({
     if (!res.confirm) {
       return
     }
-    cart.clearMeal(this.data.meal)
+    cart.clearSlot(this.data.meal, this.data.scheduledDate)
     wx.navigateBack({ delta: 1 })
   },
 
@@ -449,7 +470,7 @@ Page({
         scheduledDate,
         requestId
       })
-      cart.clearMeal(meal)
+      cart.clearSlot(meal, scheduledDate)
       wx.redirectTo({ url: `/pages/order-detail/index?id=${order.id}` })
     } catch (e: any) {
       const message =

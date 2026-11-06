@@ -45,7 +45,6 @@ Page({
 
   onLoad(options: any) {
     this.orderId = options.id || ''
-    this.load()
   },
 
   onShow() {
@@ -100,23 +99,31 @@ Page({
       if (!order) {
         throw new Error('订单不存在')
       }
-      let queueText = ''
+      let queueText = silent ? this.data.queueText : ''
       if (
-        !silent &&
-        ['pending', 'accepted', 'cooking'].indexOf(order.status) > -1
+        ['pending', 'accepted', 'cooking'].indexOf(order.status) === -1
       ) {
-        const kitchenStatus = await getKitchenStatus().catch(() => null)
-        if (seq !== this._loadSeq) {
-          return
-        }
-        if (kitchenStatus) {
-          const ahead = Math.max(0, Number(kitchenStatus.active || 0) - 1)
-          const minutes = Math.floor(
-            (Date.now() - Number(order.createdAt || 0)) / 60000
-          )
-          const wait = minutes >= 5 ? ` · 已等 ${minutes} 分钟` : ''
-          queueText =
-            (ahead > 0 ? `厨房前面还有 ${ahead} 单` : '马上轮到你') + wait
+        queueText = ''
+      } else if (!silent) {
+        const today = dateInputString()
+        const orderDate =
+          order.scheduledDate || dateInputString(new Date(order.createdAt))
+        if (orderDate !== today) {
+          queueText = ''
+        } else {
+          const kitchenStatus = await getKitchenStatus().catch(() => null)
+          if (seq !== this._loadSeq) {
+            return
+          }
+          if (kitchenStatus) {
+            const ahead = Math.max(0, Number(kitchenStatus.active || 0) - 1)
+            const minutes = Math.floor(
+              (Date.now() - Number(order.createdAt || 0)) / 60000
+            )
+            const wait = minutes >= 5 ? ` · 已等 ${minutes} 分钟` : ''
+            queueText =
+              (ahead > 0 ? `厨房前面还有 ${ahead} 单` : '马上轮到你') + wait
+          }
         }
       }
       const profile = order.profile
@@ -230,6 +237,11 @@ Page({
       app.globalData.pendingReorder = null
     }
     this.setData({ reordering: true })
+    const today = dateInputString()
+    const targetDate =
+      order.scheduledDate && order.scheduledDate >= today
+        ? order.scheduledDate
+        : today
     try {
       // 用当前菜价和供应状态重新加购，下架/售罄的菜跳过
       let dishes: Dish[] | null = null
@@ -268,6 +280,7 @@ Page({
         cart.add({
           key: '',
           meal: order.meal,
+          date: targetDate,
           dishId: item.dishId,
           name: dish ? dish.name : item.name,
           price: dish

@@ -54,6 +54,20 @@ async function callApi<T>(action: string, payload?: any): Promise<T> {
 
 // 分类几乎不变，缓存 5 分钟，减少首页每次进入的数据库读取
 let categoriesCache: { at: number; data: Category[] } | null = null
+let businessCache: { at: number; data: Business } | null = null
+let menuCache: Record<string, { at: number; data: DailyMenu }> = {}
+let kitchenStatusCache: { at: number; data: KitchenStatus } | null = null
+const BUSINESS_CACHE_TTL = 60 * 1000
+const MENU_CACHE_TTL = 60 * 1000
+const KITCHEN_STATUS_TTL = 30 * 1000
+
+function cloneData<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value))
+}
+
+function invalidateMenuCache() {
+  menuCache = {}
+}
 
 export async function getCategories(): Promise<Category[]> {
   if (USE_CLOUD) {
@@ -375,14 +389,25 @@ export async function deleteWish(id: string): Promise<{ id: string }> {
 
 export async function getBusiness(): Promise<Business> {
   if (USE_CLOUD) {
-    return callApi<Business>('getBusiness')
+    if (
+      businessCache &&
+      Date.now() - businessCache.at < BUSINESS_CACHE_TTL
+    ) {
+      return cloneData(businessCache.data)
+    }
+    const data = await callApi<Business>('getBusiness')
+    businessCache = { at: Date.now(), data }
+    return cloneData(data)
   }
   return mock.getBusiness()
 }
 
 export async function updateBusiness(payload: Business): Promise<Business> {
   if (USE_CLOUD) {
-    return callApi<Business>('updateBusiness', payload)
+    const result = await callApi<Business>('updateBusiness', payload)
+    businessCache = null
+    invalidateMenuCache()
+    return result
   }
   return mock.updateBusiness(payload)
 }
@@ -419,7 +444,15 @@ export async function getKitchenReport(): Promise<KitchenReport> {
 
 export async function getKitchenStatus(): Promise<KitchenStatus> {
   if (USE_CLOUD) {
-    return callApi<KitchenStatus>('getKitchenStatus')
+    if (
+      kitchenStatusCache &&
+      Date.now() - kitchenStatusCache.at < KITCHEN_STATUS_TTL
+    ) {
+      return cloneData(kitchenStatusCache.data)
+    }
+    const data = await callApi<KitchenStatus>('getKitchenStatus')
+    kitchenStatusCache = { at: Date.now(), data }
+    return cloneData(data)
   }
   return mock.getKitchenStatus()
 }
@@ -440,7 +473,9 @@ export async function getMyStats(): Promise<MyStats> {
 
 export async function rollMenu(): Promise<any> {
   if (USE_CLOUD) {
-    return callApi<any>('rollMenu')
+    const result = await callApi<any>('rollMenu')
+    invalidateMenuCache()
+    return result
   }
   return mock.rollMenu()
 }
@@ -489,7 +524,14 @@ export async function getMenuForDate(
   meal: MealId
 ): Promise<DailyMenu> {
   if (USE_CLOUD) {
-    return callApi<DailyMenu>('getMenuForDate', { date, meal })
+    const key = date + '_' + meal
+    const cached = menuCache[key]
+    if (cached && Date.now() - cached.at < MENU_CACHE_TTL) {
+      return cloneData(cached.data)
+    }
+    const data = await callApi<DailyMenu>('getMenuForDate', { date, meal })
+    menuCache[key] = { at: Date.now(), data }
+    return cloneData(data)
   }
   return mock.getMenuForDate(date, meal)
 }
@@ -524,7 +566,9 @@ export async function saveMenu(payload: {
   open: boolean
 }): Promise<DailyMenu> {
   if (USE_CLOUD) {
-    return callApi<DailyMenu>('saveMenu', payload)
+    const result = await callApi<DailyMenu>('saveMenu', payload)
+    invalidateMenuCache()
+    return result
   }
   return mock.saveMenu(payload)
 }
@@ -534,10 +578,15 @@ export async function deleteMenu(
   meal: MealId
 ): Promise<{ date: string; meal: MealId }> {
   if (USE_CLOUD) {
-    return callApi<{ date: string; meal: MealId }>('deleteMenu', {
-      date,
-      meal
-    })
+    const result = await callApi<{ date: string; meal: MealId }>(
+      'deleteMenu',
+      {
+        date,
+        meal
+      }
+    )
+    invalidateMenuCache()
+    return result
   }
   return mock.deleteMenu(date, meal)
 }

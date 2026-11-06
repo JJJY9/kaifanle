@@ -161,7 +161,10 @@ Page({
         getCoupons().catch(() => [])
       ])
       const couponCount = (coupons || []).filter(
-        coupon => coupon.owner === me.openid && coupon.status === 'unused'
+        coupon =>
+          coupon.owner === me.openid &&
+          coupon.status === 'unused' &&
+          (!coupon.expiresAt || Number(coupon.expiresAt) >= Date.now())
       ).length
 
       this.setData({

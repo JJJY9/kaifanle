@@ -15,8 +15,8 @@ Page({
   _unsub: null as null | (() => void),
 
   onLoad() {
-    this._unsub = favorites.subscribe(ids => {
-      this.setData({ count: ids.length }, () => this.applyFilter())
+    this._unsub = favorites.subscribe(() => {
+      this.applyFilter()
     })
   },
 
@@ -35,8 +35,9 @@ Page({
     try {
       const dishes = await getDishes()
       const allFavorites = favorites.filter(dishes)
-      this.setData({ allFavorites, loading: false, error: '' }, () =>
-        this.applyFilter()
+      this.setData(
+        { allFavorites, count: allFavorites.length, loading: false, error: '' },
+        () => this.applyFilter()
       )
     } catch (e: any) {
       this.setData({

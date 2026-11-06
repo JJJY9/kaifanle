@@ -616,7 +616,11 @@ Page({
     const nextStock = Math.max(0, Number(dish.stock)) + 5
     this.setData({ restockingId: id })
     try {
-      const updated = await saveDish({ ...dish, stock: nextStock } as any)
+      const updated = await saveDish({
+        ...dish,
+        stock: nextStock,
+        stockBase: dish.stock
+      } as any)
       const stock =
         updated && typeof updated.stock === 'number'
           ? updated.stock
@@ -681,7 +685,8 @@ Page({
       try {
         const updated = await saveDish({
           ...dish,
-          stock: Number(dish.stock) + 5
+          stock: Number(dish.stock) + 5,
+          stockBase: dish.stock
         } as any)
         stockMap[dish.id] =
           updated && typeof updated.stock === 'number'
@@ -762,7 +767,11 @@ Page({
         continue
       }
       try {
-        const saved = await saveDish({ ...dish, status } as any)
+        const saved = await saveDish({
+          ...dish,
+          status,
+          stockBase: dish.stock
+        } as any)
         statusMap[dish.id] =
           saved && saved.status ? saved.status : status
         done++

@@ -439,13 +439,18 @@ function chinaStartOfDay() {
 
 async function getKitchenStatus() {
   try {
+    const today = chinaDateString()
     const res = await db
       .collection('orders')
       .where({
-        status: _.in(['pending', 'accepted', 'cooking', 'ready'])
+        status: _.in(['pending', 'accepted', 'cooking'])
       })
-      .count()
-    const active = Number(res.total || 0)
+      .limit(100)
+      .get()
+    const active = (res.data || []).filter(
+      order =>
+        (order.scheduledDate || chinaDateString(order.createdAt)) === today
+    ).length
     return { active, busy: active > 0 }
   } catch (e) {
     if (isMissingDocError(e)) {
@@ -787,12 +792,16 @@ async function claimCoupon(payload, openid) {
     throw new Error('这张券过期了')
   }
   if (!coupon.owner) {
-    // 手里的未使用券太多时先别领，避免把券池占满
+    // 手里的未使用券太多时先别领，避免把券池占满；过期券不占名额
     const held = await db
       .collection('coupons')
       .where({ owner: openid, status: 'unused' })
-      .count()
-    if ((held.total || 0) >= 5) {
+      .limit(50)
+      .get()
+    const activeHeld = (held.data || []).filter(
+      item => !item.expiresAt || Number(item.expiresAt) >= Date.now()
+    ).length
+    if (activeHeld >= 5) {
       throw new Error('手里的券还没用完，先用掉再领')
     }
     // 条件更新保证同一张券只会被一个人领走（且只能领未使用的券）
@@ -1172,6 +1181,14 @@ async function saveCategory(payload, openid) {
   const id = payload.id ? String(payload.id) : ''
   if (id) {
     const res = await db.collection('categories').doc(id).get()
+    const dup = await db
+      .collection('categories')
+      .where({ name })
+      .limit(5)
+      .get()
+    if ((dup.data || []).some(item => item._id !== id)) {
+      throw new Error('已经有同名分类了')
+    }
     await db
       .collection('categories')
       .doc(id)
@@ -1829,8 +1846,10 @@ async function updateOrderStatus(payload, openid) {
     title: STEP_TITLES[status] || status,
     time: Date.now()
   }
+  const cancellableBefore =
+    order.status === 'pending' || order.status === 'accepted'
   const cancelReason =
-    status === 'cancelled' && order.status === 'pending'
+    status === 'cancelled' && cancellableBefore
       ? String(payload.reason || '').trim().slice(0, 50)
       : ''
   if (cancelReason) {
@@ -1853,8 +1872,8 @@ async function updateOrderStatus(payload, openid) {
     throw new Error('订单状态刚刚变了，刷新看看')
   }
 
-  // 厨房拒掉尚未接单的订单时，把扣掉的库存补回去
-  if (status === 'cancelled' && order.status === 'pending') {
+  // 厨房拒掉尚未出锅的订单时，把扣掉的库存补回去
+  if (status === 'cancelled' && cancellableBefore) {
     await restoreStock(order)
   }
 
@@ -1983,6 +2002,11 @@ async function saveDish(payload, openid) {
     isFinite(stockValue) && stockValue >= -1 && stockValue <= 9999
       ? Math.floor(stockValue)
       : -1
+  const stockBaseValue = Number(payload.stockBase)
+  const stockBase =
+    isFinite(stockBaseValue) && stockBaseValue >= -1 && stockBaseValue <= 9999
+      ? Math.floor(stockBaseValue)
+      : null
 
   // 云存储 fileID 或 https 图片地址；为空时前端用色块 + 首字占位。
   // 编辑时不传 image 表示保持原图不变。
@@ -2022,6 +2046,22 @@ async function saveDish(payload, openid) {
     const id = String(payload.id)
     const res = await db.collection('dishes').doc(id).get()
     const dish = res.data
+    // 编辑时库存按「基线 + 变化量」处理，避免把下单已扣的库存覆盖回去
+    if (stockBase === null) {
+      delete fields.stock
+    } else if (stock === stockBase) {
+      delete fields.stock
+    } else if (stock === -1 || stockBase === -1) {
+      fields.stock = stock
+    } else {
+      const currentStock = Number(dish.stock)
+      fields.stock =
+        isFinite(currentStock) && currentStock >= 0
+          ? currentStock === stockBase
+            ? stock
+            : Math.max(0, currentStock + (stock - stockBase))
+          : stock
+    }
     await db.collection('dishes').doc(id).update({ data: fields })
     // 换图后顺手删掉旧图，避免云存储堆积
     if (

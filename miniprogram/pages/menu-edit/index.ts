@@ -21,6 +21,7 @@ interface DateOption {
 }
 
 const TEMPLATE_KEY = 'kfl_menu_templates_v1'
+const TEMPLATE_DIRTY_KEY = 'kfl_menu_templates_dirty_v1'
 // 操作菜单最多 6 项，留一项给「清空模板」
 const MAX_TEMPLATES = 5
 
@@ -39,6 +40,30 @@ function writeTemplates(list: MenuTemplate[]) {
     wx.setStorageSync(TEMPLATE_KEY, JSON.stringify(list))
   } catch (e) {
     // 存储失败不影响当前排菜单
+  }
+}
+
+function markTemplatesDirty() {
+  try {
+    wx.setStorageSync(TEMPLATE_DIRTY_KEY, 1)
+  } catch (e) {
+    // 忽略存储失败
+  }
+}
+
+function clearTemplatesDirty() {
+  try {
+    wx.removeStorageSync(TEMPLATE_DIRTY_KEY)
+  } catch (e) {
+    // 忽略存储失败
+  }
+}
+
+function templatesDirty(): boolean {
+  try {
+    return Boolean(wx.getStorageSync(TEMPLATE_DIRTY_KEY))
+  } catch (e) {
+    return false
   }
 }
 
@@ -91,13 +116,20 @@ Page({
 
   async syncTemplates() {
     try {
-      const server = await getMenuTemplates()
       const local = readTemplates()
+      // 本地刚改过（包括清空）时以本地为准，避免被旧云端数据冲掉
+      if (templatesDirty()) {
+        await saveMenuTemplates(local)
+        clearTemplatesDirty()
+        return
+      }
+      const server = await getMenuTemplates()
       if (server.length) {
         writeTemplates(server)
         this.refreshTemplates()
       } else if (local.length) {
         await saveMenuTemplates(local)
+        clearTemplatesDirty()
       }
     } catch (e) {
       // 云端模板不可用时继续用本地模板
@@ -105,9 +137,12 @@ Page({
   },
 
   pushTemplates() {
-    saveMenuTemplates(readTemplates()).catch(() => {
-      // 离线时保留本地模板，下次保存再同步
-    })
+    markTemplatesDirty()
+    saveMenuTemplates(readTemplates())
+      .then(() => clearTemplatesDirty())
+      .catch(() => {
+        // 离线时保留本地模板，下次保存再同步
+      })
   },
 
   _loadSeq: 0,
