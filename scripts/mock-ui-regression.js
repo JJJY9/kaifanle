@@ -424,6 +424,20 @@ function invoke(mp, body) {
   page = await current()
   data = await page.data()
   check('mock 厨房加载', (data.dishes || []).length > 0, `${data.dishes.length} 道菜`)
+  await invoke(mp, 'page.onCopyTodaySummary()')
+  await sleep(600)
+  const summaryClip = await mp.evaluate(
+    new Function(
+      "return new Promise(resolve => wx.getClipboardData({ success: r => resolve(r.data || ''), fail: () => resolve('') }))"
+    )
+  )
+  check(
+    'mock 复制今日小结',
+    typeof summaryClip === 'string' &&
+      summaryClip.indexOf('今日小结') > -1 &&
+      summaryClip.indexOf('营收') > -1,
+    `${String(summaryClip || '').length} 字`
+  )
   const prepGroups = data.prepGroups || []
   check(
     'mock 备菜按餐次',

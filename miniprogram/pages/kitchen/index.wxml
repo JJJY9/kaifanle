@@ -89,6 +89,7 @@
     <view wx:if="{{stats && stats.ratedCount}}" class="week-line">
       今日好评 {{stats.goodRatings}} · 平均 {{stats.avgRating}} 分（{{stats.ratedCount}} 人评）
     </view>
+    <view class="summary-copy" bindtap="onCopyTodaySummary">📋 复制今日小结</view>
 
     <view wx:if="{{weekBarTotal > 0}}" class="chart card">
       <view class="chart-head">

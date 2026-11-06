@@ -1132,8 +1132,38 @@ Page({
     this.setData({ showPreorders: !this.data.showPreorders })
   },
 
-  onCopyPrep() {
-    const items = this.data.prepItems || []
+  onCopyTodaySummary() {
+    const stats = this.data.stats || {}
+    const lines = ['【张饱饭堂】今日小结']
+    lines.push(
+      `订单 ${Number(stats.orderCount || 0)} 单 · 营收 ¥${Number(
+        stats.revenue || 0
+      )}`
+    )
+    lines.push(
+      `已完成 ${Number(stats.completed || 0)} 单 · 待处理 ${Number(
+        this.data.pendingCount || 0
+      )} 单`
+    )
+    if (stats.topDish) {
+      lines.push(`最受欢迎：${stats.topDish} ×${Number(stats.topQty || 0)}`)
+    }
+    if (stats.ratedCount) {
+      lines.push(
+        `评价 ${Number(stats.ratedCount)} 条 · 平均 ${Number(
+          stats.avgRating || 0
+        )} 分`
+      )
+    }
+    wx.setClipboardData({
+      data: lines.join('\n'),
+      success: () => {
+        wx.showToast({ title: '今日小结已复制', icon: 'none' })
+      }
+    })
+  },
+
+  onCopyPrep() {    const items = this.data.prepItems || []
     if (!items.length) {
       wx.showToast({ title: '今天还没有要备的菜', icon: 'none' })
       return
