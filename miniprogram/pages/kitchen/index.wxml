@@ -169,9 +169,19 @@
         >{{copyingReceipts ? '复制中…' : '复制小票'}}</view>
       </view>
     </view>
-    <view wx:if="{{!orders.length}}" class="empty-line">暂时没有待处理的订单，歇会儿吧</view>
+    <view wx:if="{{orders.length}}" class="order-search">
+      <text class="order-search-icon">🔍</text>
+      <input
+        class="order-search-input"
+        value="{{orderKeyword}}"
+        placeholder="搜单号 / 菜名 / 备注"
+        bindinput="onOrderSearch"
+      />
+      <view wx:if="{{orderKeyword}}" class="order-search-clear" bindtap="onClearOrderSearch">×</view>
+    </view>
+    <view wx:if="{{!ordersView.length}}" class="empty-line">{{orderKeyword ? '没搜到相关订单' : '暂时没有待处理的订单，歇会儿吧'}}</view>
 
-    <view wx:for="{{orders}}" wx:key="id" class="order card">
+    <view wx:for="{{ordersView}}" wx:key="id" class="order card">
       <view class="order-top">
         <text class="no">#{{item.no}}</text>
         <view class="order-top-right">
@@ -227,7 +237,14 @@
 
     <view class="history-head" id="history-section" bindtap="onToggleHistory">
       <view class="section-title display">历史订单</view>
-      <view class="history-toggle">{{showHistory ? '收起' : '看最近 10 单'}}<text wx:if="{{todo.replies}}" class="history-reply-badge">{{todo.replies}} 待回复</text></view>
+      <view class="history-head-right">
+        <view
+          wx:if="{{showHistory && history.length > 10}}"
+          class="history-all"
+          catchtap="onToggleHistoryAll"
+        >{{historyAll ? '收起' : '看全部'}}</view>
+        <view class="history-toggle">{{showHistory ? '收起' : '看最近 10 单'}}<text wx:if="{{todo.replies}}" class="history-reply-badge">{{todo.replies}} 待回复</text></view>
+      </view>
     </view>
     <block wx:if="{{showHistory}}">
       <view class="history-filter">

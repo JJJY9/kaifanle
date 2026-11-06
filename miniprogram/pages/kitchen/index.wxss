@@ -639,6 +639,19 @@
   font-weight: 800;
 }
 
+.history-head-right {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.history-all {
+  color: #2D9CFF;
+  font-size: 21rpx;
+  font-weight: 800;
+  text-decoration: underline;
+}
+
 .history-toggle:active {
   transform: translate(3rpx, 3rpx);
   box-shadow: none;
@@ -1114,6 +1127,43 @@
   display: flex;
   align-items: center;
   gap: 10rpx;
+}
+
+.order-search {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  height: 72rpx;
+  margin: 6rpx 0 16rpx;
+  padding: 0 20rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  box-shadow: 3rpx 3rpx 0 #111111;
+}
+
+.order-search-icon {
+  font-size: 22rpx;
+}
+
+.order-search-input {
+  flex: 1;
+  min-width: 0;
+  height: 72rpx;
+  font-size: 24rpx;
+}
+
+.order-search-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40rpx;
+  height: 40rpx;
+  background: #EFE9DC;
+  border-radius: 999rpx;
+  color: #5C5C5C;
+  font-size: 28rpx;
+  line-height: 1;
 }
 
 .copy-receipts {

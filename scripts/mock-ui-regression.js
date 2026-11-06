@@ -384,6 +384,26 @@ function invoke(mp, body) {
     Boolean(receiptOrder),
     receiptOrder ? `#${receiptOrder.no}` : '没有待处理订单'
   )
+  const orderNoForSearch = receiptOrder ? String(receiptOrder.no) : ''
+  await invoke(
+    mp,
+    `page.onOrderSearch({ detail: { value: ${JSON.stringify(
+      orderNoForSearch
+    )} } })`
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 厨房订单搜索',
+    (data.ordersView || []).length >= 1 &&
+      data.ordersView.every(order => String(order.no).indexOf(orderNoForSearch) > -1),
+    `${(data.ordersView || []).length} 单`
+  )
+  await invoke(mp, 'page.onClearOrderSearch()')
+  await sleep(300)
+  page = await current()
+  data = await page.data()
   if (receiptOrder) {
     await invoke(
       mp,
@@ -428,6 +448,22 @@ function invoke(mp, body) {
       Number((data.todo || {}).preorders) >= 1,
     `待办 ${(data.todo || {}).preorders} 单`
   )
+  check(
+    'mock 厨房历史折叠',
+    (data.historyView || []).length ===
+      Math.min((data.history || []).length, 10)
+  )
+  await invoke(mp, 'page.onToggleHistoryAll()')
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 厨房历史看全部',
+    data.historyAll === true &&
+      (data.historyView || []).length === (data.history || []).length
+  )
+  await invoke(mp, 'page.onToggleHistoryAll()')
+  await sleep(200)
   await invoke(mp, 'page.onTogglePreorders()')
   await sleep(300)
   page = await current()

@@ -75,6 +75,8 @@ function receiptText(order: any, lines: any[]): string {
 Page({
   data: {
     orders: [] as any[],
+    ordersView: [] as any[],
+    orderKeyword: '',
     preorders: [] as any[],
     history: [] as any[],
     dishes: [] as any[],
@@ -92,6 +94,7 @@ Page({
     batchBusy: false,
     historyOnlyPending: false,
     historyView: [] as any[],
+    historyAll: false,
     receiptVisible: false,
     receipt: null as any,
     receiptLines: [] as any[],
@@ -417,7 +420,6 @@ Page({
               order =>
                 order.status === 'completed' || order.status === 'cancelled'
             )
-            .slice(0, 10)
             .map(toView)
 
       // 今日备菜：把今天所有未完成订单按餐次、菜名汇总
@@ -569,6 +571,7 @@ Page({
 
       this.setData({
         orders: view,
+        ordersView: this.filterOrders(view),
         preorders,
         pendingCount: active.filter(order => order.status === 'pending').length,
         history,
@@ -1048,17 +1051,59 @@ Page({
     )
   },
 
+  filterOrders(list: any[]): any[] {
+    const keyword = String(this.data.orderKeyword || '')
+      .trim()
+      .toLowerCase()
+    if (!keyword) {
+      return list
+    }
+    return list.filter(order => {
+      const text = [
+        order.no,
+        order.summary,
+        order.note,
+        order.address,
+        order.mode,
+        (order.items || []).map((item: any) => item.name).join(' ')
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+      return text.indexOf(keyword) > -1
+    })
+  },
+
+  onOrderSearch(e: any) {
+    this.setData(
+      { orderKeyword: String(e.detail.value || '').slice(0, 20) },
+      () => {
+        this.setData({ ordersView: this.filterOrders(this.data.orders) })
+      }
+    )
+  },
+
+  onClearOrderSearch() {
+    this.setData({ orderKeyword: '', ordersView: this.data.orders })
+  },
+
   onToggleHistory() {
-    this.setData({ showHistory: !this.data.showHistory })
+    this.setData({ showHistory: !this.data.showHistory }, () =>
+      this.applyHistoryFilter()
+    )
+  },
+
+  onToggleHistoryAll() {
+    this.setData({ historyAll: !this.data.historyAll }, () =>
+      this.applyHistoryFilter()
+    )
   },
 
   filterHistory(list: any[]): any[] {
-    if (!this.data.historyOnlyPending) {
-      return list
-    }
-    return list.filter(
-      order => order.canReply && !order.ownerReply
-    )
+    const filtered = this.data.historyOnlyPending
+      ? list.filter(order => order.canReply && !order.ownerReply)
+      : list
+    return filtered.slice(0, this.data.historyAll ? 100 : 10)
   },
 
   applyHistoryFilter() {
@@ -1228,7 +1273,7 @@ Page({
     if (this.data.copyingReceipts) {
       return
     }
-    const orders = (this.data.orders || []).slice(0, 20)
+    const orders = (this.data.ordersView || []).slice(0, 20)
     if (!orders.length) {
       wx.showToast({ title: '今天还没有待处理的单', icon: 'none' })
       return
