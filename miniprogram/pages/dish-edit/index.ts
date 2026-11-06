@@ -6,6 +6,7 @@ import type {
 import { getCategories, getDish, getDishSales, saveDish, deleteDish } from '../../services/api'
 import { MEALS } from '../../utils/constants'
 import { backAfter } from '../../utils/nav'
+import { prepareImageForUpload } from '../../utils/image'
 import { USE_CLOUD } from '../../config'
 
 const COLORS = ['#FFD23F', '#2D9CFF', '#FF6B35', '#FF5C8A', '#2FBF71']
@@ -287,6 +288,7 @@ Page({
     }
     this.setData({ uploading: true })
     try {
+      tempFilePath = await prepareImageForUpload(tempFilePath)
       if (USE_CLOUD && wx.cloud) {
         const match = tempFilePath.match(/\.(\w+)$/)
         const ext = match ? match[1] : 'jpg'
