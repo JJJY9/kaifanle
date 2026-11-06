@@ -29,6 +29,7 @@
       <view class="tags">
         <text wx:for="{{dish.tags}}" wx:key="*this" class="tag">{{item}}</text>
       </view>
+      <view wx:if="{{statsText}}" class="dish-stats">{{statsText}}</view>
     </view>
   </view>
 

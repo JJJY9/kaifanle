@@ -248,6 +248,16 @@ export interface DishSales {
   daily: { date: string; label: string; qty: number }[]
 }
 
+export interface DishStats {
+  dishId: string
+  days: number
+  orders: number
+  qty: number
+  ratedCount: number
+  avgRating: number
+  goodRate: number
+}
+
 export interface StockLog {
   id: string
   dishId: string

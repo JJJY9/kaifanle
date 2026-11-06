@@ -7,6 +7,7 @@ import type {
   DailyMenu,
   Dish,
   DishSales,
+  DishStats,
   DishInput,
   InitResult,
   KitchenReport,
@@ -1610,6 +1611,67 @@ export async function getDishSales(name: string): Promise<DishSales> {
       qty: dailyMap[key].qty
     }))
   return { name: target, qty, orders, daily }
+}
+
+export async function getDishStats(dishId: string): Promise<DishStats> {
+  await delay(60)
+  const target = String(dishId || '').trim().slice(0, 64)
+  if (!target) {
+    throw new Error('缺少菜品 ID')
+  }
+  const days = 90
+  const chinaNow = new Date(Date.now() + 8 * 60 * 60 * 1000)
+  const todayStart =
+    Date.UTC(
+      chinaNow.getUTCFullYear(),
+      chinaNow.getUTCMonth(),
+      chinaNow.getUTCDate()
+    ) - 8 * 60 * 60 * 1000
+  const start = todayStart - (days - 1) * 24 * 60 * 60 * 1000
+  let orders = 0
+  let qty = 0
+  let ratedCount = 0
+  let ratingSum = 0
+  let goodCount = 0
+  loadOrders()
+    .filter(order => Number(order.createdAt) >= start)
+    .forEach(order => {
+      if (order.status === 'cancelled') {
+        return
+      }
+      let matched = false
+      ;(order.items || []).forEach(item => {
+        if (item.dishId === target) {
+          matched = true
+          qty += Number(item.qty || 0)
+        }
+      })
+      if (!matched) {
+        return
+      }
+      orders++
+      const rating = Number(order.rating)
+      if ([1, 2, 3].indexOf(rating) > -1) {
+        ratedCount++
+        ratingSum += rating
+        if (rating === 3) {
+          goodCount++
+        }
+      }
+    })
+  return {
+    dishId: target,
+    days,
+    orders,
+    qty,
+    ratedCount,
+    avgRating: ratedCount
+      ? Number((ratingSum / ratedCount).toFixed(1))
+      : 0,
+    goodRate: ratedCount
+      ? Math.round((goodCount / ratedCount) * 100)
+      : 0
+  }
 }
 
 export async function getStockLogs(

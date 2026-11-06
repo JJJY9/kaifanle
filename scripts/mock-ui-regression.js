@@ -1175,6 +1175,11 @@ function invoke(mp, body) {
       data.dish.allergens.indexOf('花生') > -1,
     data.dish ? (data.dish.allergens || []).join('、') : '没有过敏原'
   )
+  check(
+    'mock 菜谱点单统计',
+    String(data.statsText || '').indexOf('被点') > -1,
+    data.statsText
+  )
   await invoke(
     mp,
     'page.onToggleStep({ currentTarget: { dataset: { index: 0 } } })'

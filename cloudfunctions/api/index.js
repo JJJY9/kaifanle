@@ -156,6 +156,8 @@ async function route(action, payload, openid) {
       return getKitchenReport(openid)
     case 'getDishSales':
       return getDishSales(payload, openid)
+    case 'getDishStats':
+      return getDishStats(payload)
     case 'getStockLogs':
       return getStockLogs(payload, openid)
     case 'createCoupon':
@@ -636,6 +638,65 @@ async function getStockLogs(payload, openid) {
   } catch (e) {
     // 集合还没建立时返回空
     return []
+  }
+}
+
+// 菜谱页公开统计：近 90 天被点次数、份数与评分（只返回聚合值）
+async function getDishStats(payload) {
+  const dishId = String((payload && payload.dishId) || '')
+    .trim()
+    .slice(0, 64)
+  if (!dishId) {
+    throw new Error('缺少菜品 ID')
+  }
+  const days = 90
+  const start = chinaStartOfDay() - (days - 1) * 24 * 60 * 60 * 1000
+  const res = await db
+    .collection('orders')
+    .where({ createdAt: _.gte(start) })
+    .limit(1000)
+    .get()
+  let orders = 0
+  let qty = 0
+  let ratedCount = 0
+  let ratingSum = 0
+  let goodCount = 0
+  ;(res.data || []).forEach(order => {
+    if (order.status === 'cancelled') {
+      return
+    }
+    let matched = false
+    ;(order.items || []).forEach(item => {
+      if (item.dishId === dishId) {
+        matched = true
+        qty += Number(item.qty || 0)
+      }
+    })
+    if (!matched) {
+      return
+    }
+    orders++
+    const rating = Number(order.rating)
+    if ([1, 2, 3].indexOf(rating) > -1) {
+      ratedCount++
+      ratingSum += rating
+      if (rating === 3) {
+        goodCount++
+      }
+    }
+  })
+  return {
+    dishId,
+    days,
+    orders,
+    qty,
+    ratedCount,
+    avgRating: ratedCount
+      ? Number((ratingSum / ratedCount).toFixed(1))
+      : 0,
+    goodRate: ratedCount
+      ? Math.round((goodCount / ratedCount) * 100)
+      : 0
   }
 }
 

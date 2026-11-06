@@ -1,4 +1,4 @@
-import { getDish, getMe } from '../../services/api'
+import { getDish, getDishStats, getMe } from '../../services/api'
 import { favorites } from '../../store/favorites'
 
 Page({
@@ -10,6 +10,7 @@ Page({
     isAdmin: false,
     favorite: false,
     imageFailed: false,
+    statsText: '',
     loading: true,
     error: '',
     posterMaking: false,
@@ -43,7 +44,18 @@ Page({
         .split('\n')
         .map(line => line.trim())
         .filter(Boolean)
-      const me = await getMe().catch(() => null)
+      const [me, stats] = await Promise.all([
+        getMe().catch(() => null),
+        getDishStats(dish.id).catch(() => null)
+      ])
+      let statsText = ''
+      if (stats && stats.orders > 0) {
+        statsText = `近 ${stats.days} 天被点 ${stats.orders} 次 · 共 ${stats.qty} 份`
+        statsText +=
+          stats.ratedCount > 0
+            ? ` · 平均 ${stats.avgRating}/3 分 · 好评率 ${stats.goodRate}%`
+            : ' · 暂无评分'
+      }
       this.setData({
         dish,
         steps,
@@ -52,6 +64,7 @@ Page({
         isAdmin: Boolean(me && me.isAdmin),
         favorite: favorites.has(dish.id),
         imageFailed: false,
+        statsText,
         loading: false
       })
     } catch (e: any) {

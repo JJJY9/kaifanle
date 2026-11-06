@@ -11,6 +11,7 @@ import type {
   DailyMenu,
   Dish,
   DishSales,
+  DishStats,
   DishInput,
   InitResult,
   KitchenReport,
@@ -64,6 +65,7 @@ let activeOrderCache: { at: number; data: Order | null } | null = null
 let expiringCouponsCache: { at: number; count: number } | null = null
 let pendingReviewCache: { at: number; count: number } | null = null
 let myStatsCache: { at: number; data: MyStats } | null = null
+let dishStatsCache: Record<string, { at: number; data: DishStats }> = {}
 const BUSINESS_CACHE_TTL = 60 * 1000
 const MENU_CACHE_TTL = 60 * 1000
 const KITCHEN_STATUS_TTL = 30 * 1000
@@ -72,6 +74,7 @@ const ACTIVE_ORDER_CACHE_TTL = 30 * 1000
 const EXPIRING_COUPONS_TTL = 2 * 60 * 1000
 const PENDING_REVIEW_TTL = 2 * 60 * 1000
 const MY_STATS_TTL = 5 * 60 * 1000
+const DISH_STATS_TTL = 2 * 60 * 1000
 
 function cloneData<T>(value: T): T {
   return JSON.parse(JSON.stringify(value))
@@ -375,6 +378,7 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
   lastOrderCache = null
   activeOrderCache = null
   myStatsCache = null
+  dishStatsCache = {}
   return order
 }
 
@@ -388,6 +392,7 @@ export async function cancelOrder(
   lastOrderCache = null
   activeOrderCache = null
   myStatsCache = null
+  dishStatsCache = {}
   return order
 }
 
@@ -440,6 +445,7 @@ export async function rateOrder(
       })
     : await mock.rateOrder(id, rating, feedback, tags, images)
   pendingReviewCache = null
+  dishStatsCache = {}
   return order
 }
 
@@ -467,6 +473,7 @@ export async function updateOrderStatus(
       })
     : await mock.updateOrderStatus(id, status, reason)
   activeOrderCache = null
+  dishStatsCache = {}
   return order
 }
 
@@ -592,6 +599,19 @@ export async function getDishSales(name: string): Promise<DishSales> {
     return callApi<DishSales>('getDishSales', { name })
   }
   return mock.getDishSales(name)
+}
+
+export async function getDishStats(dishId: string): Promise<DishStats> {
+  if (USE_CLOUD) {
+    const cached = dishStatsCache[dishId]
+    if (cached && Date.now() - cached.at < DISH_STATS_TTL) {
+      return cloneData(cached.data)
+    }
+    const data = await callApi<DishStats>('getDishStats', { dishId })
+    dishStatsCache[dishId] = { at: Date.now(), data }
+    return cloneData(data)
+  }
+  return mock.getDishStats(dishId)
 }
 
 export async function getStockLogs(

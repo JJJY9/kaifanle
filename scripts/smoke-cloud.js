@@ -843,6 +843,26 @@ async function run() {
   assert.strictEqual(res.data.rating, 1)
   assert.strictEqual(res.data.feedback, '糊了')
   assert.strictEqual(res.data.ownerReply, '')
+
+  // 菜谱页公开统计：聚合最近 90 天点单与评分
+  res = await call('getDishStats', { dishId: 'd01' }, 'girl-openid')
+  assert.strictEqual(res.ok, true)
+  assert.ok(res.data.orders >= 1)
+  assert.ok(res.data.qty >= 2)
+  assert.strictEqual(res.data.ratedCount, 1)
+  assert.strictEqual(res.data.avgRating, 1)
+  assert.strictEqual(res.data.goodRate, 0)
+  assert.strictEqual(typeof res.data.orders, 'number')
+  assert.ok(!('_openid' in res.data))
+  assert.ok(!('items' in res.data))
+  assert.ok(!('feedback' in res.data))
+  res = await call('getDishStats', { dishId: 'no-such-dish' }, 'girl-openid')
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.orders, 0)
+  assert.strictEqual(res.data.qty, 0)
+  res = await call('getDishStats', {}, 'girl-openid')
+  assert.strictEqual(res.ok, false)
+  assert.ok(String(res.error).indexOf('缺少菜品') > -1)
   res = await call(
     'replyRating',
     {

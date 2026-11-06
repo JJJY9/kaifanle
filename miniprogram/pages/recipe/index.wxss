@@ -98,6 +98,13 @@
   transform: rotate(-2deg);
 }
 
+.dish-stats {
+  margin-top: 10rpx;
+  color: #5C5C5C;
+  font-size: 21rpx;
+  font-weight: 700;
+}
+
 .steps-card {
   margin-top: 24rpx;
   padding: 24rpx;
