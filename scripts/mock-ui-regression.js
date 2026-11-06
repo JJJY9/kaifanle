@@ -229,6 +229,36 @@ function invoke(mp, body) {
   page = await current()
   data = await page.data()
   check('mock 厨房加载', (data.dishes || []).length > 0, `${data.dishes.length} 道菜`)
+  const receiptOrder = (data.orders || [])[0]
+  check(
+    'mock 厨房待处理订单',
+    Boolean(receiptOrder),
+    receiptOrder ? `#${receiptOrder.no}` : '没有待处理订单'
+  )
+  if (receiptOrder) {
+    await invoke(
+      mp,
+      `page.onOpenReceipt({ currentTarget: { dataset: { id: ${JSON.stringify(
+        receiptOrder.id
+      )} } } })`
+    )
+    await sleep(300)
+    page = await current()
+    data = await page.data()
+    check(
+      'mock 厨房小票预览',
+      data.receiptVisible === true &&
+        Boolean(data.receipt && data.receipt.no) &&
+        (data.receiptLines || []).length >= 1 &&
+        data.receiptLines.every(line => line.name && line.qty > 0),
+      `${(data.receiptLines || []).length} 行 · ¥${data.receipt && data.receipt.amount}`
+    )
+    await invoke(mp, 'page.onCloseReceipt()')
+    await sleep(200)
+    page = await current()
+    data = await page.data()
+    check('mock 厨房小票关闭', data.receiptVisible === false)
+  }
   check(
     'mock 近7天柱状图',
     Array.isArray(data.weekBars) && data.weekBars.length === 7,

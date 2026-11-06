@@ -163,6 +163,7 @@
       <view wx:if="{{item.address}}" class="order-address">送到：{{item.address}}</view>
       <view wx:if="{{item.note}}" class="order-note">整单备注：{{item.note}}</view>
       <view class="order-actions">
+        <view class="kbtn ghost" data-id="{{item.id}}" catchtap="onOpenReceipt">小票</view>
         <view
           wx:if="{{item.status === 'pending'}}"
           class="kbtn ghost {{busyId === item.id ? 'busy' : ''}}"
@@ -211,8 +212,10 @@
           <text class="order-reply-text">{{item.ownerReply}}</text>
         </view>
         <view class="order-meta">{{item.dateText}} · {{item.mealText}} · {{item.timeText}}</view>
-        <view wx:if="{{item.canReply}}" class="history-actions">
+        <view class="history-actions">
+          <view class="kbtn ghost" data-id="{{item.id}}" catchtap="onOpenReceipt">小票</view>
           <view
+            wx:if="{{item.canReply}}"
             class="kbtn ghost {{replyingId === item.id ? 'busy' : ''}}"
             data-id="{{item.id}}"
             catchtap="onReplyRating"
@@ -290,4 +293,39 @@
       </view>
     </view>
   </block>
+
+  <view wx:if="{{receiptVisible && receipt}}" class="receipt-mask" catchtap="onCloseReceipt">
+    <view class="receipt-sheet" catchtap="onNoopReceipt">
+      <view class="receipt-head">
+        <view>
+          <view class="receipt-title">订单小票</view>
+          <view class="receipt-sub">#{{receipt.no}} · {{receipt.dateText}} · {{receipt.mealText}}</view>
+        </view>
+        <view class="receipt-close" catchtap="onCloseReceipt">×</view>
+      </view>
+      <view class="receipt-brand">张饱饭堂</view>
+      <view class="receipt-meta">{{receipt.mode}} · {{receipt.expectedTime}} · {{receipt.timeText}}</view>
+      <view class="receipt-dash"></view>
+      <view wx:for="{{receiptLines}}" wx:key="key" class="receipt-line">
+        <view class="receipt-line-main">
+          <text class="receipt-name">{{item.name}} ×{{item.qty}}</text>
+          <text class="receipt-price">¥{{item.lineTotal}}</text>
+        </view>
+        <view wx:if="{{item.specText}}" class="receipt-note">规格：{{item.specText}}</view>
+        <view wx:if="{{item.note}}" class="receipt-note">备注：{{item.note}}</view>
+      </view>
+      <view class="receipt-dash"></view>
+      <view class="receipt-total">
+        <text>合计</text>
+        <text>¥{{receipt.amount}}</text>
+      </view>
+      <view class="receipt-foot">共 {{receipt.totalQty}} 份<text wx:if="{{receipt.profileText}}"> · {{receipt.profileText}}</text></view>
+      <view wx:if="{{receipt.address}}" class="receipt-note">送到：{{receipt.address}}</view>
+      <view wx:if="{{receipt.note}}" class="receipt-note">整单备注：{{receipt.note}}</view>
+      <view class="receipt-actions">
+        <view class="kbtn primary" catchtap="onCopyReceipt">复制小票</view>
+        <view class="kbtn ghost" catchtap="onCloseReceipt">关上</view>
+      </view>
+    </view>
+  </view>
 </view>
