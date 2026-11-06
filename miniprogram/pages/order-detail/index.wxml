@@ -8,6 +8,7 @@
       <text>{{order.cancelledBy === 'admin' ? '掌勺人取消' : '你取消'}}</text>
       <text wx:if="{{order.cancelReason}}">：{{order.cancelReason}}</text>
     </view>
+    <view wx:if="{{queueText}}" class="queue-tip">{{queueText}}</view>
     <view wx:if="{{order.status === 'ready'}}" class="ready-tip">锅已经端上桌，趁热吃！</view>
     <view
       wx:if="{{order.status === 'pending' || order.status === 'accepted' || order.status === 'cooking'}}"

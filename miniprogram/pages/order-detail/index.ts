@@ -1,5 +1,5 @@
 import type { Dish, Order, OrderStatus } from '../../services/types'
-import { getOrder, cancelOrder, getDishes, urgeOrder, rateOrder } from '../../services/api'
+import { getOrder, cancelOrder, getDishes, getKitchenStatus, urgeOrder, rateOrder } from '../../services/api'
 import { cart } from '../../store/cart'
 import { STATUS_STEP_TEXT, STATUS_TEXT, mealName } from '../../utils/constants'
 import {
@@ -24,6 +24,7 @@ Page({
     order: null as any,
     steps: [] as any[],
     statusText: '',
+    queueText: '',
     orderError: '',
     loading: true,
     reordering: false,
@@ -99,6 +100,20 @@ Page({
       if (!order) {
         throw new Error('订单不存在')
       }
+      let queueText = ''
+      if (
+        !silent &&
+        ['pending', 'accepted', 'cooking'].indexOf(order.status) > -1
+      ) {
+        const kitchenStatus = await getKitchenStatus().catch(() => null)
+        if (seq !== this._loadSeq) {
+          return
+        }
+        if (kitchenStatus) {
+          const ahead = Math.max(0, Number(kitchenStatus.active || 0) - 1)
+          queueText = ahead > 0 ? `厨房前面还有 ${ahead} 单` : '马上轮到你'
+        }
+      }
       const profile = order.profile
       const profileText =
         profile && (profile.dislikes.length || profile.tastes.length)
@@ -142,6 +157,7 @@ Page({
         },
         steps: this.buildSteps(order),
         statusText: STATUS_TEXT[order.status],
+        queueText,
         rating: Number(order.rating || 0),
         feedbackDraft: order.feedback || '',
         loading: false

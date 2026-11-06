@@ -608,6 +608,21 @@ function invoke(mp, body) {
     `恢复 ${data.displayOrders.length} 单`
   )
 
+  // 进行中订单显示排队提示
+  await mp.navigateTo('/pages/order-detail/index?id=seed-1')
+  await sleep(1600)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 订单排队提示',
+    Boolean(data.order) &&
+      data.order.status === 'pending' &&
+      String(data.queueText || '').length > 0,
+    data.queueText
+  )
+  await mp.navigateBack()
+  await sleep(900)
+
   // 订单评价
   await mp.navigateTo('/pages/order-detail/index?id=seed-2')
   await sleep(1600)
