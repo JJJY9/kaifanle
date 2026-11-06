@@ -872,7 +872,9 @@ function invoke(mp, body) {
     Boolean(data.report) &&
       (data.report.daily || []).length === 30 &&
       data.report.totalOrders >= 1 &&
-      (data.report.topDishes || []).length >= 1,
+      (data.report.topDishes || []).length >= 1 &&
+      Boolean(data.health) &&
+      data.health.total >= 1,
     data.report
       ? `${data.report.totalOrders} 单 / ¥${data.report.revenue}`
       : '没有数据'

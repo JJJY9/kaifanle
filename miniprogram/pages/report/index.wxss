@@ -88,6 +88,58 @@
   font-weight: 700;
 }
 
+.health-card {
+  margin-top: 18rpx;
+  padding: 18rpx 20rpx;
+}
+
+.health-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.health-title {
+  font-size: 26rpx;
+  font-weight: 800;
+}
+
+.health-sub {
+  color: #5C5C5C;
+  font-size: 20rpx;
+}
+
+.health-row {
+  display: flex;
+  gap: 10rpx;
+  margin-top: 12rpx;
+}
+
+.health-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10rpx 4rpx;
+  background: #EFE9DC;
+  border-radius: 14rpx;
+}
+
+.health-item.warn {
+  background: #FFF7DA;
+}
+
+.health-num {
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 30rpx;
+  font-weight: 800;
+}
+
+.health-label {
+  color: #5C5C5C;
+  font-size: 18rpx;
+}
+
 .export-btn {
   display: flex;
   align-items: center;

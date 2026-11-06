@@ -1,5 +1,5 @@
 import type { KitchenReport } from '../../services/types'
-import { getAllOrders, getKitchenReport } from '../../services/api'
+import { getAllOrders, getDishes, getKitchenReport } from '../../services/api'
 import { ordersToCsv } from '../../utils/orders-csv'
 
 interface BarView {
@@ -17,6 +17,7 @@ Page({
     report: null as KitchenReport | null,
     bars: [] as BarView[],
     maxAmount: 0,
+    health: null as any,
     exporting: false,
     exportCount: 0,
     exportingFile: false,
@@ -37,9 +38,27 @@ Page({
     const seq = ++this._loadSeq
     this.setData({ loading: true, error: '' })
     try {
-      const report = await getKitchenReport()
+      const [report, dishes] = await Promise.all([
+        getKitchenReport(),
+        getDishes()
+      ])
       if (seq !== this._loadSeq) {
         return
+      }
+      const health = {
+        total: dishes.length,
+        noRecipe: dishes.filter(dish => !dish.recipe).length,
+        soldout: dishes.filter(
+          dish => dish.status === 'soldout' || dish.stock === 0
+        ).length,
+        off: dishes.filter(dish => dish.status === 'off').length,
+        lowStock: dishes.filter(
+          dish =>
+            dish.status === 'on' &&
+            typeof dish.stock === 'number' &&
+            dish.stock >= 0 &&
+            dish.stock <= 3
+        ).length
       }
       const maxAmount = Math.max(
         1,
@@ -54,7 +73,7 @@ Page({
           : 3,
         showLabel: index % 5 === 0 || index === report.daily.length - 1
       }))
-      this.setData({ report, bars, maxAmount, loading: false })
+      this.setData({ report, bars, maxAmount, health, loading: false })
     } catch (e: any) {
       if (seq !== this._loadSeq) {
         return

@@ -38,6 +38,31 @@
       </view>
     </view>
 
+    <view wx:if="{{health}}" class="health-card card">
+      <view class="health-head">
+        <text class="health-title">数据体检</text>
+        <text class="health-sub">共 {{health.total}} 道菜</text>
+      </view>
+      <view class="health-row">
+        <view class="health-item {{health.noRecipe ? 'warn' : ''}}">
+          <text class="health-num">{{health.noRecipe}}</text>
+          <text class="health-label">缺做法</text>
+        </view>
+        <view class="health-item {{health.lowStock ? 'warn' : ''}}">
+          <text class="health-num">{{health.lowStock}}</text>
+          <text class="health-label">低库存</text>
+        </view>
+        <view class="health-item">
+          <text class="health-num">{{health.soldout}}</text>
+          <text class="health-label">售罄</text>
+        </view>
+        <view class="health-item">
+          <text class="health-num">{{health.off}}</text>
+          <text class="health-label">已下架</text>
+        </view>
+      </view>
+    </view>
+
     <view wx:if="{{report.ratedCount}}" class="rating-line card">
       <text>评价 {{report.ratedCount}} 条</text>
       <text>平均 {{report.avgRating}} 分</text>
