@@ -47,6 +47,7 @@ Page({
     loading: true,
     mealNotice: '',
     notice: '',
+    recommendText: '今日推荐',
     keyword: '',
     searchResults: [] as Dish[],
     emptyDesc: '换个餐次看看，或者去许愿池点个菜',
@@ -291,6 +292,8 @@ Page({
           isOpen,
           mealNotice,
           notice: business && business.notice ? business.notice : '',
+          recommendText:
+            (business && business.recommendText) || '今日推荐',
           searchResults: this.filterDishes(this.data.keyword)
         },
         () => this.renderSections()
@@ -440,7 +443,7 @@ Page({
       sections,
       hero,
       spiceFilters,
-      heroTag: favoriteHero ? '你收藏的' : '今日推荐',
+      heroTag: favoriteHero ? '你收藏的' : this.data.recommendText || '今日推荐',
       emptyDesc:
         empty && this.data.onlyFavorites
           ? '还没有收藏，点开菜品点右上角的 ♡ 收藏'

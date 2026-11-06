@@ -40,6 +40,7 @@ const DEFAULT_BUSINESS: Business = {
   dinner: { open: true, deadline: '20:00' },
   closedNote: '今天休息，明天见',
   notice: '',
+  recommendText: '今日推荐',
   closedDates: [],
   weeklyClosed: []
 }

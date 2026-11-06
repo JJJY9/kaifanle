@@ -64,6 +64,15 @@
         maxlength="60"
         bindinput="onNotice"
       />
+
+      <view class="block-title">首页推荐角标</view>
+      <input
+        class="note"
+        placeholder="比如：今日推荐 / 雨天暖胃"
+        value="{{recommendText}}"
+        maxlength="12"
+        bindinput="onRecommendText"
+      />
     </view>
 
     <view class="card block">

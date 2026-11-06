@@ -594,7 +594,10 @@ function invoke(mp, body) {
     'mock 每周休息选项',
     Array.isArray(data.weekdays) && data.weekdays.length === 7
   )
-  await invoke(mp, "page.setData({ notice: '今天只有一锅炖菜' })")
+  await invoke(
+    mp,
+    "page.setData({ notice: '今天只有一锅炖菜', recommendText: '雨天暖胃' })"
+  )
   await invoke(mp, 'page.onSave()')
   await sleep(1000)
   await mp.switchTab('/pages/home/index')
@@ -602,11 +605,16 @@ function invoke(mp, body) {
   page = await current()
   data = await page.data()
   check('mock 今日公告展示', data.notice === '今天只有一锅炖菜', data.notice)
-  // 还原公告
+  check(
+    'mock 推荐角标展示',
+    data.recommendText === '雨天暖胃' && data.heroTag === '雨天暖胃',
+    data.heroTag
+  )
+  // 还原公告与推荐语
   await mp.navigateTo('/pages/business/index')
   await sleep(1200)
   page = await current()
-  await invoke(mp, "page.setData({ notice: '' })")
+  await invoke(mp, "page.setData({ notice: '', recommendText: '' })")
   await invoke(mp, 'page.onSave()')
   await sleep(900)
 

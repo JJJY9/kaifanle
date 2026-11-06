@@ -61,6 +61,7 @@ Page({
     mealViews: [] as MealView[],
     closedNote: '',
     notice: '',
+    recommendText: '',
     dateOptions: [] as DateView[],
     weekdays: [] as WeekdayView[]
   },
@@ -100,6 +101,7 @@ Page({
         mealViews,
         closedNote: business.closedNote,
         notice: business.notice || '',
+        recommendText: business.recommendText || '',
         dateOptions,
         weekdays,
         loading: false,
@@ -147,6 +149,10 @@ Page({
     this.setData({ notice: e.detail.value })
   },
 
+  onRecommendText(e: any) {
+    this.setData({ recommendText: e.detail.value })
+  },
+
   onToggleClosedDate(e: any) {
     const value = e.currentTarget.dataset.value
     const dateOptions = this.data.dateOptions.map(option =>
@@ -175,6 +181,8 @@ Page({
       closedNote:
         this.data.closedNote.trim().slice(0, 40) || '今天休息，明天见',
       notice: this.data.notice.trim().slice(0, 60),
+      recommendText:
+        this.data.recommendText.trim().slice(0, 12) || '今日推荐',
       closedDates: this.data.dateOptions
         .filter(option => option.closed)
         .map(option => option.value),

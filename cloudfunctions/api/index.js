@@ -34,6 +34,7 @@ const DEFAULT_BUSINESS = {
   dinner: { open: true, deadline: '20:00' },
   closedNote: '今天休息，明天见',
   notice: '',
+  recommendText: '今日推荐',
   closedDates: [],
   weeklyClosed: []
 }
@@ -297,6 +298,11 @@ function normalizeBusiness(value) {
     ),
     // 今日公告：显示在首页，让她一眼看到
     notice: String(source.notice || '').slice(0, 60),
+    // 首页今日推荐角标文案，可留空用默认
+    recommendText:
+      String(source.recommendText || '')
+        .trim()
+        .slice(0, 12) || DEFAULT_BUSINESS.recommendText,
     // 指定休息日（YYYY-MM-DD），最多 14 天
     closedDates: Array.isArray(source.closedDates)
       ? source.closedDates
