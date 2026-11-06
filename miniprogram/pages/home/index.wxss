@@ -128,6 +128,20 @@
   font-weight: 800;
 }
 
+.date-quick {
+  padding: 6rpx 16rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 21rpx;
+  font-weight: 800;
+}
+
+.date-quick.active {
+  background: #FFD23F;
+  box-shadow: 2rpx 2rpx 0 #111111;
+}
+
 .date-hint {
   color: #5C5C5C;
   font-size: 20rpx;

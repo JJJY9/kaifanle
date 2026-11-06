@@ -315,6 +315,32 @@ function invoke(mp, body) {
   data = await page.data()
   check('mock 只看能点的恢复', data.onlyAvailable === false)
 
+  // 首页今天/明天快捷切换
+  const tomorrowQuick = data.tomorrowDate
+  await invoke(
+    mp,
+    `page.onQuickDate({ currentTarget: { dataset: { date: '${tomorrowQuick}' } } })`
+  )
+  await sleep(1500)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 首页快捷切到明天',
+    data.selectedDate === tomorrowQuick && data.menuDateLabel === '明天',
+    `${data.selectedDate} · ${data.menuDateLabel}`
+  )
+  await invoke(
+    mp,
+    `page.onQuickDate({ currentTarget: { dataset: { date: '${data.todayDate}' } } })`
+  )
+  await sleep(1500)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 首页快捷切回今天',
+    data.selectedDate === data.todayDate && data.menuDateLabel === '今天'
+  )
+
   // 优惠券快过期提醒
   await mp.navigateTo('/pages/coupons/index')
   await sleep(1600)

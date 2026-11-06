@@ -36,6 +36,7 @@ Page({
     selectedMeal: 'lunch' as MealId,
     selectedDate: '',
     todayDate: '',
+    tomorrowDate: '',
     maxDate: '',
     menuDateLabel: '今天',
     deadlineText: '',
@@ -83,6 +84,8 @@ Page({
     const statusBarHeight =
       (app && app.globalData && app.globalData.statusBarHeight) || 20
     const today = dateInputString()
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
     const max = new Date()
     max.setDate(max.getDate() + 7)
 
@@ -94,6 +97,7 @@ Page({
       selectedMeal: currentMeal(),
       selectedDate: today,
       todayDate: today,
+      tomorrowDate: dateInputString(tomorrow),
       maxDate: dateInputString(max),
       menuDateLabel: '今天'
     })
@@ -184,6 +188,8 @@ Page({
     const max = new Date()
     max.setDate(max.getDate() + 7)
     const maxDate = dateInputString(max)
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
     const selected = this.data.selectedDate
     const selectedDate =
       selected && selected >= today
@@ -193,6 +199,7 @@ Page({
         : today
     this.setData({
       todayDate: today,
+      tomorrowDate: dateInputString(tomorrow),
       maxDate,
       selectedDate,
       dateText: formatDate(),
@@ -370,6 +377,14 @@ Page({
       },
       () => this.loadMenu()
     )
+  },
+
+  onQuickDate(e: any) {
+    const date = String(e.currentTarget.dataset.date || '')
+    if (!date || date === this.data.selectedDate) {
+      return
+    }
+    this.onSelectDate({ detail: { value: date } })
   },
 
   updateCartBadge() {

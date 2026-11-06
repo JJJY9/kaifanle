@@ -37,6 +37,16 @@
       >
         <view class="date-pill">📅 {{menuDateLabel}}</view>
       </picker>
+      <view
+        class="date-quick {{selectedDate === todayDate ? 'active' : ''}}"
+        data-date="{{todayDate}}"
+        bindtap="onQuickDate"
+      >今天</view>
+      <view
+        class="date-quick {{selectedDate === tomorrowDate ? 'active' : ''}}"
+        data-date="{{tomorrowDate}}"
+        bindtap="onQuickDate"
+      >明天</view>
       <text wx:if="{{selectedDate !== todayDate}}" class="date-hint">预订 / 预览</text>
     </view>
     <view wx:if="{{deadlineText}}" class="deadline-hint">⏰ {{deadlineText}}</view>
