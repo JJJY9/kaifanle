@@ -41,6 +41,7 @@ Page({
     display: [] as ReviewView[],
     filter: 'all' as 'all' | '3' | '2' | '1',
     filters: [] as any[],
+    sort: 'new' as 'new' | 'rating',
     stats: { count: 0, goodRate: 0, replies: 0 },
     emptyText: ''
   },
@@ -157,14 +158,26 @@ Page({
     this.setData({ filter }, () => this.applyFilter())
   },
 
+  onSort(e: any) {
+    const sort = e.currentTarget.dataset.sort === 'rating' ? 'rating' : 'new'
+    if (sort === this.data.sort) {
+      return
+    }
+    this.setData({ sort }, () => this.applyFilter())
+  },
+
   applyFilter() {
     const filter = this.data.filter
-    const display =
+    const matched =
       filter === 'all'
-        ? this.data.reviews
+        ? this.data.reviews.slice()
         : this.data.reviews.filter(
             review => String(review.rating) === filter
           )
+    const display =
+      this.data.sort === 'rating'
+        ? matched.sort((a, b) => b.rating - a.rating)
+        : matched
     const label =
       filter === 'all'
         ? ''

@@ -1511,6 +1511,26 @@ function invoke(mp, body) {
         (data.display || []).every(review => review.rating === 1),
       `翻车 ${(data.display || []).length} 条`
     )
+    await invoke(
+      mp,
+      "page.onSelectFilter({ currentTarget: { dataset: { filter: 'all' } } })"
+    )
+    await invoke(
+      mp,
+      "page.onSort({ currentTarget: { dataset: { sort: 'rating' } } })"
+    )
+    await sleep(400)
+    page = await current()
+    data = await page.data()
+    check(
+      'mock 我的评价评分排序',
+      data.sort === 'rating' &&
+        (data.display || []).every(
+          (review, index, list) =>
+            index === 0 || Number(list[index - 1].rating) >= Number(review.rating)
+        ),
+      `${(data.display || []).length} 条`
+    )
     await mp.navigateBack()
     await sleep(900)
 

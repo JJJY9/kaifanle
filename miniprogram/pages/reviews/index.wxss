@@ -108,6 +108,26 @@
   color: #FFFFFF;
 }
 
+.sort-row {
+  display: flex;
+  gap: 10rpx;
+  margin-bottom: 18rpx;
+}
+
+.sort-chip {
+  padding: 6rpx 18rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
+.sort-chip.active {
+  background: #FFD23F;
+  box-shadow: 2rpx 2rpx 0 #111111;
+}
+
 .review {
   padding: 24rpx;
   margin-bottom: 24rpx;

@@ -56,6 +56,19 @@
       >{{item.label}} {{item.count}}</view>
     </view>
 
+    <view class="sort-row">
+      <view
+        class="sort-chip {{sort === 'new' ? 'active' : ''}}"
+        data-sort="new"
+        bindtap="onSort"
+      >最新</view>
+      <view
+        class="sort-chip {{sort === 'rating' ? 'active' : ''}}"
+        data-sort="rating"
+        bindtap="onSort"
+      >评分优先</view>
+    </view>
+
     <empty-state
       wx:if="{{!display.length}}"
       title="这一档还没有"
