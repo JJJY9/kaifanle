@@ -5,6 +5,7 @@ import type {
 } from '../../services/types'
 import { getCategories, getDish, saveDish, deleteDish } from '../../services/api'
 import { MEALS } from '../../utils/constants'
+import { backAfter } from '../../utils/nav'
 import { USE_CLOUD } from '../../config'
 
 const COLORS = ['#FFD23F', '#2D9CFF', '#FF6B35', '#FF5C8A', '#2FBF71']
@@ -326,9 +327,7 @@ Page({
     try {
       await saveDish(payload)
       wx.showToast({ title: '已保存', icon: 'none' })
-      setTimeout(() => {
-        wx.navigateBack({ delta: 1 })
-      }, 500)
+      backAfter(500)
     } catch (e: any) {
       wx.showToast({
         title: String((e && e.message) || '保存失败').slice(0, 40),
@@ -356,9 +355,7 @@ Page({
     try {
       await deleteDish(this.data.id)
       wx.showToast({ title: '已删除', icon: 'none' })
-      setTimeout(() => {
-        wx.navigateBack({ delta: 1 })
-      }, 500)
+      backAfter(500)
     } catch (e: any) {
       wx.showToast({
         title: String((e && e.message) || '删除失败').slice(0, 40),

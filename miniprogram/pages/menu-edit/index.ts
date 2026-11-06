@@ -11,6 +11,7 @@ import {
   currentMeal,
   dateInputString
 } from '../../utils/format'
+import { backAfter } from '../../utils/nav'
 
 interface DateOption {
   value: string
@@ -367,9 +368,7 @@ Page({
         open: this.data.open
       })
       wx.showToast({ title: '菜单已保存', icon: 'none' })
-      setTimeout(() => {
-        wx.navigateBack({ delta: 1 })
-      }, 500)
+      backAfter(500)
     } catch (e: any) {
       wx.showToast({
         title: String((e && e.message) || '保存失败').slice(0, 40),
@@ -419,9 +418,7 @@ Page({
         done++
       }
       wx.showToast({ title: `已复制到 ${done} 天`, icon: 'none' })
-      setTimeout(() => {
-        wx.navigateBack({ delta: 1 })
-      }, 600)
+      backAfter(600)
     } catch (e: any) {
       wx.showToast({
         title: `第 ${done + 1} 天复制失败：${String(
@@ -450,9 +447,7 @@ Page({
     try {
       await deleteMenu(this.data.selectedDate, this.data.meal)
       wx.showToast({ title: '已恢复默认', icon: 'none' })
-      setTimeout(() => {
-        wx.navigateBack({ delta: 1 })
-      }, 500)
+      backAfter(500)
     } catch (e: any) {
       wx.showToast({
         title: String((e && e.message) || '操作失败').slice(0, 40),

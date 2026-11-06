@@ -1,4 +1,5 @@
 import { getMyProfile, saveMyProfile } from '../../services/api'
+import { backAfter } from '../../utils/nav'
 
 function splitList(text: string): string[] {
   return String(text || '')
@@ -78,9 +79,7 @@ Page({
         address: this.data.address.trim().slice(0, 60)
       })
       wx.showToast({ title: '已保存', icon: 'none' })
-      setTimeout(() => {
-        wx.navigateBack({ delta: 1 })
-      }, 500)
+      backAfter(500)
     } catch (e: any) {
       wx.showToast({
         title: String((e && e.message) || '保存失败').slice(0, 40),

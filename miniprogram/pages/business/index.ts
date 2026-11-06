@@ -2,6 +2,7 @@ import type { Business, MealId } from '../../services/types'
 import { getBusiness, updateBusiness } from '../../services/api'
 import { MEALS } from '../../utils/constants'
 import { dateInputString } from '../../utils/format'
+import { backAfter } from '../../utils/nav'
 
 interface MealView {
   id: MealId
@@ -191,9 +192,7 @@ Page({
     try {
       await updateBusiness(business as Business)
       wx.showToast({ title: '已保存', icon: 'none' })
-      setTimeout(() => {
-        wx.navigateBack({ delta: 1 })
-      }, 500)
+      backAfter(500)
     } catch (e: any) {
       wx.showToast({
         title: String((e && e.message) || '保存失败').slice(0, 40),
