@@ -22,6 +22,18 @@
     >已结束 {{counts.done}}</view>
   </view>
 
+  <view class="search-bar">
+    <text class="search-icon">🔍</text>
+    <input
+      class="search-input"
+      placeholder="搜订单号、菜名或日期"
+      value="{{keyword}}"
+      confirm-type="search"
+      bindinput="onSearch"
+    />
+    <view wx:if="{{keyword}}" class="search-clear" bindtap="onClearSearch">×</view>
+  </view>
+
   <view wx:if="{{loading}}" class="loading">
     <view class="skeleton sk-row"></view>
     <view class="skeleton sk-row"></view>
@@ -62,8 +74,10 @@
 
   <empty-state
     wx:elif="{{orders.length}}"
-    title="这里还没有订单"
-    desc="换个分类看看"
+    title="{{keyword ? '没搜到相关订单' : '这里还没有订单'}}"
+    desc="{{keyword ? '换个菜名、订单号或日期试试' : '换个分类看看'}}"
+    actionText="{{keyword ? '清空搜索' : ''}}"
+    bind:action="onClearSearch"
   />
 
   <empty-state

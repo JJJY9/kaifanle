@@ -227,6 +227,45 @@ function invoke(mp, body) {
   data = await page.data()
   check('mock 订单列表', (data.orders || []).length > 0, `${data.orders.length} 单`)
 
+  // 订单搜索
+  const orderNo = String((data.orders || [])[0].no || '')
+  await invoke(
+    mp,
+    `page.onSearch({ detail: { value: ${JSON.stringify(orderNo)} } })`
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 订单号搜索',
+    orderNo.length > 0 &&
+      data.displayOrders.length > 0 &&
+      data.displayOrders.every(item =>
+        `${item.no} ${item.summary} ${item.dateText}`.indexOf(orderNo) > -1
+      ),
+    `关键词 ${orderNo} → ${data.displayOrders.length} 单`
+  )
+
+  await invoke(mp, "page.onSearch({ detail: { value: 'zzz查无此单' } })")
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 订单搜索无结果',
+    data.displayOrders.length === 0 && data.keyword === 'zzz查无此单',
+    `还剩 ${data.displayOrders.length} 单`
+  )
+
+  await invoke(mp, 'page.onClearSearch()')
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 清空订单搜索',
+    data.keyword === '' && data.displayOrders.length === data.orders.length,
+    `恢复 ${data.displayOrders.length} 单`
+  )
+
   // 订单评价
   await mp.navigateTo('/pages/order-detail/index?id=seed-2')
   await sleep(1600)

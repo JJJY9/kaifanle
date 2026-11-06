@@ -13,6 +13,7 @@ Page({
     displayOrders: [] as any[],
     loading: true,
     error: '',
+    keyword: '',
     filter: 'all' as 'all' | 'active' | 'done',
     counts: { all: 0, active: 0, done: 0 }
   },
@@ -83,16 +84,34 @@ Page({
     this.setData({ filter }, () => this.applyFilter())
   },
 
+  onSearch(e: any) {
+    this.setData({ keyword: String(e.detail.value || '') }, () =>
+      this.applyFilter()
+    )
+  },
+
+  onClearSearch() {
+    this.setData({ keyword: '' }, () => this.applyFilter())
+  },
+
   applyFilter() {
     const filter = this.data.filter
+    const keyword = this.data.keyword.trim().toLowerCase()
     const list = this.data.orders.filter(order => {
       const finished =
         order.status === 'completed' || order.status === 'cancelled'
-      if (filter === 'active') {
-        return !finished
+      if (filter === 'active' && finished) {
+        return false
       }
-      if (filter === 'done') {
-        return finished
+      if (filter === 'done' && !finished) {
+        return false
+      }
+      if (keyword) {
+        const haystack = `${order.no} ${order.summary} ${order.dateText}`
+          .toLowerCase()
+        if (haystack.indexOf(keyword) === -1) {
+          return false
+        }
       }
       return true
     })
