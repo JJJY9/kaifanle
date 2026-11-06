@@ -240,6 +240,7 @@ export interface DishSales {
   name: string
   qty: number
   orders: number
+  daily: { date: string; label: string; qty: number }[]
 }
 
 export interface StockLog {

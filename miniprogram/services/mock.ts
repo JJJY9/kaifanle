@@ -1465,25 +1465,45 @@ export async function getDishSales(name: string): Promise<DishSales> {
   let qty = 0
   let orders = 0
   const start = Date.now() - 29 * 24 * 60 * 60 * 1000
+  const dailyMap: Record<string, { date: string; qty: number }> = {}
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  for (let i = 6; i >= 0; i--) {
+    const date = dateInputString(
+      new Date(today.getTime() - i * 24 * 60 * 60 * 1000)
+    )
+    dailyMap[date] = { date, qty: 0 }
+  }
   loadOrders()
     .filter(order => Number(order.createdAt) >= start)
     .forEach(order => {
-    if (order.status === 'cancelled') {
-      return
-    }
-    let matched = 0
-    order.items.forEach(item => {
-      if (item.name === target) {
-        const count = Number(item.qty || 0)
-        qty += count
-        matched += count
+      if (order.status === 'cancelled') {
+        return
+      }
+      let matched = 0
+      order.items.forEach(item => {
+        if (item.name === target) {
+          const count = Number(item.qty || 0)
+          qty += count
+          matched += count
+        }
+      })
+      if (matched > 0) {
+        orders++
+        const key = dateInputString(new Date(order.createdAt))
+        if (dailyMap[key]) {
+          dailyMap[key].qty += matched
+        }
       }
     })
-    if (matched > 0) {
-      orders++
-    }
-  })
-  return { name: target, qty, orders }
+  const daily = Object.keys(dailyMap)
+    .sort()
+    .map(key => ({
+      date: key,
+      label: `${Number(key.slice(5, 7))}/${Number(key.slice(8, 10))}`,
+      qty: dailyMap[key].qty
+    }))
+  return { name: target, qty, orders, daily }
 }
 
 export async function getStockLogs(

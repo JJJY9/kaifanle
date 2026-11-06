@@ -13,6 +13,14 @@
     <view class="card block">
       <view class="block-title">基本信息</view>
       <view wx:if="{{salesText}}" class="sales-line">{{salesText}}</view>
+      <view wx:if="{{salesDaily.length}}" class="sales-chart">
+        <view wx:for="{{salesDaily}}" wx:key="date" class="sales-col">
+          <view class="sales-bar-wrap">
+            <view class="sales-bar {{item.qty ? '' : 'empty'}}" style="height: {{item.height}}%;"></view>
+          </view>
+          <text class="sales-label">{{item.label}}</text>
+        </view>
+      </view>
 
       <view class="field">
         <text class="label">名称</text>

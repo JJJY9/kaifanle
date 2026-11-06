@@ -1872,6 +1872,7 @@ async function run() {
   assert.strictEqual(res.data.name, topName)
   assert.ok(res.data.qty >= 1)
   assert.ok(res.data.orders >= 1)
+  assert.strictEqual(res.data.daily.length, 7)
   res = await call('getDishSales', { name: '不存在的菜' }, 'admin-openid')
   assert.strictEqual(res.data.qty, 0)
 

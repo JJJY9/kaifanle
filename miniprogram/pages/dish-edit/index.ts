@@ -61,6 +61,7 @@ Page({
     status: 'on',
     isRecommended: false,
     salesText: '',
+    salesDaily: [] as any[],
     stockLogs: [] as any[]
   },
 
@@ -107,10 +108,20 @@ Page({
       if (!asCopy) {
         getDishSales(dish.name)
           .then(sales => {
+            const max = Math.max(
+              1,
+              ...(sales.daily || []).map(day => Number(day.qty || 0))
+            )
             this.setData({
               salesText: sales.qty
                 ? `近 30 天卖出 ${sales.qty} 份 · ${sales.orders} 单`
-                : '近 30 天还没卖过'
+                : '近 30 天还没卖过',
+              salesDaily: (sales.daily || []).map(day => ({
+                ...day,
+                height: day.qty
+                  ? Math.max(8, Math.round((day.qty / max) * 100))
+                  : 3
+              }))
             })
           })
           .catch(() => {})

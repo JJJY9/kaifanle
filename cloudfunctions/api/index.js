@@ -632,6 +632,12 @@ async function getDishSales(payload, openid) {
     .where({ createdAt: _.gte(start) })
     .limit(1000)
     .get()
+  const todayStart = chinaStartOfDay()
+  const dailyMap = {}
+  for (let i = 6; i >= 0; i--) {
+    const date = chinaDateString(todayStart - i * 24 * 60 * 60 * 1000)
+    dailyMap[date] = { date, qty: 0 }
+  }
   let qty = 0
   let orders = 0
   ;(res.data || []).forEach(order => {
@@ -648,9 +654,20 @@ async function getDishSales(payload, openid) {
     })
     if (matched > 0) {
       orders++
+      const key = chinaDateString(order.createdAt)
+      if (dailyMap[key]) {
+        dailyMap[key].qty += matched
+      }
     }
   })
-  return { name, qty, orders }
+  const daily = Object.keys(dailyMap)
+    .sort()
+    .map(key => ({
+      date: key,
+      label: `${Number(key.slice(5, 7))}/${Number(key.slice(8, 10))}`,
+      qty: dailyMap[key].qty
+    }))
+  return { name, qty, orders, daily }
 }
 
 async function getKitchenReport(openid) {

@@ -26,6 +26,49 @@
   font-weight: 700;
 }
 
+.sales-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 8rpx;
+  height: 120rpx;
+  margin-bottom: 14rpx;
+  padding: 10rpx 12rpx 6rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 14rpx;
+}
+
+.sales-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+}
+
+.sales-bar-wrap {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+}
+
+.sales-bar {
+  width: 100%;
+  background: #2D9CFF;
+  border-radius: 6rpx 6rpx 0 0;
+}
+
+.sales-bar.empty {
+  background: #E8E8E8;
+}
+
+.sales-label {
+  margin-top: 4rpx;
+  color: #9A9A9A;
+  font-size: 16rpx;
+}
+
 .stock-logs {
   margin: 6rpx 0 14rpx;
   padding: 12rpx 16rpx;

@@ -922,6 +922,11 @@ function invoke(mp, body) {
     data.salesText
   )
   check(
+    'mock 菜品近7天销量趋势',
+    (data.salesDaily || []).length === 7,
+    `${(data.salesDaily || []).length} 天`
+  )
+  check(
     'mock 菜品食材用量',
     String(data.ingredientsText || '').indexOf('番茄') > -1,
     String(data.ingredientsText || '').split('\n').length + ' 行'
