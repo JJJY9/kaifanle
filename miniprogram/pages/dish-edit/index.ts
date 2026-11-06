@@ -20,6 +20,24 @@ function splitList(text: string): string[] {
     .slice(0, 5)
 }
 
+function buildStockLogView(log: any) {
+  const label =
+    log.source === 'order'
+      ? '下单扣减'
+      : log.source === 'cancel'
+      ? '取消回补'
+      : '手动调整'
+  const delta =
+    log.delta === null
+      ? `改为 ${log.after}`
+      : `${log.delta > 0 ? '+' : ''}${log.delta}`
+  return {
+    id: log.id,
+    text: `${delta} · ${label}${log.orderNo ? ` #${log.orderNo}` : ''}`,
+    timeText: formatDate(log.createdAt)
+  }
+}
+
 Page({
   _presetName: '',
   data: {
@@ -65,7 +83,10 @@ Page({
     salesText: '',
     salesDaily: [] as any[],
     priceHistory: [] as any[],
-    stockLogs: [] as any[]
+    stockLogs: [] as any[],
+    stockLogsView: [] as any[],
+    stockLogsAll: false,
+    stockLogsLoading: false
   },
 
   onLoad(options: any) {
@@ -130,26 +151,11 @@ Page({
           .catch(() => {})
         getStockLogs(dish.id, 5)
           .then(logs => {
+            const stockLogs = (logs || []).map(buildStockLogView)
             this.setData({
-              stockLogs: (logs || []).map(log => {
-                const label =
-                  log.source === 'order'
-                    ? '下单扣减'
-                    : log.source === 'cancel'
-                    ? '取消回补'
-                    : '手动调整'
-                const delta =
-                  log.delta === null
-                    ? `改为 ${log.after}`
-                    : `${log.delta > 0 ? '+' : ''}${log.delta}`
-                return {
-                  id: log.id,
-                  text: `${delta} · ${label}${
-                    log.orderNo ? ` #${log.orderNo}` : ''
-                  }`,
-                  timeText: formatDate(log.createdAt)
-                }
-              })
+              stockLogs,
+              stockLogsView: stockLogs.slice(0, 5),
+              stockLogsAll: false
             })
           })
           .catch(() => {})
@@ -320,6 +326,40 @@ Page({
 
   onAllergens(e: any) {
     this.setData({ allergensText: e.detail.value })
+  },
+
+  async onToggleStockLogs() {
+    if (this.data.stockLogsAll) {
+      this.setData({
+        stockLogsAll: false,
+        stockLogsView: this.data.stockLogs.slice(0, 5)
+      })
+      return
+    }
+    if (this.data.stockLogs.length >= 15 || this.data.stockLogsLoading) {
+      this.setData({
+        stockLogsAll: true,
+        stockLogsView: this.data.stockLogs
+      })
+      return
+    }
+    if (!this.data.id) {
+      return
+    }
+    this.setData({ stockLogsLoading: true })
+    try {
+      const logs = await getStockLogs(this.data.id, 15)
+      const stockLogs = (logs || []).map(buildStockLogView)
+      this.setData({
+        stockLogs,
+        stockLogsView: stockLogs,
+        stockLogsAll: true
+      })
+    } catch (e) {
+      wx.showToast({ title: '库存记录加载失败', icon: 'none' })
+    } finally {
+      this.setData({ stockLogsLoading: false })
+    }
   },
 
   async onChooseImage() {

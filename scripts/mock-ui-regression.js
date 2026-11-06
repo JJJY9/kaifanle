@@ -947,6 +947,18 @@ function invoke(mp, body) {
         data.stockLogs.some(log => String(log.text).indexOf('手动调整') > -1),
       `${(data.stockLogs || []).length} 条`
     )
+    await invoke(mp, 'page.onToggleStockLogs()')
+    await sleep(900)
+    page = await current()
+    data = await page.data()
+    check(
+      'mock 库存记录看全部',
+      data.stockLogsAll === true &&
+        (data.stockLogsView || []).length === (data.stockLogs || []).length,
+      `${(data.stockLogsView || []).length} 条`
+    )
+    await invoke(mp, 'page.onToggleStockLogs()')
+    await sleep(300)
     await mp.navigateBack()
     await sleep(900)
   }

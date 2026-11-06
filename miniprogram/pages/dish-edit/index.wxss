@@ -130,6 +130,14 @@
   color: #9A9A9A;
 }
 
+.stock-logs-more {
+  margin-top: 8rpx;
+  text-align: center;
+  color: #2D9CFF;
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
 .field {
   display: flex;
   align-items: center;
