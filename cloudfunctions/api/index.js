@@ -128,6 +128,8 @@ async function route(action, payload, openid) {
       return saveMyProfile(payload, openid)
     case 'getStats':
       return getStats(openid)
+    case 'getKitchenReport':
+      return getKitchenReport(openid)
     case 'createCoupon':
       return createCoupon(payload, openid)
     case 'getCoupons':
@@ -505,6 +507,102 @@ function chinaStartOfMonth() {
     Date.UTC(china.getUTCFullYear(), china.getUTCMonth(), 1) -
     8 * 60 * 60 * 1000
   )
+}
+
+// 厨房近 30 天经营概览：营收、订单、客单价、菜品排行与评分
+async function getKitchenReport(openid) {
+  await requireAdmin(openid)
+  const days = 30
+  const todayStart = chinaStartOfDay()
+  const start = todayStart - (days - 1) * 24 * 60 * 60 * 1000
+  const res = await db
+    .collection('orders')
+    .where({ createdAt: _.gte(start) })
+    .limit(1000)
+    .get()
+  const orders = res.data || []
+  const active = orders.filter(order => order.status !== 'cancelled')
+  const revenue = active.reduce(
+    (sum, order) => sum + Number(order.amount || 0),
+    0
+  )
+
+  const dailyMap = {}
+  for (let i = 0; i < days; i++) {
+    const date = chinaDateString(start + i * 24 * 60 * 60 * 1000)
+    dailyMap[date] = { date, amount: 0, count: 0 }
+  }
+  active.forEach(order => {
+    const key = chinaDateString(order.createdAt)
+    if (dailyMap[key]) {
+      dailyMap[key].amount += Number(order.amount || 0)
+      dailyMap[key].count += 1
+    }
+  })
+  const daily = Object.keys(dailyMap)
+    .sort()
+    .map(key => ({
+      ...dailyMap[key],
+      amount: Number(dailyMap[key].amount.toFixed(2)),
+      label:
+        Number(key.slice(5, 7)) + '/' + Number(key.slice(8, 10))
+    }))
+
+  const dishMap = {}
+  active.forEach(order => {
+    ;(order.items || []).forEach(item => {
+      const name = item.name || '未命名'
+      if (!dishMap[name]) {
+        dishMap[name] = { name, qty: 0, revenue: 0 }
+      }
+      const qty = Number(item.qty || 0)
+      dishMap[name].qty += qty
+      dishMap[name].revenue += Number(item.price || 0) * qty
+    })
+  })
+  const topDishes = Object.keys(dishMap)
+    .map(name => ({
+      ...dishMap[name],
+      revenue: Number(dishMap[name].revenue.toFixed(2))
+    }))
+    .sort((a, b) => b.qty - a.qty || b.revenue - a.revenue)
+    .slice(0, 8)
+
+  const rated = active.filter(
+    order => typeof order.rating === 'number' && order.rating > 0
+  )
+  const avgRating = rated.length
+    ? Number(
+        (
+          rated.reduce((sum, order) => sum + Number(order.rating), 0) /
+          rated.length
+        ).toFixed(1)
+      )
+    : 0
+  const goodRate = rated.length
+    ? Math.round(
+        (rated.filter(order => order.rating === 3).length / rated.length) *
+          100
+      )
+    : 0
+
+  return {
+    days,
+    startDate: chinaDateString(start),
+    endDate: chinaDateString(todayStart),
+    totalOrders: active.length,
+    cancelled: orders.length - active.length,
+    completed: active.filter(order => order.status === 'completed').length,
+    revenue: Number(revenue.toFixed(2)),
+    avgOrder: active.length
+      ? Number((revenue / active.length).toFixed(2))
+      : 0,
+    daily,
+    topDishes,
+    ratedCount: rated.length,
+    avgRating,
+    goodRate
+  }
 }
 
 // 「我的」页统计：总数用 count，月度明细最多取 200 单算最常点

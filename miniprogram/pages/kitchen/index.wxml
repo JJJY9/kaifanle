@@ -27,6 +27,7 @@
     <view class="notify-btn settings" bindtap="onBusiness">营业设置</view>
     <view class="notify-btn menu" bindtap="onMenu">排菜单</view>
     <view class="notify-btn week" bindtap="onWeekMenus">本周饭表</view>
+    <view class="notify-btn report" bindtap="onReport">经营月报</view>
     <view class="notify-btn copy" bindtap="onCopySummary">复制清单</view>
     <text class="notify-hint">一次授权提醒下一单</text>
   </view>

@@ -769,6 +769,10 @@ Page({
     wx.navigateTo({ url: '/pages/week-menus/index' })
   },
 
+  onReport() {
+    wx.navigateTo({ url: '/pages/report/index' })
+  },
+
   onEditDish(e: any) {
     const id = e.currentTarget.dataset.id
     if (id) {

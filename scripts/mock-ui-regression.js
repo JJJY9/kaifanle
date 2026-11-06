@@ -614,6 +614,24 @@ function invoke(mp, body) {
     )
   }
 
+  // 经营月报
+  await mp.navigateTo('/pages/report/index')
+  await sleep(2200)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 经营月报加载',
+    Boolean(data.report) &&
+      (data.report.daily || []).length === 30 &&
+      data.report.totalOrders >= 1 &&
+      (data.report.topDishes || []).length >= 1,
+    data.report
+      ? `${data.report.totalOrders} 单 / ¥${data.report.revenue}`
+      : '没有数据'
+  )
+  await mp.navigateBack()
+  await sleep(600)
+
   const failed = results.filter(r => !r.ok)
   console.log(`\n结论：${results.length - failed.length}/${results.length} 通过`)
   await mp.disconnect()

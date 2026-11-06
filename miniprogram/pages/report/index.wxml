@@ -1,0 +1,85 @@
+<view class="page">
+  <view class="head">
+    <view class="title-row">
+      <text class="title display">经营月报</text>
+      <view class="sticker">近 30 天</view>
+    </view>
+    <text wx:if="{{report}}" class="sub">{{report.startDate}} 至 {{report.endDate}} · 只统计未取消订单</text>
+  </view>
+
+  <view wx:if="{{loading}}" class="loading">
+    <view class="skeleton sk-card"></view>
+    <view class="skeleton sk-card"></view>
+  </view>
+
+  <empty-state
+    wx:elif="{{error}}"
+    title="月报加载失败"
+    desc="{{error}}"
+    actionText="再试一次"
+    bind:action="onRetry"
+  />
+
+  <block wx:elif="{{report}}">
+    <view class="stats-card card">
+      <view class="stat">
+        <text class="stat-num">¥{{report.revenue}}</text>
+        <text class="stat-label">30 天营收</text>
+      </view>
+      <view class="divider"></view>
+      <view class="stat">
+        <text class="stat-num">{{report.totalOrders}}</text>
+        <text class="stat-label">订单</text>
+      </view>
+      <view class="divider"></view>
+      <view class="stat">
+        <text class="stat-num">¥{{report.avgOrder}}</text>
+        <text class="stat-label">客单价</text>
+      </view>
+    </view>
+
+    <view wx:if="{{report.ratedCount}}" class="rating-line card">
+      <text>评价 {{report.ratedCount}} 条</text>
+      <text>平均 {{report.avgRating}} 分</text>
+      <text>好评率 {{report.goodRate}}%</text>
+    </view>
+
+    <view class="chart card">
+      <view class="chart-head">
+        <view class="chart-title">每天营收</view>
+        <view class="chart-total">单日最高 ¥{{maxAmount}}</view>
+      </view>
+      <view class="chart-bars">
+        <view wx:for="{{bars}}" wx:key="date" class="chart-col">
+          <view class="chart-bar-wrap">
+            <view
+              class="chart-bar {{item.amount ? '' : 'empty'}}"
+              style="height: {{item.height}}%;"
+            ></view>
+          </view>
+          <text class="chart-label">{{item.showLabel ? item.label : ''}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="section-title display">菜品排行</view>
+    <view wx:if="{{!report.topDishes.length}}" class="empty-line">这 30 天还没有卖出的菜</view>
+    <view wx:for="{{report.topDishes}}" wx:key="name" class="dish-row card">
+      <view class="rank {{index < 3 ? 'top' : ''}}">{{index + 1}}</view>
+      <view class="dish-info">
+        <view class="dish-name">{{item.name}}</view>
+        <view class="dish-sub">卖出 {{item.qty}} 份 · ¥{{item.revenue}}</view>
+      </view>
+      <view class="dish-bar-wrap">
+        <view
+          class="dish-bar"
+          style="width: {{report.topDishes[0].qty ? (item.qty / report.topDishes[0].qty * 100) : 0}}%;"
+        ></view>
+      </view>
+    </view>
+
+    <view class="foot-note">
+      完成 {{report.completed}} 单 · 取消 {{report.cancelled}} 单
+    </view>
+  </block>
+</view>

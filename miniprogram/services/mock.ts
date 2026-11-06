@@ -7,6 +7,7 @@ import type {
   Dish,
   DishInput,
   InitResult,
+  KitchenReport,
   MealId,
   MeInfo,
   MyStats,
@@ -1074,6 +1075,95 @@ export async function getStats(): Promise<StoreStats> {
         )
       : 0,
     goodRatings: active.filter(order => order.rating === 3).length
+  }
+}
+
+export async function getKitchenReport(): Promise<KitchenReport> {
+  await delay(80)
+  const days = 30
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const start = today.getTime() - (days - 1) * 24 * 60 * 60 * 1000
+  const orders = loadOrders().filter(
+    order => Number(order.createdAt) >= start
+  )
+  const active = orders.filter(order => order.status !== 'cancelled')
+  const revenue = active.reduce(
+    (sum, order) => sum + Number(order.amount || 0),
+    0
+  )
+  const dailyMap: Record<string, any> = {}
+  for (let i = 0; i < days; i++) {
+    const date = dateInputString(
+      new Date(start + i * 24 * 60 * 60 * 1000)
+    )
+    dailyMap[date] = { date, amount: 0, count: 0 }
+  }
+  active.forEach(order => {
+    const key = dateInputString(new Date(order.createdAt))
+    if (dailyMap[key]) {
+      dailyMap[key].amount += Number(order.amount || 0)
+      dailyMap[key].count += 1
+    }
+  })
+  const daily = Object.keys(dailyMap)
+    .sort()
+    .map(key => ({
+      ...dailyMap[key],
+      amount: Number(dailyMap[key].amount.toFixed(2)),
+      label: `${Number(key.slice(5, 7))}/${Number(key.slice(8, 10))}`
+    }))
+  const dishMap: Record<string, any> = {}
+  active.forEach(order => {
+    order.items.forEach(item => {
+      const name = item.name || '未命名'
+      if (!dishMap[name]) {
+        dishMap[name] = { name, qty: 0, revenue: 0 }
+      }
+      const qty = Number(item.qty || 0)
+      dishMap[name].qty += qty
+      dishMap[name].revenue += Number(item.price || 0) * qty
+    })
+  })
+  const topDishes = Object.keys(dishMap)
+    .map(name => ({
+      ...dishMap[name],
+      revenue: Number(dishMap[name].revenue.toFixed(2))
+    }))
+    .sort((a, b) => b.qty - a.qty || b.revenue - a.revenue)
+    .slice(0, 8)
+  const rated = active.filter(order => Number(order.rating) > 0)
+  const avgRating = rated.length
+    ? Number(
+        (
+          rated.reduce((sum, order) => sum + Number(order.rating), 0) /
+          rated.length
+        ).toFixed(1)
+      )
+    : 0
+  const goodRate = rated.length
+    ? Math.round(
+        (rated.filter(order => Number(order.rating) === 3).length /
+          rated.length) *
+          100
+      )
+    : 0
+  return {
+    days,
+    startDate: dateInputString(new Date(start)),
+    endDate: dateInputString(today),
+    totalOrders: active.length,
+    cancelled: orders.length - active.length,
+    completed: active.filter(order => order.status === 'completed').length,
+    revenue: Number(revenue.toFixed(2)),
+    avgOrder: active.length
+      ? Number((revenue / active.length).toFixed(2))
+      : 0,
+    daily,
+    topDishes,
+    ratedCount: rated.length,
+    avgRating,
+    goodRate
   }
 }
 
