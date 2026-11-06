@@ -128,6 +128,11 @@ Page({
           createdText: `${formatDate(order.createdAt)} ${formatTime(
             order.createdAt
           )}`,
+          ownerReplyText: order.ownerReplyAt
+            ? `${formatDate(order.ownerReplyAt)} ${formatTime(
+                order.ownerReplyAt
+              )}`
+            : '',
           items: order.items.map((item, index) => ({
             ...item,
             key: `${index}-${item.dishId}`,

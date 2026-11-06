@@ -102,6 +102,8 @@ async function route(action, payload, openid) {
       return urgeOrder(payload, openid)
     case 'rateOrder':
       return rateOrder(payload, openid)
+    case 'replyRating':
+      return replyRating(payload, openid)
     case 'updateOrderStatus':
       return updateOrderStatus(payload, openid)
     case 'toggleDishStatus':
@@ -1367,12 +1369,72 @@ async function rateOrder(payload, openid) {
   const feedback = String(payload.feedback || '').trim().slice(0, 50)
   await checkContentSafety(openid, feedback)
   const now = Date.now()
-  await db
+  const changed =
+    Number(order.rating) !== rating ||
+    String(order.feedback || '') !== feedback
+  const data = { rating, feedback, ratedAt: now }
+  // 评价变了，旧回复不再对应这条评价，清掉避免错配
+  if (changed && order.ownerReply) {
+    data.ownerReply = ''
+    data.ownerReplyAt = 0
+  }
+  await db.collection('orders').doc(payload.id).update({ data })
+  return withId(Object.assign({}, order, data))
+}
+
+// 掌勺人回复顾客评价：管理员专属，覆盖式更新，写库前做内容安全
+async function replyRating(payload, openid) {
+  await requireAdmin(openid)
+  if (!payload || !payload.id) {
+    throw new Error('缺少订单 ID')
+  }
+  let order
+  try {
+    const res = await db.collection('orders').doc(payload.id).get()
+    order = res.data
+  } catch (e) {
+    if (isMissingDocError(e)) {
+      throw new Error('订单不存在')
+    }
+    throw e
+  }
+  if (order.status !== 'completed') {
+    throw new Error('吃完才能回复哦')
+  }
+  if ([1, 2, 3].indexOf(Number(order.rating)) === -1) {
+    throw new Error('她还没评价，先等等')
+  }
+  // 客户端带上它看到的评价时间，避免回复写到刚被改过的新评价上
+  const seenRatedAt = Number(payload.ratedAt || 0)
+  if (seenRatedAt && Number(order.ratedAt || 0) !== seenRatedAt) {
+    throw new Error('她的评价刚刚更新了，刷新看看')
+  }
+  const reply = Array.from(String(payload.reply || '').trim())
+    .slice(0, 50)
+    .join('')
+  if (!reply) {
+    throw new Error('回复不能为空')
+  }
+  await checkContentSafety(openid, reply)
+  const now = Date.now()
+  const cond = {
+    _id: payload.id,
+    status: 'completed',
+    rating: _.in([1, 2, 3])
+  }
+  // 读后写窗口里如果顾客改了评价，ratedAt 会变，条件更新就不会命中
+  if (order.ratedAt) {
+    cond.ratedAt = order.ratedAt
+  }
+  const upd = await db
     .collection('orders')
-    .doc(payload.id)
-    .update({ data: { rating, feedback, ratedAt: now } })
+    .where(cond)
+    .update({ data: { ownerReply: reply, ownerReplyAt: now } })
+  if (!upd.stats || upd.stats.updated !== 1) {
+    throw new Error('订单刚刚变了，刷新看看')
+  }
   return withId(
-    Object.assign({}, order, { rating, feedback, ratedAt: now })
+    Object.assign({}, order, { ownerReply: reply, ownerReplyAt: now })
   )
 }
 

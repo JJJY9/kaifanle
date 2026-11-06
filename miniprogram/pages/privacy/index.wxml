@@ -6,7 +6,7 @@
 
   <view class="card block">
     <view class="block-title">会收集什么</view>
-    <view class="p">微信 openid（用来区分是谁在下单）、口味与忌口、常用地址、订单备注、许愿内容、菜品偏好。</view>
+    <view class="p">微信 openid（用来区分是谁在下单）、口味与忌口、常用地址、订单备注、订单评价与掌勺人回复、许愿内容、菜品偏好。</view>
   </view>
 
   <view class="card block">
@@ -16,7 +16,7 @@
 
   <view class="card block">
     <view class="block-title">存在哪里</view>
-    <view class="p">数据存放在微信云开发的云数据库里。掌勺人可以查看全部订单和许愿，用来做饭；其他用户只能看到自己的内容。</view>
+    <view class="p">数据存放在微信云开发的云数据库里。掌勺人可以查看全部订单、评价和许愿，用来做饭和回复评价；其他用户只能看到自己的内容和掌勺人对自己的回复。</view>
   </view>
 
   <view class="card block">
@@ -29,5 +29,5 @@
     <view class="p">只有在管理员点击「我的 openid」时才会写入剪贴板，用于添加管理员，不会读取剪贴板内容。</view>
   </view>
 
-  <view class="footer">更新于 2026-11-05</view>
+  <view class="footer">更新于 2026-11-06</view>
 </view>

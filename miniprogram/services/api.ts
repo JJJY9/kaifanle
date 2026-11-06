@@ -278,6 +278,17 @@ export async function rateOrder(
   return mock.rateOrder(id, rating, feedback)
 }
 
+export async function replyRating(
+  id: string,
+  reply: string,
+  ratedAt?: number
+): Promise<Order | null> {
+  if (USE_CLOUD) {
+    return callApi<Order | null>('replyRating', { id, reply, ratedAt })
+  }
+  return mock.replyRating(id, reply, ratedAt)
+}
+
 export async function updateOrderStatus(
   id: string,
   status: OrderStatus
