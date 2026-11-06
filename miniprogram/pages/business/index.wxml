@@ -72,6 +72,20 @@
       <view class="date-hint">点一下标记为休息日，那天不能下单</view>
     </view>
 
+    <view class="card block">
+      <view class="block-title">每周固定休息</view>
+      <view class="date-chips">
+        <view
+          wx:for="{{weekdays}}"
+          wx:key="value"
+          class="date-chip {{item.closed ? 'closed' : ''}}"
+          data-value="{{item.value}}"
+          bindtap="onToggleWeekday"
+        >{{item.name}}</view>
+      </view>
+      <view class="date-hint">比如每周日休息，每周都生效</view>
+    </view>
+
     <view
       class="save-btn {{saving ? 'disabled' : ''}}"
       bindtap="onSave"

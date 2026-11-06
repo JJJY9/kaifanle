@@ -148,8 +148,10 @@ Page({
       let mealNotice = ''
       const closedToday = Boolean(
         business &&
-          Array.isArray(business.closedDates) &&
-          business.closedDates.indexOf(today) > -1
+          ((Array.isArray(business.closedDates) &&
+            business.closedDates.indexOf(today) > -1) ||
+            (Array.isArray(business.weeklyClosed) &&
+              business.weeklyClosed.indexOf(new Date().getDay()) > -1))
       )
       const mealSetting = business ? business[meal] : null
       if (closedToday) {

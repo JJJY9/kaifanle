@@ -157,6 +157,7 @@ export interface Business {
   closedNote: string
   notice?: string
   closedDates?: string[]
+  weeklyClosed?: number[]
 }
 
 export interface UserProfile {

@@ -738,6 +738,44 @@ async function run() {
   )
   assert.strictEqual(res.ok, true)
 
+  // 每周固定休息：按星期拦截
+  const weeklyDate = chinaDate(6)
+  const weeklyDay = new Date(
+    Date.parse(weeklyDate + 'T00:00:00+08:00') + 8 * 60 * 60 * 1000
+  ).getUTCDay()
+  res = await call(
+    'updateBusiness',
+    Object.assign({}, businessWithClosed, {
+      closedDates: [],
+      weeklyClosed: [weeklyDay]
+    }),
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  res = await call('getBusiness', {}, 'girl-openid')
+  assert.deepStrictEqual(res.data.weeklyClosed, [weeklyDay])
+  res = await call(
+    'createOrder',
+    {
+      items: [{ dishId: 'd02', qty: 1, specs: [] }],
+      meal: 'lunch',
+      expectedTime: '12:00',
+      mode: '在家吃',
+      scheduledDate: weeklyDate
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, false)
+  res = await call(
+    'updateBusiness',
+    Object.assign({}, businessWithClosed, {
+      closedDates: [],
+      weeklyClosed: []
+    }),
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+
   res = await call(
     'createOrder',
     {

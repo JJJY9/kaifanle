@@ -106,12 +106,21 @@ Page({
       const isClosedDate =
         Array.isArray(business.closedDates) &&
         business.closedDates.indexOf(this.data.scheduledDate) > -1
-      const closed = !setting.open || pastDeadline || isClosedDate
+      const weekday = new Date(
+        this.data.scheduledDate + 'T00:00:00'
+      ).getDay()
+      const isWeeklyClosed =
+        Array.isArray(business.weeklyClosed) &&
+        business.weeklyClosed.indexOf(weekday) > -1
+      const closed =
+        !setting.open || pastDeadline || isClosedDate || isWeeklyClosed
       this.setData({
         closed,
         closedText: closed
           ? isClosedDate
             ? '这一天休息，换个日子吧'
+            : isWeeklyClosed
+            ? '这一天固定休息，换个日子吧'
             : !setting.open
             ? business.closedNote || '今天休息，明天见'
             : '这一餐已经截单啦，下次早点来'

@@ -34,7 +34,8 @@ const DEFAULT_BUSINESS: Business = {
   dinner: { open: true, deadline: '20:00' },
   closedNote: '今天休息，明天见',
   notice: '',
-  closedDates: []
+  closedDates: [],
+  weeklyClosed: []
 }
 
 const CATEGORIES: Category[] = [
@@ -717,6 +718,13 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
   ) {
     throw new Error('这一天休息，换个日子吧')
   }
+  const weekday = new Date(scheduledDate + 'T00:00:00').getDay()
+  if (
+    Array.isArray(business.weeklyClosed) &&
+    business.weeklyClosed.indexOf(weekday) > -1
+  ) {
+    throw new Error('这一天固定休息，换个日子吧')
+  }
 
   const menu = loadMenus()[`${scheduledDate}_${payload.meal}`]
   if (menu && menu.open === false) {
@@ -957,6 +965,9 @@ export async function getBusiness(): Promise<Business> {
   await delay(60)
   const data = JSON.parse(JSON.stringify(loadBusiness()))
   data.closedDates = Array.isArray(data.closedDates) ? data.closedDates : []
+  data.weeklyClosed = Array.isArray(data.weeklyClosed)
+    ? data.weeklyClosed
+    : []
   return data
 }
 

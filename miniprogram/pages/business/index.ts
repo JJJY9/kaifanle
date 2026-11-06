@@ -16,6 +16,22 @@ interface DateView {
   closed: boolean
 }
 
+interface WeekdayView {
+  value: number
+  name: string
+  closed: boolean
+}
+
+const WEEKDAYS: WeekdayView[] = [
+  { value: 1, name: '周一', closed: false },
+  { value: 2, name: '周二', closed: false },
+  { value: 3, name: '周三', closed: false },
+  { value: 4, name: '周四', closed: false },
+  { value: 5, name: '周五', closed: false },
+  { value: 6, name: '周六', closed: false },
+  { value: 0, name: '周日', closed: false }
+]
+
 function buildDateOptions(): DateView[] {
   const options: DateView[] = []
   for (let i = 0; i <= 7; i++) {
@@ -43,7 +59,8 @@ Page({
     mealViews: [] as MealView[],
     closedNote: '',
     notice: '',
-    dateOptions: [] as DateView[]
+    dateOptions: [] as DateView[],
+    weekdays: [] as WeekdayView[]
   },
 
   onLoad() {
@@ -66,11 +83,19 @@ Page({
         ...option,
         closed: closedDates.indexOf(option.value) > -1
       }))
+      const weeklyClosed = Array.isArray(business.weeklyClosed)
+        ? business.weeklyClosed
+        : []
+      const weekdays = WEEKDAYS.map(day => ({
+        ...day,
+        closed: weeklyClosed.indexOf(day.value) > -1
+      }))
       this.setData({
         mealViews,
         closedNote: business.closedNote,
         notice: business.notice || '',
         dateOptions,
+        weekdays,
         loading: false
       })
     } catch (e: any) {
@@ -118,6 +143,14 @@ Page({
     this.setData({ dateOptions })
   },
 
+  onToggleWeekday(e: any) {
+    const value = Number(e.currentTarget.dataset.value)
+    const weekdays = this.data.weekdays.map(day =>
+      day.value === value ? { ...day, closed: !day.closed } : day
+    )
+    this.setData({ weekdays })
+  },
+
   async onSave() {
     if (this.data.saving) {
       return
@@ -128,7 +161,10 @@ Page({
       notice: this.data.notice.trim().slice(0, 60),
       closedDates: this.data.dateOptions
         .filter(option => option.closed)
-        .map(option => option.value)
+        .map(option => option.value),
+      weeklyClosed: this.data.weekdays
+        .filter(day => day.closed)
+        .map(day => day.value)
     }
     this.data.mealViews.forEach(view => {
       business[view.id] = {

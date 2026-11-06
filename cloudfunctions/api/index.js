@@ -34,7 +34,8 @@ const DEFAULT_BUSINESS = {
   dinner: { open: true, deadline: '20:00' },
   closedNote: '今天休息，明天见',
   notice: '',
-  closedDates: []
+  closedDates: [],
+  weeklyClosed: []
 }
 
 exports.main = async event => {
@@ -282,6 +283,19 @@ function normalizeBusiness(value) {
               list.indexOf(date) === index
           )
           .slice(0, 14)
+      : [],
+    // 每周固定休息：0=周日 ... 6=周六
+    weeklyClosed: Array.isArray(source.weeklyClosed)
+      ? source.weeklyClosed
+          .map(Number)
+          .filter(
+            (day, index, list) =>
+              Number.isInteger(day) &&
+              day >= 0 &&
+              day <= 6 &&
+              list.indexOf(day) === index
+          )
+          .slice(0, 7)
       : []
   }
   for (const meal of MEALS) {
@@ -307,8 +321,16 @@ function pad2(n) {
   return n < 10 ? '0' + n : String(n)
 }
 
-function chinaDateString(ts) {
-  const d = new Date((ts || Date.now()) + 8 * 60 * 60 * 1000)
+// YYYY-MM-DD 在北京时间下的星期（0=周日）
+function chinaWeekday(dateString) {
+  const ts = Date.parse(dateString + 'T00:00:00+08:00')
+  if (!isFinite(ts)) {
+    return -1
+  }
+  return new Date(ts + 8 * 60 * 60 * 1000).getUTCDay()
+}
+
+function chinaDateString(ts) {  const d = new Date((ts || Date.now()) + 8 * 60 * 60 * 1000)
   return (
     d.getUTCFullYear() +
     '-' +
@@ -999,6 +1021,12 @@ async function createOrder(payload, openid) {
     business.closedDates.indexOf(scheduledDate) > -1
   ) {
     throw new Error('这一天休息，换个日子吧')
+  }
+  if (
+    Array.isArray(business.weeklyClosed) &&
+    business.weeklyClosed.indexOf(chinaWeekday(scheduledDate)) > -1
+  ) {
+    throw new Error('这一天固定休息，换个日子吧')
   }
 
   const menu = await getMenuDoc(scheduledDate, meal)
