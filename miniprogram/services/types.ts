@@ -54,6 +54,7 @@ export interface DishInput {
   meals: MealId[]
   status: 'on' | 'soldout' | 'off'
   stock: number
+  stockBase?: number
   isRecommended: boolean
   image?: string
   recipe?: string
@@ -62,6 +63,7 @@ export interface DishInput {
 export interface CartLine {
   key: string
   meal: MealId
+  date: string
   dishId: string
   name: string
   price: number

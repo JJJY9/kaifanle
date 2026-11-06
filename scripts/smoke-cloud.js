@@ -359,6 +359,12 @@ async function run() {
   )
   res = await call(
     'saveCategory',
+    { id: newCategoryId, name: '主食', color: '#FF5C8A' },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, false)
+  res = await call(
+    'saveCategory',
     { id: newCategoryId, name: '夜宵啦', color: '#FF5C8A' },
     'admin-openid'
   )
@@ -892,6 +898,103 @@ async function run() {
   res = await call('getOrder', { id: adminCancelId }, 'girl-openid')
   assert.strictEqual(res.data.cancelReason, '今天太忙了')
   assert.strictEqual(res.data.cancelledBy, 'admin')
+
+  // 编辑菜品时库存按基线差量处理，不覆盖下单已扣的库存
+  res = await call(
+    'saveDish',
+    {
+      name: '库存基线测试',
+      desc: '',
+      price: 8,
+      categoryId: 'staple',
+      tags: [],
+      spicyLevels: [],
+      addons: [],
+      color: '#FFD23F',
+      meals: ['lunch'],
+      status: 'on',
+      stock: 10,
+      isRecommended: false
+    },
+    'admin-openid'
+  )
+  const baseDishId = res.data.id
+  res = await call(
+    'createOrder',
+    {
+      items: [{ dishId: baseDishId, qty: 2, specs: [] }],
+      meal: 'lunch',
+      expectedTime: '12:00',
+      mode: '在家吃'
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  const baseOrderId = res.data.id
+  res = await call('getDish', { id: baseDishId }, 'admin-openid')
+  assert.strictEqual(res.data.stock, 8)
+  res = await call(
+    'saveDish',
+    {
+      id: baseDishId,
+      name: '库存基线测试改',
+      desc: '',
+      price: 8,
+      categoryId: 'staple',
+      tags: [],
+      spicyLevels: [],
+      addons: [],
+      color: '#FFD23F',
+      meals: ['lunch'],
+      status: 'on',
+      stock: 10,
+      stockBase: 10,
+      isRecommended: false
+    },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  res = await call('getDish', { id: baseDishId }, 'admin-openid')
+  assert.strictEqual(res.data.stock, 8)
+  res = await call(
+    'saveDish',
+    {
+      id: baseDishId,
+      name: '库存基线测试改',
+      desc: '',
+      price: 8,
+      categoryId: 'staple',
+      tags: [],
+      spicyLevels: [],
+      addons: [],
+      color: '#FFD23F',
+      meals: ['lunch'],
+      status: 'on',
+      stock: 15,
+      stockBase: 10,
+      isRecommended: false
+    },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  res = await call('getDish', { id: baseDishId }, 'admin-openid')
+  assert.strictEqual(res.data.stock, 13)
+  res = await call(
+    'updateOrderStatus',
+    { id: baseOrderId, status: 'accepted' },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  res = await call(
+    'updateOrderStatus',
+    { id: baseOrderId, status: 'cancelled', reason: '临时休息' },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.cancelReason, '临时休息')
+  res = await call('getDish', { id: baseDishId }, 'admin-openid')
+  assert.strictEqual(res.data.stock, 15)
+  await call('deleteDish', { id: baseDishId }, 'admin-openid')
 
   // 我的统计：总数（不含已取消）、本月、最常点
   res = await call('getMyStats', {}, 'girl-openid')

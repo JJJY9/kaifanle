@@ -87,6 +87,89 @@ function invoke(mp, body) {
     data.cartCount === lunchBefore,
     `午餐 ${data.cartCount} 件 / 早餐 ${breakfastBefore + 1} 件`
   )
+
+  // 购物车按日期隔离：今天加的菜不会跟到明天
+  const todayForCart = data.selectedDate
+  const tomorrowForCart = (() => {
+    const d = new Date(todayForCart + 'T12:00:00')
+    d.setDate(d.getDate() + 1)
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${d.getFullYear()}-${m}-${day}`
+  })()
+  await invoke(
+    mp,
+    `page.onSelectDate({ detail: { value: '${tomorrowForCart}' } })`
+  )
+  await sleep(1600)
+  page = await current()
+  data = await page.data()
+  const tomorrowBefore = data.cartCount
+  check(
+    'mock 切换日期后购物车清零',
+    data.selectedDate === tomorrowForCart && tomorrowBefore === 0,
+    `${data.selectedDate} · ${tomorrowBefore} 件`
+  )
+  await invoke(
+    mp,
+    'page.quickAdd(page._available.find(d => d.status !== "soldout" && d.stock !== 0 && !(d.spicyLevels || []).length && !(d.addons || []).length))'
+  )
+  await sleep(500)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 明天加购独立计数',
+    data.cartCount === tomorrowBefore + 1,
+    `明天 ${data.cartCount} 件`
+  )
+  await mp.navigateTo(
+    `/pages/checkout/index?meal=lunch&date=${tomorrowForCart}`
+  )
+  await sleep(1600)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 结算按日期取菜',
+    (data.lines || []).length >= 1 &&
+      data.scheduledDate === tomorrowForCart &&
+      (data.lines || []).every(line => line.date === tomorrowForCart),
+    `${data.scheduledDate} · ${(data.lines || []).length} 道`
+  )
+  const tomorrowLines = (data.lines || []).filter(
+    line => line.date === tomorrowForCart
+  )
+  for (const line of tomorrowLines) {
+    page = await current()
+    data = await page.data()
+    if (!(data.lines || []).some(item => item.key === line.key)) {
+      continue
+    }
+    await invoke(
+      mp,
+      `page.onRemove({ currentTarget: { dataset: { key: ${JSON.stringify(
+        line.key
+      )} } } })`
+    )
+    await sleep(500)
+  }
+  page = await current()
+  if (String(page.path).indexOf('checkout') > -1) {
+    await mp.navigateBack()
+    await sleep(800)
+  }
+  page = await current()
+  await invoke(
+    mp,
+    `page.onSelectDate({ detail: { value: '${todayForCart}' } })`
+  )
+  await sleep(1600)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 切回今天购物车恢复',
+    data.selectedDate === todayForCart && data.cartCount === lunchBefore,
+    `今天 ${data.cartCount} 件 / 基线 ${lunchBefore} 件`
+  )
   await mp.navigateTo('/pages/checkout/index?meal=breakfast')
   await sleep(1800)
   page = await current()

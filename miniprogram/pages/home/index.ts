@@ -113,6 +113,8 @@ Page({
     if (tabBar) {
       tabBar.setData({ selected: 0 })
     }
+    // 跨天后修正「今天」和可选日期范围，热启动也能正确显示
+    this.syncToday()
     const app: any = getApp()
     const pending =
       app && app.globalData ? app.globalData.pendingReorder : null
@@ -162,6 +164,30 @@ Page({
     }
   },
 
+  syncToday() {
+    const today = dateInputString()
+    if (today === this.data.todayDate) {
+      return
+    }
+    const max = new Date()
+    max.setDate(max.getDate() + 7)
+    const maxDate = dateInputString(max)
+    const selected = this.data.selectedDate
+    const selectedDate =
+      selected && selected >= today
+        ? selected <= maxDate
+          ? selected
+          : maxDate
+        : today
+    this.setData({
+      todayDate: today,
+      maxDate,
+      selectedDate,
+      dateText: formatDate(),
+      menuDateLabel: dateLabel(selectedDate, today)
+    })
+  },
+
   async loadMenu() {
     // 切换餐次很快时，只认最后一次请求的结果
     const seq = ++this._loadSeq
@@ -171,15 +197,18 @@ Page({
     }
     try {
       const meal = this.data.selectedMeal
-      const today = this.data.todayDate || dateInputString()
-      const date = this.data.selectedDate || today
+      const today = dateInputString()
+      const date =
+        this.data.selectedDate && this.data.selectedDate >= today
+          ? this.data.selectedDate
+          : today
       const isToday = date === today
       const [categories, dishes, business, menu, kitchenStatus] =
         await Promise.all([
           getCategories(),
           getDishes(),
           getBusiness().catch(() => null),
-          getMenuForDate(date, meal).catch(() => null),
+          getMenuForDate(date, meal),
           getKitchenStatus().catch(() => null)
         ])
       if (seq !== this._loadSeq) {
@@ -331,7 +360,9 @@ Page({
 
   updateCartBadge() {
     const lines = (this._cartLines || []).filter(
-      line => line.meal === this.data.selectedMeal
+      line =>
+        line.meal === this.data.selectedMeal &&
+        line.date === this.data.selectedDate
     )
     const count = lines.reduce((sum, line) => sum + line.qty, 0)
     const total = lines.reduce((sum, line) => sum + line.qty * line.price, 0)
@@ -483,6 +514,7 @@ Page({
     cart.add({
       key: '',
       meal: this.data.selectedMeal,
+      date: this.data.selectedDate,
       dishId: dish.id,
       name: dish.name,
       price: dish.price,
@@ -517,7 +549,11 @@ Page({
   },
 
   onSkuAdd(e: any) {
-    cart.add({ ...e.detail.line, meal: this.data.selectedMeal })
+    cart.add({
+      ...e.detail.line,
+      meal: this.data.selectedMeal,
+      date: this.data.selectedDate
+    })
     this.setData({ skuVisible: false })
     wx.showToast({ title: '已加购', icon: 'none' })
   },
@@ -532,6 +568,7 @@ Page({
   },
 
   onPullDownRefresh() {
+    this.syncToday()
     this.setData({
       dateText: formatDate(),
       greetText: greeting()

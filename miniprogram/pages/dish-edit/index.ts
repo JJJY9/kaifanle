@@ -24,6 +24,7 @@ Page({
     id: '',
     isEdit: false,
     loading: true,
+    loadFailed: false,
     saving: false,
     deleting: false,
     categories: [] as Category[],
@@ -31,6 +32,7 @@ Page({
     desc: '',
     price: '',
     stock: '-1',
+    stockBase: -1,
     categoryId: '',
     meals: MEALS,
     selectedMeals: [] as MealId[],
@@ -69,7 +71,7 @@ Page({
       presetName = String(options.name || '').slice(0, 12)
     }
     this._presetName = presetName
-    this.setData({ id, isEdit: Boolean(id) })
+    this.setData({ id, isEdit: Boolean(id), loadFailed: false })
     wx.setNavigationBarTitle({
       title: id ? '编辑菜品' : '新增菜品'
     })
@@ -115,6 +117,8 @@ Page({
         desc: dish.desc,
         price: String(dish.price),
         stock: String(typeof dish.stock === 'number' ? dish.stock : -1),
+        stockBase:
+          typeof dish.stock === 'number' ? Number(dish.stock) : -1,
         categoryId: dish.categoryId,
         selectedMeals: dish.meals || [],
         mealChecked,
@@ -134,12 +138,17 @@ Page({
         loading: false
       })
     } catch (e: any) {
-      this.setData({ loading: false })
+      this.setData({ loading: false, loadFailed: true })
       wx.showToast({
         title: String((e && e.message) || '加载失败').slice(0, 40),
         icon: 'none'
       })
     }
+  },
+
+  onRetryLoad() {
+    this.setData({ loading: true, loadFailed: false })
+    this.load(this.data.id)
   },
 
   onName(e: any) {
@@ -308,6 +317,10 @@ Page({
     if (this.data.saving) {
       return
     }
+    if (this.data.loadFailed) {
+      wx.showToast({ title: '菜品还没加载好，先重试', icon: 'none' })
+      return
+    }
 
     const name = this.data.name.trim()
     const price = Number(this.data.price)
@@ -354,6 +367,7 @@ Page({
       meals: this.data.selectedMeals,
       status: this.data.status as DishInput['status'],
       stock: Math.floor(stock),
+      stockBase: this.data.stockBase,
       isRecommended: this.data.isRecommended,
       image: this.data.image,
       recipe: this.data.recipe.trim()

@@ -1,6 +1,14 @@
 <view class="page">
   <view wx:if="{{loading}}" class="skeleton sk"></view>
 
+  <empty-state
+    wx:elif="{{loadFailed}}"
+    title="菜品加载失败"
+    desc="没有拿到原来的菜品，先别保存，免得覆盖掉"
+    actionText="重试"
+    bind:action="onRetryLoad"
+  />
+
   <block wx:else>
     <view class="card block">
       <view class="block-title">基本信息</view>

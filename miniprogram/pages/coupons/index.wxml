@@ -46,6 +46,14 @@
 
   <view wx:if="{{loading}}" class="skeleton sk"></view>
 
+  <empty-state
+    wx:elif="{{loadFailed}}"
+    title="爱心券加载失败"
+    desc="没有拿到券列表，先别领取，免得错过上新"
+    actionText="重试"
+    bind:action="onRetryLoad"
+  />
+
   <block wx:elif="{{coupons.length}}">
     <view wx:for="{{coupons}}" wx:key="id" class="coupon card">
       <view class="coupon-top">

@@ -1,5 +1,5 @@
 import type { CartLine, MealId } from '../services/types'
-import { currentMeal } from '../utils/format'
+import { currentMeal, dateInputString } from '../utils/format'
 
 type Listener = (lines: CartLine[]) => void
 
@@ -10,8 +10,14 @@ function normalizeMeal(value: any): MealId {
   return MEALS.indexOf(value) > -1 ? value : currentMeal()
 }
 
+function normalizeDate(value: any): string {
+  return /^\d{4}-\d{2}-\d{2}$/.test(String(value || ''))
+    ? String(value)
+    : dateInputString()
+}
+
 function lineKey(line: CartLine): string {
-  return [line.meal, line.dishId, line.specs.join('|'), line.note].join('::')
+  return [line.date, line.meal, line.dishId, line.specs.join('|'), line.note].join('::')
 }
 
 class CartStore {
@@ -31,6 +37,7 @@ class CartStore {
               const migrated: CartLine = {
                 ...line,
                 meal: normalizeMeal(line.meal),
+                date: normalizeDate(line.date),
                 specs: Array.isArray(line.specs) ? line.specs : [],
                 qty: Math.max(1, Number(line.qty) || 1)
               }
@@ -77,6 +84,16 @@ class CartStore {
     this.emit()
   }
 
+  updatePrice(key: string, price: number): void {
+    const line = this.lines.find(item => item.key === key)
+    if (!line || line.price === price) {
+      return
+    }
+    line.price = price
+    this.persist()
+    this.emit()
+  }
+
   remove(key: string): void {
     this.lines = this.lines.filter(item => item.key !== key)
     this.persist()
@@ -91,6 +108,14 @@ class CartStore {
 
   clearMeal(meal: MealId): void {
     this.lines = this.lines.filter(line => line.meal !== meal)
+    this.persist()
+    this.emit()
+  }
+
+  clearSlot(meal: MealId, date: string): void {
+    this.lines = this.lines.filter(
+      line => !(line.meal === meal && line.date === date)
+    )
     this.persist()
     this.emit()
   }

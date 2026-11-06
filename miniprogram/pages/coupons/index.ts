@@ -14,6 +14,7 @@ Page({
     isAdmin: false,
     openid: '',
     loading: true,
+    loadFailed: false,
     newTitle: '',
     newNote: '',
     presetTitles: ['洗碗券', '奶茶券', '夸夸卡'],
@@ -34,6 +35,7 @@ Page({
   },
 
   async load() {
+    this.setData({ loading: true, loadFailed: false })
     try {
       const [me, coupons] = await Promise.all([getMe(), getCoupons()])
       const view = coupons.map(coupon => {
@@ -66,15 +68,20 @@ Page({
         coupons: view,
         isAdmin: me.isAdmin,
         openid: me.openid,
-        loading: false
+        loading: false,
+        loadFailed: false
       })
     } catch (e: any) {
-      this.setData({ loading: false })
+      this.setData({ loading: false, loadFailed: true })
       wx.showToast({
         title: String((e && e.message) || '加载失败').slice(0, 40),
         icon: 'none'
       })
     }
+  },
+
+  onRetryLoad() {
+    this.load()
   },
 
   onTitle(e: any) {

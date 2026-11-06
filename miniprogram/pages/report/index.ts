@@ -61,15 +61,16 @@ Page({
         ).length
       }
       const maxAmount = Math.max(
-        1,
+        0,
         ...(report.daily || []).map(day => day.amount)
       )
+      const scale = Math.max(1, maxAmount)
       const bars = (report.daily || []).map((day, index) => ({
         date: day.date,
         label: day.label,
         amount: day.amount,
         height: day.amount
-          ? Math.max(6, Math.round((day.amount / maxAmount) * 100))
+          ? Math.max(6, Math.round((day.amount / scale) * 100))
           : 3,
         showLabel: index % 5 === 0 || index === report.daily.length - 1
       }))
