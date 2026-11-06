@@ -1,4 +1,4 @@
-import { getOrders } from '../../services/api'
+import { getOrdersPage } from '../../services/api'
 import { STATUS_TEXT, mealName } from '../../utils/constants'
 import {
   formatTime,
@@ -12,6 +12,8 @@ Page({
     orders: [] as any[],
     displayOrders: [] as any[],
     loading: true,
+    loadingMore: false,
+    hasMore: false,
     error: '',
     keyword: '',
     filter: 'all' as 'all' | 'active' | 'done' | 'rate',
@@ -34,47 +36,11 @@ Page({
     const seq = ++this._loadSeq
     this.setData({ error: '' })
     try {
-      const orders = await getOrders()
+      const page = await getOrdersPage(undefined, 50)
       if (seq !== this._loadSeq) {
         return
       }
-      const today = dateInputString()
-      const view = orders.map(order => ({
-        ...order,
-        statusText: STATUS_TEXT[order.status],
-        mealText: mealName(order.meal),
-        timeText: formatTime(order.createdAt),
-        groupKey:
-          order.scheduledDate ||
-          dateInputString(new Date(order.createdAt)),
-        dateText: dateLabel(
-          order.scheduledDate || dateInputString(new Date(order.createdAt))
-        ),
-        isPreorder:
-          (order.scheduledDate ||
-            dateInputString(new Date(order.createdAt))) > today,
-        summary: itemSummary(order.items.map(item => item.name)),
-        totalQty: order.items.reduce((sum, item) => sum + item.qty, 0),
-        rated: Boolean(order.rating),
-        replied: Boolean(order.ownerReply)
-      }))
-      const counts = {
-        all: view.length,
-        active: view.filter(
-          order =>
-            order.status !== 'completed' && order.status !== 'cancelled'
-        ).length,
-        done: view.filter(
-          order =>
-            order.status === 'completed' || order.status === 'cancelled'
-        ).length,
-        rate: view.filter(
-          order => order.status === 'completed' && !order.rating
-        ).length
-      }
-      this.setData({ orders: view, loading: false, counts }, () =>
-        this.applyFilter()
-      )
+      this.applyOrders(page.orders, page.hasMore)
     } catch (e: any) {
       if (seq !== this._loadSeq) {
         return
@@ -84,6 +50,79 @@ Page({
         error: String(
           (e && e.message) || '订单加载失败'
         ).slice(0, 40)
+      })
+    }
+  },
+
+  applyOrders(orders: any[], hasMore: boolean) {
+    const today = dateInputString()
+    const view = orders.map(order => ({
+      ...order,
+      statusText: STATUS_TEXT[order.status],
+      mealText: mealName(order.meal),
+      timeText: formatTime(order.createdAt),
+      groupKey:
+        order.scheduledDate ||
+        dateInputString(new Date(order.createdAt)),
+      dateText: dateLabel(
+        order.scheduledDate || dateInputString(new Date(order.createdAt))
+      ),
+      isPreorder:
+        (order.scheduledDate ||
+          dateInputString(new Date(order.createdAt))) > today,
+      summary: itemSummary(order.items.map(item => item.name)),
+      totalQty: order.items.reduce((sum, item) => sum + item.qty, 0),
+      rated: Boolean(order.rating),
+      replied: Boolean(order.ownerReply)
+    }))
+    const counts = {
+      all: view.length,
+      active: view.filter(
+        order =>
+          order.status !== 'completed' && order.status !== 'cancelled'
+      ).length,
+      done: view.filter(
+        order =>
+          order.status === 'completed' || order.status === 'cancelled'
+      ).length,
+      rate: view.filter(
+        order => order.status === 'completed' && !order.rating
+      ).length
+    }
+    this.setData(
+      { orders: view, loading: false, loadingMore: false, hasMore, counts },
+      () => this.applyFilter()
+    )
+  },
+
+  async onLoadMore() {
+    if (!this.data.hasMore || this.data.loadingMore) {
+      return
+    }
+    const list = this.data.orders || []
+    const last = list[list.length - 1]
+    if (!last) {
+      return
+    }
+    this.setData({ loadingMore: true })
+    try {
+      const page = await getOrdersPage(Number(last.createdAt) || 0, 20)
+      const seen: Record<string, boolean> = {}
+      const merged = list
+        .concat(page.orders)
+        .filter(order => {
+          if (seen[order.id]) {
+            return false
+          }
+          seen[order.id] = true
+          return true
+        })
+      this.applyOrders(merged, page.hasMore)
+    } catch (e: any) {
+      this.setData({ loadingMore: false })
+      wx.showToast({
+        title: String((e && e.message) || '加载失败').slice(0, 40),
+        icon: 'none'
       })
     }
   },

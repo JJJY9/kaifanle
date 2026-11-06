@@ -263,6 +263,19 @@ export async function getOrders(): Promise<Order[]> {
   return mock.getOrders()
 }
 
+export async function getOrdersPage(
+  before?: number,
+  limit = 20
+): Promise<{ orders: Order[]; hasMore: boolean; nextBefore: number }> {
+  if (USE_CLOUD) {
+    return callApi<{ orders: Order[]; hasMore: boolean; nextBefore: number }>(
+      'getOrdersPage',
+      { before, limit }
+    )
+  }
+  return mock.getOrdersPage(before, limit)
+}
+
 export async function getLastOrder(): Promise<Order | null> {
   if (USE_CLOUD) {
     if (

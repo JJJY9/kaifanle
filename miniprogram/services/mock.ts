@@ -787,6 +787,26 @@ export async function getOrders(): Promise<Order[]> {
     .map(order => ({ ...order }))
 }
 
+export async function getOrdersPage(
+  before?: number,
+  limit = 20
+): Promise<{ orders: Order[]; hasMore: boolean; nextBefore: number }> {
+  await delay(80)
+  const size = Math.min(50, Math.max(1, Number(limit) || 20))
+  const cursor = Number(before) || 0
+  const list = loadOrders()
+    .slice()
+    .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0))
+    .filter(order => !cursor || Number(order.createdAt || 0) < cursor)
+    .slice(0, size)
+    .map(order => ({ ...order }))
+  return {
+    orders: list,
+    hasMore: list.length === size,
+    nextBefore: list.length ? Number(list[list.length - 1].createdAt || 0) : 0
+  }
+}
+
 export async function getLastOrder(): Promise<Order | null> {
   await delay(60)
   const today = dateInputString()

@@ -91,6 +91,8 @@ async function route(action, payload, openid) {
       return getDish(payload.id)
     case 'getOrders':
       return getOrders(openid)
+    case 'getOrdersPage':
+      return getOrdersPage(payload, openid)
     case 'getLastOrder':
       return getLastOrder(openid)
     case 'getMyActiveOrder':
@@ -1342,7 +1344,7 @@ async function getMe(openid) {
   }
 }
 
-// 用户自己的订单
+// 用户自己的订单（最近 50 单）
 async function getOrders(openid) {
   const res = await db
     .collection('orders')
@@ -1351,6 +1353,33 @@ async function getOrders(openid) {
     .limit(50)
     .get()
   return res.data.map(withId)
+}
+
+// 订单分页：before 传上一页最后一条的 createdAt
+async function getOrdersPage(payload, openid) {
+  const limit = Math.min(
+    50,
+    Math.max(1, Number((payload && payload.limit) || 20))
+  )
+  const before = Number((payload && payload.before) || 0)
+  const cond = { _openid: openid }
+  if (before > 0) {
+    cond.createdAt = _.lt(before)
+  }
+  const res = await db
+    .collection('orders')
+    .where(cond)
+    .orderBy('createdAt', 'desc')
+    .limit(limit)
+    .get()
+  const orders = res.data.map(withId)
+  return {
+    orders,
+    hasMore: (res.data || []).length === limit,
+    nextBefore: orders.length
+      ? Number(orders[orders.length - 1].createdAt || 0)
+      : 0
+  }
 }
 
 // 首页「上次吃」：最近一笔今天或更早的非取消订单

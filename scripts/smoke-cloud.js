@@ -516,6 +516,20 @@ async function run() {
   res = await call('getOrders', {}, 'girl-openid')
   assert.strictEqual(res.data.length, 1)
 
+  // 订单分页：按 createdAt 倒序游标，before 取上一页最后一条
+  res = await call('getOrdersPage', { limit: 1 }, 'girl-openid')
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.orders.length, 1)
+  assert.ok(res.data.nextBefore > 0)
+  res = await call(
+    'getOrdersPage',
+    { limit: 1, before: res.data.nextBefore },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.orders.length, 0)
+  assert.strictEqual(res.data.hasMore, false)
+
   res = await call('getLastOrder', {}, 'girl-openid')
   assert.strictEqual(res.ok, true)
   assert.strictEqual(res.data.id, created.data.id)

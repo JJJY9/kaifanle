@@ -77,6 +77,11 @@
         </view>
       </view>
     </block>
+    <view
+      wx:if="{{hasMore}}"
+      class="load-more {{loadingMore ? 'disabled' : ''}}"
+      bindtap="onLoadMore"
+    >{{loadingMore ? '加载中…' : '加载更多订单'}}</view>
   </block>
 
   <empty-state
