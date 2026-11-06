@@ -7,7 +7,8 @@ import {
   getLastOrder,
   getMenuForDate,
   getMyActiveOrder,
-  getMyExpiringCoupons
+  getMyExpiringCoupons,
+  getMyPendingReviewCount
 } from '../../services/api'
 import { cart } from '../../store/cart'
 import { favorites } from '../../store/favorites'
@@ -93,6 +94,7 @@ Page({
     lastOrder: null as any,
     activeOrder: null as any,
     couponExpiring: 0,
+    pendingReviews: 0,
     showCatBar: false,
     spiceFilter: 'all',
     spiceFilters: [] as { key: string; label: string }[],
@@ -202,6 +204,7 @@ Page({
     this.loadLastOrder()
     this.loadActiveOrder()
     this.loadCouponReminder()
+    this.loadPendingReviews()
   },
 
   onUnload() {
@@ -591,6 +594,19 @@ Page({
       this.renderSections()
       this.setData({ searchResults: this.filterDishes(this.data.keyword) })
     })
+  },
+
+  async loadPendingReviews() {
+    try {
+      const result = await getMyPendingReviewCount()
+      this.setData({ pendingReviews: Number(result.count || 0) })
+    } catch (e) {
+      // 提醒失败不影响首页
+    }
+  },
+
+  onPendingReviews() {
+    wx.switchTab({ url: '/pages/orders/index' })
   },
 
   async loadCouponReminder() {

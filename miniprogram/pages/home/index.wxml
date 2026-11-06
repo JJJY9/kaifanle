@@ -60,6 +60,9 @@
     <view wx:if="{{couponExpiring}}" class="coupon-reminder" bindtap="onCouponReminder">
       🎟 有 {{couponExpiring}} 张券 3 天内到期，去用掉 ›
     </view>
+    <view wx:if="{{pendingReviews}}" class="review-reminder" bindtap="onPendingReviews">
+      ⭐ 有 {{pendingReviews}} 单吃完还没评价，去夸夸 ›
+    </view>
     <view wx:if="{{busyText}}" class="busy-line">{{busyText}}</view>
     <view wx:if="{{mealNotice}}" class="meal-notice">{{mealNotice}}</view>
     <view wx:if="{{notice}}" class="notice-box">

@@ -72,6 +72,11 @@ function invoke(mp, body) {
     `${data.couponExpiring} 张`
   )
   check(
+    'mock 首页待评价提醒',
+    Number(data.pendingReviews) >= 1,
+    `${data.pendingReviews} 单`
+  )
+  check(
     'mock 首页厨房忙闲',
     !data.isOpen || String(data.busyText || '').length > 0,
     data.busyText || (data.isOpen ? '没有提示' : '休息中')

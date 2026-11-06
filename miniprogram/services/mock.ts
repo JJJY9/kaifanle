@@ -887,6 +887,16 @@ export async function getMyActiveOrder(): Promise<Order | null> {
   return order ? { ...order } : null
 }
 
+export async function getMyPendingReviewCount(): Promise<{ count: number }> {
+  await delay(40)
+  const count = loadOrders().filter(
+    order =>
+      order.status === 'completed' &&
+      [1, 2, 3].indexOf(Number(order.rating)) === -1
+  ).length
+  return { count }
+}
+
 export async function getAllOrders(): Promise<Order[]> {
   return getOrders()
 }

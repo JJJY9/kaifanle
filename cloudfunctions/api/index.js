@@ -97,6 +97,8 @@ async function route(action, payload, openid) {
       return getLastOrder(openid)
     case 'getMyActiveOrder':
       return getMyActiveOrder(openid)
+    case 'getMyPendingReviewCount':
+      return getMyPendingReviewCount(openid)
     case 'getMyStats':
       return getMyStats(openid)
     case 'getAllOrders':
@@ -1697,6 +1699,19 @@ async function getMyActiveOrder(openid) {
     .map(id => map[id])
     .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0))[0]
   return order ? withId(order) : null
+}
+
+// 首页提醒：已完成但还没评价的订单数
+async function getMyPendingReviewCount(openid) {
+  const res = await db
+    .collection('orders')
+    .where({ _openid: openid, status: 'completed' })
+    .limit(100)
+    .get()
+  const count = (res.data || []).filter(
+    order => [1, 2, 3].indexOf(Number(order.rating)) === -1
+  ).length
+  return { count }
 }
 
 // 厨房轮询专用：只取未完成订单，减少每次刷新读取的文档数

@@ -206,6 +206,17 @@
   font-weight: 800;
 }
 
+.review-reminder {
+  margin-top: 10rpx;
+  padding: 10rpx 18rpx;
+  background: #FFF4C2;
+  border: 3rpx solid #111111;
+  border-radius: 18rpx;
+  box-shadow: 3rpx 3rpx 0 #111111;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
 .busy-line {
   margin: 6rpx 4rpx 0;
   color: #5C5C5C;

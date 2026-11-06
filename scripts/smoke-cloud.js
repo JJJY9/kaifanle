@@ -645,6 +645,12 @@ async function run() {
   )
   assert.strictEqual(res.ok, true)
 
+  res = await call('getMyPendingReviewCount', {}, 'girl-openid')
+  assert.strictEqual(res.ok, true)
+  assert.ok(res.data.count >= 1)
+  res = await call('getMyPendingReviewCount', {}, 'admin-openid')
+  assert.strictEqual(res.data.count, 0)
+
   // 回复评价：已完成但还没评分时不能回复，也不能写库
   res = await call(
     'replyRating',

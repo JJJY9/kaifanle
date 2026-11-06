@@ -62,12 +62,14 @@ let kitchenStatusCache: { at: number; data: KitchenStatus } | null = null
 let lastOrderCache: { at: number; data: Order | null } | null = null
 let activeOrderCache: { at: number; data: Order | null } | null = null
 let expiringCouponsCache: { at: number; count: number } | null = null
+let pendingReviewCache: { at: number; count: number } | null = null
 const BUSINESS_CACHE_TTL = 60 * 1000
 const MENU_CACHE_TTL = 60 * 1000
 const KITCHEN_STATUS_TTL = 30 * 1000
 const LAST_ORDER_CACHE_TTL = 2 * 60 * 1000
 const ACTIVE_ORDER_CACHE_TTL = 30 * 1000
 const EXPIRING_COUPONS_TTL = 2 * 60 * 1000
+const PENDING_REVIEW_TTL = 2 * 60 * 1000
 
 function cloneData<T>(value: T): T {
   return JSON.parse(JSON.stringify(value))
@@ -309,6 +311,21 @@ export async function getMyActiveOrder(): Promise<Order | null> {
   return mock.getMyActiveOrder()
 }
 
+export async function getMyPendingReviewCount(): Promise<{ count: number }> {
+  if (USE_CLOUD) {
+    if (
+      pendingReviewCache &&
+      Date.now() - pendingReviewCache.at < PENDING_REVIEW_TTL
+    ) {
+      return { count: pendingReviewCache.count }
+    }
+    const data = await callApi<{ count: number }>('getMyPendingReviewCount')
+    pendingReviewCache = { at: Date.now(), count: Number(data.count || 0) }
+    return { count: pendingReviewCache.count }
+  }
+  return mock.getMyPendingReviewCount()
+}
+
 export async function getActiveOrders(): Promise<Order[]> {
   if (USE_CLOUD) {
     return callApi<Order[]>('getActiveOrders')
@@ -409,16 +426,17 @@ export async function rateOrder(
   tags: string[] = [],
   images: string[] = []
 ): Promise<Order | null> {
-  if (USE_CLOUD) {
-    return callApi<Order | null>('rateOrder', {
-      id,
-      rating,
-      feedback,
-      tags,
-      images
-    })
-  }
-  return mock.rateOrder(id, rating, feedback, tags, images)
+  const order = USE_CLOUD
+    ? await callApi<Order | null>('rateOrder', {
+        id,
+        rating,
+        feedback,
+        tags,
+        images
+      })
+    : await mock.rateOrder(id, rating, feedback, tags, images)
+  pendingReviewCache = null
+  return order
 }
 
 export async function replyRating(
