@@ -153,6 +153,17 @@
   margin-top: 10rpx;
 }
 
+.allergen-tip {
+  margin-top: 10rpx;
+  padding: 4rpx 12rpx;
+  background: #FFF4C2;
+  border: 2rpx solid #111111;
+  border-radius: 10rpx;
+  color: #D9431C;
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
 .tag {
   padding: 2rpx 14rpx;
   background: #FFD23F;

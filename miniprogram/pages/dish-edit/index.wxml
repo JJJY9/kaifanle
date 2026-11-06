@@ -142,6 +142,17 @@
         bindinput="onIngredients"
       ></textarea>
       <view class="recipe-tip">厨房备菜时会按订单份数汇总到采购清单</view>
+      <view class="field">
+        <text class="label">过敏原 / 忌口</text>
+        <input
+          class="input"
+          placeholder="逗号分隔，如：花生,牛奶"
+          value="{{allergensText}}"
+          maxlength="60"
+          bindinput="onAllergens"
+        />
+      </view>
+      <view class="recipe-tip">会显示在菜谱和点单弹层，提醒她注意</view>
     </view>
 
     <view class="card block">

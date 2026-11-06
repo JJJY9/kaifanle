@@ -957,6 +957,11 @@ function invoke(mp, body) {
     String(data.ingredientsText || '').indexOf('番茄') > -1,
     String(data.ingredientsText || '').split('\n').length + ' 行'
   )
+  check(
+    'mock 菜品过敏原',
+    String(data.allergensText || '').indexOf('花生') > -1,
+    data.allergensText
+  )
   await invoke(mp, 'page.onCopyDish()')
   await sleep(1600)
   page = await current()
@@ -1074,6 +1079,13 @@ function invoke(mp, body) {
       Array.isArray(data.dish.ingredients) &&
       data.dish.ingredients.length >= 1,
     data.dish ? (data.dish.ingredients || []).join('、') : '没有食材'
+  )
+  check(
+    'mock 菜谱过敏原展示',
+    Boolean(data.dish) &&
+      Array.isArray(data.dish.allergens) &&
+      data.dish.allergens.indexOf('花生') > -1,
+    data.dish ? (data.dish.allergens || []).join('、') : '没有过敏原'
   )
   await invoke(
     mp,

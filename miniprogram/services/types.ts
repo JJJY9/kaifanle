@@ -34,6 +34,7 @@ export interface Dish {
   cartoon?: string
   recipe?: string
   ingredients?: string[]
+  allergens?: string[]
   priceHistory?: { from: number; to: number; at: number }[]
 }
 
@@ -62,6 +63,7 @@ export interface DishInput {
   image?: string
   recipe?: string
   ingredients?: string[]
+  allergens?: string[]
 }
 
 export interface CartLine {

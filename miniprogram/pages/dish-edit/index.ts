@@ -37,6 +37,7 @@ Page({
     stock: '-1',
     stockBase: -1,
     ingredientsText: '',
+    allergensText: '',
     categoryId: '',
     meals: MEALS,
     selectedMeals: [] as MealId[],
@@ -185,6 +186,7 @@ Page({
         image: dish.image || '',
         recipe: dish.recipe || '',
         ingredientsText: (dish.ingredients || []).join('\n'),
+        allergensText: (dish.allergens || []).join('，'),
         priceHistory: (dish.priceHistory || [])
           .slice(-3)
           .reverse()
@@ -316,6 +318,10 @@ Page({
     this.setData({ ingredientsText: e.detail.value })
   },
 
+  onAllergens(e: any) {
+    this.setData({ allergensText: e.detail.value })
+  },
+
   async onChooseImage() {
     if (this.data.uploading) {
       return
@@ -441,7 +447,8 @@ Page({
         .split('\n')
         .map(line => line.trim().slice(0, 30))
         .filter(Boolean)
-        .slice(0, 15)
+        .slice(0, 15),
+      allergens: splitList(this.data.allergensText).slice(0, 6)
     }
 
     this.setData({ saving: true })

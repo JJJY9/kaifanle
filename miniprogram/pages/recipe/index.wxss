@@ -145,6 +145,17 @@
   word-break: break-all;
 }
 
+.allergen-line {
+  margin-top: 14rpx;
+  padding: 8rpx 14rpx;
+  background: #FFF4C2;
+  border: 2rpx solid #111111;
+  border-radius: 12rpx;
+  color: #D9431C;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
 .step-row {
   display: flex;
   gap: 16rpx;

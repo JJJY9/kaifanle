@@ -2595,6 +2595,13 @@ async function saveDish(payload, openid) {
     .map(line => String(line || '').trim().slice(0, 30))
     .filter(Boolean)
     .slice(0, 15)
+  const allergens = (Array.isArray(payload.allergens)
+    ? payload.allergens
+    : []
+  )
+    .map(line => String(line || '').trim().slice(0, 10))
+    .filter(Boolean)
+    .slice(0, 6)
   const addons = (Array.isArray(payload.addons) ? payload.addons : [])
     .slice(0, 10)
     .map((addon, index) => ({
@@ -2636,6 +2643,7 @@ async function saveDish(payload, openid) {
     tags,
     spicyLevels,
     ingredients,
+    allergens,
     addons,
     color,
     meals,

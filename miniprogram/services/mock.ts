@@ -74,7 +74,8 @@ const DISHES: Dish[] = [
     isRecommended: true,
     recipe:
       '牛腩切块冷水下锅焯水\n番茄切块炒出汁，下牛腩翻炒\n小火炖 60 分钟，加盐收汁\n浇在热米饭上',
-    ingredients: ['番茄 2个', '牛腩 300g', '米饭 1碗']
+    ingredients: ['番茄 2个', '牛腩 300g', '米饭 1碗'],
+    allergens: ['花生']
   },
   {
     id: 'd02',
@@ -745,6 +746,10 @@ export async function saveDish(payload: DishInput): Promise<Dish> {
       .map(line => String(line || '').trim().slice(0, 30))
       .filter(Boolean)
       .slice(0, 15),
+    allergens: (payload.allergens || [])
+      .map(line => String(line || '').trim().slice(0, 10))
+      .filter(Boolean)
+      .slice(0, 6),
     addons: (payload.addons || []).map(addon => ({ ...addon })),
     status: payload.status || 'on',
     color: payload.color || '#FFD23F',

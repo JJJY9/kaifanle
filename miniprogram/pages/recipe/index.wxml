@@ -40,6 +40,9 @@
         <text class="ingredient-text">{{item}}</text>
       </view>
     </view>
+    <view wx:if="{{dish.allergens && dish.allergens.length}}" class="allergen-line">
+      含：{{dish.allergens}}
+    </view>
   </view>
 
   <view class="steps-card card">

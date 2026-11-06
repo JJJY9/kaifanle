@@ -25,6 +25,9 @@
         <view class="tags">
           <text wx:for="{{dish.tags}}" wx:key="*this" class="tag">{{item}}</text>
         </view>
+        <view wx:if="{{dish.allergens && dish.allergens.length}}" class="allergen-tip">
+          含：{{dish.allergens}}
+        </view>
       </view>
     </view>
 
