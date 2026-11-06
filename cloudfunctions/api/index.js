@@ -1500,6 +1500,8 @@ async function cancelOrder(payload, openid) {
   if (order.status !== 'pending') {
     throw new Error('已经接单啦，不能取消')
   }
+  const cancelReason = String(payload.reason || '').trim().slice(0, 50)
+  await checkContentSafety(openid, cancelReason)
 
   const entry = {
     status: 'cancelled',
@@ -1513,6 +1515,8 @@ async function cancelOrder(payload, openid) {
     .update({
       data: {
         status: 'cancelled',
+        cancelReason,
+        cancelledBy: admin ? 'admin' : 'customer',
         timeline: _.push([entry])
       }
     })
@@ -1524,6 +1528,8 @@ async function cancelOrder(payload, openid) {
   return withId(
     Object.assign({}, order, {
       status: 'cancelled',
+      cancelReason,
+      cancelledBy: admin ? 'admin' : 'customer',
       timeline: (order.timeline || []).concat([entry])
     })
   )

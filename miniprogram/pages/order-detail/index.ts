@@ -369,7 +369,9 @@ Page({
     }
     const res: any = await wx.showModal({
       title: '取消这一单？',
-      content: '还没接单，可以取消。取消后要重新点哦。',
+      editable: true,
+      content: '',
+      placeholderText: '为什么取消？选填，掌勺人能看到',
       confirmText: '取消订单',
       cancelText: '再想想'
     })
@@ -377,7 +379,10 @@ Page({
       return
     }
     try {
-      await cancelOrder(order.id)
+      const reason = String(res.content || '')
+        .trim()
+        .slice(0, 50)
+      await cancelOrder(order.id, reason)
       wx.showToast({ title: '已取消', icon: 'none' })
       this.load()
     } catch (e: any) {

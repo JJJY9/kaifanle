@@ -661,6 +661,13 @@
   font-size: 22rpx;
 }
 
+.order-cancel-reason {
+  margin-top: 8rpx;
+  color: #B85C38;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
 .replied-badge {
   padding: 4rpx 14rpx;
   background: #2FBF71;

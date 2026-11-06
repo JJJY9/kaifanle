@@ -111,6 +111,8 @@ export interface Order {
   ratedAt?: number
   ownerReply?: string
   ownerReplyAt?: number
+  cancelReason?: string
+  cancelledBy?: 'customer' | 'admin'
 }
 
 export interface CreateOrderPayload {

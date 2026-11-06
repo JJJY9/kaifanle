@@ -804,7 +804,10 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
   return { ...order }
 }
 
-export async function cancelOrder(id: string): Promise<Order | null> {
+export async function cancelOrder(
+  id: string,
+  reason?: string
+): Promise<Order | null> {
   await delay(80)
   const orders = loadOrders()
   const order = orders.find(item => item.id === id)
@@ -815,6 +818,8 @@ export async function cancelOrder(id: string): Promise<Order | null> {
     throw new Error('已经接单啦，不能取消')
   }
   order.status = 'cancelled'
+  order.cancelReason = String(reason || '').trim().slice(0, 50)
+  order.cancelledBy = 'customer'
   order.timeline.push({
     status: 'cancelled',
     title: STATUS_STEP_TEXT.cancelled,

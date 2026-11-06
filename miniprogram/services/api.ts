@@ -269,11 +269,14 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
   return mock.createOrder(payload)
 }
 
-export async function cancelOrder(id: string): Promise<Order | null> {
+export async function cancelOrder(
+  id: string,
+  reason?: string
+): Promise<Order | null> {
   if (USE_CLOUD) {
-    return callApi<Order | null>('cancelOrder', { id })
+    return callApi<Order | null>('cancelOrder', { id, reason })
   }
-  return mock.cancelOrder(id)
+  return mock.cancelOrder(id, reason)
 }
 
 export async function urgeOrder(id: string): Promise<Order | null> {

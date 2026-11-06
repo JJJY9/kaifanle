@@ -846,9 +846,18 @@ async function run() {
   res = await call('cancelOrder', { id: order2.data.id }, 'stranger-openid')
   assert.strictEqual(res.ok, false)
 
-  res = await call('cancelOrder', { id: order2.data.id }, 'girl-openid')
+  res = await call(
+    'cancelOrder',
+    { id: order2.data.id, reason: '临时有事' },
+    'girl-openid'
+  )
   assert.strictEqual(res.ok, true)
   assert.strictEqual(res.data.status, 'cancelled')
+  assert.strictEqual(res.data.cancelReason, '临时有事')
+  assert.strictEqual(res.data.cancelledBy, 'customer')
+  res = await call('getOrder', { id: order2.data.id }, 'admin-openid')
+  assert.strictEqual(res.data.cancelReason, '临时有事')
+  assert.strictEqual(res.data.cancelledBy, 'customer')
 
   res = await call('cancelOrder', { id: order2.data.id }, 'admin-openid')
   assert.strictEqual(res.ok, false)
