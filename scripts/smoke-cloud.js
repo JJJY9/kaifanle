@@ -504,6 +504,13 @@ async function run() {
   res = await call('getLastOrder', {}, 'admin-openid')
   assert.strictEqual(res.ok, true)
   assert.strictEqual(res.data, null)
+  res = await call('getMyActiveOrder', {}, 'girl-openid')
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.id, created.data.id)
+  assert.strictEqual(res.data.status, 'pending')
+  res = await call('getMyActiveOrder', {}, 'admin-openid')
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data, null)
 
   // 改整单备注：本人、开火前、内容安全
   res = await call(

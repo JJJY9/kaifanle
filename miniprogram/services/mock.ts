@@ -795,6 +795,21 @@ export async function getLastOrder(): Promise<Order | null> {
   return order ? { ...order } : null
 }
 
+export async function getMyActiveOrder(): Promise<Order | null> {
+  await delay(60)
+  const today = dateInputString()
+  const order = loadOrders()
+    .filter(
+      item =>
+        ['pending', 'accepted', 'cooking', 'ready'].indexOf(item.status) >
+          -1 &&
+        (item.scheduledDate ||
+          dateInputString(new Date(item.createdAt))) === today
+    )
+    .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0))[0]
+  return order ? { ...order } : null
+}
+
 export async function getAllOrders(): Promise<Order[]> {
   return getOrders()
 }

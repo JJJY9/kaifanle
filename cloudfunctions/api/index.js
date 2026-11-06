@@ -93,6 +93,8 @@ async function route(action, payload, openid) {
       return getOrders(openid)
     case 'getLastOrder':
       return getLastOrder(openid)
+    case 'getMyActiveOrder':
+      return getMyActiveOrder(openid)
     case 'getMyStats':
       return getMyStats(openid)
     case 'getAllOrders':
@@ -1470,6 +1472,26 @@ async function acceptPendingOrders(openid) {
     }
   }
   return { done, total: targets.length }
+}
+
+// 首页「今天这单」：当前用户今天最近的进行中订单
+async function getMyActiveOrder(openid) {
+  const res = await db
+    .collection('orders')
+    .where({
+      _openid: openid,
+      status: _.in(['pending', 'accepted', 'cooking', 'ready'])
+    })
+    .limit(10)
+    .get()
+  const today = chinaDateString()
+  const order = (res.data || [])
+    .filter(
+      item =>
+        (item.scheduledDate || chinaDateString(item.createdAt)) === today
+    )
+    .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0))[0]
+  return order ? withId(order) : null
 }
 
 // 厨房轮询专用：只取未完成订单，减少每次刷新读取的文档数

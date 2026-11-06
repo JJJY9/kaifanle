@@ -57,6 +57,15 @@ function invoke(mp, body) {
   let data = await page.data()
   check('mock 首页加载', (data.sections || []).length > 0, `${data.sections.length} 个分类`)
   check(
+    'mock 首页进行中订单',
+    Boolean(data.activeOrder) &&
+      String(data.activeOrder.statusText || '').length > 0 &&
+      String(data.activeOrder.summary || '').length > 0,
+    data.activeOrder
+      ? `${data.activeOrder.mealText} · ${data.activeOrder.statusText}`
+      : '没有进行中订单'
+  )
+  check(
     'mock 首页厨房忙闲',
     !data.isOpen || String(data.busyText || '').length > 0,
     data.busyText || (data.isOpen ? '没有提示' : '休息中')

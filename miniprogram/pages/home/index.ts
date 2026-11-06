@@ -5,11 +5,12 @@ import {
   getBusiness,
   getKitchenStatus,
   getLastOrder,
-  getMenuForDate
+  getMenuForDate,
+  getMyActiveOrder
 } from '../../services/api'
 import { cart } from '../../store/cart'
 import { favorites } from '../../store/favorites'
-import { MEALS, mealName } from '../../utils/constants'
+import { MEALS, STATUS_TEXT, mealName } from '../../utils/constants'
 import { USE_CLOUD } from '../../config'
 import {
   currentMeal,
@@ -64,6 +65,7 @@ Page({
     favoriteLabel: '♡ 我的收藏',
     onlyAvailable: false,
     lastOrder: null as any,
+    activeOrder: null as any,
     spiceFilter: 'all',
     spiceFilters: [] as { key: string; label: string }[]
   },
@@ -167,6 +169,7 @@ Page({
     // 每次回到首页都刷新菜单，保证厨房端的售罄/上架能同步过来
     this.loadMenu()
     this.loadLastOrder()
+    this.loadActiveOrder()
   },
 
   onUnload() {
@@ -510,6 +513,41 @@ Page({
       this.renderSections()
       this.setData({ searchResults: this.filterDishes(this.data.keyword) })
     })
+  },
+
+  async loadActiveOrder() {
+    try {
+      const order = await getMyActiveOrder()
+      if (!order) {
+        this.setData({ activeOrder: null })
+        return
+      }
+      const totalQty = (order.items || []).reduce(
+        (sum, item) => sum + Number(item.qty || 0),
+        0
+      )
+      this.setData({
+        activeOrder: {
+          id: order.id,
+          status: order.status,
+          statusText: STATUS_TEXT[order.status],
+          mealText: mealName(order.meal),
+          summary:
+            itemSummary((order.items || []).map(item => item.name)) +
+            ` · 共 ${totalQty} 份`
+        }
+      })
+    } catch (e) {
+      // 没有进行中订单时保持隐藏
+    }
+  },
+
+  onActiveOrderTap() {
+    const order = this.data.activeOrder
+    if (!order) {
+      return
+    }
+    wx.navigateTo({ url: `/pages/order-detail/index?id=${order.id}` })
   },
 
   async loadLastOrder() {

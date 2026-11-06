@@ -59,10 +59,12 @@ let businessCache: { at: number; data: Business } | null = null
 let menuCache: Record<string, { at: number; data: DailyMenu }> = {}
 let kitchenStatusCache: { at: number; data: KitchenStatus } | null = null
 let lastOrderCache: { at: number; data: Order | null } | null = null
+let activeOrderCache: { at: number; data: Order | null } | null = null
 const BUSINESS_CACHE_TTL = 60 * 1000
 const MENU_CACHE_TTL = 60 * 1000
 const KITCHEN_STATUS_TTL = 30 * 1000
 const LAST_ORDER_CACHE_TTL = 2 * 60 * 1000
+const ACTIVE_ORDER_CACHE_TTL = 30 * 1000
 
 function cloneData<T>(value: T): T {
   return JSON.parse(JSON.stringify(value))
@@ -276,6 +278,21 @@ export async function getLastOrder(): Promise<Order | null> {
   return mock.getLastOrder()
 }
 
+export async function getMyActiveOrder(): Promise<Order | null> {
+  if (USE_CLOUD) {
+    if (
+      activeOrderCache &&
+      Date.now() - activeOrderCache.at < ACTIVE_ORDER_CACHE_TTL
+    ) {
+      return cloneData(activeOrderCache.data)
+    }
+    const data = await callApi<Order | null>('getMyActiveOrder')
+    activeOrderCache = { at: Date.now(), data }
+    return cloneData(data)
+  }
+  return mock.getMyActiveOrder()
+}
+
 export async function getActiveOrders(): Promise<Order[]> {
   if (USE_CLOUD) {
     return callApi<Order[]>('getActiveOrders')
@@ -319,6 +336,7 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
     ? await callApi<Order>('createOrder', payload)
     : await mock.createOrder(payload)
   lastOrderCache = null
+  activeOrderCache = null
   return order
 }
 
@@ -326,10 +344,12 @@ export async function cancelOrder(
   id: string,
   reason?: string
 ): Promise<Order | null> {
-  if (USE_CLOUD) {
-    return callApi<Order | null>('cancelOrder', { id, reason })
-  }
-  return mock.cancelOrder(id, reason)
+  const order = USE_CLOUD
+    ? await callApi<Order | null>('cancelOrder', { id, reason })
+    : await mock.cancelOrder(id, reason)
+  lastOrderCache = null
+  activeOrderCache = null
+  return order
 }
 
 export async function updateOrderNote(
@@ -377,14 +397,15 @@ export async function updateOrderStatus(
   status: OrderStatus,
   reason?: string
 ): Promise<Order | null> {
-  if (USE_CLOUD) {
-    return callApi<Order | null>('updateOrderStatus', {
-      id,
-      status,
-      reason
-    })
-  }
-  return mock.updateOrderStatus(id, status, reason)
+  const order = USE_CLOUD
+    ? await callApi<Order | null>('updateOrderStatus', {
+        id,
+        status,
+        reason
+      })
+    : await mock.updateOrderStatus(id, status, reason)
+  activeOrderCache = null
+  return order
 }
 
 export async function getMe(): Promise<MeInfo> {

@@ -155,6 +155,46 @@
   font-weight: 800;
 }
 
+.active-order {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-top: 12rpx;
+  padding: 12rpx 18rpx;
+  background: #E9F8EF;
+  border: 3rpx solid #111111;
+  border-radius: 20rpx;
+  box-shadow: 3rpx 3rpx 0 #111111;
+}
+
+.active-order-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.active-order-label {
+  color: #2F7D4F;
+  font-size: 19rpx;
+  font-weight: 800;
+}
+
+.active-order-text {
+  font-size: 23rpx;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.active-order-arrow {
+  flex-shrink: 0;
+  color: #2F7D4F;
+  font-size: 21rpx;
+  font-weight: 800;
+}
+
 .busy-line {
   margin: 6rpx 4rpx 0;
   color: #5C5C5C;
