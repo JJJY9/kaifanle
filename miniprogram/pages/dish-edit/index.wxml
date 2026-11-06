@@ -149,7 +149,7 @@
             {{uploading ? '上传中…' : '换一张'}}
           </view>
         </view>
-        <text class="image-tip">不传图片时用色块 + 首字占位</text>
+        <text class="image-tip">不传图片时显示卡通插画；上传自己的照片后会优先用照片</text>
       </view>
 
       <view class="field field-column">
