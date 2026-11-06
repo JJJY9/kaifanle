@@ -1412,6 +1412,56 @@ async function run() {
   res = await call('cancelOrder', { id: goneOrder.data.id }, 'girl-openid')
   assert.strictEqual(res.ok, true)
 
+  // 同一个 requestId 重试只创建一单，库存只扣一次
+  res = await call(
+    'saveDish',
+    {
+      name: '幂等测试菜',
+      desc: '',
+      price: 7,
+      categoryId: 'staple',
+      tags: [],
+      spicyLevels: [],
+      addons: [],
+      color: '#FFD23F',
+      meals: ['lunch'],
+      status: 'on',
+      stock: 5,
+      isRecommended: false
+    },
+    'admin-openid'
+  )
+  const idemDishId = res.data.id
+  const idemPayload = {
+    requestId: 'smoke-idem-1',
+    items: [{ dishId: idemDishId, qty: 2, specs: [] }],
+    meal: 'lunch',
+    expectedTime: '12:00',
+    mode: '在家吃'
+  }
+  const idemFirst = await call('createOrder', idemPayload, 'girl-openid')
+  assert.strictEqual(idemFirst.ok, true)
+  const idemSecond = await call('createOrder', idemPayload, 'girl-openid')
+  assert.strictEqual(idemSecond.ok, true)
+  assert.strictEqual(idemSecond.data.id, idemFirst.data.id)
+  assert.strictEqual(idemSecond.data.no, idemFirst.data.no)
+  res = await call('getDish', { id: idemDishId }, 'admin-openid')
+  assert.strictEqual(res.data.stock, 3)
+  const idemThird = await call(
+    'createOrder',
+    { ...idemPayload, requestId: 'smoke-idem-2' },
+    'girl-openid'
+  )
+  assert.strictEqual(idemThird.ok, true)
+  assert.notStrictEqual(idemThird.data.id, idemFirst.data.id)
+  res = await call('getDish', { id: idemDishId }, 'admin-openid')
+  assert.strictEqual(res.data.stock, 1)
+  await call('cancelOrder', { id: idemFirst.data.id }, 'girl-openid')
+  await call('cancelOrder', { id: idemThird.data.id }, 'girl-openid')
+  res = await call('getDish', { id: idemDishId }, 'admin-openid')
+  assert.strictEqual(res.data.stock, 5)
+  await call('deleteDish', { id: idemDishId }, 'admin-openid')
+
   // 口味档案
   res = await call('getMyProfile', {}, 'girl-openid')
   assert.deepStrictEqual(res.data.dislikes, [])

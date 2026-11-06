@@ -1077,6 +1077,24 @@ async function createOrder(payload, openid) {
     throw new Error('云数据库还没初始化，请先到「我的」完成初始化')
   }
 
+  // 同一个下单请求重试（例如超时但订单已写入）直接返回原订单，避免重复扣库存
+  const requestId = String((payload && payload.requestId) || '').slice(0, 64)
+  if (requestId) {
+    try {
+      const existing = await db
+        .collection('orders')
+        .where({ _openid: openid, requestId })
+        .limit(1)
+        .get()
+      if (existing.data && existing.data.length) {
+        return withId(existing.data[0])
+      }
+    } catch (e) {
+      // 去重查询失败不阻断下单，服务端库存与订单仍会做基本校验
+      console.warn('[api] createOrder dedupe failed:', e)
+    }
+  }
+
   const meal = MEALS.indexOf(payload && payload.meal) > -1 ? payload.meal : 'lunch'
   const business = normalizeBusiness(config.business)
   const mealBusiness = business[meal]
@@ -1256,6 +1274,9 @@ async function createOrder(payload, openid) {
       urgeBucket: 0,
       timeline: [{ status: 'pending', title: STEP_TITLES.pending, time: now }],
       createdAt: now
+    }
+    if (requestId) {
+      order.requestId = requestId
     }
 
     const addRes = await db.collection('orders').add({ data: order })
