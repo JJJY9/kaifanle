@@ -1021,6 +1021,20 @@ function invoke(mp, body) {
     String(data.result || '').indexOf('成功导入 1 道') > -1,
     data.result
   )
+  await invoke(
+    mp,
+    "page.onText({ detail: { value: '空库存菜,3,小炒,午,' } })"
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 批量导入空库存',
+    (data.parsed || []).length === 1 &&
+      !data.parsed[0].error &&
+      Number(data.parsed[0].stock) === -1,
+    data.parsed[0] ? data.parsed[0].stockText : '没有解析结果'
+  )
   await mp.navigateTo('/pages/kitchen/index')
   await sleep(2300)
   page = await current()
