@@ -1615,6 +1615,13 @@ async function run() {
   res = await call('getMyProfile', {}, 'admin-openid')
   assert.deepStrictEqual(res.data.dislikes, [])
 
+  // 顾客可读的厨房忙闲（只返回数量）
+  res = await call('getKitchenStatus', {}, 'girl-openid')
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(typeof res.data.active, 'number')
+  assert.strictEqual(res.data.busy, res.data.active > 0)
+  assert.strictEqual(res.data.orders, undefined)
+
   // 今日看板
   res = await call('getStats', {}, 'admin-openid')
   assert.strictEqual(res.ok, true)

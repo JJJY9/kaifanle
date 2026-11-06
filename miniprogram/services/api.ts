@@ -12,6 +12,7 @@ import type {
   DishInput,
   InitResult,
   KitchenReport,
+  KitchenStatus,
   MealId,
   MenuTemplate,
   MeInfo,
@@ -413,6 +414,13 @@ export async function getKitchenReport(): Promise<KitchenReport> {
     return callApi<KitchenReport>('getKitchenReport')
   }
   return mock.getKitchenReport()
+}
+
+export async function getKitchenStatus(): Promise<KitchenStatus> {
+  if (USE_CLOUD) {
+    return callApi<KitchenStatus>('getKitchenStatus')
+  }
+  return mock.getKitchenStatus()
 }
 
 export async function getMyStats(): Promise<MyStats> {

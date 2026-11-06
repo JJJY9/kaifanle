@@ -141,6 +141,13 @@
   font-weight: 800;
 }
 
+.busy-line {
+  margin: 6rpx 4rpx 0;
+  color: #5C5C5C;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
 .meal-tab {
   flex: 1;
   display: flex;

@@ -3,6 +3,7 @@ import {
   getCategories,
   getDishes,
   getBusiness,
+  getKitchenStatus,
   getMenuForDate
 } from '../../services/api'
 import { cart } from '../../store/cart'
@@ -35,6 +36,7 @@ Page({
     maxDate: '',
     menuDateLabel: '今天',
     deadlineText: '',
+    busyText: '',
     hero: null as Dish | null,
     heroTag: '今日推荐',
     sections: [] as Section[],
@@ -172,12 +174,14 @@ Page({
       const today = this.data.todayDate || dateInputString()
       const date = this.data.selectedDate || today
       const isToday = date === today
-      const [categories, dishes, business, menu] = await Promise.all([
-        getCategories(),
-        getDishes(),
-        getBusiness().catch(() => null),
-        getMenuForDate(date, meal).catch(() => null)
-      ])
+      const [categories, dishes, business, menu, kitchenStatus] =
+        await Promise.all([
+          getCategories(),
+          getDishes(),
+          getBusiness().catch(() => null),
+          getMenuForDate(date, meal).catch(() => null),
+          getKitchenStatus().catch(() => null)
+        ])
       if (seq !== this._loadSeq) {
         return
       }
@@ -200,6 +204,7 @@ Page({
       let isOpen = isToday ? isOpenNow() : true
       let mealNotice = ''
       let deadlineText = ''
+      let busyText = ''
       const now = new Date()
       const nowMinutes = now.getHours() * 60 + now.getMinutes()
       const closedDate = Boolean(
@@ -239,6 +244,11 @@ Page({
             : `${mealSetting.deadline} 截单`
         }
       }
+      if (isToday && isOpen && kitchenStatus) {
+        busyText = kitchenStatus.busy
+          ? `厨房正在做 ${kitchenStatus.active} 单`
+          : '厨房现在空闲'
+      }
 
       this.setData(
         {
@@ -246,6 +256,7 @@ Page({
           loadFailed: false,
           emptyTitle: '这一餐还没开火',
           deadlineText,
+          busyText,
           isOpen,
           mealNotice,
           notice: business && business.notice ? business.notice : '',
@@ -272,6 +283,7 @@ Page({
         loadFailed: true,
         emptyTitle: '菜单加载失败',
         deadlineText: '',
+        busyText: '',
         sections: [],
         hero: null,
         searchResults: [],

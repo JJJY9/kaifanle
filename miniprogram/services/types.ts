@@ -219,6 +219,11 @@ export interface KitchenReport {
   goodRate: number
 }
 
+export interface KitchenStatus {
+  active: number
+  busy: boolean
+}
+
 export type CouponStatus = 'unused' | 'used'
 
 export interface Coupon {

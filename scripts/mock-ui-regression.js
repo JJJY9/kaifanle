@@ -36,6 +36,11 @@ function invoke(mp, body) {
   let page = await current()
   let data = await page.data()
   check('mock 首页加载', (data.sections || []).length > 0, `${data.sections.length} 个分类`)
+  check(
+    'mock 首页厨房忙闲',
+    !data.isOpen || String(data.busyText || '').length > 0,
+    data.busyText || (data.isOpen ? '没有提示' : '休息中')
+  )
 
   // 购物车按餐次隔离：早餐加的菜不会出现在午餐购物车
   await invoke(

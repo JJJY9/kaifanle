@@ -8,6 +8,7 @@ import type {
   DishInput,
   InitResult,
   KitchenReport,
+  KitchenStatus,
   MealId,
   MenuTemplate,
   MeInfo,
@@ -1106,6 +1107,15 @@ export async function getStats(): Promise<StoreStats> {
       : 0,
     goodRatings: active.filter(order => order.rating === 3).length
   }
+}
+
+export async function getKitchenStatus(): Promise<KitchenStatus> {
+  await delay(40)
+  const active = loadOrders().filter(
+    order =>
+      ['pending', 'accepted', 'cooking', 'ready'].indexOf(order.status) > -1
+  ).length
+  return { active, busy: active > 0 }
 }
 
 export async function getKitchenReport(): Promise<KitchenReport> {

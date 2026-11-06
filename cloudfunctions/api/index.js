@@ -130,6 +130,8 @@ async function route(action, payload, openid) {
       return saveMyProfile(payload, openid)
     case 'getStats':
       return getStats(openid)
+    case 'getKitchenStatus':
+      return getKitchenStatus()
     case 'getKitchenReport':
       return getKitchenReport(openid)
     case 'createCoupon':
@@ -431,6 +433,24 @@ function chinaStartOfDay() {
     ) -
     8 * 60 * 60 * 1000
   )
+}
+
+async function getKitchenStatus() {
+  try {
+    const res = await db
+      .collection('orders')
+      .where({
+        status: _.in(['pending', 'accepted', 'cooking', 'ready'])
+      })
+      .count()
+    const active = Number(res.total || 0)
+    return { active, busy: active > 0 }
+  } catch (e) {
+    if (isMissingDocError(e)) {
+      return { active: 0, busy: false }
+    }
+    throw e
+  }
 }
 
 async function getStats(openid) {
