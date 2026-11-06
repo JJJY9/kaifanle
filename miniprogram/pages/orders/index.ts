@@ -14,8 +14,8 @@ Page({
     loading: true,
     error: '',
     keyword: '',
-    filter: 'all' as 'all' | 'active' | 'done',
-    counts: { all: 0, active: 0, done: 0 }
+    filter: 'all' as 'all' | 'active' | 'done' | 'rate',
+    counts: { all: 0, active: 0, done: 0, rate: 0 }
   },
 
   onShow() {
@@ -62,6 +62,9 @@ Page({
         done: view.filter(
           order =>
             order.status === 'completed' || order.status === 'cancelled'
+        ).length,
+        rate: view.filter(
+          order => order.status === 'completed' && !order.rating
         ).length
       }
       this.setData({ orders: view, loading: false, counts }, () =>
@@ -113,6 +116,12 @@ Page({
         return false
       }
       if (filter === 'done' && !finished) {
+        return false
+      }
+      if (
+        filter === 'rate' &&
+        !(order.status === 'completed' && !order.rating)
+      ) {
         return false
       }
       if (keyword) {

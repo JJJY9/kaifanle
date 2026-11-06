@@ -468,6 +468,27 @@ function invoke(mp, body) {
   page = await current()
   data = await page.data()
   check('mock 订单列表', (data.orders || []).length > 0, `${data.orders.length} 单`)
+  await invoke(
+    mp,
+    "page.onSelectFilter({ currentTarget: { dataset: { filter: 'rate' } } })"
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 订单待评价筛选',
+    data.filter === 'rate' &&
+      (data.displayOrders || []).length === data.counts.rate &&
+      data.displayOrders.every(
+        order => order.status === 'completed' && !order.rating
+      ),
+    `${(data.displayOrders || []).length} 单`
+  )
+  await invoke(
+    mp,
+    "page.onSelectFilter({ currentTarget: { dataset: { filter: 'all' } } })"
+  )
+  await sleep(300)
 
   // 订单搜索
   const orderNo = String((data.orders || [])[0].no || '')

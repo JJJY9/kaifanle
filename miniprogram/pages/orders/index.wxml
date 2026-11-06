@@ -20,6 +20,11 @@
       data-filter="done"
       bindtap="onSelectFilter"
     >已结束 {{counts.done}}</view>
+    <view
+      class="filter-tab {{filter === 'rate' ? 'active' : ''}}"
+      data-filter="rate"
+      bindtap="onSelectFilter"
+    >待评价 {{counts.rate}}</view>
   </view>
 
   <view class="search-bar">
