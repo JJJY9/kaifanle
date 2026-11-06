@@ -97,6 +97,7 @@
 
     <view class="foot">
       <view class="foot-btn" bindtap="onGoHome">去点餐</view>
+      <button class="foot-btn share" open-type="share">把这周分享给她</button>
       <view wx:if="{{isAdmin}}" class="foot-link" bindtap="onGoMenu">去排菜单 →</view>
     </view>
   </block>

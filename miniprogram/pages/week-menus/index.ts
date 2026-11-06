@@ -358,5 +358,18 @@ Page({
 
   onGoMenu() {
     wx.navigateTo({ url: '/pages/menu-edit/index' })
+  },
+
+  onShareAppMessage() {
+    return {
+      title: '这周吃什么？开饭咯',
+      path: '/pages/week-menus/index'
+    }
+  },
+
+  onShareTimeline() {
+    return {
+      title: '这周吃什么？开饭咯'
+    }
   }
 })

@@ -345,6 +345,18 @@
   box-shadow: none;
 }
 
+.foot-btn.share {
+  margin-top: 14rpx;
+  background: #FFFFFF;
+  font-size: 26rpx;
+}
+
+button.foot-btn {
+  width: 100%;
+  padding: 0;
+  line-height: normal;
+}
+
 .foot-link {
   padding: 10rpx 20rpx;
   color: #5C5C5C;
