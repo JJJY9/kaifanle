@@ -173,6 +173,9 @@ export interface StoreStats {
   topDish: string
   topQty: number
   totalOrders?: number
+  ratedCount?: number
+  avgRating?: number
+  goodRatings?: number
 }
 
 export interface MyStats {

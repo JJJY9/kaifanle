@@ -1100,6 +1100,9 @@ async function run() {
   assert.ok(res.data.orderCount >= 1)
   assert.ok(res.data.revenue >= 40)
   assert.ok(res.data.completed >= 1)
+  assert.ok(res.data.ratedCount >= 1)
+  assert.ok(res.data.goodRatings >= 1)
+  assert.ok(res.data.avgRating > 0)
 
   res = await call('getStats', {}, 'girl-openid')
   assert.strictEqual(res.ok, false)

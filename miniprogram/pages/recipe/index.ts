@@ -1,10 +1,12 @@
 import { getDish, getMe } from '../../services/api'
+import { favorites } from '../../store/favorites'
 
 Page({
   data: {
     dish: null as any,
     steps: [] as string[],
     isAdmin: false,
+    favorite: false,
     loading: true,
     error: ''
   },
@@ -32,6 +34,7 @@ Page({
         dish,
         steps,
         isAdmin: Boolean(me && me.isAdmin),
+        favorite: favorites.has(dish.id),
         loading: false
       })
     } catch (e: any) {
@@ -51,6 +54,18 @@ Page({
     if (this.data.isAdmin && this.dishId) {
       wx.navigateTo({ url: `/pages/dish-edit/index?id=${this.dishId}` })
     }
+  },
+
+  onToggleFavorite() {
+    if (!this.dishId) {
+      return
+    }
+    const favorite = favorites.toggle(this.dishId)
+    this.setData({ favorite })
+    wx.showToast({
+      title: favorite ? '已收藏' : '已取消收藏',
+      icon: 'none'
+    })
   },
 
   onShareAppMessage() {

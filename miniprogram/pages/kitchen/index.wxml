@@ -52,6 +52,9 @@
       近 7 天 {{weekStats.count}} 单 · ¥{{weekStats.revenue}} · 累计 {{weekStats.totalCount}} 单
       <text wx:if="{{weekStats.topDish}}"> · 本周最爱 {{weekStats.topDish}}</text>
     </view>
+    <view wx:if="{{stats && stats.ratedCount}}" class="week-line">
+      今日好评 {{stats.goodRatings}} · 平均 {{stats.avgRating}} 分（{{stats.ratedCount}} 人评）
+    </view>
 
     <view wx:if="{{weekBarTotal > 0}}" class="chart card">
       <view class="chart-head">

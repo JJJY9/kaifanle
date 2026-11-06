@@ -1019,7 +1019,19 @@ export async function getStats(): Promise<StoreStats> {
     revenue: Number(revenue.toFixed(2)),
     topDish: top ? top.name : '',
     topQty: top ? top.qty : 0,
-    totalOrders: orders.filter(order => order.status !== 'cancelled').length
+    totalOrders: orders.filter(order => order.status !== 'cancelled').length,
+    ratedCount: active.filter(order => order.rating).length,
+    avgRating: active.filter(order => order.rating).length
+      ? Number(
+          (
+            active
+              .filter(order => order.rating)
+              .reduce((sum, order) => sum + Number(order.rating), 0) /
+            active.filter(order => order.rating).length
+          ).toFixed(1)
+        )
+      : 0,
+    goodRatings: active.filter(order => order.rating === 3).length
   }
 }
 

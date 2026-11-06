@@ -45,7 +45,10 @@
       >
         <view class="order-top">
           <text class="no">#{{item.no}}</text>
-          <view class="status {{item.status}}">{{item.statusText}}</view>
+          <view class="order-top-right">
+            <text wx:if="{{item.rated}}" class="rated-chip">已评</text>
+            <view class="status {{item.status}}">{{item.statusText}}</view>
+          </view>
         </view>
         <view class="order-summary">{{item.summary}}</view>
         <view class="order-meta">{{item.dateText}} · {{item.mealText}} · 共 {{item.totalQty}} 份 · {{item.timeText}}</view>

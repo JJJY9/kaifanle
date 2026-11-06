@@ -43,7 +43,8 @@ Page({
           order.scheduledDate || dateInputString(new Date(order.createdAt))
         ),
         summary: itemSummary(order.items.map(item => item.name)),
-        totalQty: order.items.reduce((sum, item) => sum + item.qty, 0)
+        totalQty: order.items.reduce((sum, item) => sum + item.qty, 0),
+        rated: Boolean(order.rating)
       }))
       const counts = {
         all: view.length,

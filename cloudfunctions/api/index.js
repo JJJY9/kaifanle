@@ -450,6 +450,19 @@ async function getStats(openid) {
     .map(name => ({ name, qty: dishCount[name] }))
     .sort((a, b) => b.qty - a.qty)[0]
 
+  const rated = today.filter(
+    order => typeof order.rating === 'number' && order.rating > 0
+  )
+  const avgRating = rated.length
+    ? Number(
+        (
+          rated.reduce((sum, order) => sum + Number(order.rating), 0) /
+          rated.length
+        ).toFixed(1)
+      )
+    : 0
+  const goodRatings = today.filter(order => order.rating === 3).length
+
   let totalOrders = 0
   try {
     const [allRes, cancelledRes] = await Promise.all([
@@ -467,6 +480,9 @@ async function getStats(openid) {
     revenue: Number(revenue.toFixed(2)),
     topDish: top ? top.name : '',
     topQty: top ? top.qty : 0,
+    ratedCount: rated.length,
+    avgRating,
+    goodRatings,
     totalOrders
   }
 }
