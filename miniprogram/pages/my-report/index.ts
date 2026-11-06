@@ -17,7 +17,9 @@ Page({
     favorite: '',
     topDishes: [] as FootprintDish[],
     ratedCount: 0,
-    avgRating: 0
+    avgRating: 0,
+    posterMaking: false,
+    posterPath: ''
   },
 
   _loadSeq: 0,
@@ -103,6 +105,130 @@ Page({
 
   onRetry() {
     this.load()
+  },
+
+  async onSharePoster() {
+    if (this.data.posterMaking) {
+      return
+    }
+    this.setData({ posterMaking: true })
+    try {
+      const canvas: any = await new Promise((resolve, reject) => {
+        wx.createSelectorQuery()
+          .in(this)
+          .select('#footprintPoster')
+          .fields({ node: true, size: true })
+          .exec(res => {
+            const node = res && res[0] && res[0].node
+            if (node) {
+              resolve(node)
+            } else {
+              reject(new Error('画布还没准备好'))
+            }
+          })
+      })
+      const dpr = (wx.getWindowInfo && wx.getWindowInfo().pixelRatio) || 2
+      const width = 600
+      const height = 800
+      canvas.width = width * dpr
+      canvas.height = height * dpr
+      const ctx = canvas.getContext('2d')
+      ctx.scale(dpr, dpr)
+
+      ctx.fillStyle = '#FFFDF6'
+      ctx.fillRect(0, 0, width, height)
+      ctx.strokeStyle = '#111111'
+      ctx.lineWidth = 8
+      ctx.strokeRect(24, 24, width - 48, height - 48)
+
+      ctx.fillStyle = '#FF5C8A'
+      ctx.fillRect(24, 24, width - 48, 130)
+      ctx.fillStyle = '#FFFFFF'
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'middle'
+      ctx.font = 'bold 40px "PingFang SC", sans-serif'
+      ctx.fillText('我的干饭足迹', 48, 80)
+      ctx.font = '24px "PingFang SC", sans-serif'
+      ctx.fillText(this.data.monthText || '', 48, 125)
+
+      ctx.fillStyle = '#111111'
+      ctx.font = '24px "PingFang SC", sans-serif'
+      ctx.fillText('本月干饭', 48, 215)
+      ctx.fillStyle = '#FF6B35'
+      ctx.font = 'bold 78px "PingFang SC", sans-serif'
+      ctx.fillText(`${this.data.monthOrders} 单`, 48, 285)
+
+      ctx.fillStyle = '#111111'
+      ctx.font = 'bold 30px "PingFang SC", sans-serif'
+      ctx.fillText(`花费 ¥${this.data.monthSpend}`, 48, 370)
+      ctx.font = '26px "PingFang SC", sans-serif'
+      ctx.fillStyle = '#5C5C5C'
+      ctx.fillText(`累计干饭 ${this.data.totalOrders} 单`, 48, 420)
+
+      if (this.data.favorite) {
+        ctx.fillStyle = '#FFD23F'
+        ctx.fillRect(48, 470, width - 96, 70)
+        ctx.fillStyle = '#111111'
+        ctx.font = 'bold 26px "PingFang SC", sans-serif'
+        ctx.fillText(`最常点：${this.data.favorite}`, 68, 505)
+      }
+
+      const top = (this.data.topDishes || []).slice(0, 3)
+      ctx.fillStyle = '#5C5C5C'
+      ctx.font = '24px "PingFang SC", sans-serif'
+      ctx.fillText('本月 C 位菜', 48, 590)
+      ctx.fillStyle = '#111111'
+      ctx.font = 'bold 26px "PingFang SC", sans-serif'
+      top.forEach((dish, index) => {
+        ctx.fillText(
+          `${index + 1}. ${dish.name} ×${dish.qty}`,
+          48,
+          635 + index * 40
+        )
+      })
+
+      ctx.fillStyle = '#5C5C5C'
+      ctx.font = '22px "PingFang SC", sans-serif'
+      ctx.textAlign = 'left'
+      ctx.fillText('她点单，你掌勺', 48, height - 70)
+      ctx.textAlign = 'right'
+      ctx.fillText('开饭咯', width - 48, height - 70)
+
+      const path: string = await new Promise((resolve, reject) => {
+        wx.canvasToTempFilePath({
+          canvas,
+          destWidth: canvas.width,
+          destHeight: canvas.height,
+          success: res => resolve(res.tempFilePath),
+          fail: reject
+        } as any)
+      })
+      this.setData({ posterMaking: false, posterPath: path })
+      wx.showToast({ title: '足迹图已生成', icon: 'none' })
+    } catch (e: any) {
+      this.setData({ posterMaking: false })
+      wx.showToast({
+        title: String((e && e.message) || '生成失败').slice(0, 40),
+        icon: 'none'
+      })
+    }
+  },
+
+  onPreviewPoster() {
+    const path = this.data.posterPath
+    if (!path) {
+      return
+    }
+    if (typeof (wx as any).showShareImageMenu === 'function') {
+      ;(wx as any).showShareImageMenu({
+        path,
+        fail: () => {
+          wx.previewImage({ urls: [path] })
+        }
+      })
+    } else {
+      wx.previewImage({ urls: [path] })
+    }
   },
 
   onGoOrders() {

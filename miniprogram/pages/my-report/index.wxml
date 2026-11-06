@@ -64,6 +64,11 @@
       </view>
     </view>
 
+    <view class="poster-btn {{posterMaking ? 'disabled' : ''}}" bindtap="onSharePoster">{{posterMaking ? '生成中…' : '生成足迹海报'}}</view>
+    <view wx:if="{{posterPath}}" class="poster-hint" bindtap="onPreviewPoster">足迹图已生成，点这里分享 ›</view>
+
     <view class="foot-btn" bindtap="onGoOrders">看全部订单 →</view>
   </block>
+
+  <canvas type="2d" id="footprintPoster" class="poster-canvas"></canvas>
 </view>

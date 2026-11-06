@@ -200,6 +200,47 @@
   font-weight: 800;
 }
 
+.poster-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 84rpx;
+  margin-top: 26rpx;
+  background: #FF5C8A;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  box-shadow: 4rpx 4rpx 0 #111111;
+  color: #FFFFFF;
+  font-size: 26rpx;
+  font-weight: 800;
+}
+
+.poster-btn:active {
+  transform: translate(4rpx, 4rpx);
+  box-shadow: none;
+}
+
+.poster-btn.disabled {
+  opacity: 0.6;
+}
+
+.poster-hint {
+  margin-top: 14rpx;
+  text-align: center;
+  color: #2D9CFF;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
+.poster-canvas {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  width: 600px;
+  height: 800px;
+  pointer-events: none;
+}
+
 .foot-btn:active {
   transform: translate(4rpx, 4rpx);
   box-shadow: none;

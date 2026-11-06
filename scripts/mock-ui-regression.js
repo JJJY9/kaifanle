@@ -1786,6 +1786,15 @@ function invoke(mp, body) {
       Boolean(data.monthText),
     `${data.monthText} · ${data.monthOrders} 单`
   )
+  await invoke(mp, 'page.onSharePoster()')
+  await sleep(2200)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 干饭足迹海报',
+    Boolean(data.posterPath),
+    data.posterPath ? '已生成' : '未生成'
+  )
   await mp.navigateBack()
   await sleep(600)
 
