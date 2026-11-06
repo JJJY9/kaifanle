@@ -134,6 +134,8 @@ async function route(action, payload, openid) {
       return getKitchenStatus()
     case 'getKitchenReport':
       return getKitchenReport(openid)
+    case 'getDishSales':
+      return getDishSales(payload, openid)
     case 'createCoupon':
       return createCoupon(payload, openid)
     case 'getCoupons':
@@ -539,6 +541,41 @@ function chinaStartOfMonth() {
 }
 
 // 厨房近 30 天经营概览：营收、订单、客单价、菜品排行与评分
+async function getDishSales(payload, openid) {
+  await requireAdmin(openid)
+  const name = String((payload && payload.name) || '')
+    .trim()
+    .slice(0, 30)
+  if (!name) {
+    throw new Error('缺少菜品名称')
+  }
+  const start = chinaStartOfDay() - 29 * 24 * 60 * 60 * 1000
+  const res = await db
+    .collection('orders')
+    .where({ createdAt: _.gte(start) })
+    .limit(1000)
+    .get()
+  let qty = 0
+  let orders = 0
+  ;(res.data || []).forEach(order => {
+    if (order.status === 'cancelled') {
+      return
+    }
+    let matched = 0
+    ;(order.items || []).forEach(item => {
+      if (item.name === name) {
+        const count = Number(item.qty || 0)
+        qty += count
+        matched += count
+      }
+    })
+    if (matched > 0) {
+      orders++
+    }
+  })
+  return { name, qty, orders }
+}
+
 async function getKitchenReport(openid) {
   await requireAdmin(openid)
   const days = 30

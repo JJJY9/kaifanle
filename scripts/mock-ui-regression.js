@@ -335,6 +335,19 @@ function invoke(mp, body) {
   await mp.navigateBack()
   await sleep(900)
 
+  // 菜品编辑显示近 30 天销量
+  await mp.navigateTo('/pages/dish-edit/index?id=d01')
+  await sleep(1700)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 菜品近30天销量',
+    String(data.salesText || '').length > 0,
+    data.salesText
+  )
+  await mp.navigateBack()
+  await sleep(900)
+
   // 菜品模板
   await mp.navigateTo('/pages/dish-templates/index')
   await sleep(1800)

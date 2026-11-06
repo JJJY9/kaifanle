@@ -224,6 +224,12 @@ export interface KitchenStatus {
   busy: boolean
 }
 
+export interface DishSales {
+  name: string
+  qty: number
+  orders: number
+}
+
 export type CouponStatus = 'unused' | 'used'
 
 export interface Coupon {

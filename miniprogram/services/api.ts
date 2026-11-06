@@ -9,6 +9,7 @@ import type {
   CreateOrderPayload,
   DailyMenu,
   Dish,
+  DishSales,
   DishInput,
   InitResult,
   KitchenReport,
@@ -421,6 +422,13 @@ export async function getKitchenStatus(): Promise<KitchenStatus> {
     return callApi<KitchenStatus>('getKitchenStatus')
   }
   return mock.getKitchenStatus()
+}
+
+export async function getDishSales(name: string): Promise<DishSales> {
+  if (USE_CLOUD) {
+    return callApi<DishSales>('getDishSales', { name })
+  }
+  return mock.getDishSales(name)
 }
 
 export async function getMyStats(): Promise<MyStats> {

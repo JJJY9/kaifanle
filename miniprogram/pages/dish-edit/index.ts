@@ -3,7 +3,7 @@ import type {
   DishInput,
   MealId
 } from '../../services/types'
-import { getCategories, getDish, saveDish, deleteDish } from '../../services/api'
+import { getCategories, getDish, getDishSales, saveDish, deleteDish } from '../../services/api'
 import { MEALS } from '../../utils/constants'
 import { backAfter } from '../../utils/nav'
 import { USE_CLOUD } from '../../config'
@@ -54,7 +54,8 @@ Page({
       { id: 'off', name: '下架' }
     ],
     status: 'on',
-    isRecommended: false
+    isRecommended: false,
+    salesText: ''
   },
 
   onLoad(options: any) {
@@ -95,6 +96,15 @@ Page({
       if (!dish) {
         throw new Error('菜品不存在')
       }
+      getDishSales(dish.name)
+        .then(sales => {
+          this.setData({
+            salesText: sales.qty
+              ? `近 30 天卖出 ${sales.qty} 份 · ${sales.orders} 单`
+              : '近 30 天还没卖过'
+          })
+        })
+        .catch(() => {})
       const colorIndex = COLORS.indexOf(dish.color)
       const mealChecked: Record<string, boolean> = {}
       ;(dish.meals || []).forEach(meal => {

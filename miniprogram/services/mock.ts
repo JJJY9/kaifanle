@@ -5,6 +5,7 @@ import type {
   CreateOrderPayload,
   DailyMenu,
   Dish,
+  DishSales,
   DishInput,
   InitResult,
   KitchenReport,
@@ -1116,6 +1117,30 @@ export async function getKitchenStatus(): Promise<KitchenStatus> {
       ['pending', 'accepted', 'cooking', 'ready'].indexOf(order.status) > -1
   ).length
   return { active, busy: active > 0 }
+}
+
+export async function getDishSales(name: string): Promise<DishSales> {
+  await delay(60)
+  const target = String(name || '').trim()
+  let qty = 0
+  let orders = 0
+  loadOrders().forEach(order => {
+    if (order.status === 'cancelled') {
+      return
+    }
+    let matched = 0
+    order.items.forEach(item => {
+      if (item.name === target) {
+        const count = Number(item.qty || 0)
+        qty += count
+        matched += count
+      }
+    })
+    if (matched > 0) {
+      orders++
+    }
+  })
+  return { name: target, qty, orders }
 }
 
 export async function getKitchenReport(): Promise<KitchenReport> {

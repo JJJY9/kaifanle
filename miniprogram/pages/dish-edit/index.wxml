@@ -4,6 +4,7 @@
   <block wx:else>
     <view class="card block">
       <view class="block-title">基本信息</view>
+      <view wx:if="{{salesText}}" class="sales-line">{{salesText}}</view>
 
       <view class="field">
         <text class="label">名称</text>

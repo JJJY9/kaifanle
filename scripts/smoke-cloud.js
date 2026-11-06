@@ -1650,6 +1650,18 @@ async function run() {
   assert.ok(res.data.ratedCount >= 1)
   assert.ok(res.data.avgRating > 0)
 
+  // 单品近 30 天销量
+  const topName = res.data.topDishes[0].name
+  res = await call('getDishSales', { name: topName }, 'girl-openid')
+  assert.strictEqual(res.ok, false)
+  res = await call('getDishSales', { name: topName }, 'admin-openid')
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.name, topName)
+  assert.ok(res.data.qty >= 1)
+  assert.ok(res.data.orders >= 1)
+  res = await call('getDishSales', { name: '不存在的菜' }, 'admin-openid')
+  assert.strictEqual(res.data.qty, 0)
+
   // 爱心券
   res = await call(
     'createCoupon',
