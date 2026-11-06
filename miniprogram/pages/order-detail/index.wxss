@@ -261,9 +261,16 @@
 .receipt-row {
   display: flex;
   justify-content: space-between;
+  gap: 16rpx;
   padding: 8rpx 0;
   color: #5C5C5C;
   font-size: 24rpx;
+}
+
+.receipt-row text:last-child {
+  max-width: 68%;
+  text-align: right;
+  word-break: break-all;
 }
 
 .receipt-stamp {

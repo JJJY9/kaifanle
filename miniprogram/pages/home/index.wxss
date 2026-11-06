@@ -112,6 +112,7 @@
 
 .date-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12rpx;
   margin-top: 14rpx;
