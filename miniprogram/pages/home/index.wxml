@@ -72,6 +72,16 @@
       >{{favoriteLabel}}</view>
     </view>
 
+    <scroll-view wx:if="{{spiceFilters.length > 1}}" scroll-x class="spice-row">
+      <view
+        wx:for="{{spiceFilters}}"
+        wx:key="key"
+        class="spice-chip {{spiceFilter === item.key ? 'active' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="onSpiceFilter"
+      >{{item.label}}</view>
+    </scroll-view>
+
     <scroll-view wx:if="{{sections.length}}" scroll-x class="cat-jump">
       <view
         wx:for="{{sections}}"

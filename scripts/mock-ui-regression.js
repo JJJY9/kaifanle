@@ -223,7 +223,43 @@ function invoke(mp, body) {
   await invoke(mp, 'page.onToggleFavorites()')
   await sleep(300)
 
-  // 厨房与菜品排序
+  // 辣度筛选：只剩可选微辣（或无辣度选项按不辣算也匹配）的菜
+  await invoke(
+    mp,
+    "page.onSpiceFilter({ currentTarget: { dataset: { key: '微辣' } } })"
+  )
+  await sleep(500)
+  page = await current()
+  data = await page.data()
+  const spiceDishes = (data.sections || []).reduce(
+    (acc, section) => acc.concat(section.dishes || []),
+    []
+  )
+  check(
+    'mock 辣度筛选',
+    data.spiceFilter === '微辣' &&
+      spiceDishes.length > 0 &&
+      spiceDishes.every(
+        dish =>
+          (dish.spicyLevels && dish.spicyLevels.length
+            ? dish.spicyLevels
+            : ['不辣']
+          ).indexOf('微辣') > -1
+      ),
+    `${spiceDishes.length} 道 · ${(data.spiceFilters || []).length} 个选项`
+  )
+  await invoke(
+    mp,
+    "page.onSpiceFilter({ currentTarget: { dataset: { key: 'all' } } })"
+  )
+  await sleep(500)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 辣度筛选恢复',
+    data.spiceFilter === 'all' && (data.sections || []).length > 0,
+    `${(data.sections || []).length} 个分类`
+  )
   await mp.navigateTo('/pages/kitchen/index')
   await sleep(2200)
   page = await current()

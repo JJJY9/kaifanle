@@ -317,6 +317,31 @@
   white-space: nowrap;
 }
 
+.spice-row {
+  width: 100%;
+  margin-top: 10rpx;
+  white-space: nowrap;
+}
+
+.spice-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 48rpx;
+  padding: 0 18rpx;
+  margin-right: 10rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 21rpx;
+  font-weight: 800;
+}
+
+.spice-chip.active {
+  background: #FFD23F;
+  box-shadow: 2rpx 2rpx 0 #111111;
+}
+
 .cat-jump-chip {
   display: inline-flex;
   align-items: center;

@@ -55,7 +55,9 @@ Page({
     loadFailed: false,
     onlyFavorites: false,
     favoriteCount: 0,
-    favoriteLabel: '♡ 我的收藏'
+    favoriteLabel: '♡ 我的收藏',
+    spiceFilter: 'all',
+    spiceFilters: [] as { key: string; label: string }[]
   },
 
   _unsub: null as null | (() => void),
@@ -370,9 +372,49 @@ Page({
   },
 
   renderSections() {
-    const pool = this.data.onlyFavorites
+    const basePool = this.data.onlyFavorites
       ? favorites.filter(this._available)
       : this._available
+    // 辣度筛选项按当前可点菜品生成；没有辣度选项的菜按不辣算
+    const levelOrder = ['不辣', '微辣', '中辣', '特辣']
+    const levels: string[] = []
+    basePool.forEach(dish => {
+      const list =
+        dish.spicyLevels && dish.spicyLevels.length
+          ? dish.spicyLevels
+          : ['不辣']
+      list.forEach(level => {
+        if (levels.indexOf(level) === -1) {
+          levels.push(level)
+        }
+      })
+    })
+    levels.sort((a, b) => {
+      const ai = levelOrder.indexOf(a)
+      const bi = levelOrder.indexOf(b)
+      return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi)
+    })
+    const spiceFilters = [{ key: 'all', label: '全部口味' }].concat(
+      levels.map(level => ({ key: level, label: level }))
+    )
+    const activeSpice =
+      this.data.spiceFilter === 'all' ||
+      levels.indexOf(this.data.spiceFilter) > -1
+        ? this.data.spiceFilter
+        : 'all'
+    if (activeSpice !== this.data.spiceFilter) {
+      this.setData({ spiceFilter: activeSpice })
+    }
+    const pool = basePool.filter(dish => {
+      if (activeSpice === 'all') {
+        return true
+      }
+      const list =
+        dish.spicyLevels && dish.spicyLevels.length
+          ? dish.spicyLevels
+          : ['不辣']
+      return list.indexOf(activeSpice) > -1
+    })
     const sections = this._categories
       .map(category => ({
         ...category,
@@ -393,19 +435,36 @@ Page({
       pool[0] ||
       null
     const empty = sections.length === 0
+    const spiceEmpty = empty && activeSpice !== 'all'
     this.setData({
       sections,
       hero,
+      spiceFilters,
       heroTag: favoriteHero ? '你收藏的' : '今日推荐',
       emptyDesc:
         empty && this.data.onlyFavorites
           ? '还没有收藏，点开菜品点右上角的 ♡ 收藏'
+          : empty && spiceEmpty
+          ? '这个口味暂时没有菜，换一个试试'
           : this._baseEmptyDesc,
       emptyAction: empty
         ? this.data.onlyFavorites
           ? '看看全部'
+          : spiceEmpty
+          ? '全部口味'
           : '去许愿'
         : ''
+    })
+  },
+
+  onSpiceFilter(e: any) {
+    const key = String(e.currentTarget.dataset.key || 'all')
+    if (key === this.data.spiceFilter) {
+      return
+    }
+    this.setData({ spiceFilter: key }, () => {
+      this.renderSections()
+      this.setData({ searchResults: this.filterDishes(this.data.keyword) })
     })
   },
 
@@ -433,6 +492,13 @@ Page({
       this.setData({ onlyFavorites: false }, () => this.renderSections())
       return
     }
+    if (this.data.spiceFilter !== 'all') {
+      this.setData({ spiceFilter: 'all' }, () => {
+        this.renderSections()
+        this.setData({ searchResults: this.filterDishes(this.data.keyword) })
+      })
+      return
+    }
     wx.navigateTo({ url: '/pages/wishes/index' })
   },
 
@@ -446,7 +512,17 @@ Page({
     const pool = this.data.onlyFavorites
       ? favorites.filter(this._available)
       : this._available
+    const spice = this.data.spiceFilter
     return pool.filter(dish => {
+      if (spice !== 'all') {
+        const levels =
+          dish.spicyLevels && dish.spicyLevels.length
+            ? dish.spicyLevels
+            : ['不辣']
+        if (levels.indexOf(spice) === -1) {
+          return false
+        }
+      }
       const haystack = [dish.name, dish.desc]
         .concat(dish.tags || [])
         .join(' ')
