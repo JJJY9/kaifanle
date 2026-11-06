@@ -228,6 +228,22 @@
   bind:overview="onCartOverview"
 />
 
+<view
+  wx:if="{{showCatBar && sections.length}}"
+  class="cat-bar"
+  style="padding-top: {{navPad}}px;"
+>
+  <scroll-view scroll-x class="cat-bar-scroll">
+    <view
+      wx:for="{{sections}}"
+      wx:key="id"
+      class="cat-bar-chip"
+      data-id="{{item.id}}"
+      bindtap="onCategoryJump"
+    >{{item.name}}</view>
+  </scroll-view>
+</view>
+
 <sku-sheet
   id="skuSheet"
   visible="{{skuVisible}}"

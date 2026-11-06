@@ -529,6 +529,42 @@
   background: #FFD23F;
 }
 
+.cat-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 80;
+  background: #FFFDF6;
+  border-bottom: 3rpx solid #111111;
+  box-shadow: 0 4rpx 0 rgba(17, 17, 17, 0.08);
+}
+
+.cat-bar-scroll {
+  width: 100%;
+  padding: 8rpx 24rpx 12rpx;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+.cat-bar-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 48rpx;
+  padding: 0 18rpx;
+  margin-right: 10rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 21rpx;
+  font-weight: 800;
+}
+
+.cat-bar-chip:active {
+  background: #FFD23F;
+}
+
 .hero {
   margin-top: 32rpx;
   background: #FFFFFF;

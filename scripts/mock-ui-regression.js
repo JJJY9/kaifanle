@@ -420,6 +420,21 @@ function invoke(mp, body) {
   data = await page.data()
   check('mock 菜品标签筛选恢复', data.tagFilter === 'all')
 
+  // 分类 chips 吸顶
+  await invoke(mp, 'page.onPageScroll({ scrollTop: 400 })')
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 分类吸顶显示',
+    data.showCatBar === true && (data.sections || []).length > 0
+  )
+  await invoke(mp, 'page.onPageScroll({ scrollTop: 0 })')
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  check('mock 分类吸顶隐藏', data.showCatBar === false)
+
   // 只看能点的：隐藏售罄/无库存的菜
   await invoke(mp, 'page.onToggleAvailable()')
   await sleep(500)

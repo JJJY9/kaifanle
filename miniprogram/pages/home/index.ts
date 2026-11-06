@@ -93,6 +93,7 @@ Page({
     lastOrder: null as any,
     activeOrder: null as any,
     couponExpiring: 0,
+    showCatBar: false,
     spiceFilter: 'all',
     spiceFilters: [] as { key: string; label: string }[],
     tagFilter: 'all',
@@ -211,6 +212,13 @@ Page({
     if (this._favUnsub) {
       this._favUnsub()
       this._favUnsub = null
+    }
+  },
+
+  onPageScroll(e: any) {
+    const show = Number(e.scrollTop || 0) > 260
+    if (show !== this.data.showCatBar) {
+      this.setData({ showCatBar: show })
     }
   },
 
