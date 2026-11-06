@@ -162,6 +162,43 @@
   font-weight: 700;
 }
 
+.meal-stats {
+  display: flex;
+  align-items: stretch;
+  margin-top: 18rpx;
+  padding: 18rpx 10rpx;
+}
+
+.meal-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+  border-right: 2rpx dashed #E0E0E0;
+}
+
+.meal-stat:last-child {
+  border-right: none;
+}
+
+.meal-stat-name {
+  color: #5C5C5C;
+  font-size: 21rpx;
+  font-weight: 700;
+}
+
+.meal-stat-revenue {
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 32rpx;
+  font-weight: 800;
+}
+
+.meal-stat-count {
+  color: #9A9A9A;
+  font-size: 19rpx;
+}
+
 .report-tag {
   padding: 4rpx 14rpx;
   background: #E8F8EE;

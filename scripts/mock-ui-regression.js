@@ -1701,6 +1701,16 @@ function invoke(mp, body) {
       .map(tag => `${tag.name}×${tag.count}`)
       .join('、')
   )
+  check(
+    'mock 月报餐次分布',
+    Array.isArray(data.report.mealStats) &&
+      data.report.mealStats.length === 3 &&
+      data.report.mealStats.reduce((sum, item) => sum + item.count, 0) ===
+        data.report.totalOrders,
+    (data.report.mealStats || [])
+      .map(item => `${item.meal}:${item.count}`)
+      .join(' ')
+  )
   await invoke(mp, 'page.onExport()')
   await sleep(900)
   page = await current()

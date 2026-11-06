@@ -741,6 +741,18 @@ async function getKitchenReport(openid) {
     .map(name => ({ name, count: tagMap[name] }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 5)
+  const mealStats = MEALS.map(meal => {
+    const list = active.filter(order => order.meal === meal)
+    return {
+      meal,
+      count: list.length,
+      revenue: Number(
+        list
+          .reduce((sum, order) => sum + Number(order.amount || 0), 0)
+          .toFixed(2)
+      )
+    }
+  })
 
   return {
     days,
@@ -758,7 +770,8 @@ async function getKitchenReport(openid) {
     ratedCount: rated.length,
     avgRating,
     goodRate,
-    topTags
+    topTags,
+    mealStats
   }
 }
 
