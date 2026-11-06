@@ -1,6 +1,9 @@
 import type { DishInput } from '../../services/types'
 import { getCategories, getDishes, saveDish } from '../../services/api'
 import { DISH_TEMPLATES } from '../../utils/dish-templates'
+import { DISH_BANK } from '../../utils/dish-bank'
+
+const ALL_TEMPLATES = DISH_TEMPLATES.concat(DISH_BANK)
 
 const MEAL_NAMES: Record<string, string> = {
   breakfast: '早',
@@ -11,6 +14,10 @@ const MEAL_NAMES: Record<string, string> = {
 Page({
   data: {
     templates: [] as any[],
+    displayTemplates: [] as any[],
+    filterCategories: [] as any[],
+    activeCategory: 'all',
+    keyword: '',
     missingCount: 0,
     summaryText: '',
     addingText: '',
@@ -30,14 +37,24 @@ Page({
         getDishes()
       ])
       const categoryMap: Record<string, string> = {}
+      const usedCategories: any[] = []
       categories.forEach(category => {
         categoryMap[category.id] = category.name
+      })
+      const templateCategoryIds: Record<string, boolean> = {}
+      ALL_TEMPLATES.forEach(template => {
+        templateCategoryIds[template.categoryId] = true
+      })
+      categories.forEach(category => {
+        if (templateCategoryIds[category.id]) {
+          usedCategories.push({ id: category.id, name: category.name })
+        }
       })
       const existing: Record<string, boolean> = {}
       ;(dishes || []).forEach(dish => {
         existing[String(dish.name || '').trim()] = true
       })
-      const templates = DISH_TEMPLATES.map((template, index) => ({
+      const templates = ALL_TEMPLATES.map((template, index) => ({
         ...template,
         index,
         categoryName: categoryMap[template.categoryId] || '',
@@ -47,14 +64,20 @@ Page({
         exists: Boolean(existing[template.name.trim()])
       }))
       const missingCount = templates.filter(item => !item.exists).length
-      this.setData({
-        templates,
-        missingCount,
-        summaryText: missingCount
-          ? `还有 ${missingCount} 道可以添加`
-          : '模板里的菜都已添加',
-        loading: false
-      })
+      this.setData(
+        {
+          templates,
+          filterCategories: [{ id: 'all', name: '全部' }].concat(
+            usedCategories
+          ),
+          missingCount,
+          summaryText: missingCount
+            ? `还有 ${missingCount} 道可以添加`
+            : '模板里的菜都已添加',
+          loading: false
+        },
+        () => this.applyFilter()
+      )
     } catch (e: any) {
       this.setData({ loading: false })
       wx.showToast({
@@ -62,6 +85,48 @@ Page({
         icon: 'none'
       })
     }
+  },
+
+  onSearch(e: any) {
+    const keyword = String(e.detail.value || '')
+    this.setData({ keyword })
+    this.applyFilter()
+  },
+
+  onClearSearch() {
+    this.setData({ keyword: '' })
+    this.applyFilter()
+  },
+
+  onSelectCategory(e: any) {
+    const id = e.currentTarget.dataset.id
+    if (id === this.data.activeCategory) {
+      return
+    }
+    this.setData({ activeCategory: id })
+    this.applyFilter()
+  },
+
+  applyFilter() {
+    const keyword = this.data.keyword.trim().toLowerCase()
+    const category = this.data.activeCategory
+    const displayTemplates = this.data.templates.filter(template => {
+      if (category !== 'all' && template.categoryId !== category) {
+        return false
+      }
+      if (!keyword) {
+        return true
+      }
+      const haystack = `${template.name} ${template.desc} ${
+        template.recipe || ''
+      }`.toLowerCase()
+      return haystack.indexOf(keyword) > -1
+    })
+    this.setData({ displayTemplates })
+  },
+
+  onCustomAdd() {
+    wx.navigateTo({ url: '/pages/dish-edit/index' })
   },
 
   toInput(template: any): DishInput {

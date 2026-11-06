@@ -1,41 +1,76 @@
 <view class="page">
   <view class="head">
     <text class="title display">菜品模板</text>
-    <text class="sub">常用家常菜，一键补进菜单</text>
+    <text class="sub">150 道家常菜，按分类找，也能自己加</text>
   </view>
+
+  <view class="search-bar">
+    <text class="search-icon">🔍</text>
+    <input
+      class="search-input"
+      placeholder="搜菜名、食材或做法"
+      value="{{keyword}}"
+      confirm-type="search"
+      bindinput="onSearch"
+    />
+    <view wx:if="{{keyword}}" class="search-clear" bindtap="onClearSearch">×</view>
+  </view>
+
+  <scroll-view class="chip-scroll" scroll-x>
+    <view class="chip-row">
+      <view
+        wx:for="{{filterCategories}}"
+        wx:key="id"
+        class="filter-chip {{activeCategory === item.id ? 'active' : ''}}"
+        data-id="{{item.id}}"
+        bindtap="onSelectCategory"
+      >{{item.name}}</view>
+    </view>
+  </scroll-view>
 
   <view class="summary card">
     <view class="summary-info">
       <view class="summary-title">{{adding ? addingText : summaryText}}</view>
-      <view class="summary-sub">按模板的价格和分类创建，之后可在菜品管理里修改</view>
+      <view class="summary-sub">按模板价格和分类创建，之后可修改；也可以自己新增</view>
     </view>
-    <view
-      class="add-all {{adding || !missingCount ? 'disabled' : ''}}"
-      bindtap="onAddAll"
-    >{{adding ? '添加中…' : '全部添加'}}</view>
+    <view class="summary-actions">
+      <view class="custom-add" bindtap="onCustomAdd">自定义新增</view>
+      <view
+        class="add-all {{adding || !missingCount ? 'disabled' : ''}}"
+        bindtap="onAddAll"
+      >{{adding ? '添加中…' : '全部添加'}}</view>
+    </view>
   </view>
 
   <view wx:if="{{loading}}" class="skeleton sk"></view>
 
-  <view wx:else class="list card">
-    <view
-      wx:for="{{templates}}"
-      wx:key="name"
-      class="tpl-row {{item.exists ? 'done' : ''}}"
-    >
-      <view class="tpl-dot" style="background: {{item.color}};"></view>
-      <view class="tpl-info">
-        <view class="tpl-name">{{item.name}} <text class="tpl-price">¥{{item.price}}</text></view>
-        <view class="tpl-desc">{{item.desc}}</view>
-        <view class="tpl-meta">{{item.categoryName}} · {{item.mealsText}}</view>
-      </view>
+  <block wx:elif="{{displayTemplates.length}}">
+    <view class="list card">
       <view
-        wx:if="{{!item.exists}}"
-        class="tpl-add {{adding ? 'disabled' : ''}}"
-        data-index="{{item.index}}"
-        bindtap="onAddOne"
-      >添加</view>
-      <view wx:else class="tpl-done">已添加</view>
+        wx:for="{{displayTemplates}}"
+        wx:key="name"
+        class="tpl-row {{item.exists ? 'done' : ''}}"
+      >
+        <view class="tpl-dot" style="background: {{item.color}};"></view>
+        <view class="tpl-info">
+          <view class="tpl-name">{{item.name}} <text class="tpl-price">¥{{item.price}}</text></view>
+          <view class="tpl-desc">{{item.desc}}</view>
+          <view class="tpl-meta">{{item.categoryName}} · {{item.mealsText}}</view>
+        </view>
+        <view
+          wx:if="{{!item.exists}}"
+          class="tpl-add {{adding ? 'disabled' : ''}}"
+          data-index="{{item.index}}"
+          bindtap="onAddOne"
+        >添加</view>
+        <view wx:else class="tpl-done">已添加</view>
+      </view>
     </view>
-  </view>
+  </block>
+
+  <empty-state
+    wx:else
+    title="没找到匹配的模板"
+    desc="换个关键词或分类试试，也可以点「自定义新增」自己写"
+  />
 </view>

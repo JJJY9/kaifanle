@@ -25,7 +25,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms))
       const current = getCurrentPages()[getCurrentPages().length - 1]
       current.onAddAll()
     })
-    for (let i = 0; i < 90; i++) {
+    for (let i = 0; i < 300; i++) {
       await sleep(2000)
       page = await mp.currentPage()
       data = await page.data()
