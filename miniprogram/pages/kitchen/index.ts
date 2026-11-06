@@ -39,7 +39,8 @@ Page({
     prepTotal: 0,
     weekStats: null as any,
     weekBars: [] as any[],
-    weekBarTotal: 0
+    weekBarTotal: 0,
+    todo: { pending: 0, replies: 0, lowStock: 0 }
   },
 
   _watchTimer: null as any,
@@ -416,6 +417,32 @@ Page({
         this._rawOrders = orders
       }
 
+      const todo = silent
+        ? { ...this.data.todo, pending: active.length }
+        : {
+            pending: active.length,
+            replies: orders
+              .filter(
+                order =>
+                  order.status === 'completed' ||
+                  order.status === 'cancelled'
+              )
+              .slice(0, 10)
+              .filter(
+                order =>
+                  order.status === 'completed' &&
+                  [1, 2, 3].indexOf(Number(order.rating)) > -1 &&
+                  !order.ownerReply
+              ).length,
+            lowStock: dishes.filter(
+              dish =>
+                dish.status === 'on' &&
+                typeof dish.stock === 'number' &&
+                dish.stock >= 0 &&
+                dish.stock <= 3
+            ).length
+          }
+
       this.setData({
         orders: view,
         history,
@@ -423,6 +450,7 @@ Page({
         stats,
         prepItems,
         prepTotal,
+        todo,
         weekStats,
         weekBars,
         weekBarTotal,
@@ -535,6 +563,19 @@ Page({
 
   onToggleHistory() {
     this.setData({ showHistory: !this.data.showHistory })
+  },
+
+  onTodoTap(e: any) {
+    const target = e.currentTarget.dataset.target
+    if (target === 'replies') {
+      this.setData({ showHistory: true }, () => {
+        wx.pageScrollTo({ selector: '#history-section', duration: 300 })
+      })
+      return
+    }
+    const selector =
+      target === 'stock' ? '#menu-section' : '#orders-section'
+    wx.pageScrollTo({ selector, duration: 300 })
   },
 
   onTogglePrep() {
@@ -657,10 +698,15 @@ Page({
       const index = (this.data.history || []).findIndex(
         (order: any) => order.id === id
       )
+      const todo =
+        !item.ownerReply && this.data.todo.replies > 0
+          ? { ...this.data.todo, replies: this.data.todo.replies - 1 }
+          : this.data.todo
       if (index > -1) {
         this.setData({
           [`history[${index}].ownerReply`]: reply,
-          [`history[${index}].ownerReplyAt`]: ownerReplyAt
+          [`history[${index}].ownerReplyAt`]: ownerReplyAt,
+          todo
         })
       } else {
         await this.load()

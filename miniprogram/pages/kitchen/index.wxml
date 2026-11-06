@@ -49,6 +49,27 @@
       </view>
     </view>
 
+    <view wx:if="{{todo.pending || todo.replies || todo.lowStock}}" class="todo-card card">
+      <view class="todo-head">
+        <text class="todo-title">今日待办</text>
+        <text class="todo-sub">点一下跳过去</text>
+      </view>
+      <view class="todo-row">
+        <view wx:if="{{todo.pending}}" class="todo-item pending" data-target="orders" bindtap="onTodoTap">
+          <text class="todo-num">{{todo.pending}}</text>
+          <text class="todo-label">进行中的单</text>
+        </view>
+        <view wx:if="{{todo.replies}}" class="todo-item replies" data-target="replies" bindtap="onTodoTap">
+          <text class="todo-num">{{todo.replies}}</text>
+          <text class="todo-label">评价待回复</text>
+        </view>
+        <view wx:if="{{todo.lowStock}}" class="todo-item stock" data-target="stock" bindtap="onTodoTap">
+          <text class="todo-num">{{todo.lowStock}}</text>
+          <text class="todo-label">快卖完了</text>
+        </view>
+      </view>
+    </view>
+
     <view wx:if="{{weekStats}}" class="week-line">
       近 7 天 {{weekStats.count}} 单 · ¥{{weekStats.revenue}} · 累计 {{weekStats.totalCount}} 单
       <text wx:if="{{weekStats.topDish}}"> · 本周最爱 {{weekStats.topDish}}</text>
@@ -92,7 +113,7 @@
       </block>
     </view>
 
-    <view class="section-title display">待处理订单</view>
+    <view class="section-title display" id="orders-section">待处理订单</view>
     <view wx:if="{{!orders.length}}" class="empty-line">暂时没有待处理的订单，歇会儿吧</view>
 
     <view wx:for="{{orders}}" wx:key="id" class="order card">
@@ -148,9 +169,9 @@
       </view>
     </view>
 
-    <view class="history-head" bindtap="onToggleHistory">
+    <view class="history-head" id="history-section" bindtap="onToggleHistory">
       <view class="section-title display">历史订单</view>
-      <view class="history-toggle">{{showHistory ? '收起' : '看最近 10 单'}}</view>
+      <view class="history-toggle">{{showHistory ? '收起' : '看最近 10 单'}}<text wx:if="{{todo.replies}}" class="history-reply-badge">{{todo.replies}} 待回复</text></view>
     </view>
     <block wx:if="{{showHistory}}">
       <view wx:if="{{!history.length}}" class="empty-line">还没有历史订单</view>
@@ -186,7 +207,7 @@
       </view>
     </block>
 
-    <view class="menu-head">
+    <view class="menu-head" id="menu-section">
       <view class="section-title display menu-title">菜品管理</view>
       <view class="menu-actions">
         <view class="add-dish ghost" bindtap="onTemplates">模板</view>

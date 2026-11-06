@@ -467,6 +467,11 @@ function invoke(mp, body) {
     data.order && data.order.status
   )
   if (data.order && data.order.status === 'completed') {
+    const feedbackText = `回归评价 ${Date.now()}`
+    await invoke(
+      mp,
+      `page.setData({ feedbackDraft: ${JSON.stringify(feedbackText)} })`
+    )
     await invoke(
       mp,
       'page.onRate({ currentTarget: { dataset: { value: 3 } } })'
@@ -482,6 +487,12 @@ function invoke(mp, body) {
     await sleep(2400)
     page = await current()
     data = await page.data()
+    const repliesBefore = Number((data.todo || {}).replies || 0)
+    check(
+      'mock 厨房待办显示待回复',
+      repliesBefore >= 1,
+      `${repliesBefore} 条待回复`
+    )
     const beforeReply =
       ((data.history || []).find(order => order.id === 'seed-2') || {})
         .ownerReply || ''
@@ -534,6 +545,11 @@ function invoke(mp, body) {
         .ownerReply === firstReply,
       firstReply
     )
+    check(
+      'mock 回复后待办减少',
+      Number((data.todo || {}).replies || 0) === repliesBefore - 1,
+      `待回复 ${(data.todo || {}).replies}`
+    )
 
     const secondReply = '改一句：谢谢你呀'
     await mp.mockWxMethod('showModal', {
@@ -553,6 +569,11 @@ function invoke(mp, body) {
       ((data.history || []).find(order => order.id === 'seed-2') || {})
         .ownerReply === secondReply,
       secondReply
+    )
+    check(
+      'mock 改回复不重复扣待办',
+      Number((data.todo || {}).replies || 0) === repliesBefore - 1,
+      `待回复 ${(data.todo || {}).replies}`
     )
 
     await mp.navigateBack()

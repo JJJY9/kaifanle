@@ -107,6 +107,78 @@
   font-size: 21rpx;
 }
 
+.todo-card {
+  margin-top: 20rpx;
+  padding: 20rpx;
+}
+
+.todo-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.todo-title {
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 30rpx;
+  font-weight: 800;
+}
+
+.todo-sub {
+  color: #5C5C5C;
+  font-size: 20rpx;
+}
+
+.todo-row {
+  display: flex;
+  gap: 14rpx;
+  margin-top: 14rpx;
+}
+
+.todo-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 14rpx 8rpx;
+  border: 3rpx solid #111111;
+  border-radius: 18rpx;
+  box-shadow: 3rpx 3rpx 0 #111111;
+}
+
+.todo-item.pending {
+  background: #FFD23F;
+}
+
+.todo-item.replies {
+  background: #FF5C8A;
+  color: #FFFFFF;
+}
+
+.todo-item.stock {
+  background: #2D9CFF;
+  color: #FFFFFF;
+}
+
+.todo-item:active {
+  transform: translate(3rpx, 3rpx);
+  box-shadow: none;
+}
+
+.todo-num {
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 36rpx;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.todo-label {
+  margin-top: 4rpx;
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
 .week-line {
   margin: 12rpx 6rpx 0;
   color: #5C5C5C;
@@ -504,6 +576,17 @@
 .history-toggle:active {
   transform: translate(3rpx, 3rpx);
   box-shadow: none;
+}
+
+.history-reply-badge {
+  margin-left: 8rpx;
+  padding: 2rpx 10rpx;
+  background: #FF5C8A;
+  color: #FFFFFF;
+  border: 2rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 18rpx;
+  font-weight: 800;
 }
 
 .history-order .order-summary {
