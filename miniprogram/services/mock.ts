@@ -925,7 +925,8 @@ export async function replyRating(
 
 export async function updateOrderStatus(
   id: string,
-  status: OrderStatus
+  status: OrderStatus,
+  reason?: string
 ): Promise<Order | null> {
   await delay(80)
   const orders = loadOrders()
@@ -934,6 +935,10 @@ export async function updateOrderStatus(
     return null
   }
   order.status = status
+  if (status === 'cancelled') {
+    order.cancelReason = String(reason || '').trim().slice(0, 50)
+    order.cancelledBy = 'admin'
+  }
   order.timeline.push({
     status,
     title: STATUS_STEP_TEXT[status],

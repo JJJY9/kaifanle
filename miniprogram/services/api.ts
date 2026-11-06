@@ -310,12 +310,17 @@ export async function replyRating(
 
 export async function updateOrderStatus(
   id: string,
-  status: OrderStatus
+  status: OrderStatus,
+  reason?: string
 ): Promise<Order | null> {
   if (USE_CLOUD) {
-    return callApi<Order | null>('updateOrderStatus', { id, status })
+    return callApi<Order | null>('updateOrderStatus', {
+      id,
+      status,
+      reason
+    })
   }
-  return mock.updateOrderStatus(id, status)
+  return mock.updateOrderStatus(id, status, reason)
 }
 
 export async function getMe(): Promise<MeInfo> {

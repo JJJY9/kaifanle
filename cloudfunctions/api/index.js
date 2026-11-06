@@ -1719,16 +1719,26 @@ async function updateOrderStatus(payload, openid) {
     title: STEP_TITLES[status] || status,
     time: Date.now()
   }
+  const cancelReason =
+    status === 'cancelled' && order.status === 'pending'
+      ? String(payload.reason || '').trim().slice(0, 50)
+      : ''
+  if (cancelReason) {
+    await checkContentSafety(openid, cancelReason)
+  }
+  const data = {
+    status,
+    timeline: _.push([entry])
+  }
+  if (status === 'cancelled') {
+    data.cancelReason = cancelReason
+    data.cancelledBy = 'admin'
+  }
   // 条件更新：并发操作只有一次会生效
   const upd = await db
     .collection('orders')
     .where({ _id: id, status: order.status })
-    .update({
-      data: {
-        status,
-        timeline: _.push([entry])
-      }
-    })
+    .update({ data })
   if (!upd.stats || upd.stats.updated !== 1) {
     throw new Error('订单状态刚刚变了，刷新看看')
   }
@@ -1752,7 +1762,9 @@ async function updateOrderStatus(payload, openid) {
     Object.assign({}, order, {
       status,
       timeline: (order.timeline || []).concat([entry])
-    })
+    }, status === 'cancelled'
+      ? { cancelReason, cancelledBy: 'admin' }
+      : {})
   )
 }
 

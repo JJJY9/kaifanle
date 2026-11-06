@@ -536,16 +536,21 @@ Page({
     const id = e.currentTarget.dataset.id
     const res: any = await wx.showModal({
       title: '拒掉这一单？',
-      content: '她可能会伤心一秒钟',
+      editable: true,
+      content: '',
+      placeholderText: '为什么拒单？她能看见（选填）',
       confirmText: '拒单',
       cancelText: '算了'
     })
     if (!res.confirm) {
       return
     }
+    const reason = String(res.content || '')
+      .trim()
+      .slice(0, 50)
     this.setData({ busyId: id })
     try {
-      await updateOrderStatus(id, 'cancelled')
+      await updateOrderStatus(id, 'cancelled', reason)
       await this.load()
     } catch (err: any) {
       wx.showToast({

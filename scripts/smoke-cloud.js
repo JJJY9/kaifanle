@@ -879,10 +879,24 @@ async function run() {
   assert.ok(res.data.no.length > 3)
   transactionsEnabled = true
 
+  // 厨房拒单可带原因，顾客能看到
+  const adminCancelId = res.data.id
+  res = await call(
+    'updateOrderStatus',
+    { id: adminCancelId, status: 'cancelled', reason: '今天太忙了' },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.cancelReason, '今天太忙了')
+  assert.strictEqual(res.data.cancelledBy, 'admin')
+  res = await call('getOrder', { id: adminCancelId }, 'girl-openid')
+  assert.strictEqual(res.data.cancelReason, '今天太忙了')
+  assert.strictEqual(res.data.cancelledBy, 'admin')
+
   // 我的统计：总数（不含已取消）、本月、最常点
   res = await call('getMyStats', {}, 'girl-openid')
   assert.strictEqual(res.ok, true)
-  assert.ok(res.data.total >= 2)
+  assert.ok(res.data.total >= 1)
   assert.ok(res.data.month >= 1)
   assert.strictEqual(typeof res.data.favorite, 'string')
 
