@@ -140,7 +140,24 @@ Page({
             ? 'down'
             : 'flat'
       }
-      this.setData({ report, bars, maxAmount, health, compare, loading: false })
+      const safeReport = Object.assign({}, report, {
+        topRatedDishes: Array.isArray(report.topRatedDishes)
+          ? report.topRatedDishes
+          : [],
+        minRatedOrders:
+          Number.isInteger(Number(report.minRatedOrders)) &&
+          Number(report.minRatedOrders) > 0
+            ? Number(report.minRatedOrders)
+            : 2
+      })
+      this.setData({
+        report: safeReport,
+        bars,
+        maxAmount,
+        health,
+        compare,
+        loading: false
+      })
     } catch (e: any) {
       if (seq !== this._loadSeq) {
         return

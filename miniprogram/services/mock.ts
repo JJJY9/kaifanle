@@ -29,6 +29,8 @@ import { STATUS_STEP_TEXT } from '../utils/constants'
 import { dateInputString } from '../utils/format'
 
 const ORDERS_KEY = 'kfl_orders_v1'
+const MIN_RATED_DISH_ORDERS = 2
+const TOP_RATED_DISH_LIMIT = 5
 const DISH_STATUS_KEY = 'kfl_dish_status_v1'
 const WISHES_KEY = 'kfl_wishes_v1'
 const BUSINESS_KEY = 'kfl_business_v1'
@@ -510,6 +512,7 @@ function seedOrders(): Order[] {
   // 凌晨打开时 20 分钟前可能还是昨天，示例进行中订单要落在今天
   const t1 = Math.max(now - 20 * 60 * 1000, dayStart.getTime() + 60 * 1000)
   const t2 = now - 3 * 60 * 60 * 1000
+  const t4 = now - 4 * 60 * 60 * 1000
   return [
     {
       id: 'seed-1',
@@ -583,6 +586,39 @@ function seedOrders(): Order[] {
       status: 'pending',
       timeline: [{ status: 'pending', title: '已下单', time: now - 10 * 60 * 1000 }],
       createdAt: now - 10 * 60 * 1000
+    },
+    {
+      id: 'seed-4',
+      no: '004',
+      items: [
+        {
+          dishId: 'd01',
+          name: '番茄牛腩饭',
+          price: 18,
+          qty: 1,
+          specs: ['微辣'],
+          note: ''
+        }
+      ],
+      amount: 18,
+      meal: 'lunch',
+      expectedTime: '12:30',
+      mode: '在家吃',
+      note: '',
+      status: 'completed',
+      rating: 2,
+      feedback: '还不错',
+      ratedAt: t4 + 50 * 60000,
+      ownerReply: '下次再改进',
+      ownerReplyAt: t4 + 60 * 60000,
+      timeline: [
+        { status: 'pending', title: '已下单', time: t4 },
+        { status: 'accepted', title: '已接单 · 锅已热', time: t4 + 5 * 60000 },
+        { status: 'cooking', title: '制作中 · 正在炒', time: t4 + 15 * 60000 },
+        { status: 'ready', title: '出锅啦', time: t4 + 30 * 60000 },
+        { status: 'completed', title: '已完成', time: t4 + 40 * 60000 }
+      ],
+      createdAt: t4
     }
   ]
 }
@@ -604,6 +640,7 @@ function loadOrders(): Order[] {
         const staleSeed =
           seedBroken ||
           !stored.some((order: Order) => order.id === 'seed-3') ||
+          !stored.some((order: Order) => order.id === 'seed-4') ||
           stored.some(
             (order: Order) =>
               /^seed-/.test(order.id) &&
@@ -1686,6 +1723,72 @@ export async function getStockLogs(
     .map(log => ({ ...log }))
 }
 
+function buildTopRatedDishes(orders: Order[]) {
+  const groups: Record<
+    string,
+    { name: string; sum: number; count: number }
+  > = {}
+  ;(orders || [])
+    .slice()
+    .sort((a, b) => Number(a.createdAt || 0) - Number(b.createdAt || 0))
+    .forEach(order => {
+      const rating = Number(order.rating)
+      if (!Number.isInteger(rating) || rating < 1 || rating > 3) {
+        return
+      }
+      const seenIds: Record<string, boolean> = {}
+      const seenNames: Record<string, boolean> = {}
+      ;(order.items || []).forEach(item => {
+        const id = String(item.dishId || '').trim()
+        const name = String(item.name || '').trim() || '未命名'
+        if (id && seenIds[id]) {
+          return
+        }
+        if (seenNames[name]) {
+          return
+        }
+        if (id) {
+          seenIds[id] = true
+        }
+        seenNames[name] = true
+        const key = id ? `id:${id}` : `name:${name}`
+        if (!groups[key]) {
+          groups[key] = { name, sum: 0, count: 0 }
+        }
+        groups[key].name = name
+        groups[key].sum += rating
+        groups[key].count += 1
+      })
+    })
+  const byName: Record<
+    string,
+    { name: string; sum: number; count: number }
+  > = {}
+  Object.keys(groups).forEach(key => {
+    const group = groups[key]
+    if (!byName[group.name]) {
+      byName[group.name] = { name: group.name, sum: 0, count: 0 }
+    }
+    byName[group.name].sum += group.sum
+    byName[group.name].count += group.count
+  })
+  return Object.keys(byName)
+    .map(name => byName[name])
+    .filter(group => group.count >= MIN_RATED_DISH_ORDERS)
+    .sort(
+      (a, b) =>
+        b.sum / b.count - a.sum / a.count ||
+        b.count - a.count ||
+        (a.name < b.name ? -1 : a.name > b.name ? 1 : 0)
+    )
+    .slice(0, TOP_RATED_DISH_LIMIT)
+    .map(group => ({
+      name: group.name,
+      avgRating: Number((group.sum / group.count).toFixed(1)),
+      ratedCount: group.count
+    }))
+}
+
 export async function getKitchenReport(): Promise<KitchenReport> {
   await delay(80)
   const days = 30
@@ -1783,6 +1886,7 @@ export async function getKitchenReport(): Promise<KitchenReport> {
       }
     }
   )
+  const topRatedDishes = buildTopRatedDishes(active)
   return {
     days,
     startDate: dateInputString(new Date(start)),
@@ -1800,7 +1904,9 @@ export async function getKitchenReport(): Promise<KitchenReport> {
     avgRating,
     goodRate,
     topTags,
-    mealStats
+    mealStats,
+    topRatedDishes,
+    minRatedOrders: MIN_RATED_DISH_ORDERS
   }
 }
 

@@ -234,6 +234,8 @@ export interface KitchenReport {
   goodRate: number
   topTags: { name: string; count: number }[]
   mealStats: { meal: MealId; count: number; revenue: number }[]
+  topRatedDishes: { name: string; avgRating: number; ratedCount: number }[]
+  minRatedOrders: number
 }
 
 export interface KitchenStatus {

@@ -1926,8 +1926,69 @@ async function run() {
   assert.ok(res.data.revenue >= 40)
   assert.ok(res.data.topDishes.length >= 1)
   assert.ok(res.data.topDishes[0].qty >= 1)
+  assert.strictEqual(res.data.minRatedOrders, 2)
+  assert.deepStrictEqual(res.data.topRatedDishes, [])
+  const topName = res.data.topDishes[0].name
   assert.ok(res.data.ratedCount >= 1)
   assert.ok(res.data.avgRating > 0)
+  // 好评菜品榜：每单每菜只计一次、同名合并、至少 2 次评价、忽略无效/取消
+  const fixtureNow = Date.now()
+  const fixtureOrder = (id, rating, items, status) => ({
+    _id: id,
+    _openid: 'girl-openid',
+    no: id,
+    items,
+    amount: 18,
+    meal: 'lunch',
+    expectedTime: '12:00',
+    mode: '在家吃',
+    note: '',
+    status: status || 'completed',
+    rating,
+    createdAt: fixtureNow - 2 * 24 * 60 * 60 * 1000,
+    timeline: []
+  })
+  const fixtures = [
+    fixtureOrder('fixture-d01', 3, [
+      { dishId: 'd01', name: '番茄牛腩饭', price: 18, qty: 1, specs: ['微辣'] },
+      { dishId: 'd01', name: '番茄牛腩饭', price: 18, qty: 1, specs: [] }
+    ]),
+    fixtureOrder('fixture-dup-a', 3, [
+      { dishId: 'fixture-a', name: '同名菜', price: 10, qty: 1, specs: [] }
+    ]),
+    fixtureOrder('fixture-dup-b', 2, [
+      { dishId: 'fixture-b', name: '同名菜', price: 10, qty: 1, specs: [] }
+    ]),
+    fixtureOrder('fixture-invalid', 4, [
+      { dishId: 'd01', name: '番茄牛腩饭', price: 18, qty: 1, specs: [] }
+    ]),
+    fixtureOrder('fixture-cancelled', 3, [
+      { dishId: 'd01', name: '番茄牛腩饭', price: 18, qty: 1, specs: [] }
+    ], 'cancelled')
+  ]
+  fixtures.forEach(order => ensure('orders').set(order._id, order))
+  res = await call('getKitchenReport', {}, 'admin-openid')
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.topRatedDishes.length, 2)
+  assert.deepStrictEqual(res.data.topRatedDishes[0], {
+    name: '番茄牛腩饭',
+    avgRating: 3,
+    ratedCount: 2
+  })
+  assert.deepStrictEqual(res.data.topRatedDishes[1], {
+    name: '同名菜',
+    avgRating: 2.5,
+    ratedCount: 2
+  })
+  res.data.topRatedDishes.forEach(item => {
+    assert.deepStrictEqual(Object.keys(item).sort(), [
+      'avgRating',
+      'name',
+      'ratedCount'
+    ])
+  })
+  fixtures.forEach(order => ensure('orders').delete(order._id))
+
   assert.ok(Array.isArray(res.data.topTags))
   assert.ok(res.data.topTags.length <= 5)
   assert.strictEqual(res.data.mealStats.length, 3)
@@ -1945,7 +2006,6 @@ async function run() {
   )
 
   // 单品近 30 天销量
-  const topName = res.data.topDishes[0].name
   res = await call('getDishSales', { name: topName }, 'girl-openid')
   assert.strictEqual(res.ok, false)
   res = await call('getDishSales', { name: topName }, 'admin-openid')

@@ -167,6 +167,16 @@
       </view>
     </view>
 
+    <view class="section-title display">好评菜品</view>
+    <view wx:if="{{!report.topRatedDishes.length}}" class="empty-line">还没有满 {{report.minRatedOrders}} 次评价的菜</view>
+    <view wx:for="{{report.topRatedDishes}}" wx:key="name" class="dish-row card">
+      <view class="rank {{index < 3 ? 'top' : ''}}">{{index + 1}}</view>
+      <view class="dish-info">
+        <view class="dish-name">{{item.name}}</view>
+        <view class="dish-sub">平均 {{item.avgRating}}/3 分 · {{item.ratedCount}} 次评价</view>
+      </view>
+    </view>
+
     <view class="foot-note">
       完成 {{report.completed}} 单 · 取消 {{report.cancelled}} 单
     </view>

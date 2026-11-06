@@ -1953,6 +1953,25 @@ function invoke(mp, body) {
       .map(item => `${item.meal}:${item.count}`)
       .join(' ')
   )
+  check(
+    'mock 月报好评菜品',
+    Array.isArray(data.report.topRatedDishes) &&
+      data.report.minRatedOrders === 2 &&
+      data.report.topRatedDishes.some(
+        item =>
+          item.name === '番茄牛腩饭' &&
+          item.avgRating === 2.5 &&
+          item.ratedCount === 2
+      ) &&
+      data.report.topRatedDishes.every(
+        item =>
+          Object.keys(item).sort().join(',') ===
+          'avgRating,name,ratedCount'
+      ),
+    (data.report.topRatedDishes || [])
+      .map(item => `${item.name}:${item.avgRating}/${item.ratedCount}`)
+      .join(' ')
+  )
   await invoke(mp, 'page.onExport()')
   await sleep(900)
   page = await current()

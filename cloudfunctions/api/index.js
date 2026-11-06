@@ -11,6 +11,8 @@ const CONFIG_ID = 'app'
 const COLLECTIONS = ['categories', 'dishes', 'orders', 'config', 'wishes']
 
 const RATING_TAGS = ['好吃', '分量足', '准时', '有点辣', '下次还想吃']
+const MIN_RATED_DISH_ORDERS = 2
+const TOP_RATED_DISH_LIMIT = 5
 
 const STEP_TITLES = {
   pending: '已下单',
@@ -700,6 +702,71 @@ async function getDishStats(payload) {
   }
 }
 
+// 按菜品聚合评分：每单每菜只计一次，同名菜品合并，至少 2 次评价才上榜
+function buildTopRatedDishes(orders) {
+  const groups = {}
+  ;(orders || [])
+    .slice()
+    .sort((a, b) => Number(a.createdAt || 0) - Number(b.createdAt || 0))
+    .forEach(order => {
+      const rating = Number(order.rating)
+      if (
+        !Number.isInteger(rating) ||
+        rating < 1 ||
+        rating > 3
+      ) {
+        return
+      }
+      const seenIds = {}
+      const seenNames = {}
+      ;(order.items || []).forEach(item => {
+        const id = String(item.dishId || '').trim()
+        const name = String(item.name || '').trim() || '未命名'
+        if (id && seenIds[id]) {
+          return
+        }
+        if (seenNames[name]) {
+          return
+        }
+        if (id) {
+          seenIds[id] = true
+        }
+        seenNames[name] = true
+        const key = id ? `id:${id}` : `name:${name}`
+        if (!groups[key]) {
+          groups[key] = { name, sum: 0, count: 0 }
+        }
+        groups[key].name = name
+        groups[key].sum += rating
+        groups[key].count += 1
+      })
+    })
+  const byName = {}
+  Object.keys(groups).forEach(key => {
+    const group = groups[key]
+    if (!byName[group.name]) {
+      byName[group.name] = { name: group.name, sum: 0, count: 0 }
+    }
+    byName[group.name].sum += group.sum
+    byName[group.name].count += group.count
+  })
+  return Object.keys(byName)
+    .map(name => byName[name])
+    .filter(group => group.count >= MIN_RATED_DISH_ORDERS)
+    .sort(
+      (a, b) =>
+        b.sum / b.count - a.sum / a.count ||
+        b.count - a.count ||
+        (a.name < b.name ? -1 : a.name > b.name ? 1 : 0)
+    )
+    .slice(0, TOP_RATED_DISH_LIMIT)
+    .map(group => ({
+      name: group.name,
+      avgRating: Number((group.sum / group.count).toFixed(1)),
+      ratedCount: group.count
+    }))
+}
+
 async function getDishSales(payload, openid) {
   await requireAdmin(openid)
   const name = String((payload && payload.name) || '')
@@ -852,6 +919,7 @@ async function getKitchenReport(openid) {
       )
     }
   })
+  const topRatedDishes = buildTopRatedDishes(active)
 
   return {
     days,
@@ -870,7 +938,9 @@ async function getKitchenReport(openid) {
     avgRating,
     goodRate,
     topTags,
-    mealStats
+    mealStats,
+    topRatedDishes,
+    minRatedOrders: MIN_RATED_DISH_ORDERS
   }
 }
 
