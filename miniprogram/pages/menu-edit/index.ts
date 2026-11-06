@@ -1,10 +1,12 @@
-import type { MealId } from '../../services/types'
+import type { MealId, MenuTemplate } from '../../services/types'
 import {
   deleteMenu,
   getCategories,
   getDishes,
   getMenuForDate,
-  saveMenu
+  getMenuTemplates,
+  saveMenu,
+  saveMenuTemplates
 } from '../../services/api'
 import { MEALS } from '../../utils/constants'
 import {
@@ -16,14 +18,6 @@ import { backAfter } from '../../utils/nav'
 interface DateOption {
   value: string
   label: string
-}
-
-interface MenuTemplate {
-  id: string
-  name: string
-  meal: MealId
-  dishIds: string[]
-  updatedAt: number
 }
 
 const TEMPLATE_KEY = 'kfl_menu_templates_v1'
@@ -92,6 +86,28 @@ Page({
     })
     this.refreshTemplates()
     this.load()
+    this.syncTemplates()
+  },
+
+  async syncTemplates() {
+    try {
+      const server = await getMenuTemplates()
+      const local = readTemplates()
+      if (server.length) {
+        writeTemplates(server)
+        this.refreshTemplates()
+      } else if (local.length) {
+        await saveMenuTemplates(local)
+      }
+    } catch (e) {
+      // 云端模板不可用时继续用本地模板
+    }
+  },
+
+  pushTemplates() {
+    saveMenuTemplates(readTemplates()).catch(() => {
+      // 离线时保留本地模板，下次保存再同步
+    })
   },
 
   _loadSeq: 0,
@@ -267,6 +283,7 @@ Page({
       )
     )
     this.refreshTemplates()
+    this.pushTemplates()
     wx.showToast({
       title: same ? '模板已更新' : '模板已保存',
       icon: 'none'
@@ -307,6 +324,7 @@ Page({
         )
       )
       this.refreshTemplates()
+      this.pushTemplates()
       wx.showToast({ title: '模板已清空', icon: 'none' })
       return
     }

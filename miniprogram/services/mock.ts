@@ -9,6 +9,7 @@ import type {
   InitResult,
   KitchenReport,
   MealId,
+  MenuTemplate,
   MeInfo,
   MyStats,
   Order,
@@ -1354,6 +1355,52 @@ export async function deleteMenu(
   delete menus[`${date}_${meal}`]
   saveMenus()
   return { date, meal }
+}
+
+const MENU_TEMPLATES_KEY = 'kfl_menu_templates_server_v1'
+
+function loadServerTemplates(): MenuTemplate[] {
+  try {
+    const raw = wx.getStorageSync(MENU_TEMPLATES_KEY)
+    const list = raw ? JSON.parse(raw) : []
+    return Array.isArray(list) ? list : []
+  } catch (e) {
+    return []
+  }
+}
+
+export async function getMenuTemplates(): Promise<MenuTemplate[]> {
+  await delay(60)
+  return loadServerTemplates().map(item => ({
+    ...item,
+    dishIds: [...item.dishIds]
+  }))
+}
+
+export async function saveMenuTemplates(
+  templates: MenuTemplate[]
+): Promise<MenuTemplate[]> {
+  await delay(80)
+  const list = (templates || [])
+    .slice(0, 15)
+    .map((item, index) => ({
+      id: String(item.id || `tpl-${index}`).slice(0, 40),
+      name: String(item.name || '').trim().slice(0, 12),
+      meal: (['breakfast', 'lunch', 'dinner'] as MealId[]).indexOf(item.meal) > -1
+        ? item.meal
+        : ('lunch' as MealId),
+      dishIds: Array.isArray(item.dishIds)
+        ? item.dishIds.filter(id => typeof id === 'string').slice(0, 50)
+        : [],
+      updatedAt: Number(item.updatedAt || Date.now())
+    }))
+    .filter(item => item.name && item.dishIds.length)
+  try {
+    wx.setStorageSync(MENU_TEMPLATES_KEY, JSON.stringify(list))
+  } catch (e) {
+    // 忽略存储失败
+  }
+  return list
 }
 
 export async function getMenuForDate(

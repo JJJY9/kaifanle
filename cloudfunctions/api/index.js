@@ -144,6 +144,10 @@ async function route(action, payload, openid) {
       return deleteCoupon(payload, openid)
     case 'getMenuForDate':
       return getMenuForDate(payload)
+    case 'getMenuTemplates':
+      return getMenuTemplates(openid)
+    case 'saveMenuTemplates':
+      return saveMenuTemplates(payload, openid)
     case 'getWeekMenus':
       return getWeekMenus()
     case 'rollMenu':
@@ -824,6 +828,43 @@ async function getMenuForDate(payload) {
   const meal =
     payload && MEALS.indexOf(payload.meal) > -1 ? payload.meal : 'lunch'
   return getMenuDoc(date, meal)
+}
+
+async function getMenuTemplates(openid) {
+  await requireAdmin(openid)
+  const config = await getConfig()
+  return config && Array.isArray(config.menuTemplates)
+    ? config.menuTemplates
+    : []
+}
+
+async function saveMenuTemplates(payload, openid) {
+  await requireAdmin(openid)
+  const raw =
+    payload && Array.isArray(payload.templates) ? payload.templates : []
+  const templates = raw
+    .slice(0, 15)
+    .map((item, index) => {
+      const name = String((item && item.name) || '')
+        .trim()
+        .slice(0, 12)
+      const meal =
+        item && MEALS.indexOf(item.meal) > -1 ? item.meal : 'lunch'
+      const dishIds = Array.isArray(item && item.dishIds)
+        ? item.dishIds
+            .filter(id => typeof id === 'string')
+            .slice(0, 50)
+        : []
+      const id = String((item && item.id) || `tpl-${index}`).slice(0, 40)
+      const updatedAt = Number((item && item.updatedAt) || Date.now())
+      return { id, name, meal, dishIds, updatedAt }
+    })
+    .filter(item => item.name && item.dishIds.length)
+  await db
+    .collection('config')
+    .doc(CONFIG_ID)
+    .update({ data: { menuTemplates: templates } })
+  return templates
 }
 
 // 周饭表固定展示北京时间今天起 7 天（今天..今天+6），共 21 个菜单文档；

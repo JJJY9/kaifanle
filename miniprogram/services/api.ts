@@ -13,6 +13,7 @@ import type {
   InitResult,
   KitchenReport,
   MealId,
+  MenuTemplate,
   MeInfo,
   MyStats,
   Order,
@@ -481,6 +482,22 @@ export async function getWeekMenus(): Promise<WeekMenus> {
     return callApi<WeekMenus>('getWeekMenus')
   }
   return mock.getWeekMenus()
+}
+
+export async function getMenuTemplates(): Promise<MenuTemplate[]> {
+  if (USE_CLOUD) {
+    return callApi<MenuTemplate[]>('getMenuTemplates')
+  }
+  return mock.getMenuTemplates()
+}
+
+export async function saveMenuTemplates(
+  templates: MenuTemplate[]
+): Promise<MenuTemplate[]> {
+  if (USE_CLOUD) {
+    return callApi<MenuTemplate[]>('saveMenuTemplates', { templates })
+  }
+  return mock.saveMenuTemplates(templates)
 }
 
 export async function saveMenu(payload: {

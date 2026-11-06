@@ -252,3 +252,11 @@ export interface WeekMenus {
   endDate: string
   days: WeekMenusDay[]
 }
+
+export interface MenuTemplate {
+  id: string
+  name: string
+  meal: MealId
+  dishIds: string[]
+  updatedAt: number
+}

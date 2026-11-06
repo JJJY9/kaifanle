@@ -1267,6 +1267,51 @@ async function run() {
   await call('deleteMenu', { date: tomorrowKey, meal: 'lunch' }, 'admin-openid')
   await call('deleteMenu', { date: todayKey, meal: 'lunch' }, 'admin-openid')
 
+  // 菜单模板云同步：管理员读写、字段清洗
+  res = await call('getMenuTemplates', {}, 'girl-openid')
+  assert.strictEqual(res.ok, false)
+  res = await call(
+    'saveMenuTemplates',
+    { templates: [] },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, false)
+  res = await call(
+    'saveMenuTemplates',
+    {
+      templates: [
+        {
+          id: 'tpl-1',
+          name: '午餐A',
+          meal: 'lunch',
+          dishIds: ['d01', 'd02'],
+          updatedAt: 1
+        },
+        {
+          id: 'tpl-2',
+          name: '',
+          meal: 'bad',
+          dishIds: [],
+          updatedAt: 2
+        }
+      ]
+    },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.length, 1)
+  assert.strictEqual(res.data[0].name, '午餐A')
+  assert.strictEqual(res.data[0].meal, 'lunch')
+  assert.deepStrictEqual(res.data[0].dishIds, ['d01', 'd02'])
+  res = await call('getMenuTemplates', {}, 'admin-openid')
+  assert.strictEqual(res.data.length, 1)
+  res = await call(
+    'saveMenuTemplates',
+    { templates: [] },
+    'admin-openid'
+  )
+  assert.strictEqual(res.data.length, 0)
+
   // 周饭表：公开读取今天起 7 天 × 3 餐，缺失的补占位
   res = await call('getWeekMenus', {}, 'girl-openid')
   assert.strictEqual(res.ok, true)
