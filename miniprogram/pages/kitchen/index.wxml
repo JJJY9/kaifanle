@@ -216,9 +216,29 @@
         <view class="add-dish" bindtap="onAddDish">+ 新增</view>
       </view>
     </view>
+    <view class="dish-search">
+      <text class="dish-search-icon">🔍</text>
+      <input
+        class="dish-search-input"
+        value="{{dishKeyword}}"
+        placeholder="搜菜名 / 描述"
+        bindinput="onDishSearch"
+      />
+      <view wx:if="{{dishKeyword}}" class="dish-search-clear" bindtap="onClearDishSearch">×</view>
+    </view>
+    <view class="dish-filter-row">
+      <view
+        wx:for="{{dishFilters}}"
+        wx:key="key"
+        class="dish-filter {{dishFilter === item.key ? 'active' : ''}}"
+        data-filter="{{item.key}}"
+        bindtap="onDishFilter"
+      >{{item.label}} {{item.count}}</view>
+    </view>
+    <view wx:if="{{!displayDishes.length}}" class="empty-line">没有符合条件的菜</view>
     <view class="menu card">
       <view
-        wx:for="{{dishes}}"
+        wx:for="{{displayDishes}}"
         wx:key="id"
         class="dish-row"
         data-id="{{item.id}}"

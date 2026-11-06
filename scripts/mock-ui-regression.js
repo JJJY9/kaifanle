@@ -146,6 +146,47 @@ function invoke(mp, body) {
     Array.isArray(data.weekBars) && data.weekBars.length === 7,
     `合计 ¥${data.weekBarTotal}`
   )
+  check(
+    'mock 厨房菜品筛选',
+    (data.dishFilters || []).length === 4 &&
+      (data.displayDishes || []).length === (data.dishes || []).length,
+    `${(data.displayDishes || []).length} 道`
+  )
+  await invoke(mp, "page.onDishSearch({ detail: { value: '番茄' } })")
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 厨房菜品搜索',
+    (data.displayDishes || []).length > 0 &&
+      data.displayDishes.every(dish => dish.name.indexOf('番茄') > -1),
+    `${(data.displayDishes || []).length} 道`
+  )
+  await invoke(mp, 'page.onClearDishSearch()')
+  await invoke(
+    mp,
+    "page.onDishFilter({ currentTarget: { dataset: { filter: 'soldout' } } })"
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  const soldoutCount = Number(
+    ((data.dishFilters || []).find(item => item.key === 'soldout') || {})
+      .count || 0
+  )
+  check(
+    'mock 厨房售罄筛选',
+    (data.displayDishes || []).length === soldoutCount &&
+      data.displayDishes.every(
+        dish => dish.status === 'soldout' || dish.stock === 0
+      ),
+    `${(data.displayDishes || []).length} 道`
+  )
+  await invoke(
+    mp,
+    "page.onDishFilter({ currentTarget: { dataset: { filter: 'all' } } })"
+  )
+  await sleep(300)
   const firstDish = (data.dishes || [])[0]
   const secondDish = (data.dishes || [])[1]
   if (firstDish && secondDish) {

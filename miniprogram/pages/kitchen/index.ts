@@ -42,7 +42,11 @@ Page({
     weekStats: null as any,
     weekBars: [] as any[],
     weekBarTotal: 0,
-    todo: { pending: 0, replies: 0, lowStock: 0 }
+    todo: { pending: 0, replies: 0, lowStock: 0 },
+    dishKeyword: '',
+    dishFilter: 'all' as 'all' | 'low' | 'soldout' | 'off',
+    dishFilters: [] as any[],
+    displayDishes: [] as any[]
   },
 
   _watchTimer: null as any,
@@ -459,7 +463,7 @@ Page({
         weekBarTotal,
         loading: false,
         error: ''
-      })
+      }, () => this.applyDishFilter())
     } catch (e: any) {
       if (seq !== this._loadSeq) {
         return
@@ -600,10 +604,13 @@ Page({
           item.stock >= 0 &&
           item.stock <= 3
       ).length
-      this.setData({
-        dishes,
-        todo: { ...this.data.todo, lowStock }
-      })
+      this.setData(
+        {
+          dishes,
+          todo: { ...this.data.todo, lowStock }
+        },
+        () => this.applyDishFilter()
+      )
       wx.showToast({ title: `已补到 ${stock} 份`, icon: 'none' })
     } catch (err: any) {
       wx.showToast({
@@ -613,6 +620,80 @@ Page({
     } finally {
       this.setData({ restockingId: '' })
     }
+  },
+
+  applyDishFilter() {
+    const dishes = this.data.dishes || []
+    const keyword = String(this.data.dishKeyword || '')
+      .trim()
+      .toLowerCase()
+    const filter = this.data.dishFilter
+    const low = (dish: any) =>
+      dish.status === 'on' &&
+      typeof dish.stock === 'number' &&
+      dish.stock >= 0 &&
+      dish.stock <= 3
+    const soldout = (dish: any) =>
+      dish.status === 'soldout' || dish.stock === 0
+    const displayDishes = dishes.filter(dish => {
+      if (
+        keyword &&
+        `${dish.name} ${dish.desc || ''} ${dish.categoryName || ''}`
+          .toLowerCase()
+          .indexOf(keyword) === -1
+      ) {
+        return false
+      }
+      if (filter === 'low') {
+        return low(dish)
+      }
+      if (filter === 'soldout') {
+        return soldout(dish)
+      }
+      if (filter === 'off') {
+        return dish.status === 'off'
+      }
+      return true
+    })
+    this.setData({
+      displayDishes,
+      dishFilters: [
+        { key: 'all', label: '全部', count: dishes.length },
+        {
+          key: 'low',
+          label: '低库存',
+          count: dishes.filter(low).length
+        },
+        {
+          key: 'soldout',
+          label: '售罄',
+          count: dishes.filter(soldout).length
+        },
+        {
+          key: 'off',
+          label: '已下架',
+          count: dishes.filter(dish => dish.status === 'off').length
+        }
+      ]
+    })
+  },
+
+  onDishSearch(e: any) {
+    this.setData({ dishKeyword: String(e.detail.value || '') }, () =>
+      this.applyDishFilter()
+    )
+  },
+
+  onClearDishSearch() {
+    this.setData({ dishKeyword: '' }, () => this.applyDishFilter())
+  },
+
+  onDishFilter(e: any) {
+    const filter = e.currentTarget.dataset.filter
+    if (filter === this.data.dishFilter) {
+      return
+    }
+    this.setData({ dishFilter: filter }, () => this.applyDishFilter())
   },
 
   onToggleHistory() {
