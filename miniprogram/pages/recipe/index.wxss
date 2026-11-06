@@ -121,6 +121,30 @@
   font-weight: 800;
 }
 
+.ingredient-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.ingredient-row {
+  display: flex;
+  gap: 10rpx;
+  font-size: 25rpx;
+  line-height: 1.5;
+}
+
+.ingredient-dot {
+  color: #FF6B35;
+  font-weight: 800;
+}
+
+.ingredient-text {
+  flex: 1;
+  min-width: 0;
+  word-break: break-all;
+}
+
 .step-row {
   display: flex;
   gap: 16rpx;

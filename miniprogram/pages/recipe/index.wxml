@@ -32,6 +32,16 @@
     </view>
   </view>
 
+  <view wx:if="{{dish.ingredients.length}}" class="steps-card card">
+    <view class="steps-title display">食材</view>
+    <view class="ingredient-list">
+      <view wx:for="{{dish.ingredients}}" wx:key="*this" class="ingredient-row">
+        <text class="ingredient-dot">·</text>
+        <text class="ingredient-text">{{item}}</text>
+      </view>
+    </view>
+  </view>
+
   <view class="steps-card card">
     <view class="steps-title-row">
       <view class="steps-title display">怎么做</view>

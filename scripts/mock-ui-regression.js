@@ -1003,6 +1003,13 @@ function invoke(mp, body) {
     Boolean(data.dish) && (data.steps || []).length >= 3,
     data.dish && `${data.dish.name} · ${data.steps.length} 步`
   )
+  check(
+    'mock 菜谱食材展示',
+    Boolean(data.dish) &&
+      Array.isArray(data.dish.ingredients) &&
+      data.dish.ingredients.length >= 1,
+    data.dish ? (data.dish.ingredients || []).join('、') : '没有食材'
+  )
   await invoke(
     mp,
     'page.onToggleStep({ currentTarget: { dataset: { index: 0 } } })'
