@@ -12,6 +12,7 @@ Page({
     stats: {
       month: 0,
       total: 0,
+      monthSpend: 0,
       favorite: '还没点过'
     },
     cloudMode: USE_CLOUD,
@@ -174,6 +175,7 @@ Page({
         stats: {
           month: myStats ? myStats.month : 0,
           total: myStats ? myStats.total : 0,
+          monthSpend: myStats ? myStats.monthSpend : 0,
           favorite: myStats ? myStats.favorite : '还没点过'
         },
         entries: this.buildEntries(me.isAdmin, me.initialized, couponCount)
@@ -184,7 +186,7 @@ Page({
         isAdmin: !USE_CLOUD,
         initialized: !USE_CLOUD,
         openid: '',
-        stats: { month: 0, total: 0, favorite: '还没点过' },
+        stats: { month: 0, total: 0, monthSpend: 0, favorite: '还没点过' },
         entries: this.buildEntries(!USE_CLOUD, !USE_CLOUD)
       })
     }

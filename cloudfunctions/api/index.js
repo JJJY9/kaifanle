@@ -738,6 +738,11 @@ async function getMyStats(openid) {
   return {
     total: (allRes.total || 0) - (cancelledRes.total || 0),
     month: monthOrders.length,
+    monthSpend: Number(
+      monthOrders
+        .reduce((sum, order) => sum + Number(order.amount || 0), 0)
+        .toFixed(2)
+    ),
     favorite
   }
 }

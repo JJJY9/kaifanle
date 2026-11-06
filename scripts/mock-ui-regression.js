@@ -1514,6 +1514,16 @@ function invoke(mp, body) {
   )
 
   // 厨房一键接单（放在最后，下一轮 mock 种子会自动恢复待接单状态）
+  await mp.switchTab('/pages/profile/index')
+  await sleep(1800)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 我的本月花费',
+    Number(data.stats && data.stats.monthSpend) >= 0 &&
+      Number(data.stats && data.stats.month) >= 1,
+    `¥${data.stats && data.stats.monthSpend} · ${data.stats && data.stats.month} 单`
+  )
   await mp.navigateTo('/pages/kitchen/index')
   await sleep(2200)
   page = await current()

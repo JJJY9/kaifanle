@@ -192,6 +192,7 @@ export interface StoreStats {
 export interface MyStats {
   total: number
   month: number
+  monthSpend: number
   favorite: string
 }
 

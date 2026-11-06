@@ -11,6 +11,7 @@
   <view class="stats card">
     <view class="stat">
       <view class="stat-num">{{stats.month}}</view>
+      <view class="stat-sub">¥{{stats.monthSpend}}</view>
       <view class="stat-label">本月干饭</view>
     </view>
     <view class="divider"></view>

@@ -1455,6 +1455,11 @@ export async function getMyStats(): Promise<MyStats> {
   return {
     total: valid.length,
     month: monthly.length,
+    monthSpend: Number(
+      monthly
+        .reduce((sum, order) => sum + Number(order.amount || 0), 0)
+        .toFixed(2)
+    ),
     favorite
   }
 }

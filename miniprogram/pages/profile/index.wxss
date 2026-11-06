@@ -100,6 +100,13 @@
   font-size: 22rpx;
 }
 
+.stat-sub {
+  margin-top: 2rpx;
+  color: #FF6B35;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
 .divider {
   width: 3rpx;
   margin: 8rpx 0;
