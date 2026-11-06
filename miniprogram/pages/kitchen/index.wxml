@@ -207,6 +207,7 @@
       <view class="order-top">
         <text class="no">#{{item.no}}</text>
         <view class="order-top-right">
+          <text wx:if="{{item.slotUpdated}}" class="slot-updated">改过时间</text>
           <text wx:if="{{item.waitText}}" class="order-wait">{{item.waitText}}</text>
           <view class="status {{item.status}}">{{item.statusText}}</view>
         </view>

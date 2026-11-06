@@ -1897,6 +1897,13 @@ function invoke(mp, body) {
     ),
     `预订单 ${(data.preorders || []).length} 单`
   )
+  check(
+    'mock 厨房改时间标记',
+    (data.preorders || []).some(
+      order => order.id === 'seed-3' && order.slotUpdated
+    ),
+    'seed-3'
+  )
 
   const failed = results.filter(r => !r.ok)
   console.log(`\n结论：${results.length - failed.length}/${results.length} 通过`)

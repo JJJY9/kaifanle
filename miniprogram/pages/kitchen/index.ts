@@ -331,6 +331,7 @@ Page({
               : '',
           feedback: order.feedback || '',
           noteUpdated: Boolean(order.noteUpdatedAt),
+          slotUpdated: Boolean(order.slotUpdatedAt),
           ratingTags: Array.isArray(order.ratingTags)
             ? order.ratingTags.slice(0, 4)
             : [],

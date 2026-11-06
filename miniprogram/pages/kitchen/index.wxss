@@ -479,6 +479,16 @@
   font-weight: 800;
 }
 
+.slot-updated {
+  padding: 4rpx 14rpx;
+  background: #E9F1FF;
+  border: 3rpx solid #2D6FD9;
+  border-radius: 999rpx;
+  color: #2D6FD9;
+  font-size: 19rpx;
+  font-weight: 800;
+}
+
 .status {
   padding: 4rpx 20rpx;
   background: #FFD23F;
