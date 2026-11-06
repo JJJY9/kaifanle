@@ -713,7 +713,14 @@ Page({
           return false
         }
       }
-      const haystack = [dish.name, dish.desc]
+      const category = (this._categories || []).find(
+        item => item.id === dish.categoryId
+      )
+      const haystack = [
+        dish.name,
+        dish.desc,
+        category ? category.name : ''
+      ]
         .concat(dish.tags || [])
         .join(' ')
         .toLowerCase()

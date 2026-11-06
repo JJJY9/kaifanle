@@ -246,6 +246,17 @@ function invoke(mp, body) {
   data = await page.data()
   check('mock 搜索', data.searchResults.length > 0, `${data.searchResults.length} 条`)
 
+  await invoke(mp, "page.onSearchInput({ detail: { value: '主食' } })")
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 按分类名搜索',
+    (data.searchResults || []).length > 0 &&
+      data.searchResults.every(dish => dish.categoryId === 'staple'),
+    `${(data.searchResults || []).length} 条`
+  )
+
   await invoke(mp, 'page.onClearSearch()')
   await sleep(300)
 
@@ -1117,6 +1128,20 @@ function invoke(mp, body) {
     'mock 改整单备注',
     Boolean(data.order) && data.order.note === '少放辣',
     data.order && data.order.note
+  )
+  await invoke(mp, 'page.onCopyOrderReceipt()')
+  await sleep(600)
+  const orderClip = await mp.evaluate(
+    new Function(
+      "return new Promise(resolve => wx.getClipboardData({ success: r => resolve(r.data || ''), fail: () => resolve('') }))"
+    )
+  )
+  check(
+    'mock 顾客复制小票',
+    typeof orderClip === 'string' &&
+      orderClip.indexOf('【张饱饭堂】') > -1 &&
+      orderClip.indexOf(String(data.order.no)) > -1,
+    `${String(orderClip || '').length} 字`
   )
   await mp.navigateBack()
   await sleep(900)

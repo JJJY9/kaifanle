@@ -1,6 +1,7 @@
 import type { Dish, Order, OrderStatus } from '../../services/types'
 import { getOrder, cancelOrder, getDishes, getKitchenStatus, urgeOrder, rateOrder, updateOrderNote } from '../../services/api'
 import { addOrderToCart } from '../../utils/reorder'
+import { orderReceiptLines, receiptText } from '../../utils/receipt'
 import { STATUS_STEP_TEXT, STATUS_TEXT, mealName } from '../../utils/constants'
 import {
   formatDate,
@@ -412,6 +413,28 @@ Page({
     } catch (e) {
       wx.showToast({ title: '订阅失败，稍后再试', icon: 'none' })
     }
+  },
+
+  onCopyOrderReceipt() {
+    const order = this.data.order
+    if (!order) {
+      return
+    }
+    const totalQty = (order.items || []).reduce(
+      (sum: number, item: any) => sum + Number(item.qty || 0),
+      0
+    )
+    const view = Object.assign({}, order, {
+      dateText: order.scheduledText || '',
+      mealText: order.mealText,
+      totalQty
+    })
+    wx.setClipboardData({
+      data: receiptText(view, orderReceiptLines(order)),
+      success: () => {
+        wx.showToast({ title: '小票已复制', icon: 'none' })
+      }
+    })
   },
 
   async onCancelOrder() {

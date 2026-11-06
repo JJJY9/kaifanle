@@ -22,6 +22,7 @@ import {
   mealName
 } from '../../utils/constants'
 import { formatTime, itemSummary, dateLabel, dateInputString, formatDate } from '../../utils/format'
+import { orderReceiptLines, receiptText } from '../../utils/receipt'
 import { TEMPLATE_NEW_ORDER } from '../../config'
 
 const REPLY_PHRASES = [
@@ -29,48 +30,6 @@ const REPLY_PHRASES = [
   '收到，下次注意',
   '抱歉翻车了，下次补偿'
 ]
-
-function orderReceiptLines(order: any): any[] {
-  return (order.items || []).map((item: any, index: number) => ({
-    key: `${index}-${item.dishId || item.name}`,
-    name: item.name,
-    qty: Number(item.qty || 0),
-    lineTotal: Number(item.price || 0) * Number(item.qty || 0),
-    specText: Array.isArray(item.specs) ? item.specs.join(' / ') : '',
-    note: item.note || ''
-  }))
-}
-
-function receiptText(order: any, lines: any[]): string {
-  const head = [`【张饱饭堂】#${order.no || ''}`]
-  const meta = [order.dateText, order.mealText, order.mode, order.expectedTime]
-    .filter(Boolean)
-    .join(' · ')
-  if (meta) {
-    head.push(meta)
-  }
-  lines.forEach(line => {
-    head.push(`${line.name} ×${line.qty}  ¥${line.lineTotal}`)
-    if (line.specText) {
-      head.push(`  规格：${line.specText}`)
-    }
-    if (line.note) {
-      head.push(`  备注：${line.note}`)
-    }
-  })
-  head.push(
-    `合计 ¥${order.amount} · 共 ${
-      order.totalQty || lines.reduce((sum, line) => sum + line.qty, 0)
-    } 份`
-  )
-  if (order.address) {
-    head.push(`送到：${order.address}`)
-  }
-  if (order.note) {
-    head.push(`整单备注：${order.note}`)
-  }
-  return head.join('\n')
-}
 
 Page({
   data: {

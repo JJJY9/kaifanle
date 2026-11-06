@@ -25,6 +25,7 @@
       class="cancel-order"
       bindtap="onCancelOrder"
     >取消订单</view>
+    <view class="copy-order" bindtap="onCopyOrderReceipt">复制小票</view>
   </view>
 
   <view class="block card">
