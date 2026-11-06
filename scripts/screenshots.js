@@ -12,8 +12,13 @@ const sleep = ms => new Promise(r => setTimeout(r, ms))
     content: ''
   })
 
-  // 清空测试遗留的购物车，再切到午餐拍首页
+  // 清空测试遗留的购物车（先切到午餐，避免早餐已截单导致进不了结算页）
   await mp.switchTab('/pages/home/index')
+  await sleep(1600)
+  await mp.evaluate(function () {
+    const current = getCurrentPages()[getCurrentPages().length - 1]
+    current.onSelectMeal({ currentTarget: { dataset: { meal: 'lunch' } } })
+  })
   await sleep(1600)
   let page = await mp.currentPage()
   let data = await page.data()
@@ -23,11 +28,14 @@ const sleep = ms => new Promise(r => setTimeout(r, ms))
       current.onCheckout()
     })
     await sleep(1400)
-    await mp.evaluate(function () {
-      const current = getCurrentPages()[getCurrentPages().length - 1]
-      current.onClearCart()
-    })
-    await sleep(1400)
+    const checkoutPage = await mp.currentPage()
+    if (checkoutPage.path === 'pages/checkout/index') {
+      await mp.evaluate(function () {
+        const current = getCurrentPages()[getCurrentPages().length - 1]
+        current.onClearCart()
+      })
+      await sleep(1400)
+    }
   }
   await mp.switchTab('/pages/home/index')
   await sleep(1200)
