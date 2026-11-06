@@ -1,5 +1,6 @@
 <view class="page">
   <view wx:if="{{closed}}" class="closed-banner">{{closedText}}</view>
+  <view wx:if="{{kitchenHint}}" class="kitchen-hint">🔥 {{kitchenHint}}</view>
 
   <view class="block card">
     <view class="block-title">送到哪一顿</view>

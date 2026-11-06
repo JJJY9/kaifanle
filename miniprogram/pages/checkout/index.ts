@@ -3,6 +3,7 @@ import {
   createOrder,
   getBusiness,
   getDishes,
+  getKitchenStatus,
   getMenuForDate,
   getMyProfile
 } from '../../services/api'
@@ -62,6 +63,7 @@ Page({
     slotChecking: false,
     slotInvalidCount: 0,
     slotError: '',
+    kitchenHint: '',
     submitting: false
   },
 
@@ -103,8 +105,38 @@ Page({
     })
     this.checkClosed(meal)
     this.checkSlot(meal, scheduledDate)
+    this.loadKitchenHint()
     this.loadProfile()
     this.newRequestId()
+  },
+
+  async loadKitchenHint() {
+    if (this.data.scheduledDate !== this.data.todayDate) {
+      this.setData({ kitchenHint: '' })
+      return
+    }
+    try {
+      const status = await getKitchenStatus()
+      if (this.data.scheduledDate !== this.data.todayDate) {
+        return
+      }
+      const ahead = Math.max(0, Number(status.active || 0))
+      const items = (this.data.lines || []).reduce(
+        (sum, line) => sum + Number(line.qty || 0),
+        0
+      )
+      this.setData({
+        kitchenHint:
+          ahead > 0
+            ? `厨房前面还有 ${ahead} 单，预计 ${Math.max(
+                10,
+                10 + ahead * 8 + items * 2
+              )} 分钟左右出锅`
+            : '厨房现在空闲，下单后马上开火'
+      })
+    } catch (e) {
+      this.setData({ kitchenHint: '' })
+    }
   },
 
   applySlot(meal: MealId, date: string): any[] {
@@ -294,6 +326,7 @@ Page({
       () => {
         this.checkClosed(meal)
         this.checkSlot(meal, this.data.scheduledDate)
+        this.loadKitchenHint()
       }
     )
   },

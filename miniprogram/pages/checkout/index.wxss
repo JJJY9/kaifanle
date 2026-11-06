@@ -12,6 +12,16 @@
   font-weight: 700;
 }
 
+.kitchen-hint {
+  margin-bottom: 24rpx;
+  padding: 14rpx 20rpx;
+  background: #E9F8EF;
+  border: 3rpx solid #111111;
+  border-radius: 18rpx;
+  font-size: 23rpx;
+  font-weight: 700;
+}
+
 .block {
   padding: 24rpx;
   margin-bottom: 24rpx;

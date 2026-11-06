@@ -135,6 +135,11 @@ function invoke(mp, body) {
       (data.lines || []).every(line => line.date === tomorrowForCart),
     `${data.scheduledDate} · ${(data.lines || []).length} 道`
   )
+  check(
+    'mock 预订不显示厨房排队',
+    data.kitchenHint === '',
+    data.kitchenHint || '已隐藏'
+  )
   const tomorrowLines = (data.lines || []).filter(
     line => line.date === tomorrowForCart
   )
@@ -183,6 +188,11 @@ function invoke(mp, body) {
       Boolean(porridgeLine) &&
       (data.lines || []).every(line => line.meal === 'breakfast'),
     `${(data.lines || []).length} 道`
+  )
+  check(
+    'mock 结算厨房提示',
+    String(data.kitchenHint || '').indexOf('厨房') > -1,
+    data.kitchenHint
   )
   if (porridgeLine) {
     await invoke(
