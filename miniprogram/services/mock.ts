@@ -1238,6 +1238,7 @@ export async function getMyStats(): Promise<MyStats> {
 export async function createCoupon(payload: {
   title: string
   note: string
+  expiresInDays?: number
 }): Promise<Coupon> {
   await delay(80)
   const title = String(payload.title || '').trim()
@@ -1245,6 +1246,7 @@ export async function createCoupon(payload: {
     throw new Error('券名不能为空')
   }
   const now = Date.now()
+  const days = Number(payload.expiresInDays || 0)
   const coupon: Coupon = {
     id: `c${now}`,
     title: title.slice(0, 20),
@@ -1253,7 +1255,8 @@ export async function createCoupon(payload: {
     owner: '',
     createdAt: now,
     claimedAt: 0,
-    usedAt: 0
+    usedAt: 0,
+    expiresAt: days > 0 ? now + Math.min(365, Math.floor(days)) * 24 * 60 * 60 * 1000 : 0
   }
   const coupons = loadCoupons()
   coupons.unshift(coupon)
@@ -1278,6 +1281,9 @@ export async function claimCoupon(id: string): Promise<Coupon> {
   if (coupon.status === 'used') {
     throw new Error('这张券已经用掉了')
   }
+  if (coupon.expiresAt && coupon.expiresAt < Date.now()) {
+    throw new Error('这张券过期了')
+  }
   if (coupon.owner && coupon.owner !== 'mock-openid') {
     throw new Error('这张券已经被领走了')
   }
@@ -1295,6 +1301,9 @@ export async function useCoupon(id: string): Promise<Coupon> {
   }
   if (coupon.status === 'used') {
     throw new Error('这张券已经用掉了')
+  }
+  if (coupon.expiresAt && coupon.expiresAt < Date.now()) {
+    throw new Error('这张券过期了')
   }
   coupon.status = 'used'
   coupon.usedAt = Date.now()

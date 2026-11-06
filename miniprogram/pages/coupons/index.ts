@@ -17,6 +17,12 @@ Page({
     newTitle: '',
     newNote: '',
     presetTitles: ['洗碗券', '奶茶券', '夸夸卡'],
+    expiryOptions: [
+      { label: '永久有效', days: 0 },
+      { label: '7 天', days: 7 },
+      { label: '30 天', days: 30 }
+    ],
+    expiryDays: 0,
     creating: false,
     claimingId: '',
     usingId: '',
@@ -32,19 +38,28 @@ Page({
       const [me, coupons] = await Promise.all([getMe(), getCoupons()])
       const view = coupons.map(coupon => {
         const mine = Boolean(coupon.owner && coupon.owner === me.openid)
+        const expired = Boolean(
+          coupon.expiresAt && Number(coupon.expiresAt) < Date.now()
+        )
         return {
           ...coupon,
-          statusText:
-            coupon.status === 'used'
-              ? '已用掉'
-              : coupon.owner
-              ? mine
-                ? '我的'
-                : '已领取'
-              : '待领取',
-          canClaim: !coupon.owner && coupon.status === 'unused',
-          canUse: mine && coupon.status === 'unused',
-          dateText: formatDate(coupon.createdAt)
+          expired,
+          statusText: expired
+            ? '已过期'
+            : coupon.status === 'used'
+            ? '已用掉'
+            : coupon.owner
+            ? mine
+              ? '我的'
+              : '已领取'
+            : '待领取',
+          canClaim:
+            !expired && !coupon.owner && coupon.status === 'unused',
+          canUse: !expired && mine && coupon.status === 'unused',
+          dateText: formatDate(coupon.createdAt),
+          expiryText: coupon.expiresAt
+            ? `${formatDate(coupon.expiresAt)} 到期`
+            : ''
         }
       })
       this.setData({
@@ -70,6 +85,10 @@ Page({
     this.setData({ newTitle: e.currentTarget.dataset.title })
   },
 
+  onExpiry(e: any) {
+    this.setData({ expiryDays: Number(e.currentTarget.dataset.days) || 0 })
+  },
+
   onNote(e: any) {
     this.setData({ newNote: e.detail.value })
   },
@@ -85,7 +104,11 @@ Page({
     }
     this.setData({ creating: true })
     try {
-      await createCoupon({ title, note: this.data.newNote.trim() })
+      await createCoupon({
+        title,
+        note: this.data.newNote.trim(),
+        expiresInDays: this.data.expiryDays
+      })
       this.setData({ newTitle: '', newNote: '' })
       wx.showToast({ title: '发好啦', icon: 'none' })
       this.load()

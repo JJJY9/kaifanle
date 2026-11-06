@@ -675,6 +675,11 @@ async function createCoupon(payload, openid) {
     throw new Error('券名需要 1-20 个字')
   }
   const note = String((payload && payload.note) || '').trim().slice(0, 40)
+  const expiresInDaysRaw = Number((payload && payload.expiresInDays) || 0)
+  const expiresInDays =
+    isFinite(expiresInDaysRaw) && expiresInDaysRaw > 0
+      ? Math.min(365, Math.floor(expiresInDaysRaw))
+      : 0
   await ensureCollection('coupons')
   const now = Date.now()
   const coupon = {
@@ -684,7 +689,8 @@ async function createCoupon(payload, openid) {
     owner: '',
     createdAt: now,
     claimedAt: 0,
-    usedAt: 0
+    usedAt: 0,
+    expiresAt: expiresInDays ? now + expiresInDays * 24 * 60 * 60 * 1000 : 0
   }
   const addRes = await db.collection('coupons').add({ data: coupon })
   return withId(Object.assign({}, coupon, { _id: addRes._id }))
@@ -740,6 +746,9 @@ async function claimCoupon(payload, openid) {
   if (coupon.owner && coupon.owner !== openid) {
     throw new Error('这张券已经被领走了')
   }
+  if (coupon.expiresAt && Number(coupon.expiresAt) < Date.now()) {
+    throw new Error('这张券过期了')
+  }
   if (!coupon.owner) {
     // 手里的未使用券太多时先别领，避免把券池占满
     const held = await db
@@ -778,6 +787,9 @@ async function useCoupon(payload, openid) {
   }
   if (coupon.status === 'used') {
     throw new Error('这张券已经用掉了')
+  }
+  if (coupon.expiresAt && Number(coupon.expiresAt) < Date.now()) {
+    throw new Error('这张券过期了')
   }
   const usedAt = Date.now()
   // 条件更新：并发下同一张券只会被用掉一次

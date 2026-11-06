@@ -29,6 +29,15 @@
       maxlength="40"
       bindinput="onNote"
     />
+    <view class="preset-row">
+      <view
+        wx:for="{{expiryOptions}}"
+        wx:key="days"
+        class="preset-chip {{expiryDays === item.days ? 'active' : ''}}"
+        data-days="{{item.days}}"
+        bindtap="onExpiry"
+      >{{item.label}}</view>
+    </view>
     <view
       class="create-btn {{creating ? 'disabled' : ''}}"
       bindtap="onCreate"
@@ -45,7 +54,10 @@
       </view>
       <view wx:if="{{item.note}}" class="coupon-note">{{item.note}}</view>
       <view class="coupon-foot">
-        <text class="coupon-date">{{item.dateText}}</text>
+        <view class="coupon-dates">
+          <text class="coupon-date">{{item.dateText}}</text>
+          <text wx:if="{{item.expiryText}}" class="coupon-date">{{item.expiryText}}</text>
+        </view>
         <view class="coupon-actions">
           <view
             wx:if="{{item.canClaim}}"

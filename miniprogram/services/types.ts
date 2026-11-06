@@ -235,6 +235,7 @@ export interface Coupon {
   createdAt: number
   claimedAt: number
   usedAt: number
+  expiresAt?: number
 }
 
 export interface DailyMenu {

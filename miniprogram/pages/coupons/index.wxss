@@ -63,6 +63,16 @@
   background: #FFD23F;
 }
 
+.preset-chip.active {
+  background: #FFD23F;
+}
+
+.coupon-dates {
+  display: flex;
+  flex-direction: column;
+  gap: 2rpx;
+}
+
 .create-btn {
   display: flex;
   align-items: center;

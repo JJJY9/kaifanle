@@ -440,6 +440,7 @@ export async function rollMenu(): Promise<any> {
 export async function createCoupon(payload: {
   title: string
   note: string
+  expiresInDays?: number
 }): Promise<Coupon> {
   if (USE_CLOUD) {
     return callApi<Coupon>('createCoupon', payload)

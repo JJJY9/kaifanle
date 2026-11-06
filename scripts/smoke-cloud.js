@@ -1693,6 +1693,26 @@ async function run() {
   res = await call('deleteCoupon', { id: couponId }, 'admin-openid')
   assert.strictEqual(res.ok, true)
 
+  // 过期券不能领取，也不能使用
+  res = await call(
+    'createCoupon',
+    { title: '过期券', note: '', expiresInDays: 1 },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.ok(Number(res.data.expiresAt) > Date.now())
+  const expiredId = res.data.id
+  const expiredDoc = ensure('coupons').get(expiredId)
+  expiredDoc.expiresAt = Date.now() - 1000
+  res = await call('claimCoupon', { id: expiredId }, 'expired-openid')
+  assert.strictEqual(res.ok, false)
+  assert.ok(String(res.error).indexOf('过期') > -1)
+  expiredDoc.owner = 'expired-openid'
+  res = await call('useCoupon', { id: expiredId }, 'expired-openid')
+  assert.strictEqual(res.ok, false)
+  assert.ok(String(res.error).indexOf('过期') > -1)
+  await call('deleteCoupon', { id: expiredId }, 'admin-openid')
+
   // 未使用的券最多同时持有 5 张
   const hoardedIds = []
   for (let i = 0; i < 6; i++) {
