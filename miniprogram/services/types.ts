@@ -122,6 +122,7 @@ export interface CreateOrderPayload {
   note: string
   address?: string
   scheduledDate?: string
+  requestId?: string
 }
 
 export interface MeInfo {

@@ -90,6 +90,7 @@ node scripts/init-cloud-db.js ws://127.0.0.1:9420
 数据量变大后建议在云开发控制台加这些索引（集合 → 索引管理）：
 
 - `orders`：`_openid`（升序）+ `createdAt`（降序）
+- `orders`：`_openid`（升序）+ `requestId`（升序，下单幂等去重）
 - `orders`：`status`（升序）+ `createdAt`（降序）
 - `orders`：`createdAt`（降序）、`scheduledDate`（升序）
 - `dishes`：`sort`（升序）

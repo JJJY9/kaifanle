@@ -65,6 +65,12 @@ Page({
   _closedSeq: 0,
   _slotSeq: 0,
   _slotInvalid: {} as Record<string, string>,
+  _requestId: '',
+
+  newRequestId() {
+    this._requestId =
+      'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
+  },
 
   onLoad(options: any) {
     if (!cart.getLines().length) {
@@ -95,6 +101,7 @@ Page({
     this.checkClosed(meal)
     this.checkSlot(meal, scheduledDate)
     this.loadProfile()
+    this.newRequestId()
   },
 
   applySlot(meal: MealId): any[] {
@@ -258,6 +265,7 @@ Page({
     }
     this._slotInvalid = {}
     const lines = buildLines(meal)
+    this.newRequestId()
     this.setData(
       {
         meal,
@@ -288,6 +296,7 @@ Page({
       return
     }
     const date = e.detail.value
+    this.newRequestId()
     this.setData(
       {
         scheduledDate: date,
@@ -322,6 +331,7 @@ Page({
     if (this.data.submitting) {
       return
     }
+    this.newRequestId()
     const key = e.currentTarget.dataset.key
     cart.remove(key)
     if (!cart.getLines().length) {
@@ -340,6 +350,7 @@ Page({
     if (this.data.submitting) {
       return
     }
+    this.newRequestId()
     const key = e.currentTarget.dataset.key
     const delta = Number(e.currentTarget.dataset.delta)
     cart.changeQty(key, delta)
@@ -404,6 +415,7 @@ Page({
     const expectedTime = this.data.timeOptions[this.data.timeIndex]
     const note = this.data.note.trim()
     const address = this.data.address.trim()
+    const requestId = this._requestId
     this.setData({ submitting: true })
 
     // 一次性订阅：授权后，出锅时会给顾客发一条提醒。
@@ -434,7 +446,8 @@ Page({
         mode,
         note,
         address,
-        scheduledDate
+        scheduledDate,
+        requestId
       })
       cart.clearMeal(meal)
       wx.redirectTo({ url: `/pages/order-detail/index?id=${order.id}` })
