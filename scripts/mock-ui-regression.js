@@ -1081,6 +1081,26 @@ function invoke(mp, body) {
       ? `${data.report.totalOrders} 单 / ¥${data.report.revenue}`
       : '没有数据'
   )
+  const weekSum = list =>
+    Number(
+      list.reduce((sum, day) => sum + Number(day.amount || 0), 0).toFixed(2)
+    )
+  const weekCount = list =>
+    list.reduce((sum, day) => sum + Number(day.count || 0), 0)
+  const reportDaily = (data.report && data.report.daily) || []
+  const lastWeek = reportDaily.slice(-7)
+  const prevWeek = reportDaily.slice(-14, -7)
+  check(
+    'mock 月报周对比',
+    Boolean(data.compare) &&
+      data.compare.thisRevenue === weekSum(lastWeek) &&
+      data.compare.prevRevenue === weekSum(prevWeek) &&
+      data.compare.thisCount === weekCount(lastWeek) &&
+      data.compare.prevCount === weekCount(prevWeek),
+    data.compare
+      ? `本周 ¥${data.compare.thisRevenue} / 上周 ¥${data.compare.prevRevenue}`
+      : '没有对比'
+  )
   await invoke(mp, 'page.onExport()')
   await sleep(900)
   page = await current()

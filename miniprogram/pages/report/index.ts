@@ -23,6 +23,7 @@ Page({
     bars: [] as BarView[],
     maxAmount: 0,
     health: null as any,
+    compare: null as any,
     exporting: false,
     exportCount: 0,
     exportingFile: false,
@@ -82,7 +83,52 @@ Page({
           : 3,
         showLabel: index % 5 === 0 || index === report.daily.length - 1
       }))
-      this.setData({ report, bars, maxAmount, health, loading: false })
+      const daily = report.daily || []
+      const lastWeek = daily.slice(-7)
+      const prevWeek = daily.slice(-14, -7)
+      const sumAmount = (list: any[]) =>
+        Number(
+          list.reduce((sum, day) => sum + Number(day.amount || 0), 0).toFixed(2)
+        )
+      const sumCount = (list: any[]) =>
+        list.reduce((sum, day) => sum + Number(day.count || 0), 0)
+      const thisRevenue = sumAmount(lastWeek)
+      const prevRevenue = sumAmount(prevWeek)
+      const thisCount = sumCount(lastWeek)
+      const prevCount = sumCount(prevWeek)
+      const percent = (now: number, before: number) =>
+        before > 0 ? Math.round(((now - before) / before) * 100) : null
+      const revenueDelta = percent(thisRevenue, prevRevenue)
+      const countDelta = percent(thisCount, prevCount)
+      const compare = {
+        thisRevenue,
+        prevRevenue,
+        thisCount,
+        prevCount,
+        revenueDelta,
+        countDelta,
+        revenueText:
+          revenueDelta === null
+            ? prevRevenue > 0 || thisRevenue === 0
+              ? '持平'
+              : '上周还没有营收'
+            : `比上周 ${revenueDelta > 0 ? '+' : ''}${revenueDelta}%`,
+        countText:
+          countDelta === null
+            ? prevCount > 0 || thisCount === 0
+              ? '持平'
+              : '上周还没有订单'
+            : `比上周 ${countDelta > 0 ? '+' : ''}${countDelta}%`,
+        trend:
+          revenueDelta === null
+            ? 'flat'
+            : revenueDelta > 0
+            ? 'up'
+            : revenueDelta < 0
+            ? 'down'
+            : 'flat'
+      }
+      this.setData({ report, bars, maxAmount, health, compare, loading: false })
     } catch (e: any) {
       if (seq !== this._loadSeq) {
         return

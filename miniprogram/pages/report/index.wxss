@@ -88,6 +88,65 @@
   font-weight: 700;
 }
 
+.compare {
+  margin-top: 18rpx;
+  padding: 20rpx;
+}
+
+.compare-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+
+.compare-title {
+  font-size: 26rpx;
+  font-weight: 800;
+}
+
+.compare-badge {
+  padding: 4rpx 14rpx;
+  background: #F0F0F0;
+  border: 2rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
+.compare-badge.up {
+  background: #2FBF71;
+}
+
+.compare-badge.down {
+  background: #FFB3C7;
+}
+
+.compare-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-top: 12rpx;
+}
+
+.compare-label {
+  color: #5C5C5C;
+  font-size: 22rpx;
+}
+
+.compare-value {
+  font-size: 26rpx;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.compare-prev {
+  color: #5C5C5C;
+  font-size: 20rpx;
+  font-weight: 600;
+}
+
 .health-card {
   margin-top: 18rpx;
   padding: 18rpx 20rpx;
