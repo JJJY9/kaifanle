@@ -1,3 +1,5 @@
+import { favorites } from '../../store/favorites'
+
 Component({
   properties: {
     visible: { type: Boolean, value: false },
@@ -14,7 +16,8 @@ Component({
     unitPrice: 0,
     totalPrice: 0,
     recipeLines: [] as string[],
-    recipeOpen: false
+    recipeOpen: false,
+    favorite: false
   },
 
   observers: {
@@ -46,7 +49,8 @@ Component({
         unitPrice: dish.price,
         totalPrice: dish.price,
         recipeLines,
-        recipeOpen: false
+        recipeOpen: false,
+        favorite: favorites.has(dish.id)
       })
     },
 
@@ -79,6 +83,19 @@ Component({
 
     onToggleRecipe() {
       this.setData({ recipeOpen: !this.data.recipeOpen })
+    },
+
+    onToggleFavorite() {
+      const dish = this.data.dish
+      if (!dish) {
+        return
+      }
+      const favorite = favorites.toggle(dish.id)
+      this.setData({ favorite })
+      wx.showToast({
+        title: favorite ? '已收藏' : '已取消收藏',
+        icon: 'none'
+      })
     },
 
     onMinus() {

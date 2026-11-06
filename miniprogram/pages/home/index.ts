@@ -6,6 +6,7 @@ import {
   getMenuForDate
 } from '../../services/api'
 import { cart } from '../../store/cart'
+import { favorites } from '../../store/favorites'
 import { MEALS } from '../../utils/constants'
 import { USE_CLOUD } from '../../config'
 import {
@@ -40,11 +41,17 @@ Page({
     keyword: '',
     searchResults: [] as Dish[],
     emptyDesc: '换个餐次看看，或者去许愿池点个菜',
-    emptyAction: ''
+    emptyAction: '',
+    onlyFavorites: false,
+    favoriteCount: 0,
+    favoriteLabel: '♡ 我的收藏'
   },
 
   _unsub: null as null | (() => void),
+  _favUnsub: null as null | (() => void),
   _available: [] as Dish[],
+  _categories: [] as Category[],
+  _baseEmptyDesc: '',
   _loadSeq: 0,
 
   onLoad() {
@@ -65,6 +72,19 @@ Page({
       const total = lines.reduce((sum, line) => sum + line.qty * line.price, 0)
       this.setData({ cartCount: count, cartTotal: total })
     })
+
+    this._favUnsub = favorites.subscribe(ids => {
+      this.setData({
+        favoriteCount: ids.length,
+        favoriteLabel: `♡ 我的收藏${ids.length ? ' ' + ids.length : ''}`
+      })
+      if (this.data.onlyFavorites) {
+        this.renderSections()
+        this.setData({
+          searchResults: this.filterDishes(this.data.keyword)
+        })
+      }
+    })
   },
 
   onShow() {
@@ -82,6 +102,10 @@ Page({
     if (this._unsub) {
       this._unsub()
       this._unsub = null
+    }
+    if (this._favUnsub) {
+      this._favUnsub()
+      this._favUnsub = null
     }
   },
 
@@ -111,23 +135,14 @@ Page({
           dish.meals.indexOf(meal) > -1 &&
           (!menuActive || menu!.dishIds.indexOf(dish.id) > -1)
       )
-      const sections = categories
-        .map(category => ({
-          ...category,
-          dishes: available
-            .filter(dish => dish.categoryId === category.id)
-            .sort((a, b) => {
-              // 卖完的菜排到分类末尾，别挡着能点的
-              const rank = (dish: Dish) =>
-                dish.status === 'soldout' || dish.stock === 0 ? 1 : 0
-              return rank(a) - rank(b)
-            })
-        }))
-        .filter(section => section.dishes.length > 0)
-      const hero =
-        available.find(dish => dish.isRecommended) || available[0] || null
-
       this._available = available
+      this._categories = categories
+      this._baseEmptyDesc =
+        USE_CLOUD && available.length === 0
+          ? menuActive
+            ? '这一餐还没排菜单，晚点再来看看'
+            : '云数据库可能还没初始化，去「我的」看一眼'
+          : '换个餐次看看，或者去许愿池点个菜'
 
       let isOpen = isOpenNow()
       let mealNotice = ''
@@ -159,22 +174,16 @@ Page({
           : ''
       }
 
-      this.setData({
-        sections,
-        hero,
-        loading: false,
-        isOpen,
-        mealNotice,
-        notice: business && business.notice ? business.notice : '',
-        searchResults: this.filterDishes(this.data.keyword),
-        emptyAction: sections.length ? '' : '去许愿',
-        emptyDesc:
-          USE_CLOUD && sections.length === 0
-            ? menuActive
-              ? '这一餐还没排菜单，晚点再来看看'
-              : '云数据库可能还没初始化，去「我的」看一眼'
-            : '换个餐次看看，或者去许愿池点个菜'
-      })
+      this.setData(
+        {
+          loading: false,
+          isOpen,
+          mealNotice,
+          notice: business && business.notice ? business.notice : '',
+          searchResults: this.filterDishes(this.data.keyword)
+        },
+        () => this.renderSections()
+      )
     } catch (e: any) {
       if (seq !== this._loadSeq) {
         return
@@ -207,6 +216,56 @@ Page({
     this.setData({ selectedMeal: meal }, () => this.loadMenu())
   },
 
+  renderSections() {
+    const pool = this.data.onlyFavorites
+      ? favorites.filter(this._available)
+      : this._available
+    const sections = this._categories
+      .map(category => ({
+        ...category,
+        dishes: pool
+          .filter(dish => dish.categoryId === category.id)
+          .sort((a, b) => {
+            // 卖完的菜排到分类末尾，别挡着能点的
+            const rank = (dish: Dish) =>
+              dish.status === 'soldout' || dish.stock === 0 ? 1 : 0
+            return rank(a) - rank(b)
+          })
+      }))
+      .filter(section => section.dishes.length > 0)
+    const hero =
+      pool.find(dish => dish.isRecommended) || pool[0] || null
+    const empty = sections.length === 0
+    this.setData({
+      sections,
+      hero,
+      emptyDesc:
+        empty && this.data.onlyFavorites
+          ? '还没有收藏，点开菜品点右上角的 ♡ 收藏'
+          : this._baseEmptyDesc,
+      emptyAction: empty
+        ? this.data.onlyFavorites
+          ? '看看全部'
+          : '去许愿'
+        : ''
+    })
+  },
+
+  onToggleFavorites() {
+    this.setData({ onlyFavorites: !this.data.onlyFavorites }, () => {
+      this.renderSections()
+      this.setData({ searchResults: this.filterDishes(this.data.keyword) })
+    })
+  },
+
+  onEmptyAction() {
+    if (this.data.onlyFavorites) {
+      this.setData({ onlyFavorites: false }, () => this.renderSections())
+      return
+    }
+    wx.navigateTo({ url: '/pages/wishes/index' })
+  },
+
   filterDishes(keyword: string): Dish[] {
     const kw = String(keyword || '')
       .trim()
@@ -214,7 +273,10 @@ Page({
     if (!kw) {
       return []
     }
-    return this._available.filter(dish => {
+    const pool = this.data.onlyFavorites
+      ? favorites.filter(this._available)
+      : this._available
+    return pool.filter(dish => {
       const haystack = [dish.name, dish.desc]
         .concat(dish.tags || [])
         .join(' ')
@@ -331,10 +393,6 @@ Page({
     wx.navigateTo({
       url: `/pages/checkout/index?meal=${this.data.selectedMeal}`
     })
-  },
-
-  onGoWish() {
-    wx.navigateTo({ url: '/pages/wishes/index' })
   },
 
   onPullDownRefresh() {

@@ -225,6 +225,26 @@
   margin-top: 32rpx;
 }
 
+.fav-row {
+  display: flex;
+  margin-top: 14rpx;
+}
+
+.fav-chip {
+  padding: 8rpx 22rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
+.fav-chip.active {
+  background: #FF5C8A;
+  box-shadow: 3rpx 3rpx 0 #111111;
+  transform: rotate(-1deg);
+}
+
 .hero {
   margin-top: 32rpx;
   background: #FFFFFF;

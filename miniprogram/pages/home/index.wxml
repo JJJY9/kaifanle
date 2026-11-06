@@ -44,6 +44,13 @@
       />
       <view wx:if="{{keyword}}" class="search-clear" bindtap="onClearSearch">×</view>
     </view>
+
+    <view class="fav-row">
+      <view
+        class="fav-chip {{onlyFavorites ? 'active' : ''}}"
+        bindtap="onToggleFavorites"
+      >{{favoriteLabel}}</view>
+    </view>
   </view>
 
   <view wx:if="{{loading}}" class="loading">
@@ -114,7 +121,7 @@
     title="这一餐还没开火"
     desc="{{emptyDesc}}"
     actionText="{{emptyAction}}"
-    bind:action="onGoWish"
+    bind:action="onEmptyAction"
   />
 </view>
 

@@ -111,6 +111,34 @@
   line-height: 1.2;
 }
 
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.name-row .name {
+  flex: 1;
+  min-width: 0;
+}
+
+.fav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56rpx;
+  height: 56rpx;
+  background: #FFFDF6;
+  border: 3rpx solid #111111;
+  border-radius: 50%;
+  font-size: 30rpx;
+  line-height: 1;
+}
+
+.fav.on {
+  background: #FF5C8A;
+}
+
 .desc {
   margin-top: 6rpx;
   color: #5C5C5C;

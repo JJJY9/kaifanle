@@ -14,7 +14,13 @@
         <text wx:else class="media-char">{{dish.emoji || dish.char}}</text>
       </view>
       <view class="head-info">
-        <view class="name">{{dish.name}}</view>
+        <view class="name-row">
+          <view class="name">{{dish.name}}</view>
+          <view
+            class="fav {{favorite ? 'on' : ''}}"
+            catchtap="onToggleFavorite"
+          >{{favorite ? '♥' : '♡'}}</view>
+        </view>
         <view class="desc">{{dish.desc}}</view>
         <view class="tags">
           <text wx:for="{{dish.tags}}" wx:key="*this" class="tag">{{item}}</text>
