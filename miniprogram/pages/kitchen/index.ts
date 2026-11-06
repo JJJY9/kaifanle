@@ -106,7 +106,7 @@ Page({
     weekStats: null as any,
     weekBars: [] as any[],
     weekBarTotal: 0,
-    todo: { pending: 0, replies: 0, lowStock: 0 },
+    todo: { pending: 0, replies: 0, lowStock: 0, preorders: 0 },
     dishKeyword: '',
     dishFilter: 'all' as 'all' | 'low' | 'soldout' | 'off' | 'missing',
     dishCategory: 'all',
@@ -537,9 +537,14 @@ Page({
       }
 
       const todo = silent
-        ? { ...this.data.todo, pending: active.length }
+        ? {
+            ...this.data.todo,
+            pending: active.length,
+            preorders: preorderOrders.length
+          }
         : {
             pending: active.length,
+            preorders: preorderOrders.length,
             replies: orders
               .filter(
                 order =>
@@ -1082,6 +1087,12 @@ Page({
           wx.pageScrollTo({ selector: '#history-section', duration: 300 })
         }
       )
+      return
+    }
+    if (target === 'preorders') {
+      this.setData({ showPreorders: true }, () => {
+        wx.pageScrollTo({ selector: '#preorder-section', duration: 300 })
+      })
       return
     }
     const selector =

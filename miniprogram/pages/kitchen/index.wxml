@@ -75,6 +75,10 @@
           <text class="todo-num">{{todo.lowStock}}</text>
           <text class="todo-label">快卖完了</text>
         </view>
+        <view wx:if="{{todo.preorders}}" class="todo-item preorders" data-target="preorders" bindtap="onTodoTap">
+          <text class="todo-num">{{todo.preorders}}</text>
+          <text class="todo-label">未来预订</text>
+        </view>
       </view>
     </view>
 
@@ -125,7 +129,7 @@
       </block>
     </view>
 
-    <view wx:if="{{preorders.length}}" class="preorder card">
+    <view wx:if="{{preorders.length}}" class="preorder card" id="preorder-section">
       <view class="preorder-head" bindtap="onTogglePreorders">
         <view class="prep-text">
           <view class="prep-title">未来预订</view>

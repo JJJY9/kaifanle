@@ -190,6 +190,11 @@
   color: #FFFFFF;
 }
 
+.todo-item.preorders {
+  background: #2FBF71;
+  color: #FFFFFF;
+}
+
 .todo-item:active {
   transform: translate(3rpx, 3rpx);
   box-shadow: none;

@@ -422,6 +422,12 @@ function invoke(mp, body) {
       (preorder.itemLines || []).length >= 1,
     preorder ? `${preorder.dateText} · ${preorder.summary}` : '没有预订单'
   )
+  check(
+    'mock 预订待办数',
+    Number((data.todo || {}).preorders) === (data.preorders || []).length &&
+      Number((data.todo || {}).preorders) >= 1,
+    `待办 ${(data.todo || {}).preorders} 单`
+  )
   await invoke(mp, 'page.onTogglePreorders()')
   await sleep(300)
   page = await current()
