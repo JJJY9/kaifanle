@@ -44,6 +44,12 @@
       <text>好评率 {{report.goodRate}}%</text>
     </view>
 
+    <view
+      class="export-btn {{exporting ? 'disabled' : ''}}"
+      bindtap="onExport"
+    >{{exporting ? '导出中…' : '复制订单 CSV'}}</view>
+    <view wx:if="{{exportCount}}" class="export-hint">已复制最近 {{exportCount}} 单，可以直接粘贴到表格</view>
+
     <view class="chart card">
       <view class="chart-head">
         <view class="chart-title">每天营收</view>

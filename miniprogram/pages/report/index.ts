@@ -1,5 +1,6 @@
 import type { KitchenReport } from '../../services/types'
-import { getKitchenReport } from '../../services/api'
+import { getAllOrders, getKitchenReport } from '../../services/api'
+import { ordersToCsv } from '../../utils/orders-csv'
 
 interface BarView {
   date: string
@@ -15,7 +16,9 @@ Page({
     error: '',
     report: null as KitchenReport | null,
     bars: [] as BarView[],
-    maxAmount: 0
+    maxAmount: 0,
+    exporting: false,
+    exportCount: 0
   },
 
   _loadSeq: 0,
@@ -63,5 +66,30 @@ Page({
 
   onRetry() {
     this.load()
+  },
+
+  async onExport() {
+    if (this.data.exporting) {
+      return
+    }
+    this.setData({ exporting: true })
+    try {
+      const orders = await getAllOrders()
+      const csv = ordersToCsv(orders)
+      this.setData({ exporting: false, exportCount: orders.length })
+      wx.setClipboardData({
+        data: csv,
+        fail: () => {
+          this.setData({ exportCount: 0 })
+          wx.showToast({ title: '复制失败，再试一次', icon: 'none' })
+        }
+      })
+    } catch (e: any) {
+      this.setData({ exporting: false })
+      wx.showToast({
+        title: String((e && e.message) || '导出失败').slice(0, 40),
+        icon: 'none'
+      })
+    }
   }
 })

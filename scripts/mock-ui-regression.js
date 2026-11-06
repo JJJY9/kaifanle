@@ -629,6 +629,15 @@ function invoke(mp, body) {
       ? `${data.report.totalOrders} 单 / ¥${data.report.revenue}`
       : '没有数据'
   )
+  await invoke(mp, 'page.onExport()')
+  await sleep(900)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 订单 CSV 导出',
+    Number(data.exportCount) >= 1,
+    `导出 ${data.exportCount} 单`
+  )
   await mp.navigateBack()
   await sleep(600)
 

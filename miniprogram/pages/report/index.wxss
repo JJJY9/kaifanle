@@ -88,6 +88,36 @@
   font-weight: 700;
 }
 
+.export-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 80rpx;
+  margin-top: 18rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  box-shadow: 4rpx 4rpx 0 #111111;
+  font-size: 24rpx;
+  font-weight: 800;
+}
+
+.export-btn:active {
+  transform: translate(4rpx, 4rpx);
+  box-shadow: none;
+}
+
+.export-btn.disabled {
+  opacity: 0.6;
+}
+
+.export-hint {
+  margin-top: 8rpx;
+  color: #5C5C5C;
+  font-size: 20rpx;
+  text-align: center;
+}
+
 .chart {
   margin-top: 20rpx;
   padding: 20rpx;
