@@ -698,6 +698,21 @@ function invoke(mp, body) {
   await mp.navigateBack()
   await sleep(600)
 
+  // 干饭足迹
+  await mp.navigateTo('/pages/my-report/index')
+  await sleep(1800)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 干饭足迹加载',
+    Number(data.monthOrders) >= 1 &&
+      (data.topDishes || []).length >= 1 &&
+      Boolean(data.monthText),
+    `${data.monthText} · ${data.monthOrders} 单`
+  )
+  await mp.navigateBack()
+  await sleep(600)
+
   const failed = results.filter(r => !r.ok)
   console.log(`\n结论：${results.length - failed.length}/${results.length} 通过`)
   await mp.disconnect()

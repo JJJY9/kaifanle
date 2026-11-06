@@ -19,7 +19,8 @@
     "pages/recipe-list/index",
     "pages/week-menus/index",
     "pages/reviews/index",
-    "pages/report/index"
+    "pages/report/index",
+    "pages/my-report/index"
   ],
   "window": {
     "navigationBarBackgroundColor": "#FFFDF6",

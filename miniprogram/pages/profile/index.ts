@@ -67,6 +67,13 @@ Page({
         color: '#2FBF71'
       },
       {
+        key: 'footprint',
+        label: '干饭足迹',
+        desc: '本月吃了多少、最爱哪道菜',
+        icon: '饭',
+        color: '#FF6B35'
+      },
+      {
         key: 'prefs',
         label: '口味与地址',
         desc: '忌口、口味、常用地址',
@@ -193,6 +200,11 @@ Page({
 
     if (key === 'reviews') {
       wx.navigateTo({ url: '/pages/reviews/index' })
+      return
+    }
+
+    if (key === 'footprint') {
+      wx.navigateTo({ url: '/pages/my-report/index' })
       return
     }
 

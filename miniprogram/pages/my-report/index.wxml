@@ -1,0 +1,69 @@
+<view class="page">
+  <view class="head">
+    <view class="title-row">
+      <text class="title display">干饭足迹</text>
+      <view class="sticker">本月</view>
+    </view>
+    <text class="sub">{{monthText}} · 她吃过的都算数</text>
+  </view>
+
+  <view wx:if="{{loading}}" class="loading">
+    <view class="skeleton sk-card"></view>
+    <view class="skeleton sk-card"></view>
+  </view>
+
+  <empty-state
+    wx:elif="{{error}}"
+    title="足迹加载失败"
+    desc="{{error}}"
+    actionText="再试一次"
+    bind:action="onRetry"
+  />
+
+  <block wx:else>
+    <view class="stats-card card">
+      <view class="stat">
+        <text class="stat-num">{{monthOrders}}</text>
+        <text class="stat-label">本月干饭</text>
+      </view>
+      <view class="divider"></view>
+      <view class="stat">
+        <text class="stat-num">¥{{monthSpend}}</text>
+        <text class="stat-label">本月花费</text>
+      </view>
+      <view class="divider"></view>
+      <view class="stat">
+        <text class="stat-num">{{totalOrders}}</text>
+        <text class="stat-label">累计干饭</text>
+      </view>
+    </view>
+
+    <view wx:if="{{favorite}}" class="favorite-card card">
+      <text class="favorite-label">最常点</text>
+      <text class="favorite-name">{{favorite}}</text>
+    </view>
+
+    <view wx:if="{{ratedCount}}" class="rating-line card">
+      <text>本月评价 {{ratedCount}} 条</text>
+      <text>平均 {{avgRating}} 分</text>
+    </view>
+
+    <view class="section-title display">本月 C 位菜</view>
+    <view wx:if="{{!topDishes.length}}" class="empty-line">这个月还没开饭，去首页点一顿吧</view>
+    <view wx:for="{{topDishes}}" wx:key="name" class="dish-row card">
+      <view class="rank {{index < 3 ? 'top' : ''}}">{{index + 1}}</view>
+      <view class="dish-info">
+        <view class="dish-name">{{item.name}}</view>
+        <view class="dish-sub">吃了 {{item.qty}} 份 · ¥{{item.amount}}</view>
+      </view>
+      <view class="dish-bar-wrap">
+        <view
+          class="dish-bar"
+          style="width: {{topDishes[0].qty ? (item.qty / topDishes[0].qty * 100) : 0}}%;"
+        ></view>
+      </view>
+    </view>
+
+    <view class="foot-btn" bindtap="onGoOrders">看全部订单 →</view>
+  </block>
+</view>
