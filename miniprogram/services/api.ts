@@ -99,20 +99,21 @@ function decorateDish(dish: Dish): Dish {
 }
 
 const DISH_CACHE_KEY = 'kfl_dishes_cache_v1'
+const DISH_CACHE_TTL = 60 * 1000
 
-function readDishCache(): Dish[] {
+function readDishCache(): { data: Dish[]; at: number } {
   try {
     const raw = wx.getStorageSync(DISH_CACHE_KEY)
     if (raw) {
       const parsed = JSON.parse(raw)
       if (parsed && Array.isArray(parsed.data) && parsed.data.length) {
-        return parsed.data
+        return { data: parsed.data, at: Number(parsed.at || 0) }
       }
     }
   } catch (e) {
     // 缓存损坏时忽略
   }
-  return []
+  return { data: [], at: 0 }
 }
 
 function writeDishCache(dishes: Dish[]) {
@@ -126,8 +127,20 @@ function writeDishCache(dishes: Dish[]) {
   }
 }
 
+function invalidateDishCache() {
+  try {
+    wx.removeStorageSync(DISH_CACHE_KEY)
+  } catch (e) {
+    // 忽略
+  }
+}
+
 export async function getDishes(): Promise<Dish[]> {
   if (USE_CLOUD) {
+    const cached = readDishCache()
+    if (cached.data.length && Date.now() - cached.at < DISH_CACHE_TTL) {
+      return cached.data
+    }
     try {
       const data = await callApi<Dish[]>('getDishes')
       const decorated = (data || []).map(decorateDish)
@@ -135,9 +148,8 @@ export async function getDishes(): Promise<Dish[]> {
       return decorated
     } catch (e) {
       // 云端读取失败（例如额度用尽）时，退回上次成功的菜单缓存
-      const cached = readDishCache()
-      if (cached.length) {
-        return cached
+      if (cached.data.length) {
+        return cached.data
       }
       throw e
     }
@@ -152,7 +164,7 @@ export async function getDish(id: string): Promise<Dish | null> {
       const data = await callApi<Dish | null>('getDish', { id })
       return data ? decorateDish(data) : null
     } catch (e) {
-      const cached = readDishCache().find(item => item.id === id)
+      const cached = readDishCache().data.find(item => item.id === id)
       if (cached) {
         return cached
       }
@@ -165,14 +177,18 @@ export async function getDish(id: string): Promise<Dish | null> {
 
 export async function toggleDishStatus(id: string): Promise<Dish | null> {
   if (USE_CLOUD) {
-    return callApi<Dish | null>('toggleDishStatus', { id })
+    const result = await callApi<Dish | null>('toggleDishStatus', { id })
+    invalidateDishCache()
+    return result
   }
   return mock.toggleDishStatus(id)
 }
 
 export async function saveDish(payload: DishInput): Promise<Dish> {
   if (USE_CLOUD) {
-    return callApi<Dish>('saveDish', payload)
+    const result = await callApi<Dish>('saveDish', payload)
+    invalidateDishCache()
+    return result
   }
   return mock.saveDish(payload)
 }
@@ -182,13 +198,21 @@ export async function moveDish(
   direction: 'up' | 'down'
 ): Promise<{ moved: boolean }> {
   if (USE_CLOUD) {
-    return callApi<{ moved: boolean }>('moveDish', { id, direction })
+    const result = await callApi<{ moved: boolean }>('moveDish', {
+      id,
+      direction
+    })
+    invalidateDishCache()
+    return result
   }
   return mock.moveDish(id, direction)
 }
 
-export async function deleteDish(id: string): Promise<{ id: string }> {  if (USE_CLOUD) {
-    return callApi<{ id: string }>('deleteDish', { id })
+export async function deleteDish(id: string): Promise<{ id: string }> {
+  if (USE_CLOUD) {
+    const result = await callApi<{ id: string }>('deleteDish', { id })
+    invalidateDishCache()
+    return result
   }
   return mock.deleteDish(id)
 }
