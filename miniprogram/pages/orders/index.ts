@@ -28,10 +28,16 @@ Page({
     this.load()
   },
 
+  _loadSeq: 0,
+
   async load() {
+    const seq = ++this._loadSeq
     this.setData({ error: '' })
     try {
       const orders = await getOrders()
+      if (seq !== this._loadSeq) {
+        return
+      }
       const view = orders.map(order => ({
         ...order,
         statusText: STATUS_TEXT[order.status],
@@ -62,6 +68,9 @@ Page({
         this.applyFilter()
       )
     } catch (e: any) {
+      if (seq !== this._loadSeq) {
+        return
+      }
       this.setData({
         loading: false,
         error: String(

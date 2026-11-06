@@ -50,6 +50,7 @@ Page({
   _statsAt: 0,
   _rawOrders: [] as any[],
   _replyModalOpen: false as boolean,
+  _lastPollErrorAt: 0,
   _loadSeq: 0,
 
   onShow() {
@@ -458,7 +459,15 @@ Page({
         error: ''
       })
     } catch (e: any) {
-      if (silent || seq !== this._loadSeq) {
+      if (seq !== this._loadSeq) {
+        return
+      }
+      if (silent) {
+        // 轮询失败不打断页面，但每 5 分钟最多提醒一次
+        if (Date.now() - this._lastPollErrorAt > 5 * 60 * 1000) {
+          this._lastPollErrorAt = Date.now()
+          wx.showToast({ title: '刷新失败，稍后自动重试', icon: 'none' })
+        }
         return
       }
       this.setData({

@@ -42,6 +42,8 @@ Page({
     searchResults: [] as Dish[],
     emptyDesc: '换个餐次看看，或者去许愿池点个菜',
     emptyAction: '',
+    emptyTitle: '这一餐还没开火',
+    loadFailed: false,
     onlyFavorites: false,
     favoriteCount: 0,
     favoriteLabel: '♡ 我的收藏'
@@ -199,6 +201,8 @@ Page({
       this.setData(
         {
           loading: false,
+          loadFailed: false,
+          emptyTitle: '这一餐还没开火',
           isOpen,
           mealNotice,
           notice: business && business.notice ? business.notice : '',
@@ -217,9 +221,17 @@ Page({
         message.indexOf('EXCEED_REQUEST_LIMIT') > -1 ||
         message.indexOf('quota') > -1 ||
         message.indexOf('exceed request limit') > -1
+      // 失败时清掉上一餐次/上一次成功加载的菜，避免旧菜单挂在新餐次下面
+      this._available = []
+      this._baseEmptyDesc = ''
       this.setData({
         loading: false,
-        emptyAction: '',
+        loadFailed: true,
+        emptyTitle: '菜单加载失败',
+        sections: [],
+        hero: null,
+        searchResults: [],
+        emptyAction: '再试一次',
         emptyDesc: quotaExceeded
           ? '今天的云端读取额度用完了，0 点后自动恢复'
           : USE_CLOUD
@@ -296,6 +308,10 @@ Page({
   },
 
   onEmptyAction() {
+    if (this.data.loadFailed) {
+      this.loadMenu()
+      return
+    }
     if (this.data.onlyFavorites) {
       this.setData({ onlyFavorites: false }, () => this.renderSections())
       return

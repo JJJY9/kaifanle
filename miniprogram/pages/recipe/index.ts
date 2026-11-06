@@ -15,7 +15,16 @@ Page({
 
   onLoad(options: any) {
     this.dishId = options.id || ''
+    this.setData({
+      favorite: this.dishId ? favorites.has(this.dishId) : false
+    })
     this.load()
+  },
+
+  onShow() {
+    if (this.dishId) {
+      this.setData({ favorite: favorites.has(this.dishId) })
+    }
   },
 
   async load() {
