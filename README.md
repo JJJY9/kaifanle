@@ -91,6 +91,8 @@ node scripts/init-cloud-db.js ws://127.0.0.1:9420
 
 - `orders`：`_openid`（升序）+ `createdAt`（降序）
 - `orders`：`_openid`（升序）+ `requestId`（升序，下单幂等去重）
+- `orders`：`_openid`（升序）+ `scheduledDate`（升序）+ `status`（升序）
+- `orders`：`status`（升序）+ `scheduledDate`（升序）
 - `orders`：`status`（升序）+ `createdAt`（降序）
 - `orders`：`createdAt`（降序）、`scheduledDate`（升序）
 - `dishes`：`sort`（升序）

@@ -18,6 +18,7 @@ interface CartGroupView {
   meal: MealId
   dateText: string
   mealText: string
+  past: boolean
   items: CartItemView[]
   count: number
   total: number
@@ -68,6 +69,7 @@ Page({
           meal: meal as MealId,
           dateText: dateLabel(date, today),
           mealText: mealName(meal as MealId),
+          past: date < today,
           items,
           count: items.reduce((sum, item) => sum + item.qty, 0),
           total: items.reduce((sum, item) => sum + item.lineTotal, 0)

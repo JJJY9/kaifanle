@@ -173,3 +173,9 @@
   transform: translate(3rpx, 3rpx);
   box-shadow: none;
 }
+
+.group-expired {
+  color: #D9431C;
+  font-size: 21rpx;
+  font-weight: 700;
+}

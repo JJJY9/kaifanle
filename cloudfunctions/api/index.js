@@ -1355,18 +1355,39 @@ async function getOrders(openid) {
 
 // 首页「上次吃」：最近一笔今天或更早的非取消订单
 async function getLastOrder(openid) {
-  const res = await db
-    .collection('orders')
-    .where({ _openid: openid })
-    .orderBy('createdAt', 'desc')
-    .limit(10)
-    .get()
   const today = chinaDateString()
-  const order = (res.data || []).find(
-    item =>
-      item.status !== 'cancelled' &&
-      (item.scheduledDate || chinaDateString(item.createdAt)) <= today
-  )
+  const tomorrowStart = chinaStartOfDay() + 24 * 60 * 60 * 1000
+  // 日期条件下推到查询，避免未来预订单占满 limit 后把历史单挤掉
+  const [scheduledRes, legacyRes] = await Promise.all([
+    db
+      .collection('orders')
+      .where({
+        _openid: openid,
+        status: _.neq('cancelled'),
+        scheduledDate: _.lte(today)
+      })
+      .orderBy('createdAt', 'desc')
+      .limit(10)
+      .get(),
+    db
+      .collection('orders')
+      .where({
+        _openid: openid,
+        status: _.neq('cancelled'),
+        scheduledDate: _.exists(false),
+        createdAt: _.lt(tomorrowStart)
+      })
+      .orderBy('createdAt', 'desc')
+      .limit(10)
+      .get()
+  ])
+  const map = {}
+  ;(scheduledRes.data || []).concat(legacyRes.data || []).forEach(order => {
+    map[order._id] = order
+  })
+  const order = Object.keys(map)
+    .map(id => map[id])
+    .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0))[0]
   return order ? withId(order) : null
 }
 
@@ -1446,15 +1467,29 @@ async function exportData(openid) {
 async function acceptPendingOrders(openid) {
   await requireAdmin(openid)
   const today = chinaDateString()
-  const res = await db
-    .collection('orders')
-    .where({ status: 'pending' })
-    .limit(50)
-    .get()
-  const targets = (res.data || []).filter(
-    order =>
-      (order.scheduledDate || chinaDateString(order.createdAt)) <= today
-  )
+  const todayEnd = chinaStartOfDay() + 24 * 60 * 60 * 1000
+  // 日期条件下推到查询，未来预订单不会占满 50 条名额
+  const [scheduledRes, legacyRes] = await Promise.all([
+    db
+      .collection('orders')
+      .where({ status: 'pending', scheduledDate: _.lte(today) })
+      .limit(50)
+      .get(),
+    db
+      .collection('orders')
+      .where({
+        status: 'pending',
+        scheduledDate: _.exists(false),
+        createdAt: _.lt(todayEnd)
+      })
+      .limit(50)
+      .get()
+  ])
+  const map = {}
+  ;(scheduledRes.data || []).concat(legacyRes.data || []).forEach(order => {
+    map[order._id] = order
+  })
+  const targets = Object.keys(map).map(id => map[id])
   let done = 0
   for (const order of targets) {
     const entry = {
@@ -1481,26 +1516,42 @@ async function acceptPendingOrders(openid) {
 
 // 首页「今天这单」：当前用户今天最近的进行中订单
 async function getMyActiveOrder(openid) {
-  const res = await db
-    .collection('orders')
-    .where({
-      _openid: openid,
-      status: _.in(['pending', 'accepted', 'cooking', 'ready'])
-    })
-    .limit(10)
-    .get()
   const today = chinaDateString()
-  const order = (res.data || [])
-    .filter(
-      item =>
-        (item.scheduledDate || chinaDateString(item.createdAt)) === today
-    )
+  const activeStatus = ['pending', 'accepted', 'cooking', 'ready']
+  const [scheduledRes, legacyRes] = await Promise.all([
+    db
+      .collection('orders')
+      .where({
+        _openid: openid,
+        status: _.in(activeStatus),
+        scheduledDate: today
+      })
+      .limit(10)
+      .get(),
+    db
+      .collection('orders')
+      .where({
+        _openid: openid,
+        status: _.in(activeStatus),
+        scheduledDate: _.exists(false),
+        createdAt: _.gte(chinaStartOfDay())
+      })
+      .limit(10)
+      .get()
+  ])
+  const map = {}
+  ;(scheduledRes.data || []).concat(legacyRes.data || []).forEach(order => {
+    map[order._id] = order
+  })
+  const order = Object.keys(map)
+    .map(id => map[id])
     .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0))[0]
   return order ? withId(order) : null
 }
 
 // 厨房轮询专用：只取未完成订单，减少每次刷新读取的文档数
-async function getActiveOrders(openid) {  await requireAdmin(openid)
+async function getActiveOrders(openid) {
+  await requireAdmin(openid)
   const res = await db
     .collection('orders')
     .where({ status: _.in(['pending', 'accepted', 'cooking', 'ready']) })
@@ -1863,7 +1914,13 @@ async function updateOrderNote(payload, openid) {
   }
   await checkContentSafety(openid, note)
   const data = { note, noteUpdatedAt: Date.now() }
-  await db.collection('orders').doc(id).update({ data })
+  const upd = await db
+    .collection('orders')
+    .where({ _id: id, status: _.in(['pending', 'accepted']) })
+    .update({ data })
+  if (!upd.stats || upd.stats.updated !== 1) {
+    throw new Error('订单状态刚刚变了，刷新看看')
+  }
   return withId(Object.assign({}, order, data))
 }
 

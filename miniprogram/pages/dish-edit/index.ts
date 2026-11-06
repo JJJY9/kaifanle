@@ -120,7 +120,9 @@ Page({
       this.setData({
         id: asCopy ? '' : this.data.id,
         isEdit: asCopy ? false : this.data.isEdit,
-        name: asCopy ? `${dish.name}副本`.slice(0, 12) : dish.name,
+        name: asCopy
+          ? dish.name.slice(0, 18) + '副本'
+          : dish.name,
         desc: dish.desc,
         price: String(dish.price),
         stock: String(typeof dish.stock === 'number' ? dish.stock : -1),

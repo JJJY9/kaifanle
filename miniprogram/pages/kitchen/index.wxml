@@ -50,7 +50,7 @@
       </view>
     </view>
 
-    <view wx:if="{{todo.pending || todo.replies || todo.lowStock}}" class="todo-card card">
+    <view wx:if="{{todo.pending || todo.replies || todo.lowStock || todo.preorders}}" class="todo-card card">
       <view class="todo-head">
         <text class="todo-title">今日待办</text>
         <view class="todo-head-right">
