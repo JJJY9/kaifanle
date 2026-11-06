@@ -14,6 +14,8 @@ const STATUS_TEXT: Record<WishStatus, string> = {
   done: '已吃上'
 }
 
+const REPLY_PHRASES = ['收到，安排上', '周末给你做', '再等等我']
+
 Page({
   data: {
     wishes: [] as any[],
@@ -152,10 +154,27 @@ Page({
     }
   },
 
-  async onReply(e: any) {    const id = e.currentTarget.dataset.id
+  async onReply(e: any) {
+    const id = e.currentTarget.dataset.id
+    const wish = (this.data.wishes || []).find((item: any) => item.id === id)
+    let draft = wish && wish.reply ? String(wish.reply) : ''
+    if (!draft) {
+      try {
+        const sheet: any = await wx.showActionSheet({
+          itemList: REPLY_PHRASES.concat('自己写')
+        })
+        const index = Number(sheet.tapIndex)
+        if (index >= 0 && index < REPLY_PHRASES.length) {
+          draft = REPLY_PHRASES[index]
+        }
+      } catch (err) {
+        return
+      }
+    }
     const res: any = await wx.showModal({
       title: '回一句',
       editable: true,
+      content: draft,
       placeholderText: '比如：周末给你做！',
       confirmText: '回复',
       cancelText: '算了'
