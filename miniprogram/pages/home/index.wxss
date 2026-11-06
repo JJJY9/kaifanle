@@ -293,6 +293,7 @@
 
 .fav-row {
   display: flex;
+  gap: 10rpx;
   margin-top: 14rpx;
 }
 

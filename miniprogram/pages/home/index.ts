@@ -57,6 +57,7 @@ Page({
     onlyFavorites: false,
     favoriteCount: 0,
     favoriteLabel: '♡ 我的收藏',
+    onlyAvailable: false,
     spiceFilter: 'all',
     spiceFilters: [] as { key: string; label: string }[]
   },
@@ -375,9 +376,14 @@ Page({
   },
 
   renderSections() {
-    const basePool = this.data.onlyFavorites
+    const favoritePool = this.data.onlyFavorites
       ? favorites.filter(this._available)
       : this._available
+    const basePool = this.data.onlyAvailable
+      ? favoritePool.filter(
+          dish => dish.status !== 'soldout' && dish.stock !== 0
+        )
+      : favoritePool
     // 辣度筛选项按当前可点菜品生成；没有辣度选项的菜按不辣算
     const levelOrder = ['不辣', '微辣', '中辣', '特辣']
     const levels: string[] = []
@@ -449,14 +455,25 @@ Page({
           ? '还没有收藏，点开菜品点右上角的 ♡ 收藏'
           : empty && spiceEmpty
           ? '这个口味暂时没有菜，换一个试试'
+          : empty && this.data.onlyAvailable
+          ? '能点的都卖完啦，看看全部菜吧'
           : this._baseEmptyDesc,
       emptyAction: empty
         ? this.data.onlyFavorites
           ? '看看全部'
           : spiceEmpty
           ? '全部口味'
+          : this.data.onlyAvailable
+          ? '看全部菜'
           : '去许愿'
         : ''
+    })
+  },
+
+  onToggleAvailable() {
+    this.setData({ onlyAvailable: !this.data.onlyAvailable }, () => {
+      this.renderSections()
+      this.setData({ searchResults: this.filterDishes(this.data.keyword) })
     })
   },
 
@@ -495,6 +512,13 @@ Page({
       this.setData({ onlyFavorites: false }, () => this.renderSections())
       return
     }
+    if (this.data.onlyAvailable) {
+      this.setData({ onlyAvailable: false }, () => {
+        this.renderSections()
+        this.setData({ searchResults: this.filterDishes(this.data.keyword) })
+      })
+      return
+    }
     if (this.data.spiceFilter !== 'all') {
       this.setData({ spiceFilter: 'all' }, () => {
         this.renderSections()
@@ -515,8 +539,11 @@ Page({
     const pool = this.data.onlyFavorites
       ? favorites.filter(this._available)
       : this._available
+    const availablePool = this.data.onlyAvailable
+      ? pool.filter(dish => dish.status !== 'soldout' && dish.stock !== 0)
+      : pool
     const spice = this.data.spiceFilter
-    return pool.filter(dish => {
+    return availablePool.filter(dish => {
       if (spice !== 'all') {
         const levels =
           dish.spicyLevels && dish.spicyLevels.length

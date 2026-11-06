@@ -70,6 +70,10 @@
         class="fav-chip {{onlyFavorites ? 'active' : ''}}"
         bindtap="onToggleFavorites"
       >{{favoriteLabel}}</view>
+      <view
+        class="fav-chip {{onlyAvailable ? 'active' : ''}}"
+        bindtap="onToggleAvailable"
+      >只看能点的</view>
     </view>
 
     <scroll-view wx:if="{{spiceFilters.length > 1}}" scroll-x class="spice-row">

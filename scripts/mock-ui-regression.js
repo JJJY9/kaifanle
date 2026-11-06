@@ -260,6 +260,30 @@ function invoke(mp, body) {
     data.spiceFilter === 'all' && (data.sections || []).length > 0,
     `${(data.sections || []).length} 个分类`
   )
+
+  // 只看能点的：隐藏售罄/无库存的菜
+  await invoke(mp, 'page.onToggleAvailable()')
+  await sleep(500)
+  page = await current()
+  data = await page.data()
+  const availableDishes = (data.sections || []).reduce(
+    (acc, section) => acc.concat(section.dishes || []),
+    []
+  )
+  check(
+    'mock 只看能点的',
+    data.onlyAvailable === true &&
+      availableDishes.length > 0 &&
+      availableDishes.every(
+        dish => dish.status !== 'soldout' && dish.stock !== 0
+      ),
+    `${availableDishes.length} 道`
+  )
+  await invoke(mp, 'page.onToggleAvailable()')
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check('mock 只看能点的恢复', data.onlyAvailable === false)
   await mp.navigateTo('/pages/kitchen/index')
   await sleep(2200)
   page = await current()
