@@ -1298,7 +1298,7 @@ function invoke(mp, body) {
   )
   await invoke(
     mp,
-    "page.setData({ notice: '今天只有一锅炖菜', recommendText: '雨天暖胃' })"
+    "page.setData({ notice: '今天只有一锅炖菜', recommendText: '雨天暖胃', noticeUntil: '2099-01-01' })"
   )
   await invoke(mp, 'page.onSave()')
   await sleep(1000)
@@ -1312,11 +1312,28 @@ function invoke(mp, body) {
     data.recommendText === '雨天暖胃' && data.heroTag === '雨天暖胃',
     data.heroTag
   )
+  // 过期公告不再展示
+  await mp.navigateTo('/pages/business/index')
+  await sleep(1200)
+  await invoke(
+    mp,
+    "page.setData({ notice: '过期公告', noticeUntil: '2000-01-01' })"
+  )
+  await invoke(mp, 'page.onSave()')
+  await sleep(1000)
+  await mp.switchTab('/pages/home/index')
+  await sleep(1600)
+  page = await current()
+  data = await page.data()
+  check('mock 过期公告隐藏', data.notice === '', data.notice || '已隐藏')
   // 还原公告与推荐语
   await mp.navigateTo('/pages/business/index')
   await sleep(1200)
   page = await current()
-  await invoke(mp, "page.setData({ notice: '', recommendText: '' })")
+  await invoke(
+    mp,
+    "page.setData({ notice: '', recommendText: '', noticeUntil: '' })"
+  )
   await invoke(mp, 'page.onSave()')
   await sleep(900)
 

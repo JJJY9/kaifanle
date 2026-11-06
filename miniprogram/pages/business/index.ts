@@ -61,6 +61,7 @@ Page({
     mealViews: [] as MealView[],
     closedNote: '',
     notice: '',
+    noticeUntil: '',
     recommendText: '',
     lowStockThreshold: '3',
     dateOptions: [] as DateView[],
@@ -102,6 +103,7 @@ Page({
         mealViews,
         closedNote: business.closedNote,
         notice: business.notice || '',
+        noticeUntil: business.noticeUntil || '',
         recommendText: business.recommendText || '',
         lowStockThreshold: String(
           typeof business.lowStockThreshold === 'number'
@@ -155,6 +157,14 @@ Page({
     this.setData({ notice: e.detail.value })
   },
 
+  onNoticeUntil(e: any) {
+    this.setData({ noticeUntil: e.detail.value })
+  },
+
+  onClearNoticeUntil() {
+    this.setData({ noticeUntil: '' })
+  },
+
   onRecommendText(e: any) {
     this.setData({ recommendText: e.detail.value })
   },
@@ -191,6 +201,9 @@ Page({
       closedNote:
         this.data.closedNote.trim().slice(0, 40) || '今天休息，明天见',
       notice: this.data.notice.trim().slice(0, 60),
+      noticeUntil: /^\d{4}-\d{2}-\d{2}$/.test(this.data.noticeUntil)
+        ? this.data.noticeUntil
+        : '',
       recommendText:
         this.data.recommendText.trim().slice(0, 12) || '今日推荐',
       lowStockThreshold: (() => {

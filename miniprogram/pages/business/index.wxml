@@ -64,6 +64,10 @@
         maxlength="60"
         bindinput="onNotice"
       />
+      <picker mode="date" value="{{noticeUntil}}" bindchange="onNoticeUntil">
+        <view class="note date-line">公告显示到：{{noticeUntil || '长期显示'}}</view>
+      </picker>
+      <view wx:if="{{noticeUntil}}" class="note-hint" bindtap="onClearNoticeUntil">点此改回长期显示</view>
 
       <view class="block-title">首页推荐角标</view>
       <input

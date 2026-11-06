@@ -174,6 +174,7 @@ export interface Business {
   dinner: MealBusiness
   closedNote: string
   notice?: string
+  noticeUntil?: string
   recommendText?: string
   lowStockThreshold?: number
   closedDates?: string[]

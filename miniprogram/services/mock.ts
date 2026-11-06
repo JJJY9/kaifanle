@@ -44,6 +44,7 @@ const DEFAULT_BUSINESS: Business = {
   dinner: { open: true, deadline: '20:00' },
   closedNote: '今天休息，明天见',
   notice: '',
+  noticeUntil: '',
   recommendText: '今日推荐',
   lowStockThreshold: 3,
   closedDates: [],
@@ -377,6 +378,11 @@ function loadBusiness(): Business {
       businessCache.lowStockThreshold = normalizeLowStockThreshold(
         businessCache.lowStockThreshold
       )
+      businessCache.noticeUntil = /^\d{4}-\d{2}-\d{2}$/.test(
+        String(businessCache.noticeUntil || '')
+      )
+        ? String(businessCache.noticeUntil)
+        : ''
       saveBusiness()
       return businessCache as Business
     }
@@ -1520,6 +1526,11 @@ export async function getBusiness(): Promise<Business> {
   data.lowStockThreshold = normalizeLowStockThreshold(
     data.lowStockThreshold
   )
+  data.noticeUntil = /^\d{4}-\d{2}-\d{2}$/.test(
+    String(data.noticeUntil || '')
+  )
+    ? String(data.noticeUntil)
+    : ''
   return data
 }
 
@@ -1530,9 +1541,17 @@ export async function updateBusiness(payload: Business): Promise<Business> {
   if (next.lowStockThreshold === undefined) {
     next.lowStockThreshold = existing.lowStockThreshold
   }
+  if (next.noticeUntil === undefined) {
+    next.noticeUntil = existing.noticeUntil
+  }
   next.lowStockThreshold = normalizeLowStockThreshold(
     next.lowStockThreshold
   )
+  next.noticeUntil = /^\d{4}-\d{2}-\d{2}$/.test(
+    String(next.noticeUntil || '')
+  )
+    ? String(next.noticeUntil)
+    : ''
   businessCache = next
   saveBusiness()
   return JSON.parse(JSON.stringify(businessCache))

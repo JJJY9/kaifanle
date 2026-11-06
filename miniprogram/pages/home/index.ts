@@ -352,7 +352,13 @@ Page({
           busyText,
           isOpen,
           mealNotice,
-          notice: business && business.notice ? business.notice : '',
+          notice:
+            business &&
+            business.notice &&
+            (!business.noticeUntil ||
+              business.noticeUntil >= today)
+              ? business.notice
+              : '',
           recommendText:
             (business && business.recommendText) || '今日推荐',
           searchResults: this.filterDishes(this.data.keyword)
