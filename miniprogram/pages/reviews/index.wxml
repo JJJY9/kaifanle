@@ -82,6 +82,16 @@
       <view wx:if="{{item.tags.length}}" class="review-tags">
         <text wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this" class="review-tag">{{tag}}</text>
       </view>
+      <view wx:if="{{item.images.length}}" class="review-images">
+        <image
+          wx:for="{{item.images}}"
+          wx:key="*this"
+          class="review-image"
+          src="{{item}}"
+          mode="aspectFill"
+          lazy-load
+        />
+      </view>
       <view wx:if="{{item.feedback}}" class="review-feedback">“{{item.feedback}}”</view>
       <view wx:else class="review-feedback muted">这顿没留文字</view>
 

@@ -2,6 +2,8 @@ import type { Dish, Order, OrderStatus } from '../../services/types'
 import { getOrder, cancelOrder, getDishes, getKitchenStatus, urgeOrder, rateOrder, updateOrderNote } from '../../services/api'
 import { addOrderToCart } from '../../utils/reorder'
 import { orderReceiptLines, receiptText } from '../../utils/receipt'
+import { prepareImageForUpload } from '../../utils/image'
+import { USE_CLOUD } from '../../config'
 import { STATUS_STEP_TEXT, STATUS_TEXT, mealName } from '../../utils/constants'
 import {
   formatDate,
@@ -34,6 +36,8 @@ Page({
     rating: 0,
     feedbackDraft: '',
     ratingTagOptions: RATING_TAGS.map(name => ({ name, active: false })),
+    ratingImages: [] as string[],
+    uploadingRatingImage: false,
     submittingRating: false,
     ratingOptions: [
       { value: 3, emoji: '😋', label: '好吃' },
@@ -180,6 +184,9 @@ Page({
           name,
           active: (order.ratingTags || []).indexOf(name) > -1
         })),
+        ratingImages: Array.isArray(order.ratingImages)
+          ? order.ratingImages.slice(0, 3)
+          : [],
         loading: false
       })
     } catch (e: any) {
@@ -313,6 +320,61 @@ Page({
     this.setData({ ratingTagOptions: options })
   },
 
+  async onAddRatingImage() {
+    if (
+      this.data.uploadingRatingImage ||
+      (this.data.ratingImages || []).length >= 3
+    ) {
+      return
+    }
+    let tempFilePath = ''
+    try {
+      const res: any = await wx.chooseMedia({
+        count: 1,
+        mediaType: ['image'],
+        sizeType: ['compressed'],
+        sourceType: ['album', 'camera']
+      })
+      tempFilePath =
+        res.tempFiles && res.tempFiles[0] ? res.tempFiles[0].tempFilePath : ''
+    } catch (e) {
+      return
+    }
+    if (!tempFilePath) {
+      return
+    }
+    this.setData({ uploadingRatingImage: true })
+    try {
+      tempFilePath = await prepareImageForUpload(tempFilePath)
+      let src = tempFilePath
+      if (USE_CLOUD && wx.cloud) {
+        const match = tempFilePath.match(/\.(\w+)$/)
+        const ext = match ? match[1] : 'jpg'
+        const upload: any = await wx.cloud.uploadFile({
+          cloudPath: `reviews/${this.orderId}-${Date.now()}.${ext}`,
+          filePath: tempFilePath
+        })
+        src = upload.fileID
+      }
+      this.setData({
+        ratingImages: (this.data.ratingImages || [])
+          .concat(src)
+          .slice(0, 3)
+      })
+    } catch (e) {
+      wx.showToast({ title: '图片上传失败', icon: 'none' })
+    } finally {
+      this.setData({ uploadingRatingImage: false })
+    }
+  },
+
+  onRemoveRatingImage(e: any) {
+    const index = Number(e.currentTarget.dataset.index)
+    const images = (this.data.ratingImages || []).slice()
+    images.splice(index, 1)
+    this.setData({ ratingImages: images })
+  },
+
   async onSubmitRating() {
     const order = this.data.order
     if (!order || this.data.submittingRating) {
@@ -331,7 +393,8 @@ Page({
         order.id,
         this.data.rating,
         this.data.feedbackDraft,
-        tags
+        tags,
+        this.data.ratingImages || []
       )
       wx.showToast({ title: '评价收到啦', icon: 'none' })
       this.load()

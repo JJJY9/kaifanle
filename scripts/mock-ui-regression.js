@@ -1376,6 +1376,10 @@ function invoke(mp, body) {
       mp,
       'page.onToggleRatingTag({ currentTarget: { dataset: { index: 0 } } })'
     )
+    await invoke(
+      mp,
+      "page.setData({ ratingImages: ['/tmp/review-test.png'] })"
+    )
     await invoke(mp, 'page.onSubmitRating()')
     await sleep(900)
     page = await current()
@@ -1387,6 +1391,13 @@ function invoke(mp, body) {
         Array.isArray(data.order.ratingTags) &&
         data.order.ratingTags.indexOf('好吃') > -1,
       data.order ? (data.order.ratingTags || []).join('、') : '没有订单'
+    )
+    check(
+      'mock 评价晒图',
+      Boolean(data.order) &&
+        Array.isArray(data.order.ratingImages) &&
+        data.order.ratingImages.indexOf('/tmp/review-test.png') > -1,
+      data.order ? (data.order.ratingImages || []).join('、') : '没有订单'
     )
 
     // 我的评价页：汇总评分与筛选
@@ -1406,6 +1417,13 @@ function invoke(mp, body) {
         review => Array.isArray(review.tags) && review.tags.length > 0
       ),
       `${(data.reviews || []).filter(review => (review.tags || []).length).length} 条带标签`
+    )
+    check(
+      'mock 评价晒图展示',
+      (data.reviews || []).some(
+        review => Array.isArray(review.images) && review.images.length > 0
+      ),
+      `${(data.reviews || []).filter(review => (review.images || []).length).length} 条带图`
     )
     await invoke(
       mp,

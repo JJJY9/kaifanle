@@ -1105,7 +1105,8 @@ export async function rateOrder(
   id: string,
   rating: number,
   feedback: string,
-  tags: string[] = []
+  tags: string[] = [],
+  images: string[] = []
 ): Promise<Order | null> {
   await delay(60)
   const orders = loadOrders()
@@ -1133,16 +1134,35 @@ export async function rateOrder(
     }
   })
   const oldTags = Array.isArray(order.ratingTags) ? order.ratingTags : []
+  const ratingImages: string[] = []
+  ;(Array.isArray(images) ? images : []).forEach(src => {
+    const value = String(src || '').trim()
+    if (
+      (/^cloud:\/\//.test(value) || /^https:\/\//.test(value) || value.indexOf('/') === 0) &&
+      ratingImages.indexOf(value) === -1 &&
+      ratingImages.length < 3
+    ) {
+      ratingImages.push(value.slice(0, 300))
+    }
+  })
+  const oldImages = Array.isArray(order.ratingImages)
+    ? order.ratingImages
+    : []
   const tagsChanged =
     ratingTags.length !== oldTags.length ||
     ratingTags.some(tag => oldTags.indexOf(tag) === -1)
+  const imagesChanged =
+    ratingImages.length !== oldImages.length ||
+    ratingImages.some(src => oldImages.indexOf(src) === -1)
   const changed =
     Number(order.rating) !== Number(rating) ||
     String(order.feedback || '') !== feedbackText ||
-    tagsChanged
+    tagsChanged ||
+    imagesChanged
   order.rating = Number(rating)
   order.feedback = feedbackText
   order.ratingTags = ratingTags
+  order.ratingImages = ratingImages
   order.ratedAt = Date.now()
   if (changed && order.ownerReply) {
     order.ownerReply = ''

@@ -26,6 +26,7 @@ interface ReviewView {
   tone: string
   feedback: string
   tags: string[]
+  images: string[]
   reply: string
   replyTime: string
   dishes: string
@@ -95,6 +96,9 @@ Page({
             feedback: String(order.feedback || '').trim(),
             tags: Array.isArray(order.ratingTags)
               ? order.ratingTags.slice(0, 4)
+              : [],
+            images: Array.isArray(order.ratingImages)
+              ? order.ratingImages.slice(0, 3)
               : [],
             reply: String(order.ownerReply || '').trim(),
             replyTime: order.ownerReplyAt

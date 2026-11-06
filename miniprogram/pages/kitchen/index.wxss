@@ -725,6 +725,19 @@
   margin-top: 8rpx;
 }
 
+.order-rating-images {
+  display: flex;
+  gap: 8rpx;
+  margin-top: 8rpx;
+}
+
+.order-rating-image {
+  width: 110rpx;
+  height: 110rpx;
+  border: 3rpx solid #111111;
+  border-radius: 12rpx;
+}
+
 .order-rating-tag {
   padding: 3rpx 14rpx;
   background: #E8F8EE;

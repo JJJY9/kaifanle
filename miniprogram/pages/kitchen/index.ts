@@ -332,6 +332,9 @@ Page({
           ratingTags: Array.isArray(order.ratingTags)
             ? order.ratingTags.slice(0, 4)
             : [],
+          ratingImages: Array.isArray(order.ratingImages)
+            ? order.ratingImages.slice(0, 3)
+            : [],
           canReply:
             order.status === 'completed' &&
             [1, 2, 3].indexOf(Number(order.rating)) > -1,

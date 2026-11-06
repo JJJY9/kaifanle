@@ -2093,16 +2093,40 @@ async function rateOrder(payload, openid) {
       tags.push(name)
     }
   })
+  const images = []
+  ;(Array.isArray(payload.images) ? payload.images : []).forEach(src => {
+    const value = String(src || '').trim()
+    if (
+      (/^cloud:\/\//.test(value) || /^https:\/\//.test(value)) &&
+      images.indexOf(value) === -1 &&
+      images.length < 3
+    ) {
+      images.push(value.slice(0, 300))
+    }
+  })
   const now = Date.now()
   const oldTags = Array.isArray(order.ratingTags) ? order.ratingTags : []
+  const oldImages = Array.isArray(order.ratingImages)
+    ? order.ratingImages
+    : []
   const tagsChanged =
     tags.length !== oldTags.length ||
     tags.some(tag => oldTags.indexOf(tag) === -1)
+  const imagesChanged =
+    images.length !== oldImages.length ||
+    images.some(src => oldImages.indexOf(src) === -1)
   const changed =
     Number(order.rating) !== rating ||
     String(order.feedback || '') !== feedback ||
-    tagsChanged
-  const data = { rating, feedback, ratingTags: tags, ratedAt: now }
+    tagsChanged ||
+    imagesChanged
+  const data = {
+    rating,
+    feedback,
+    ratingTags: tags,
+    ratingImages: images,
+    ratedAt: now
+  }
   // 评价变了，旧回复不再对应这条评价，清掉避免错配
   if (changed && order.ownerReply) {
     data.ownerReply = ''

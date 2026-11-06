@@ -669,7 +669,13 @@ async function run() {
       id: created.data.id,
       rating: 3,
       feedback: '超好吃',
-      tags: ['好吃', '分量足', '不存在的标签']
+      tags: ['好吃', '分量足', '不存在的标签'],
+      images: [
+        'cloud://ok/a.jpg',
+        'https://example.com/b.jpg',
+        'bad-path',
+        'cloud://ok/a.jpg'
+      ]
     },
     'girl-openid'
   )
@@ -677,6 +683,10 @@ async function run() {
   assert.strictEqual(res.data.rating, 3)
   assert.strictEqual(res.data.feedback, '超好吃')
   assert.deepStrictEqual(res.data.ratingTags, ['好吃', '分量足'])
+  assert.deepStrictEqual(res.data.ratingImages, [
+    'cloud://ok/a.jpg',
+    'https://example.com/b.jpg'
+  ])
   res = await call(
     'rateOrder',
     { id: created.data.id, rating: 3, feedback: '违规评价' },
@@ -784,6 +794,7 @@ async function run() {
   assert.strictEqual(res.data.ownerReply, '')
   assert.strictEqual(res.data.ownerReplyAt, 0)
   assert.deepStrictEqual(res.data.ratingTags, [])
+  assert.deepStrictEqual(res.data.ratingImages, [])
   const newRatedAt = res.data.ratedAt
   res = await call('getOrder', { id: created.data.id }, 'admin-openid')
   assert.strictEqual(res.data.rating, 1)

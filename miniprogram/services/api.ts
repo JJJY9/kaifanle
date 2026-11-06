@@ -391,12 +391,19 @@ export async function rateOrder(
   id: string,
   rating: number,
   feedback: string,
-  tags: string[] = []
+  tags: string[] = [],
+  images: string[] = []
 ): Promise<Order | null> {
   if (USE_CLOUD) {
-    return callApi<Order | null>('rateOrder', { id, rating, feedback, tags })
+    return callApi<Order | null>('rateOrder', {
+      id,
+      rating,
+      feedback,
+      tags,
+      images
+    })
   }
-  return mock.rateOrder(id, rating, feedback, tags)
+  return mock.rateOrder(id, rating, feedback, tags, images)
 }
 
 export async function replyRating(

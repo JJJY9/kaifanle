@@ -287,6 +287,17 @@
         <view wx:if="{{item.ratingTags.length}}" class="order-rating-tags">
           <text wx:for="{{item.ratingTags}}" wx:for-item="tag" wx:key="*this" class="order-rating-tag">{{tag}}</text>
         </view>
+        <view wx:if="{{item.ratingImages.length}}" class="order-rating-images">
+          <image
+            wx:for="{{item.ratingImages}}"
+            wx:for-item="src"
+            wx:key="*this"
+            class="order-rating-image"
+            src="{{src}}"
+            mode="aspectFill"
+            lazy-load
+          />
+        </view>
         <view wx:if="{{item.feedback}}" class="order-feedback">“{{item.feedback}}”</view>
         <view wx:if="{{item.ownerReply}}" class="order-reply">
           <text class="order-reply-label">掌勺人</text>

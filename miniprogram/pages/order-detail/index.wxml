@@ -93,6 +93,17 @@
         bindtap="onToggleRatingTag"
       >{{item.name}}</view>
     </view>
+    <view class="rating-images">
+      <view wx:for="{{ratingImages}}" wx:key="*this" class="rating-image-item">
+        <image class="rating-image" src="{{item}}" mode="aspectFill" />
+        <view class="rating-image-remove" data-index="{{index}}" catchtap="onRemoveRatingImage">×</view>
+      </view>
+      <view
+        wx:if="{{ratingImages.length < 3}}"
+        class="rating-image-add {{uploadingRatingImage ? 'busy' : ''}}"
+        bindtap="onAddRatingImage"
+      >{{uploadingRatingImage ? '上传中…' : '+ 晒图'}}</view>
+    </view>
     <input
       class="rating-input"
       placeholder="想对掌勺的说点什么（选填）"
