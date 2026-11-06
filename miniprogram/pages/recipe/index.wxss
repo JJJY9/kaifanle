@@ -103,9 +103,21 @@
   padding: 24rpx;
 }
 
-.steps-title {
+.steps-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 18rpx;
+}
+
+.steps-title {
   font-size: 34rpx;
+  font-weight: 800;
+}
+
+.steps-reset {
+  color: #2D9CFF;
+  font-size: 21rpx;
   font-weight: 800;
 }
 
@@ -139,6 +151,16 @@
   min-width: 0;
   font-size: 26rpx;
   line-height: 1.6;
+}
+
+.step-row.done .step-text {
+  color: #9A9A9A;
+  text-decoration: line-through;
+}
+
+.step-row.done .step-no {
+  background: #2FBF71;
+  color: #FFFFFF;
 }
 
 .empty-steps {

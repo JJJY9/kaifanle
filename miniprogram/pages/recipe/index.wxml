@@ -33,11 +33,20 @@
   </view>
 
   <view class="steps-card card">
-    <view class="steps-title display">怎么做</view>
-    <block wx:if="{{steps.length}}">
-      <view wx:for="{{steps}}" wx:key="index" class="step-row">
-        <view class="step-no">{{index + 1}}</view>
-        <view class="step-text">{{item}}</view>
+    <view class="steps-title-row">
+      <view class="steps-title display">怎么做</view>
+      <view wx:if="{{doneCount}}" class="steps-reset" bindtap="onResetSteps">重置 {{doneCount}}/{{stepViews.length}}</view>
+    </view>
+    <block wx:if="{{stepViews.length}}">
+      <view
+        wx:for="{{stepViews}}"
+        wx:key="index"
+        class="step-row {{item.done ? 'done' : ''}}"
+        data-index="{{index}}"
+        bindtap="onToggleStep"
+      >
+        <view class="step-no">{{item.done ? '✓' : index + 1}}</view>
+        <view class="step-text">{{item.text}}</view>
       </view>
     </block>
     <view wx:else class="empty-steps">这道菜还没写做法，可以在菜品编辑里补充</view>

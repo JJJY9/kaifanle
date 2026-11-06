@@ -774,6 +774,24 @@ function invoke(mp, body) {
     Boolean(data.dish) && (data.steps || []).length >= 3,
     data.dish && `${data.dish.name} · ${data.steps.length} 步`
   )
+  await invoke(
+    mp,
+    'page.onToggleStep({ currentTarget: { dataset: { index: 0 } } })'
+  )
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 做法步骤勾选',
+    Boolean(data.stepViews && data.stepViews[0] && data.stepViews[0].done) &&
+      Number(data.doneCount) === 1,
+    `完成 ${data.doneCount} 步`
+  )
+  await invoke(mp, 'page.onResetSteps()')
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  check('mock 做法步骤重置', Number(data.doneCount) === 0)
   await invoke(mp, 'page.onSharePoster()')
   await sleep(2500)
   page = await current()

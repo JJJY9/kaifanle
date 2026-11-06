@@ -5,6 +5,8 @@ Page({
   data: {
     dish: null as any,
     steps: [] as string[],
+    stepViews: [] as { text: string; done: boolean }[],
+    doneCount: 0,
     isAdmin: false,
     favorite: false,
     imageFailed: false,
@@ -45,6 +47,8 @@ Page({
       this.setData({
         dish,
         steps,
+        stepViews: steps.map(text => ({ text, done: false })),
+        doneCount: 0,
         isAdmin: Boolean(me && me.isAdmin),
         favorite: favorites.has(dish.id),
         imageFailed: false,
@@ -65,6 +69,32 @@ Page({
 
   onImageError() {
     this.setData({ imageFailed: true })
+  },
+
+  onToggleStep(e: any) {
+    const index = Number(e.currentTarget.dataset.index)
+    const step = (this.data.stepViews || [])[index]
+    if (!step) {
+      return
+    }
+    const done = !step.done
+    const doneCount = (this.data.stepViews || []).filter(
+      (item, i) => (i === index ? done : item.done)
+    ).length
+    this.setData({
+      [`stepViews[${index}].done`]: done,
+      doneCount
+    })
+  },
+
+  onResetSteps() {
+    this.setData({
+      stepViews: (this.data.steps || []).map(text => ({
+        text,
+        done: false
+      })),
+      doneCount: 0
+    })
   },
 
   onEdit() {
