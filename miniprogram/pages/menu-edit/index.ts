@@ -17,6 +17,36 @@ interface DateOption {
   label: string
 }
 
+interface MenuTemplate {
+  id: string
+  name: string
+  meal: MealId
+  dishIds: string[]
+  updatedAt: number
+}
+
+const TEMPLATE_KEY = 'kfl_menu_templates_v1'
+// 操作菜单最多 6 项，留一项给「清空模板」
+const MAX_TEMPLATES = 5
+
+function readTemplates(): MenuTemplate[] {
+  try {
+    const raw = wx.getStorageSync(TEMPLATE_KEY)
+    const list = raw ? JSON.parse(raw) : []
+    return Array.isArray(list) ? list : []
+  } catch (e) {
+    return []
+  }
+}
+
+function writeTemplates(list: MenuTemplate[]) {
+  try {
+    wx.setStorageSync(TEMPLATE_KEY, JSON.stringify(list))
+  } catch (e) {
+    // 存储失败不影响当前排菜单
+  }
+}
+
 function buildDates(): DateOption[] {
   const dates: DateOption[] = []
   for (let i = 0; i <= 7; i++) {
@@ -47,7 +77,8 @@ Page({
     selectedMap: {} as Record<string, boolean>,
     open: true,
     loading: true,
-    saving: false
+    saving: false,
+    templates: [] as MenuTemplate[]
   },
 
   onLoad() {
@@ -57,6 +88,7 @@ Page({
       selectedDate: dates[0].value,
       meal: currentMeal()
     })
+    this.refreshTemplates()
     this.load()
   },
 
@@ -129,8 +161,147 @@ Page({
     if (meal === this.data.meal) {
       return
     }
-    this.setData({ meal })
+    this.setData({ meal }, () => this.refreshTemplates())
     this.load()
+  },
+
+  refreshTemplates() {
+    const templates = readTemplates()
+      .filter(template => template.meal === this.data.meal)
+      .sort((a, b) => b.updatedAt - a.updatedAt)
+      .slice(0, MAX_TEMPLATES)
+    this.setData({ templates })
+  },
+
+  mealLabel(): string {
+    const meal = MEALS.find(item => item.id === this.data.meal)
+    return meal ? meal.name : '这一餐'
+  },
+
+  selectedDishIds(): string[] {
+    return this.data.dishes
+      .filter(dish => this.data.selectedMap[dish.id])
+      .map(dish => dish.id)
+  },
+
+  async onSaveTemplate() {
+    const dishIds = this.selectedDishIds()
+    if (!dishIds.length) {
+      wx.showToast({ title: '先选几道菜再存模板', icon: 'none' })
+      return
+    }
+    const mealLabel = this.mealLabel()
+    const res: any = await wx.showModal({
+      title: '存为菜单模板',
+      editable: true,
+      placeholderText: '给模板起个名字',
+      content: `${mealLabel}模板`,
+      confirmText: '保存',
+      cancelText: '算了'
+    })
+    if (!res.confirm) {
+      return
+    }
+    const name =
+      String(res.content || '')
+        .trim()
+        .slice(0, 12) || `${mealLabel}模板`
+    const all = readTemplates()
+    const same = all.find(
+      template =>
+        template.meal === this.data.meal && template.name === name
+    )
+    const next = same
+      ? all.map(template =>
+          template.id === same.id
+            ? { ...template, name, dishIds, updatedAt: Date.now() }
+            : template
+        )
+      : all.concat({
+          id: `tpl-${Date.now()}`,
+          name,
+          meal: this.data.meal,
+          dishIds,
+          updatedAt: Date.now()
+        })
+    const mine = next
+      .filter(template => template.meal === this.data.meal)
+      .sort((a, b) => b.updatedAt - a.updatedAt)
+      .slice(0, MAX_TEMPLATES)
+    const keep = mine.map(template => template.id)
+    writeTemplates(
+      next.filter(
+        template =>
+          template.meal !== this.data.meal ||
+          keep.indexOf(template.id) > -1
+      )
+    )
+    this.refreshTemplates()
+    wx.showToast({
+      title: same ? '模板已更新' : '模板已保存',
+      icon: 'none'
+    })
+  },
+
+  async onApplyTemplate() {
+    const templates = this.data.templates
+    if (!templates.length) {
+      wx.showToast({ title: '还没有模板，先存一个', icon: 'none' })
+      return
+    }
+    const itemList = templates.map(
+      template => `${template.name} · ${template.dishIds.length} 道`
+    )
+    itemList.push('清空本餐模板')
+    const res: any = await wx.showActionSheet({ itemList })
+    const index = Number(res.tapIndex)
+    if (!(index >= 0)) {
+      return
+    }
+    if (index === templates.length) {
+      const confirm: any = await wx.showModal({
+        title: '清空本餐模板？',
+        content: `会删除${this.mealLabel()}的 ${templates.length} 个菜单模板，已排好的菜单不受影响。`,
+        confirmText: '清空',
+        cancelText: '算了'
+      })
+      if (!confirm.confirm) {
+        return
+      }
+      writeTemplates(
+        readTemplates().filter(
+          template => template.meal !== this.data.meal
+        )
+      )
+      this.refreshTemplates()
+      wx.showToast({ title: '模板已清空', icon: 'none' })
+      return
+    }
+    const template = templates[index]
+    const available: Record<string, boolean> = {}
+    this.data.dishes.forEach(dish => {
+      available[dish.id] = true
+    })
+    const selectedMap: Record<string, boolean> = {}
+    let missing = 0
+    template.dishIds.forEach(id => {
+      if (available[id]) {
+        selectedMap[id] = true
+      } else {
+        missing++
+      }
+    })
+    const dishes = this.data.dishes.map(dish => ({
+      ...dish,
+      checked: Boolean(selectedMap[dish.id])
+    }))
+    this.setData({ dishes, selectedMap })
+    wx.showToast({
+      title: missing
+        ? `已套用，${missing} 道暂不可用`
+        : '已套用，记得点保存',
+      icon: 'none'
+    })
   },
 
   onToggleDish(e: any) {

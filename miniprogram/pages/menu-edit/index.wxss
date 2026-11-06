@@ -165,6 +165,31 @@
   opacity: 0.6;
 }
 
+.template-row {
+  display: flex;
+  gap: 18rpx;
+  margin-top: 20rpx;
+}
+
+.template-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 76rpx;
+  background: #EFE9DC;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  box-shadow: 4rpx 4rpx 0 #111111;
+  font-size: 24rpx;
+  font-weight: 800;
+}
+
+.template-btn:active {
+  transform: translate(4rpx, 4rpx);
+  box-shadow: none;
+}
+
 .reset-btn {
   display: flex;
   align-items: center;

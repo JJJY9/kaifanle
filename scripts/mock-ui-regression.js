@@ -27,6 +27,7 @@ function invoke(mp, body) {
     cancel: false,
     content: ''
   })
+  await mp.mockWxMethod('showActionSheet', { tapIndex: 0 })
   const current = () => mp.currentPage()
 
   // 首页
@@ -210,6 +211,40 @@ function invoke(mp, body) {
   page = await current()
   data = await page.data()
   check('mock 排菜单加载', (data.dishes || []).length > 0, `餐次=${data.meal}`)
+
+  // 菜单模板：存一个，取消勾选后套用恢复
+  await invoke(
+    mp,
+    "wx.removeStorageSync('kfl_menu_templates_v1'); page.refreshTemplates()"
+  )
+  await invoke(mp, 'page.onSaveTemplate()')
+  await sleep(600)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 保存菜单模板',
+    (data.templates || []).length === 1 &&
+      (data.templates[0].dishIds || []).length === data.dishes.length,
+    `${data.templates.length} 个模板 / ${data.templates[0].dishIds.length} 道`
+  )
+  if ((data.dishes || []).length) {
+    await invoke(
+      mp,
+      `page.onToggleDish({ currentTarget: { dataset: { id: ${JSON.stringify(
+        data.dishes[0].id
+      )} } } })`
+    )
+    await invoke(mp, 'page.onApplyTemplate()')
+    await sleep(600)
+    page = await current()
+    data = await page.data()
+    check(
+      'mock 套用菜单模板',
+      data.dishes.every(dish => dish.checked),
+      `${data.dishes.filter(dish => dish.checked).length} 道已选`
+    )
+  }
+
   await invoke(mp, 'page.onSave()')
   await sleep(1400)
   page = await current()
