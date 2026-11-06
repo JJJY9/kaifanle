@@ -1254,16 +1254,29 @@ async function createOrder(payload, openid) {
     throw new Error('一次最多点 20 道菜')
   }
 
-  // 备注（整单 + 每道菜）先做内容安全检查，避免扣完库存再失败
+  // 备注（整单 + 每道菜）、地址和规格先做内容安全检查，避免扣完库存再失败
   const note = String(payload.note || '').slice(0, 100)
   const itemNotes = payload.items
     .map(item => String((item && item.note) || '').trim())
     .filter(Boolean)
     .join('\n')
     .slice(0, 400)
+  const address = String(payload.address || '').trim().slice(0, 60)
+  const specsText = payload.items
+    .map(item =>
+      Array.isArray(item && item.specs) ? item.specs.join(' / ') : ''
+    )
+    .filter(Boolean)
+    .join('\n')
+    .slice(0, 300)
+  const expectedTime = String(payload.expectedTime || '尽快').slice(0, 20)
+  const mode = String(payload.mode || '在家吃').slice(0, 20)
   await checkContentSafety(
     openid,
-    [note, itemNotes].filter(Boolean).join('\n').slice(0, 500)
+    [note, itemNotes, address, specsText, mode, expectedTime]
+      .filter(Boolean)
+      .join('\n')
+      .slice(0, 500)
   )
 
   const ids = payload.items.map(item => item && item.dishId).filter(Boolean)
@@ -1340,9 +1353,6 @@ async function createOrder(payload, openid) {
   }
 
   try {
-    const expectedTime = String(payload.expectedTime || '尽快').slice(0, 20)
-    const mode = String(payload.mode || '在家吃').slice(0, 20)
-    const address = String(payload.address || '').slice(0, 60)
     let buyerProfile = { dislikes: [], tastes: [] }
     try {
       const savedProfile = await getMyProfile(openid)

@@ -1320,6 +1320,35 @@ async function run() {
   res = await call('getDish', { id: limitedId }, 'admin-openid')
   assert.strictEqual(res.data.stock, 5)
 
+  // 地址和规格同样纳入内容安全
+  res = await call(
+    'createOrder',
+    {
+      items: [{ dishId: limitedId, qty: 1, specs: [] }],
+      meal: 'lunch',
+      expectedTime: '12:00',
+      mode: '在家吃',
+      address: '违规地址'
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, false)
+  res = await call('getDish', { id: limitedId }, 'admin-openid')
+  assert.strictEqual(res.data.stock, 5)
+  res = await call(
+    'createOrder',
+    {
+      items: [{ dishId: limitedId, qty: 1, specs: ['违规规格'] }],
+      meal: 'lunch',
+      expectedTime: '12:00',
+      mode: '在家吃'
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, false)
+  res = await call('getDish', { id: limitedId }, 'admin-openid')
+  assert.strictEqual(res.data.stock, 5)
+
   // 写单失败时，已经扣掉的库存要回补
   beforeAdd = name => {
     if (name === 'orders') {
