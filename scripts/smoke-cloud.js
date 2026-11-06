@@ -1132,6 +1132,7 @@ async function run() {
   currentOpenid = ''
   const timerRoll = await api.main({ Type: 'Timer' })
   assert.strictEqual(timerRoll.ok, true)
+  assert.strictEqual(timerRoll.data.skipped, false)
   assert.deepStrictEqual(timerRoll.data.menus, ['lunch'])
   res = await call(
     'getMenuForDate',
@@ -1140,12 +1141,25 @@ async function run() {
   )
   assert.strictEqual(res.data.exists, true)
   assert.deepStrictEqual(res.data.dishIds, ['d02'])
-  // 已有明天的菜单时不会重复覆盖
+  // 同一天重复跑定时任务会直接跳过
   currentOpenid = ''
   const timerAgain = await api.main({ Type: 'Timer' })
+  assert.strictEqual(timerAgain.data.skipped, true)
   assert.deepStrictEqual(timerAgain.data.menus, [])
 
-  // 定时任务同时会把售罄菜品恢复供应
+  // 同一天删掉明天的菜单后，重复 Timer 不会把它补回来
+  await call('deleteMenu', { date: tomorrowKey, meal: 'lunch' }, 'admin-openid')
+  currentOpenid = ''
+  const timerAfterDelete = await api.main({ Type: 'Timer' })
+  assert.strictEqual(timerAfterDelete.data.skipped, true)
+  res = await call(
+    'getMenuForDate',
+    { date: tomorrowKey, meal: 'lunch' },
+    'admin-openid'
+  )
+  assert.strictEqual(res.data.exists, false)
+
+  // 定时任务同时会把售罄菜品恢复供应，但同一天只做一次
   res = await call(
     'saveDish',
     {
@@ -1166,7 +1180,18 @@ async function run() {
   const timerDishId = res.data.id
   await call('toggleDishStatus', { id: timerDishId }, 'admin-openid')
   currentOpenid = ''
+  const timerSameDay = await api.main({ Type: 'Timer' })
+  assert.strictEqual(timerSameDay.data.skipped, true)
+  res = await call('getDish', { id: timerDishId }, 'admin-openid')
+  assert.strictEqual(res.data.status, 'soldout')
+  // 模拟第二天：清掉滚动记录后再跑
+  const configDoc = ensure('config').get('app')
+  if (configDoc) {
+    configDoc.lastRollDate = ''
+  }
+  currentOpenid = ''
   const timerReset = await api.main({ Type: 'Timer' })
+  assert.strictEqual(timerReset.data.skipped, false)
   assert.ok(timerReset.data.restored >= 1)
   res = await call('getDish', { id: timerDishId }, 'admin-openid')
   assert.strictEqual(res.data.status, 'on')

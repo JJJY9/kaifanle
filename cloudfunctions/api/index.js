@@ -835,6 +835,12 @@ async function deleteMenu(payload, openid) {  await requireAdmin(openid)
 async function autoRollMenu() {
   const today = chinaDateString()
   const tomorrow = chinaDateString(Date.now() + 24 * 60 * 60 * 1000)
+  // 每天只滚动一次：重复打开厨房或定时器补跑都不能再恢复已手动售罄的菜、
+  // 也不能重建管理员已经删掉的次日菜单。
+  const config = await getConfig()
+  if (config && config.lastRollDate === today) {
+    return { date: tomorrow, menus: [], restored: 0, skipped: true }
+  }
   const rolled = []
   for (const meal of MEALS) {
     const next = await getMenuDoc(tomorrow, meal)
@@ -871,7 +877,17 @@ async function autoRollMenu() {
     console.warn('[api] reset soldout failed:', e)
   }
 
-  return { date: tomorrow, menus: rolled, restored }
+  try {
+    await db
+      .collection('config')
+      .doc(CONFIG_ID)
+      .update({ data: { lastRollDate: today } })
+  } catch (e) {
+    // 记录失败时宁可下次重复一次，也不要把当天的滚动结果吞掉
+    console.warn('[api] save lastRollDate failed:', e)
+  }
+
+  return { date: tomorrow, menus: rolled, restored, skipped: false }
 }
 
 // 内容安全检测：违规内容直接拒绝；接口未开通或异常时不阻断正常使用。
