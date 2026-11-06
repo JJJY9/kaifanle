@@ -14,6 +14,7 @@ import {
   updateOrderStatus
 } from '../../services/api'
 import {
+  MEALS,
   NEXT_ACTION,
   NEXT_STATUS,
   STATUS_TEXT,
@@ -97,6 +98,7 @@ Page({
     showPrep: false,
     showPreorders: false,
     prepItems: [] as any[],
+    prepGroups: [] as any[],
     prepTotal: 0,
     weekStats: null as any,
     weekBars: [] as any[],
@@ -415,8 +417,13 @@ Page({
             .slice(0, 10)
             .map(toView)
 
-      // 今日备菜：把今天所有未完成订单按菜名汇总
+      // 今日备菜：把今天所有未完成订单按餐次、菜名汇总
       const prepMap: Record<string, number> = {}
+      const prepMealMap: Record<string, Record<string, number>> = {
+        breakfast: {},
+        lunch: {},
+        dinner: {}
+      }
       active
         .filter(
           order =>
@@ -424,16 +431,33 @@ Page({
               dateInputString(new Date(order.createdAt))) === todayKey
         )
         .forEach(order => {
+          const bucket =
+            prepMealMap[order.meal] || prepMealMap.lunch
           order.items.forEach((item: any) => {
             const name = String(item.name || '')
             if (name) {
               prepMap[name] = (prepMap[name] || 0) + Number(item.qty || 0)
+              bucket[name] = (bucket[name] || 0) + Number(item.qty || 0)
             }
           })
         })
       const prepItems = Object.keys(prepMap)
         .map(name => ({ name, qty: prepMap[name] }))
         .sort((a, b) => b.qty - a.qty)
+      const prepGroups = MEALS.map(meal => {
+        const items = Object.keys(prepMealMap[meal.id] || {})
+          .map(name => ({
+            name,
+            qty: prepMealMap[meal.id][name]
+          }))
+          .sort((a, b) => b.qty - a.qty)
+        return {
+          meal: meal.id,
+          mealText: mealName(meal.id),
+          items,
+          total: items.reduce((sum, item) => sum + item.qty, 0)
+        }
+      }).filter(group => group.items.length)
       const prepTotal = prepItems.reduce((sum, item) => sum + item.qty, 0)
 
       // 近 7 天经营概况（不含已取消订单）；静默轮询沿用上次结果
@@ -543,6 +567,7 @@ Page({
         dishes,
         stats,
         prepItems,
+        prepGroups,
         prepTotal,
         todo,
         weekStats,

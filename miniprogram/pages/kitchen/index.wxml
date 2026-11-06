@@ -113,11 +113,14 @@
         <view class="prep-badge">{{prepTotal}} 份 {{showPrep ? '▾' : '▸'}}</view>
       </view>
       <block wx:if="{{showPrep}}">
-        <view wx:if="{{!prepItems.length}}" class="empty-line">今天还没有要备的菜</view>
-        <view wx:if="{{prepItems.length}}" class="prep-copy" bindtap="onCopyPrep">复制采购清单</view>
-        <view wx:for="{{prepItems}}" wx:key="name" class="prep-row">
-          <text class="prep-name">{{item.name}}</text>
-          <text class="prep-qty">×{{item.qty}}</text>
+        <view wx:if="{{!prepGroups.length}}" class="empty-line">今天还没有要备的菜</view>
+        <view wx:if="{{prepGroups.length}}" class="prep-copy" bindtap="onCopyPrep">复制采购清单</view>
+        <view wx:for="{{prepGroups}}" wx:key="meal" wx:for-item="group" class="prep-group">
+          <view class="prep-group-title">{{group.mealText}} · {{group.total}} 份</view>
+          <view wx:for="{{group.items}}" wx:key="name" wx:for-item="dish" class="prep-row">
+            <text class="prep-name">{{dish.name}}</text>
+            <text class="prep-qty">×{{dish.qty}}</text>
+          </view>
         </view>
       </block>
     </view>

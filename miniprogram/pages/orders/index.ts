@@ -38,6 +38,7 @@ Page({
       if (seq !== this._loadSeq) {
         return
       }
+      const today = dateInputString()
       const view = orders.map(order => ({
         ...order,
         statusText: STATUS_TEXT[order.status],
@@ -49,6 +50,9 @@ Page({
         dateText: dateLabel(
           order.scheduledDate || dateInputString(new Date(order.createdAt))
         ),
+        isPreorder:
+          (order.scheduledDate ||
+            dateInputString(new Date(order.createdAt))) > today,
         summary: itemSummary(order.items.map(item => item.name)),
         totalQty: order.items.reduce((sum, item) => sum + item.qty, 0),
         rated: Boolean(order.rating),

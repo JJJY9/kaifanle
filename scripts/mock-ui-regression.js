@@ -334,6 +334,15 @@ function invoke(mp, body) {
   page = await current()
   data = await page.data()
   check('mock 厨房加载', (data.dishes || []).length > 0, `${data.dishes.length} 道菜`)
+  const prepGroups = data.prepGroups || []
+  check(
+    'mock 备菜按餐次',
+    prepGroups.length >= 1 &&
+      prepGroups.every(group => group.items.length > 0) &&
+      prepGroups.reduce((sum, group) => sum + group.total, 0) ===
+        Number(data.prepTotal),
+    `${prepGroups.map(group => group.mealText).join('、')} · ${data.prepTotal} 份`
+  )
   const receiptOrder = (data.orders || [])[0]
   check(
     'mock 厨房待处理订单',
@@ -901,6 +910,11 @@ function invoke(mp, body) {
   page = await current()
   data = await page.data()
   check('mock 订单列表', (data.orders || []).length > 0, `${data.orders.length} 单`)
+  check(
+    'mock 订单预订标记',
+    (data.orders || []).some(order => order.isPreorder),
+    `${(data.orders || []).filter(order => order.isPreorder).length} 单预订`
+  )
   await invoke(
     mp,
     "page.onSelectFilter({ currentTarget: { dataset: { filter: 'rate' } } })"
