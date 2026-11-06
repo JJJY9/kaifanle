@@ -175,8 +175,17 @@ Page({
     })
   },
 
-  onTapReview(e: any) {
-    const id = e.currentTarget.dataset.id
+  onPreviewImage(e: any) {
+    const index = Number(e.currentTarget.dataset.index)
+    const src = String(e.currentTarget.dataset.src || '')
+    const review = (this.data.display || [])[index]
+    if (!review || !src || !(review.images || []).length) {
+      return
+    }
+    wx.previewImage({ current: src, urls: review.images })
+  },
+
+  onTapReview(e: any) {    const id = e.currentTarget.dataset.id
     if (id) {
       wx.navigateTo({ url: `/pages/order-detail/index?id=${id}` })
     }

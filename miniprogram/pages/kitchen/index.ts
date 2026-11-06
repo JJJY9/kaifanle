@@ -1081,6 +1081,16 @@ Page({
     )
   },
 
+  onPreviewOrderImages(e: any) {
+    const id = e.currentTarget.dataset.id
+    const src = String(e.currentTarget.dataset.src || '')
+    const order = (this.data.history || []).find((item: any) => item.id === id)
+    if (!order || !src || !(order.ratingImages || []).length) {
+      return
+    }
+    wx.previewImage({ current: src, urls: order.ratingImages })
+  },
+
   filterHistory(list: any[]): any[] {
     const filtered = this.data.historyOnlyPending
       ? list.filter(order => order.canReply && !order.ownerReply)

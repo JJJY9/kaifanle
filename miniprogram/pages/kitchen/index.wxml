@@ -296,6 +296,9 @@
             src="{{src}}"
             mode="aspectFill"
             lazy-load
+            data-src="{{src}}"
+            data-id="{{item.id}}"
+            catchtap="onPreviewOrderImages"
           />
         </view>
         <view wx:if="{{item.feedback}}" class="order-feedback">“{{item.feedback}}”</view>

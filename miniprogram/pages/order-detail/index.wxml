@@ -95,7 +95,7 @@
     </view>
     <view class="rating-images">
       <view wx:for="{{ratingImages}}" wx:key="*this" class="rating-image-item">
-        <image class="rating-image" src="{{item}}" mode="aspectFill" />
+        <image class="rating-image" src="{{item}}" mode="aspectFill" data-src="{{item}}" catchtap="onPreviewRatingImage" />
         <view class="rating-image-remove" data-index="{{index}}" catchtap="onRemoveRatingImage">×</view>
       </view>
       <view

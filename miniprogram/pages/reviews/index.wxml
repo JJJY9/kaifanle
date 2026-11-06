@@ -64,6 +64,7 @@
 
     <view
       wx:for="{{display}}"
+      wx:for-index="reviewIndex"
       wx:key="id"
       class="review card"
       data-id="{{item.id}}"
@@ -90,6 +91,9 @@
           src="{{item}}"
           mode="aspectFill"
           lazy-load
+          data-src="{{item}}"
+          data-index="{{reviewIndex}}"
+          bindtap="onPreviewImage"
         />
       </view>
       <view wx:if="{{item.feedback}}" class="review-feedback">“{{item.feedback}}”</view>

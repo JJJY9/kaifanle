@@ -375,6 +375,15 @@ Page({
     this.setData({ ratingImages: images })
   },
 
+  onPreviewRatingImage(e: any) {
+    const src = String(e.currentTarget.dataset.src || '')
+    const urls = this.data.ratingImages || []
+    if (!src || !urls.length) {
+      return
+    }
+    wx.previewImage({ current: src, urls })
+  },
+
   async onSubmitRating() {
     const order = this.data.order
     if (!order || this.data.submittingRating) {
