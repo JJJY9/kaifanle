@@ -1357,6 +1357,28 @@ function invoke(mp, body) {
   data = await page.data()
   check('mock 购物车清空', (data.groups || []).length === 0)
 
+  // 首页「上次吃」快捷再来一份
+  await mp.switchTab('/pages/home/index')
+  await sleep(1800)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 上次吃入口',
+    Boolean(data.lastOrder) && String(data.lastOrder.summary || '').length > 0,
+    data.lastOrder ? `${data.lastOrder.mealText} · ${data.lastOrder.summary}` : '没有记录'
+  )
+  await invoke(mp, 'page.onRepeatLast()')
+  await sleep(1800)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 上次吃再来一份',
+    Boolean(data.lastOrder) &&
+      data.selectedMeal === data.lastOrder.meal &&
+      Number(data.cartCount) >= 1,
+    `${data.selectedMeal} · ${data.cartCount} 份`
+  )
+
   const failed = results.filter(r => !r.ok)
   console.log(`\n结论：${results.length - failed.length}/${results.length} 通过`)
   await mp.disconnect()

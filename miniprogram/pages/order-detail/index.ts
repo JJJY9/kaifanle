@@ -1,6 +1,6 @@
 import type { Dish, Order, OrderStatus } from '../../services/types'
 import { getOrder, cancelOrder, getDishes, getKitchenStatus, urgeOrder, rateOrder } from '../../services/api'
-import { cart } from '../../store/cart'
+import { addOrderToCart } from '../../utils/reorder'
 import { STATUS_STEP_TEXT, STATUS_TEXT, mealName } from '../../utils/constants'
 import {
   formatDate,
@@ -257,52 +257,7 @@ Page({
       } catch (e) {
         dishes = null
       }
-      const dishMap: Record<string, Dish> = {}
-      if (dishes) {
-        dishes.forEach(dish => {
-          dishMap[dish.id] = dish
-        })
-      }
-      let added = 0
-      let skipped = 0
-      order.items.forEach((item: any) => {
-        const dish = dishes ? dishMap[item.dishId] : null
-        if (
-          dishes &&
-          (!dish ||
-            dish.status !== 'on' ||
-            (dish.meals || []).indexOf(order.meal) === -1)
-        ) {
-          skipped++
-          return
-        }
-        let qty = item.qty
-        if (dish && typeof dish.stock === 'number' && dish.stock >= 0) {
-          qty = Math.min(qty, dish.stock)
-        }
-        if (qty <= 0) {
-          skipped++
-          return
-        }
-        cart.add({
-          key: '',
-          meal: order.meal,
-          date: targetDate,
-          dishId: item.dishId,
-          name: dish ? dish.name : item.name,
-          price: dish
-            ? dish.price +
-              (dish.addons || [])
-                .filter(addon => item.specs.indexOf(addon.name) > -1)
-                .reduce((sum, addon) => sum + addon.price, 0)
-            : item.price,
-          qty,
-          specs: item.specs,
-          note: item.note,
-          color: dish ? dish.color : '#FFD23F'
-        })
-        added++
-      })
+      const { added, skipped } = addOrderToCart(order, targetDate, dishes)
       if (!added) {
         wx.showToast({
           title: skipped ? '这些菜暂时都不供应了' : '加购失败，稍后再试',

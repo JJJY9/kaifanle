@@ -58,9 +58,11 @@ let categoriesCache: { at: number; data: Category[] } | null = null
 let businessCache: { at: number; data: Business } | null = null
 let menuCache: Record<string, { at: number; data: DailyMenu }> = {}
 let kitchenStatusCache: { at: number; data: KitchenStatus } | null = null
+let lastOrderCache: { at: number; data: Order | null } | null = null
 const BUSINESS_CACHE_TTL = 60 * 1000
 const MENU_CACHE_TTL = 60 * 1000
 const KITCHEN_STATUS_TTL = 30 * 1000
+const LAST_ORDER_CACHE_TTL = 2 * 60 * 1000
 
 function cloneData<T>(value: T): T {
   return JSON.parse(JSON.stringify(value))
@@ -259,6 +261,21 @@ export async function getOrders(): Promise<Order[]> {
   return mock.getOrders()
 }
 
+export async function getLastOrder(): Promise<Order | null> {
+  if (USE_CLOUD) {
+    if (
+      lastOrderCache &&
+      Date.now() - lastOrderCache.at < LAST_ORDER_CACHE_TTL
+    ) {
+      return cloneData(lastOrderCache.data)
+    }
+    const data = await callApi<Order | null>('getLastOrder')
+    lastOrderCache = { at: Date.now(), data }
+    return cloneData(data)
+  }
+  return mock.getLastOrder()
+}
+
 export async function getActiveOrders(): Promise<Order[]> {
   if (USE_CLOUD) {
     return callApi<Order[]>('getActiveOrders')
@@ -288,10 +305,11 @@ export async function getOrder(id: string): Promise<Order | null> {
 }
 
 export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
-  if (USE_CLOUD) {
-    return callApi<Order>('createOrder', payload)
-  }
-  return mock.createOrder(payload)
+  const order = USE_CLOUD
+    ? await callApi<Order>('createOrder', payload)
+    : await mock.createOrder(payload)
+  lastOrderCache = null
+  return order
 }
 
 export async function cancelOrder(

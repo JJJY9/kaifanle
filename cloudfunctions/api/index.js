@@ -91,6 +91,8 @@ async function route(action, payload, openid) {
       return getDish(payload.id)
     case 'getOrders':
       return getOrders(openid)
+    case 'getLastOrder':
+      return getLastOrder(openid)
     case 'getMyStats':
       return getMyStats(openid)
     case 'getAllOrders':
@@ -1324,6 +1326,23 @@ async function getOrders(openid) {
     .limit(50)
     .get()
   return res.data.map(withId)
+}
+
+// 首页「上次吃」：最近一笔今天或更早的非取消订单
+async function getLastOrder(openid) {
+  const res = await db
+    .collection('orders')
+    .where({ _openid: openid })
+    .orderBy('createdAt', 'desc')
+    .limit(10)
+    .get()
+  const today = chinaDateString()
+  const order = (res.data || []).find(
+    item =>
+      item.status !== 'cancelled' &&
+      (item.scheduledDate || chinaDateString(item.createdAt)) <= today
+  )
+  return order ? withId(order) : null
 }
 
 // 厨房端：管理员查看全部订单

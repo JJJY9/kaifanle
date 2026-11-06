@@ -4,11 +4,12 @@ import {
   getDishes,
   getBusiness,
   getKitchenStatus,
+  getLastOrder,
   getMenuForDate
 } from '../../services/api'
 import { cart } from '../../store/cart'
 import { favorites } from '../../store/favorites'
-import { MEALS } from '../../utils/constants'
+import { MEALS, mealName } from '../../utils/constants'
 import { USE_CLOUD } from '../../config'
 import {
   currentMeal,
@@ -16,8 +17,10 @@ import {
   formatDate,
   greeting,
   isOpenNow,
-  dateInputString
+  dateInputString,
+  itemSummary
 } from '../../utils/format'
+import { addOrderToCart } from '../../utils/reorder'
 
 interface Section extends Category {
   dishes: Dish[]
@@ -59,6 +62,7 @@ Page({
     favoriteCount: 0,
     favoriteLabel: '♡ 我的收藏',
     onlyAvailable: false,
+    lastOrder: null as any,
     spiceFilter: 'all',
     spiceFilters: [] as { key: string; label: string }[]
   },
@@ -71,6 +75,8 @@ Page({
   _categories: [] as Category[],
   _baseEmptyDesc: '',
   _loadSeq: 0,
+  _lastOrderRaw: null as any,
+  _repeating: false,
 
   onLoad() {
     const app = getApp()
@@ -156,6 +162,7 @@ Page({
     }
     // 每次回到首页都刷新菜单，保证厨房端的售罄/上架能同步过来
     this.loadMenu()
+    this.loadLastOrder()
   },
 
   onUnload() {
@@ -488,6 +495,91 @@ Page({
       this.renderSections()
       this.setData({ searchResults: this.filterDishes(this.data.keyword) })
     })
+  },
+
+  async loadLastOrder() {
+    try {
+      const order = await getLastOrder()
+      if (!order) {
+        this._lastOrderRaw = null
+        this.setData({ lastOrder: null })
+        return
+      }
+      this._lastOrderRaw = order
+      const totalQty = (order.items || []).reduce(
+        (sum, item) => sum + Number(item.qty || 0),
+        0
+      )
+      this.setData({
+        lastOrder: {
+          id: order.id,
+          meal: order.meal,
+          mealText: mealName(order.meal),
+          summary:
+            itemSummary((order.items || []).map(item => item.name)) +
+            ` · 共 ${totalQty} 份`,
+          dateText: dateLabel(
+            order.scheduledDate ||
+              dateInputString(new Date(order.createdAt))
+          )
+        }
+      })
+    } catch (e) {
+      // 没有历史订单时保持隐藏
+    }
+  },
+
+  async onRepeatLast() {
+    if (this._repeating) {
+      return
+    }
+    const order = this._lastOrderRaw
+    if (!order) {
+      return
+    }
+    this._repeating = true
+    wx.showLoading({ title: '加回购物车', mask: true })
+    try {
+      let dishes: Dish[] | null = null
+      try {
+        dishes = await getDishes()
+      } catch (e) {
+        dishes = null
+      }
+      const today = dateInputString()
+      const maxDate = this.data.maxDate || today
+      const targetDate =
+        order.scheduledDate &&
+        order.scheduledDate >= today &&
+        order.scheduledDate <= maxDate
+          ? order.scheduledDate
+          : today
+      const result = addOrderToCart(order, targetDate, dishes)
+      if (!result.added) {
+        wx.showToast({ title: '这些菜暂时都不供应了', icon: 'none' })
+        return
+      }
+      this.setData(
+        {
+          selectedMeal: order.meal,
+          selectedDate: targetDate,
+          menuDateLabel: dateLabel(targetDate, this.data.todayDate || today)
+        },
+        () => {
+          this.updateCartBadge()
+          this.loadMenu()
+        }
+      )
+      wx.showToast({
+        title: result.skipped
+          ? `已加购，${result.skipped} 道暂时没供应`
+          : '已放回购物车',
+        icon: 'none'
+      })
+    } finally {
+      wx.hideLoading()
+      this._repeating = false
+    }
   },
 
   onSpiceFilter(e: any) {

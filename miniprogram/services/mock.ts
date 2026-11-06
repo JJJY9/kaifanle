@@ -777,6 +777,21 @@ export async function getOrders(): Promise<Order[]> {
     .map(order => ({ ...order }))
 }
 
+export async function getLastOrder(): Promise<Order | null> {
+  await delay(60)
+  const today = dateInputString()
+  const order = loadOrders()
+    .slice()
+    .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0))
+    .find(
+      item =>
+        item.status !== 'cancelled' &&
+        (item.scheduledDate ||
+          dateInputString(new Date(item.createdAt))) <= today
+    )
+  return order ? { ...order } : null
+}
+
 export async function getAllOrders(): Promise<Order[]> {
   return getOrders()
 }

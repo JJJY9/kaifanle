@@ -498,6 +498,13 @@ async function run() {
   res = await call('getOrders', {}, 'girl-openid')
   assert.strictEqual(res.data.length, 1)
 
+  res = await call('getLastOrder', {}, 'girl-openid')
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.id, created.data.id)
+  res = await call('getLastOrder', {}, 'admin-openid')
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data, null)
+
   // 早餐专属菜品不能点成午餐（即使没有排菜单）
   res = await call(
     'createOrder',
