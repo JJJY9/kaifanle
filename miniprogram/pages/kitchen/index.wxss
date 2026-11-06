@@ -374,6 +374,10 @@
   box-shadow: none;
 }
 
+.add-dish.disabled {
+  opacity: 0.5;
+}
+
 .add-dish:active {
   transform: translate(4rpx, 4rpx);
   box-shadow: none;

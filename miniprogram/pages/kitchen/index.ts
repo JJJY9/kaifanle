@@ -42,6 +42,7 @@ Page({
     replyingId: '',
     restockingId: '',
     restockingAll: false,
+    batchBusy: false,
     historyOnlyPending: false,
     historyView: [] as any[],
     movingId: '',
@@ -713,6 +714,86 @@ Page({
     )
     wx.showToast({
       title: failed ? `补好 ${done} 道，${failed} 道失败` : `补好 ${done} 道`,
+      icon: 'none'
+    })
+  },
+
+  async onBatchStatus() {
+    if (this.data.batchBusy) {
+      return
+    }
+    const list = this.data.displayDishes || []
+    if (!list.length) {
+      wx.showToast({ title: '当前筛选没有菜品', icon: 'none' })
+      return
+    }
+    let tapIndex = -1
+    try {
+      const sheet: any = await wx.showActionSheet({
+        itemList: [
+          `上架当前 ${list.length} 道`,
+          `下架当前 ${list.length} 道`
+        ]
+      })
+      tapIndex = Number(sheet.tapIndex)
+    } catch (e) {
+      return
+    }
+    const status: 'on' | 'off' = tapIndex === 0 ? 'on' : 'off'
+    const action = status === 'on' ? '上架' : '下架'
+    const confirm: any = await wx.showModal({
+      title: `${action}当前 ${list.length} 道菜？`,
+      content:
+        status === 'off'
+          ? '下架后顾客首页看不到这些菜，可以随时再上架。'
+          : '上架后顾客首页会重新显示这些菜。',
+      confirmText: action,
+      cancelText: '算了'
+    })
+    if (!confirm.confirm) {
+      return
+    }
+    this.setData({ batchBusy: true })
+    const statusMap: Record<string, string> = {}
+    let done = 0
+    let failed = 0
+    for (const dish of list) {
+      if (dish.status === status) {
+        continue
+      }
+      try {
+        const saved = await saveDish({ ...dish, status } as any)
+        statusMap[dish.id] =
+          saved && saved.status ? saved.status : status
+        done++
+      } catch (e) {
+        failed++
+      }
+    }
+    const dishes = this.data.dishes.map(dish =>
+      statusMap[dish.id]
+        ? { ...dish, status: statusMap[dish.id] }
+        : dish
+    )
+    const lowStock = dishes.filter(
+      item =>
+        item.status === 'on' &&
+        typeof item.stock === 'number' &&
+        item.stock >= 0 &&
+        item.stock <= 3
+    ).length
+    this.setData(
+      {
+        dishes,
+        todo: { ...this.data.todo, lowStock },
+        batchBusy: false
+      },
+      () => this.applyDishFilter()
+    )
+    wx.showToast({
+      title: done
+        ? `${action} ${done} 道${failed ? `，${failed} 道失败` : ''}`
+        : '当前筛选已经是这个状态',
       icon: 'none'
     })
   },

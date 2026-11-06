@@ -206,6 +206,34 @@ function invoke(mp, body) {
     "page.onDishCategory({ currentTarget: { dataset: { id: 'all' } } })"
   )
   await sleep(300)
+
+  // 批量上下架：先筛到一道菜，下架再上架
+  await invoke(mp, "page.onDishSearch({ detail: { value: '番茄' } })")
+  await sleep(300)
+  await mp.mockWxMethod('showActionSheet', { tapIndex: 1 })
+  await invoke(mp, 'page.onBatchStatus()')
+  await sleep(1300)
+  page = await current()
+  data = await page.data()
+  let batchDish = (data.displayDishes || [])[0]
+  check(
+    'mock 厨房批量下架',
+    Boolean(batchDish) && batchDish.status === 'off',
+    batchDish ? batchDish.status : '没找到菜'
+  )
+  await mp.mockWxMethod('showActionSheet', { tapIndex: 0 })
+  await invoke(mp, 'page.onBatchStatus()')
+  await sleep(1300)
+  page = await current()
+  data = await page.data()
+  batchDish = (data.displayDishes || [])[0]
+  check(
+    'mock 厨房批量上架',
+    Boolean(batchDish) && batchDish.status === 'on',
+    batchDish ? batchDish.status : '没找到菜'
+  )
+  await invoke(mp, 'page.onClearDishSearch()')
+  await sleep(300)
   const firstDish = (data.dishes || [])[0]
   const secondDish = (data.dishes || [])[1]
   if (firstDish && secondDish) {
