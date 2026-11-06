@@ -210,6 +210,13 @@
   font-weight: 800;
 }
 
+.line-dislike {
+  margin-top: 4rpx;
+  color: #B85C00;
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
 .slot-empty {
   padding: 28rpx 0;
   color: #5C5C5C;

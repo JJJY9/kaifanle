@@ -234,6 +234,27 @@ function invoke(mp, body) {
     String(data.kitchenHint || '').indexOf('厨房') > -1,
     data.kitchenHint
   )
+  await invoke(
+    mp,
+    "page.setData({ profileDislikes: ['皮蛋'] })"
+  )
+  await invoke(mp, 'page.applyDislikes()')
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 结算忌口提醒',
+    (data.lines || []).some(
+      line => String(line.dislikeText || '').indexOf('皮蛋') > -1
+    ),
+    (data.lines || [])
+      .map(line => line.dislikeText)
+      .filter(Boolean)
+      .join('、')
+  )
+  await invoke(mp, "page.setData({ profileDislikes: [] })")
+  await invoke(mp, 'page.applyDislikes()')
+  await sleep(300)
   const hintToday = data.todayDate
   await invoke(
     mp,

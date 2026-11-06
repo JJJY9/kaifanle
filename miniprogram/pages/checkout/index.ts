@@ -54,6 +54,7 @@ Page({
     note: '',
     notePresets: NOTE_PRESETS,
     address: '',
+    profileDislikes: [] as string[],
     scheduledDate: '',
     todayDate: '',
     maxDate: '',
@@ -70,6 +71,8 @@ Page({
   _closedSeq: 0,
   _slotSeq: 0,
   _slotInvalid: {} as Record<string, string>,
+  _dislikeMap: {} as Record<string, string>,
+  _dishMap: {} as Record<string, any>,
   _requestId: '',
 
   newRequestId() {
@@ -143,8 +146,43 @@ Page({
     return buildLines(meal, date).map(line => ({
       ...line,
       invalid: Boolean(this._slotInvalid[line.key]),
-      invalidText: this._slotInvalid[line.key] || ''
+      invalidText: this._slotInvalid[line.key] || '',
+      dislikeText: this._dislikeMap[line.key] || ''
     }))
+  },
+
+  applyDislikes() {
+    const dislikes = this.data.profileDislikes || []
+    const map: Record<string, string> = {}
+    if (dislikes.length) {
+      ;(this.data.lines || []).forEach((line: any) => {
+        const dish = this._dishMap[line.dishId]
+        if (!dish) {
+          return
+        }
+        const text = [
+          dish.name,
+          dish.desc,
+          (dish.ingredients || []).join(' '),
+          (dish.allergens || []).join(' ')
+        ]
+          .filter(Boolean)
+          .join(' ')
+        const hit = dislikes.find(
+          (item: string) => item && text.indexOf(item) > -1
+        )
+        if (hit) {
+          map[line.key] = `可能含忌口：${hit}`
+        }
+      })
+    }
+    this._dislikeMap = map
+    const lines = this.applySlot(this.data.meal, this.data.scheduledDate)
+    this.setData({
+      lines,
+      total: totalOf(lines),
+      slotInvalidCount: lines.filter(line => line.invalid).length
+    })
   },
 
   async checkSlot(meal: MealId, date: string) {
@@ -178,6 +216,7 @@ Page({
       dishes.forEach(dish => {
         dishMap[dish.id] = dish
       })
+      this._dishMap = dishMap
       // 菜品改价后同步购物车单价，避免结算显示价和服务端实收不一致
       lines.forEach(line => {
         const dish = dishMap[line.dishId]
@@ -222,6 +261,7 @@ Page({
         slotInvalidCount: decorated.filter(line => line.invalid).length,
         slotError: paused ? '这一餐还没开火，换一餐试试' : ''
       })
+      this.applyDislikes()
     } catch (e) {
       if (
         seq !== this._slotSeq ||
@@ -246,9 +286,15 @@ Page({
   async loadProfile() {
     try {
       const profile = await getMyProfile()
-      if (profile.address) {
-        this.setData({ address: profile.address })
-      }
+      this.setData(
+        {
+          address: profile.address || this.data.address,
+          profileDislikes: Array.isArray(profile.dislikes)
+            ? profile.dislikes
+            : []
+        },
+        () => this.applyDislikes()
+      )
     } catch (e) {
       // 没有档案时手填即可
     }
@@ -456,6 +502,20 @@ Page({
         icon: 'none'
       })
       return
+    }
+    const dislikeWarnings = (this.data.lines || [])
+      .map((line: any) => line.dislikeText)
+      .filter(Boolean)
+    if (dislikeWarnings.length) {
+      const res: any = await wx.showModal({
+        title: '注意忌口',
+        content: `${dislikeWarnings[0]}，仍要下单吗？`,
+        confirmText: '继续下单',
+        cancelText: '再看看'
+      })
+      if (!res.confirm) {
+        return
+      }
     }
     const mode = MODES[this.data.modeIndex]
     if (mode === '送过来' && !this.data.address.trim()) {

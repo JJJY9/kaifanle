@@ -70,6 +70,7 @@
         <view class="line-name">{{item.name}} <text class="line-qty">×{{item.qty}}</text></view>
         <view wx:if="{{item.specText}}" class="line-spec">{{item.specText}}</view>
         <view wx:if="{{item.note}}" class="line-note">备注：{{item.note}}</view>
+        <view wx:if="{{item.dislikeText}}" class="line-dislike">{{item.dislikeText}}</view>
         <view wx:if="{{item.invalid}}" class="line-invalid">{{item.invalidText}}</view>
       </view>
       <view class="line-right">
