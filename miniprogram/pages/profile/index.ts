@@ -67,6 +67,13 @@ Page({
         color: '#2FBF71'
       },
       {
+        key: 'favorites',
+        label: '我的收藏',
+        desc: '想再吃一次的菜',
+        icon: '♡',
+        color: '#FF5C8A'
+      },
+      {
         key: 'footprint',
         label: '干饭足迹',
         desc: '本月吃了多少、最爱哪道菜',
@@ -200,6 +207,11 @@ Page({
 
     if (key === 'reviews') {
       wx.navigateTo({ url: '/pages/reviews/index' })
+      return
+    }
+
+    if (key === 'favorites') {
+      wx.navigateTo({ url: '/pages/favorites/index' })
       return
     }
 

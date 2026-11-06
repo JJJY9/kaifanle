@@ -20,7 +20,8 @@
     "pages/week-menus/index",
     "pages/reviews/index",
     "pages/report/index",
-    "pages/my-report/index"
+    "pages/my-report/index",
+    "pages/favorites/index"
   ],
   "window": {
     "navigationBarBackgroundColor": "#FFFDF6",

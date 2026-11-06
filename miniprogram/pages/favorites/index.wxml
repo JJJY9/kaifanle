@@ -1,0 +1,81 @@
+<view class="page">
+  <view class="head">
+    <view class="title-row">
+      <text class="title display">我的收藏</text>
+      <view class="sticker">♡ {{count}}</view>
+    </view>
+    <text class="sub">想再吃一次的，都收在这里</text>
+  </view>
+
+  <view wx:if="{{loading}}" class="loading">
+    <view class="skeleton sk-card"></view>
+    <view class="skeleton sk-card"></view>
+  </view>
+
+  <empty-state
+    wx:elif="{{error}}"
+    title="收藏加载失败"
+    desc="{{error}}"
+    actionText="再试一次"
+    bind:action="onRetry"
+  />
+
+  <empty-state
+    wx:elif="{{!allFavorites.length}}"
+    title="还没有收藏"
+    desc="点开菜品或菜谱，点右上角的 ♡ 收藏"
+    actionText="去点餐"
+    bind:action="onGoHome"
+  />
+
+  <block wx:else>
+    <view class="search-bar">
+      <text class="search-icon">🔍</text>
+      <input
+        class="search-input"
+        placeholder="搜收藏的菜"
+        value="{{keyword}}"
+        bindinput="onSearch"
+      />
+      <view wx:if="{{keyword}}" class="search-clear" bindtap="onClearSearch">×</view>
+    </view>
+
+    <empty-state
+      wx:if="{{!display.length}}"
+      title="没搜到"
+      desc="换个菜名试试"
+    />
+
+    <view
+      wx:for="{{display}}"
+      wx:key="id"
+      class="fav-card card"
+      data-id="{{item.id}}"
+      bindtap="onTapDish"
+    >
+      <view class="fav-media" style="background: {{item.color}};">
+        <image
+          wx:if="{{item.image || item.cartoon}}"
+          class="fav-img"
+          src="{{item.image || item.cartoon}}"
+          mode="aspectFill"
+          lazy-load
+        />
+        <text wx:else class="fav-char">{{item.emoji || item.char}}</text>
+      </view>
+      <view class="fav-info">
+        <view class="fav-name">{{item.name}}</view>
+        <view class="fav-desc">{{item.desc}}</view>
+        <view class="fav-tags">
+          <text wx:for="{{item.tags}}" wx:key="*this" class="fav-tag">{{item}}</text>
+        </view>
+      </view>
+      <view class="fav-right">
+        <text class="fav-price">¥{{item.price}}</text>
+        <text class="fav-arrow">→</text>
+      </view>
+    </view>
+
+    <view class="foot-btn" bindtap="onGoHome">去点餐</view>
+  </block>
+</view>

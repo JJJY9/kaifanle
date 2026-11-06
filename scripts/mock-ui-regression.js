@@ -378,6 +378,24 @@ function invoke(mp, body) {
     data.posterPath ? '已生成' : '未生成'
   )
 
+  // 收藏页：先收藏当前菜，再取消
+  await invoke(mp, 'page.onToggleFavorite()')
+  await sleep(500)
+  await mp.navigateTo('/pages/favorites/index')
+  await sleep(1600)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 收藏页内容',
+    (data.allFavorites || []).length >= 1 &&
+      data.allFavorites.some(dish => dish.id === 'd01'),
+    `${(data.allFavorites || []).length} 道`
+  )
+  await mp.navigateBack()
+  await sleep(700)
+  await invoke(mp, 'page.onToggleFavorite()')
+  await sleep(400)
+
   // 菜谱大全
   await mp.navigateTo('/pages/recipe-list/index')
   await sleep(1600)
