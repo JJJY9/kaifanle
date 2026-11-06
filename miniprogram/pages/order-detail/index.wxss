@@ -350,6 +350,41 @@
   opacity: 0.5;
 }
 
+.owner-reply {
+  margin-top: 20rpx;
+  padding: 18rpx 20rpx;
+  background: #FFFDF6;
+  border: 3rpx solid #111111;
+  border-radius: 20rpx;
+}
+
+.owner-reply-head {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 8rpx;
+}
+
+.owner-reply-label {
+  padding: 2rpx 12rpx;
+  background: #FFD23F;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  font-weight: 800;
+  transform: rotate(-2deg);
+}
+
+.owner-reply-time {
+  color: #B8B8B8;
+  font-size: 20rpx;
+}
+
+.owner-reply-text {
+  font-size: 25rpx;
+  line-height: 1.5;
+}
+
 .actions .btn {
   flex: 1;
   height: 88rpx;

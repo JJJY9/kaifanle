@@ -16,7 +16,7 @@
 
 - v0.2.0 · 家庭投喂版
 - **默认接入微信云开发**；把 `miniprogram/config.ts` 里的 `USE_CLOUD` 改成 `false` 即可切回本地 mock 数据
-- 已实现：今日菜单、餐次切换、菜品搜索、帮我选、菜品收藏、卡通菜品插画（按菜名生成 SVG，可上传图片覆盖）、菜品做法（点单时展开查看步骤）、菜品详情 / 加料弹层、购物车、结算下单（备注快捷短语）、订单列表（全部 / 进行中 / 已结束筛选、订单号 / 菜名 / 日期搜索）、订单状态时间轴、催单、再来一单、订单评价（😋/🙂/😵 + 留言）、本周饭表（今天起 7 天早/午/晚安排与休息日）、厨房端（接单 / 状态流转 / 新订单轮询提醒 / 今日备菜清单 / 近 7 天统计 / 历史订单 / 评价展示 / 一键复制今日清单 / 菜品 CRUD / 菜品模板库（136 道）/ 分类管理 / 库存 / 营业设置（开关 / 截单 / 今日公告 / 指定休息日 / 每周固定休息）/ 每日菜单编排、菜单模板及一键复制到未来 7 天）、管理员权限、云数据库初始化、订阅消息、内容安全检测、未来 7 天预订、订单取消、许愿池、爱心券、口味与地址档案、今日看板、分享、隐私说明页
+- 已实现：今日菜单、餐次切换、菜品搜索、帮我选、菜品收藏、卡通菜品插画（按菜名生成 SVG，可上传图片覆盖）、菜品做法（点单时展开查看步骤）、菜品详情 / 加料弹层、购物车、结算下单（备注快捷短语）、订单列表（全部 / 进行中 / 已结束筛选、订单号 / 菜名 / 日期搜索）、订单状态时间轴、催单、再来一单、订单评价（😋/🙂/😵 + 留言）与掌勺人回复、本周饭表（今天起 7 天早/午/晚安排与休息日）、厨房端（接单 / 状态流转 / 新订单轮询提醒 / 今日备菜清单 / 近 7 天统计 / 历史订单 / 评价回复 / 一键复制今日清单 / 菜品 CRUD / 菜品模板库（136 道）/ 分类管理 / 库存 / 营业设置（开关 / 截单 / 今日公告 / 指定休息日 / 每周固定休息）/ 每日菜单编排、菜单模板及一键复制到未来 7 天）、管理员权限、云数据库初始化、订阅消息、内容安全检测、未来 7 天预订、订单取消、许愿池、爱心券、口味与地址档案、今日看板、分享、隐私说明页
 - 未实现：微信支付、小票打印（见路线图）
 
 > **云函数部署提示**：如果「上传并部署」报
@@ -78,7 +78,7 @@ node scripts/init-cloud-db.js ws://127.0.0.1:9420
 |---|---|
 | `categories` | 分类（主食 / 小炒 / 汤羹 / 饮品 / 甜品） |
 | `dishes` | 菜品、价格、规格、加料、售罄状态 |
-| `orders` | 订单（含 `_openid`、状态、时间轴、日期、地址、口味快照） |
+| `orders` | 订单（含 `_openid`、状态、时间轴、日期、地址、口味快照、评价与掌勺人回复） |
 | `config` | 初始化标记、管理员 openid、订单序号、营业设置 |
 | `wishes` | 许愿池 |
 | `users` | 口味、忌口、常用地址档案（文档 ID 为 openid） |
@@ -107,7 +107,7 @@ node scripts/init-cloud-db.js ws://127.0.0.1:9420
 
 ### 云函数动作
 
-`getCategories` / `saveCategory` / `deleteCategory` / `getDishes` / `getDish` / `getOrders` / `getAllOrders` / `getActiveOrders` / `getOrder` /`createOrder` / `cancelOrder` / `urgeOrder` / `rateOrder` / `updateOrderStatus` / `toggleDishStatus` / `saveDish` / `deleteDish` / `moveDish` /
+`getCategories` / `saveCategory` / `deleteCategory` / `getDishes` / `getDish` / `getOrders` / `getAllOrders` / `getActiveOrders` / `getOrder` /`createOrder` / `cancelOrder` / `urgeOrder` / `rateOrder` / `replyRating` / `updateOrderStatus` / `toggleDishStatus` / `saveDish` / `deleteDish` / `moveDish` /
 `getBusiness` / `updateBusiness` / `getMenuForDate` / `getWeekMenus` / `saveMenu` / `deleteMenu` / `rollMenu` /
 `getMyProfile` / `saveMyProfile` / `getStats` / `getMyStats` / `createWish` / `getWishes` / `updateWish` / `deleteWish` /
 `createCoupon` / `getCoupons` / `claimCoupon` / `useCoupon` / `deleteCoupon` / `getMe` / `initDb`

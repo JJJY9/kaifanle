@@ -12,6 +12,7 @@ const store = new Map()
 const sentMessages = []
 let currentOpenid = 'admin-openid'
 let transactionsEnabled = true
+let beforeQueryUpdate = null
 
 function chinaDate(offset) {
   const d = new Date(
@@ -115,6 +116,11 @@ function makeQuery(name, cond, order, limit) {
       }
     },
     async update({ data }) {
+      if (typeof beforeQueryUpdate === 'function') {
+        const hook = beforeQueryUpdate
+        beforeQueryUpdate = null
+        hook(name, cond)
+      }
       let updated = 0
       for (const doc of ensure(name).values()) {
         if (!matches(doc, cond)) {
@@ -511,6 +517,18 @@ async function run() {
   )
   assert.strictEqual(res.ok, true)
 
+  // 回复评价：已完成但还没评分时不能回复，也不能写库
+  res = await call(
+    'replyRating',
+    { id: created.data.id, reply: '谢谢' },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, false)
+  assert.ok(String(res.error).indexOf('还没评价') > -1)
+  res = await call('getOrder', { id: created.data.id }, 'admin-openid')
+  assert.strictEqual(res.data.ownerReply, undefined)
+  assert.strictEqual(res.data.rating, undefined)
+
   // 评价：只能本人评、分数受限、内容安全
   res = await call(
     'rateOrder',
@@ -538,6 +556,173 @@ async function run() {
     'girl-openid'
   )
   assert.strictEqual(res.ok, false)
+
+  // 掌勺人回复：管理员专属、只能回已评价订单、内容安全
+  res = await call('replyRating', {}, 'admin-openid')
+  assert.strictEqual(res.ok, false)
+  assert.ok(String(res.error).indexOf('缺少订单') > -1)
+  res = await call(
+    'replyRating',
+    { id: created.data.id, reply: '谢谢喜欢' },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, false)
+  assert.ok(String(res.error).indexOf('权限') > -1)
+  res = await call(
+    'replyRating',
+    { id: created.data.id, reply: '谢谢喜欢' },
+    'stranger-openid'
+  )
+  assert.strictEqual(res.ok, false)
+  res = await call(
+    'replyRating',
+    { id: 'no-such-order', reply: '谢谢' },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, false)
+  assert.ok(String(res.error).indexOf('订单不存在') > -1)
+  res = await call(
+    'replyRating',
+    { id: created.data.id, reply: '违规回复' },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, false)
+  assert.ok(String(res.error).indexOf('不太合适') > -1)
+  res = await call('getOrder', { id: created.data.id }, 'admin-openid')
+  assert.strictEqual(res.data.ownerReply, undefined)
+  const timelineBeforeReply = res.data.timeline.length
+  res = await call(
+    'replyRating',
+    { id: created.data.id, reply: '谢谢喜欢，下次给你多加个蛋' },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.ownerReply, '谢谢喜欢，下次给你多加个蛋')
+  assert.ok(Number(res.data.ownerReplyAt) > 0)
+  res = await call('getOrder', { id: created.data.id }, 'girl-openid')
+  assert.strictEqual(res.data.ownerReply, '谢谢喜欢，下次给你多加个蛋')
+  assert.strictEqual(res.data.rating, 3)
+  assert.strictEqual(res.data.feedback, '超好吃')
+  assert.strictEqual(res.data.status, 'completed')
+  assert.ok(Number(res.data.ratedAt) > 0)
+  res = await call('getOrder', { id: created.data.id }, 'stranger-openid')
+  assert.strictEqual(res.ok, false)
+
+  // 超长回复按字符截断且不切断 emoji；空回复不能擦掉已有回复
+  res = await call(
+    'replyRating',
+    { id: created.data.id, reply: 'a'.repeat(49) + '😀'.repeat(10) },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(Array.from(res.data.ownerReply).length, 50)
+  assert.ok(res.data.ownerReply.endsWith('😀'))
+  assert.ok(res.data.ownerReply.indexOf('�') === -1)
+  res = await call(
+    'replyRating',
+    { id: created.data.id, reply: '   ' },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, false)
+  assert.ok(String(res.error).indexOf('不能为空') > -1)
+  res = await call('getOrder', { id: created.data.id }, 'girl-openid')
+  assert.strictEqual(Array.from(res.data.ownerReply).length, 50)
+  assert.ok(res.data.ownerReply.endsWith('😀'))
+
+  // 重复回复按覆盖处理；不影响评分、时间轴与进行中列表
+  res = await call(
+    'replyRating',
+    { id: created.data.id, reply: '改一句：谢谢你' },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.ownerReply, '改一句：谢谢你')
+  const overwriteReplyAt = res.data.ownerReplyAt
+  res = await call('getOrder', { id: created.data.id }, 'admin-openid')
+  assert.strictEqual(res.data.ownerReply, '改一句：谢谢你')
+  assert.strictEqual(res.data.ownerReplyAt, overwriteReplyAt)
+  assert.strictEqual(res.data.rating, 3)
+  assert.strictEqual(res.data.feedback, '超好吃')
+  assert.strictEqual(res.data.status, 'completed')
+  assert.strictEqual(res.data.timeline.length, timelineBeforeReply)
+  const oldRatedAt = res.data.ratedAt
+
+  // 顾客改评后旧回复应清空，旧评价快照不能再回复
+  res = await call(
+    'rateOrder',
+    { id: created.data.id, rating: 1, feedback: '糊了' },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.ownerReply, '')
+  assert.strictEqual(res.data.ownerReplyAt, 0)
+  const newRatedAt = res.data.ratedAt
+  res = await call('getOrder', { id: created.data.id }, 'admin-openid')
+  assert.strictEqual(res.data.rating, 1)
+  assert.strictEqual(res.data.feedback, '糊了')
+  assert.strictEqual(res.data.ownerReply, '')
+  res = await call(
+    'replyRating',
+    {
+      id: created.data.id,
+      reply: '旧评价回复',
+      ratedAt: oldRatedAt
+    },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, false)
+  assert.ok(String(res.error).indexOf('评价刚刚更新') > -1)
+
+  // 读后写窗口里评价被改：条件更新必须拒绝
+  beforeQueryUpdate = name => {
+    if (name !== 'orders') {
+      return
+    }
+    const doc = ensure('orders').get(created.data.id)
+    if (doc) {
+      doc.ratedAt = Number(doc.ratedAt || 0) + 1
+    }
+  }
+  res = await call(
+    'replyRating',
+    { id: created.data.id, reply: '并发回复', ratedAt: newRatedAt },
+    'admin-openid'
+  )
+  beforeQueryUpdate = null
+  assert.strictEqual(res.ok, false)
+  assert.ok(String(res.error).indexOf('订单刚刚变了') > -1)
+
+  // 改回 3 分后重新回复，后续统计仍按 3 分
+  res = await call(
+    'rateOrder',
+    { id: created.data.id, rating: 3, feedback: '超好吃' },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.ownerReply, '')
+  const restoredRatedAt = res.data.ratedAt
+  res = await call(
+    'replyRating',
+    {
+      id: created.data.id,
+      reply: '新评价回复',
+      ratedAt: restoredRatedAt
+    },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  res = await call('getOrder', { id: created.data.id }, 'admin-openid')
+  assert.strictEqual(res.data.ownerReply, '新评价回复')
+  assert.strictEqual(res.data.rating, 3)
+  assert.strictEqual(res.data.feedback, '超好吃')
+
+  res = await call('getStats', {}, 'admin-openid')
+  assert.strictEqual(res.data.avgRating, 3)
+  res = await call('getAllOrders', {}, 'admin-openid')
+  const repliedOrder = res.data.find(order => order.id === created.data.id)
+  assert.strictEqual(repliedOrder.ownerReply, '新评价回复')
+  res = await call('getActiveOrders', {}, 'admin-openid')
+  assert.ok(!res.data.some(order => order.id === created.data.id))
 
   res = await call('toggleDishStatus', { id: 'd01' }, 'admin-openid')
   assert.strictEqual(res.ok, true)
@@ -593,6 +778,15 @@ async function run() {
     'girl-openid'
   )
   assert.strictEqual(res.ok, false)
+
+  // 未完成订单不能回复评价
+  res = await call(
+    'replyRating',
+    { id: order2.data.id, reply: '谢谢' },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, false)
+  assert.ok(String(res.error).indexOf('吃完才能回复') > -1)
 
   // 催单：只有本人能催，5 分钟内不能重复
   res = await call('urgeOrder', { id: order2.data.id }, 'stranger-openid')
@@ -1205,7 +1399,7 @@ async function run() {
   assert.strictEqual(res.ok, true)
 
   console.log(
-    '云函数冒烟测试通过：初始化、菜单、菜品 CRUD、下单计价、权限、状态流转、取消订单、许愿池、营业设置、每日菜单、口味档案、今日看板、爱心券、售罄拦截、订阅消息。'
+    '云函数冒烟测试通过：初始化、菜单、菜品 CRUD、下单计价、权限、状态流转、取消订单、订单评价与回复、许愿池、营业设置、每日菜单、口味档案、今日看板、爱心券、售罄拦截、订阅消息。'
   )
 }
 

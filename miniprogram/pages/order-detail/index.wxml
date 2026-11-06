@@ -84,6 +84,14 @@
       class="rating-submit {{submittingRating ? 'disabled' : ''}}"
       bindtap="onSubmitRating"
     >{{submittingRating ? '提交中…' : (order.rating ? '更新评价' : '提交评价')}}</view>
+
+    <view wx:if="{{order.ownerReply}}" class="owner-reply">
+      <view class="owner-reply-head">
+        <text class="owner-reply-label">掌勺人说</text>
+        <text wx:if="{{order.ownerReplyText}}" class="owner-reply-time">{{order.ownerReplyText}}</text>
+      </view>
+      <view class="owner-reply-text">{{order.ownerReply}}</view>
+    </view>
   </view>
 
   <view class="block card">

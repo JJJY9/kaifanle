@@ -6,6 +6,7 @@ import {
   getMe,
   getStats,
   moveDish,
+  replyRating,
   rollMenu,
   toggleDishStatus,
   updateOrderStatus
@@ -30,6 +31,7 @@ Page({
     error: '',
     busyId: '',
     busyDishId: '',
+    replyingId: '',
     movingId: '',
     showHistory: false,
     showPrep: false,
@@ -46,6 +48,7 @@ Page({
   _knownPending: [] as string[],
   _statsAt: 0,
   _rawOrders: [] as any[],
+  _replyModalOpen: false as boolean,
   _loadSeq: 0,
 
   onShow() {
@@ -267,6 +270,9 @@ Page({
               ? '😵 翻车'
               : '',
           feedback: order.feedback || '',
+          canReply:
+            order.status === 'completed' &&
+            [1, 2, 3].indexOf(Number(order.rating)) > -1,
           waitText: (() => {
             const minutes = Math.floor(
               (Date.now() - Number(order.createdAt || 0)) / 60000
@@ -594,6 +600,86 @@ Page({
     const id = e.currentTarget.dataset.id
     if (id) {
       wx.navigateTo({ url: '/pages/order-detail/index?id=' + id })
+    }
+  },
+
+  async onReplyRating(e: any) {
+    const id = e.currentTarget.dataset.id
+    if (this._replyModalOpen) {
+      return
+    }
+    if (this.data.replyingId) {
+      if (this.data.replyingId !== id) {
+        wx.showToast({ title: '正在回复另一条，稍等', icon: 'none' })
+      }
+      return
+    }
+    const item = (this.data.history || []).find((order: any) => order.id === id)
+    if (!item) {
+      return
+    }
+    this._replyModalOpen = true
+    let modal: any
+    try {
+      modal = await wx.showModal({
+        title: '回复这条评价',
+        editable: true,
+        content: item.ownerReply || '',
+        placeholderText: '比如：谢谢你爱吃，下次给你多加个蛋',
+        confirmText: item.ownerReply ? '更新' : '回复',
+        cancelText: '算了'
+      })
+    } catch (err) {
+      wx.showToast({ title: '打不开回复框，再试一次', icon: 'none' })
+      return
+    } finally {
+      this._replyModalOpen = false
+    }
+    if (!modal || !modal.confirm) {
+      return
+    }
+    const reply = Array.from(
+      String(modal.content || '').trim()
+    )
+      .slice(0, 50)
+      .join('')
+    if (!reply) {
+      wx.showToast({ title: '没写内容', icon: 'none' })
+      return
+    }
+    this.setData({ replyingId: id })
+    try {
+      const updated = await replyRating(id, reply, item.ratedAt)
+      if (!updated) {
+        throw new Error('订单不存在')
+      }
+      const ownerReplyAt = updated.ownerReplyAt || Date.now()
+      const index = (this.data.history || []).findIndex(
+        (order: any) => order.id === id
+      )
+      if (index > -1) {
+        this.setData({
+          [`history[${index}].ownerReply`]: reply,
+          [`history[${index}].ownerReplyAt`]: ownerReplyAt
+        })
+      } else {
+        await this.load()
+      }
+      ;(this._rawOrders || []).forEach((order: any) => {
+        if (order.id === id) {
+          order.ownerReply = reply
+          order.ownerReplyAt = ownerReplyAt
+        }
+      })
+      wx.showToast({ title: '回好啦，她看得到', icon: 'none' })
+    } catch (err: any) {
+      const message = String((err && err.message) || '回复失败')
+      wx.showToast({ title: message.slice(0, 40), icon: 'none' })
+      if (message.indexOf('评价刚刚更新') > -1) {
+        await this.load()
+      }
+    } finally {
+      this.setData({ replyingId: '' })
     }
   },
 

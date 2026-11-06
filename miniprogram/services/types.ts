@@ -108,6 +108,8 @@ export interface Order {
   rating?: number
   feedback?: string
   ratedAt?: number
+  ownerReply?: string
+  ownerReplyAt?: number
 }
 
 export interface CreateOrderPayload {

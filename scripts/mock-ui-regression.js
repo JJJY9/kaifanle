@@ -385,6 +385,11 @@ function invoke(mp, body) {
     (data.ratingOptions || []).length === 3,
     data.order && data.order.status
   )
+  check(
+    'mock 订单已完成可评价',
+    Boolean(data.order) && data.order.status === 'completed',
+    data.order && data.order.status
+  )
   if (data.order && data.order.status === 'completed') {
     await invoke(
       mp,
@@ -395,6 +400,94 @@ function invoke(mp, body) {
     page = await current()
     data = await page.data()
     check('mock 提交评价', data.rating === 3, `评分 ${data.rating}`)
+
+    // 厨房回复评价 → 顾客订单详情能看到
+    await mp.navigateTo('/pages/kitchen/index')
+    await sleep(2400)
+    page = await current()
+    data = await page.data()
+    const beforeReply =
+      ((data.history || []).find(order => order.id === 'seed-2') || {})
+        .ownerReply || ''
+    check(
+      'mock 厨房历史有回复入口',
+      Boolean(
+        (data.history || []).find(
+          order => order.id === 'seed-2' && order.canReply
+        )
+      ),
+      `历史 ${(data.history || []).length} 单`
+    )
+    await mp.mockWxMethod('showModal', {
+      confirm: true,
+      cancel: false,
+      content: '   '
+    })
+    await invoke(
+      mp,
+      "page.onReplyRating({ currentTarget: { dataset: { id: 'seed-2' } } })"
+    )
+    await sleep(600)
+    page = await current()
+    data = await page.data()
+    const afterEmpty =
+      ((data.history || []).find(order => order.id === 'seed-2') || {})
+        .ownerReply || ''
+    check(
+      'mock 空回复被拦截',
+      afterEmpty === beforeReply,
+      `回复仍为「${afterEmpty || '空'}」`
+    )
+
+    const firstReply = '谢谢喜欢，下次给你多加个蛋'
+    await mp.mockWxMethod('showModal', {
+      confirm: true,
+      cancel: false,
+      content: firstReply
+    })
+    await invoke(
+      mp,
+      "page.onReplyRating({ currentTarget: { dataset: { id: 'seed-2' } } })"
+    )
+    await sleep(900)
+    page = await current()
+    data = await page.data()
+    check(
+      'mock 厨房回复评价',
+      ((data.history || []).find(order => order.id === 'seed-2') || {})
+        .ownerReply === firstReply,
+      firstReply
+    )
+
+    const secondReply = '改一句：谢谢你呀'
+    await mp.mockWxMethod('showModal', {
+      confirm: true,
+      cancel: false,
+      content: secondReply
+    })
+    await invoke(
+      mp,
+      "page.onReplyRating({ currentTarget: { dataset: { id: 'seed-2' } } })"
+    )
+    await sleep(900)
+    page = await current()
+    data = await page.data()
+    check(
+      'mock 覆盖评价回复',
+      ((data.history || []).find(order => order.id === 'seed-2') || {})
+        .ownerReply === secondReply,
+      secondReply
+    )
+
+    await mp.navigateBack()
+    await sleep(1500)
+    page = await current()
+    data = await page.data()
+    check(
+      'mock 顾客看到掌勺人回复',
+      Boolean(data.order) && data.order.ownerReply === secondReply,
+      data.order && data.order.ownerReply
+    )
   }
 
   const failed = results.filter(r => !r.ok)

@@ -165,12 +165,24 @@
           <text class="no">#{{item.no}}</text>
           <view class="order-top-right">
             <text wx:if="{{item.ratingText}}" class="rating-badge">{{item.ratingText}}</text>
+            <text wx:if="{{item.ownerReply}}" class="replied-badge">已回复</text>
             <view class="status {{item.status}}">{{item.statusText}}</view>
           </view>
         </view>
         <view class="order-summary">{{item.summary}}</view>
         <view wx:if="{{item.feedback}}" class="order-feedback">“{{item.feedback}}”</view>
+        <view wx:if="{{item.ownerReply}}" class="order-reply">
+          <text class="order-reply-label">掌勺人</text>
+          <text class="order-reply-text">{{item.ownerReply}}</text>
+        </view>
         <view class="order-meta">{{item.dateText}} · {{item.mealText}} · {{item.timeText}}</view>
+        <view wx:if="{{item.canReply}}" class="history-actions">
+          <view
+            class="kbtn ghost {{replyingId === item.id ? 'busy' : ''}}"
+            data-id="{{item.id}}"
+            catchtap="onReplyRating"
+          >{{replyingId === item.id ? '回复中…' : (item.ownerReply ? '改一句回复' : '回复评价')}}</view>
+        </view>
       </view>
     </block>
 

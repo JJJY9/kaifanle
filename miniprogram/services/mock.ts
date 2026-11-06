@@ -850,9 +850,50 @@ export async function rateOrder(
   if ([1, 2, 3].indexOf(Number(rating)) === -1) {
     throw new Error('评价不太对')
   }
+  const feedbackText = String(feedback || '').trim().slice(0, 50)
+  const changed =
+    Number(order.rating) !== Number(rating) ||
+    String(order.feedback || '') !== feedbackText
   order.rating = Number(rating)
-  order.feedback = String(feedback || '').trim().slice(0, 50)
+  order.feedback = feedbackText
   order.ratedAt = Date.now()
+  if (changed && order.ownerReply) {
+    order.ownerReply = ''
+    order.ownerReplyAt = 0
+  }
+  saveOrders()
+  return { ...order }
+}
+
+export async function replyRating(
+  id: string,
+  reply: string,
+  ratedAt?: number
+): Promise<Order | null> {
+  await delay(60)
+  const orders = loadOrders()
+  const order = orders.find(item => item.id === id)
+  if (!order) {
+    throw new Error('订单不存在')
+  }
+  if (order.status !== 'completed') {
+    throw new Error('吃完才能回复哦')
+  }
+  if ([1, 2, 3].indexOf(Number(order.rating)) === -1) {
+    throw new Error('她还没评价，先等等')
+  }
+  const seenRatedAt = Number(ratedAt || 0)
+  if (seenRatedAt && Number(order.ratedAt || 0) !== seenRatedAt) {
+    throw new Error('她的评价刚刚更新了，刷新看看')
+  }
+  const text = Array.from(String(reply || '').trim())
+    .slice(0, 50)
+    .join('')
+  if (!text) {
+    throw new Error('回复不能为空')
+  }
+  order.ownerReply = text
+  order.ownerReplyAt = Date.now()
   saveOrders()
   return { ...order }
 }
