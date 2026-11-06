@@ -155,6 +155,45 @@
   margin-top: 28rpx;
 }
 
+.poster-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 84rpx;
+  margin-top: 24rpx;
+  background: #FFFFFF;
+  border: 4rpx solid #111111;
+  border-radius: 999rpx;
+  box-shadow: 5rpx 5rpx 0 #111111;
+  font-size: 26rpx;
+  font-weight: 800;
+}
+
+.poster-btn:active {
+  transform: translate(5rpx, 5rpx);
+  box-shadow: none;
+}
+
+.poster-btn.disabled {
+  opacity: 0.6;
+}
+
+.poster-hint {
+  margin-top: 10rpx;
+  color: #5C5C5C;
+  font-size: 20rpx;
+  text-align: center;
+}
+
+.poster-canvas {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  width: 600px;
+  height: 900px;
+  pointer-events: none;
+}
+
 .btn {
   display: flex;
   align-items: center;

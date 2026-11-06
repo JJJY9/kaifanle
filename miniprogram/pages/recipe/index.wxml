@@ -43,7 +43,14 @@
     <view wx:else class="empty-steps">这道菜还没写做法，可以在菜品编辑里补充</view>
   </view>
 
+  <view class="poster-btn {{posterMaking ? 'disabled' : ''}}" bindtap="onSharePoster">
+    {{posterMaking ? '生成中…' : '生成菜品海报'}}
+  </view>
+  <view wx:if="{{posterPath}}" class="poster-hint" bindtap="onPreviewPoster">海报已生成，点这里分享 ›</view>
+
   <view wx:if="{{isAdmin}}" class="actions">
     <view class="btn btn-primary" bindtap="onEdit">编辑菜品与做法</view>
   </view>
+
+  <canvas type="2d" id="poster" class="poster-canvas"></canvas>
 </view>

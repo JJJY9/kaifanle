@@ -288,6 +288,15 @@ function invoke(mp, body) {
     Boolean(data.dish) && (data.steps || []).length >= 3,
     data.dish && `${data.dish.name} · ${data.steps.length} 步`
   )
+  await invoke(mp, 'page.onSharePoster()')
+  await sleep(2500)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 菜品海报',
+    Boolean(data.posterPath),
+    data.posterPath ? '已生成' : '未生成'
+  )
 
   // 菜谱大全
   await mp.navigateTo('/pages/recipe-list/index')
