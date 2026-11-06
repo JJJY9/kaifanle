@@ -43,7 +43,7 @@
           bindtap="onTapDish"
         >
           <view class="dot" style="background: {{dish.color}};">
-            <image wx:if="{{dish.image || dish.cartoon}}" class="dot-img" src="{{dish.image || dish.cartoon}}" mode="aspectFill" />
+            <image wx:if="{{dish.image || dish.cartoon}}" class="dot-img" src="{{dish.image || dish.cartoon}}" mode="aspectFill" lazy-load />
             <text wx:else class="dot-char">{{dish.emoji || dish.char}}</text>
           </view>
           <view class="info">
