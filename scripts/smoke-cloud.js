@@ -208,11 +208,16 @@ const fakeSdk = {
     }
     if (transactionsEnabled) {
       // 事务在当前单线程假库里退化为直接操作，接口保持一致
-      api.startTransaction = async () => ({
-        collection: makeCollection,
-        async commit() {},
-        async rollback() {}
-      })
+      api.startTransaction = async () => {
+        if (!transactionsEnabled) {
+          throw new Error('transaction disabled')
+        }
+        return {
+          collection: makeCollection,
+          async commit() {},
+          async rollback() {}
+        }
+      }
     }
     return api
   },
@@ -829,7 +834,8 @@ async function run() {
     'girl-openid'
   )
   assert.strictEqual(res.ok, true)
-  assert.strictEqual(res.data.no, '003')
+  assert.ok(res.data.no.indexOf('003') === 0)
+  assert.ok(res.data.no.length > 3)
   transactionsEnabled = true
 
   // 我的统计：总数（不含已取消）、本月、最常点

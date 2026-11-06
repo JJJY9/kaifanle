@@ -207,7 +207,7 @@ async function reserveOrderSeq() {
           .doc(CONFIG_ID)
           .update({ data: { orderSeq: seq } })
         await transaction.commit()
-        return seq
+        return { seq, fallback: false }
       } catch (err) {
         if (transaction) {
           try {
@@ -229,7 +229,10 @@ async function reserveOrderSeq() {
     .doc(CONFIG_ID)
     .update({ data: { orderSeq: _.inc(1) } })
   const fresh = await db.collection('config').doc(CONFIG_ID).get()
-  return Number((fresh.data && fresh.data.orderSeq) || 1)
+  return {
+    seq: Number((fresh.data && fresh.data.orderSeq) || 1),
+    fallback: true
+  }
 }
 
 // 可在云函数环境变量里配置 ADMIN_OPENIDS（逗号分隔）固定管理员，
@@ -1253,12 +1256,16 @@ async function createOrder(payload, openid) {
       // 没有口味档案时不影响下单
     }
 
-    const seq = await reserveOrderSeq()
+    const seqInfo = await reserveOrderSeq()
 
     const now = Date.now()
+    // 事务不可用时序号可能并发重复，加一小段随机后缀保证展示号唯一
+    const orderNo =
+      String(seqInfo.seq).padStart(3, '0') +
+      (seqInfo.fallback ? '-' + Math.random().toString(36).slice(2, 5) : '')
     const order = {
       _openid: openid,
-      no: String(seq).padStart(3, '0'),
+      no: orderNo,
       items,
       amount,
       meal,
