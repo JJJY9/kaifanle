@@ -1826,6 +1826,15 @@ function invoke(mp, body) {
     Number(data.pendingCount) >= 1,
     `${data.pendingCount} 单`
   )
+  check(
+    'mock 备注更新标记',
+    (data.orders || []).some(
+      order => order.id === 'seed-1' && order.noteUpdated
+    ),
+    (data.orders || []).find(order => order.id === 'seed-1')
+      ? '已标记'
+      : '没找到订单'
+  )
   await mp.mockWxMethod('showModal', {
     confirm: true,
     cancel: false,

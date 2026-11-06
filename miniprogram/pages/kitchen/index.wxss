@@ -750,6 +750,12 @@
   border-radius: 12rpx;
 }
 
+.note-updated {
+  color: #D9431C;
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
 .order-rating-tag {
   padding: 3rpx 14rpx;
   background: #E8F8EE;

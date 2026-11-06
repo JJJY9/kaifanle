@@ -239,7 +239,7 @@
       </view>
       <view wx:if="{{item.profileText}}" class="order-taste">{{item.profileText}}</view>
       <view wx:if="{{item.address}}" class="order-address">送到：{{item.address}}</view>
-      <view wx:if="{{item.note}}" class="order-note">整单备注：{{item.note}}</view>
+      <view wx:if="{{item.note}}" class="order-note">整单备注：{{item.note}}<text wx:if="{{item.noteUpdated}}" class="note-updated"> · 刚改过</text></view>
       <view class="order-actions">
         <view class="kbtn ghost" data-id="{{item.id}}" catchtap="onOpenReceipt">小票</view>
         <view

@@ -330,6 +330,7 @@ Page({
               ? '😵 翻车'
               : '',
           feedback: order.feedback || '',
+          noteUpdated: Boolean(order.noteUpdatedAt),
           ratingTags: Array.isArray(order.ratingTags)
             ? order.ratingTags.slice(0, 4)
             : [],
