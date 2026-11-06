@@ -1243,6 +1243,15 @@ function invoke(mp, body) {
       ? `本周 ¥${data.compare.thisRevenue} / 上周 ¥${data.compare.prevRevenue}`
       : '没有对比'
   )
+  check(
+    'mock 月报评价标签',
+    Array.isArray(data.report.topTags) &&
+      data.report.topTags.length >= 1 &&
+      data.report.topTags.some(tag => tag.name === '好吃'),
+    (data.report.topTags || [])
+      .map(tag => `${tag.name}×${tag.count}`)
+      .join('、')
+  )
   await invoke(mp, 'page.onExport()')
   await sleep(900)
   page = await current()

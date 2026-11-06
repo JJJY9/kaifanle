@@ -1809,6 +1809,8 @@ async function run() {
   assert.ok(res.data.topDishes[0].qty >= 1)
   assert.ok(res.data.ratedCount >= 1)
   assert.ok(res.data.avgRating > 0)
+  assert.ok(Array.isArray(res.data.topTags))
+  assert.ok(res.data.topTags.length <= 5)
 
   // 单品近 30 天销量
   const topName = res.data.topDishes[0].name

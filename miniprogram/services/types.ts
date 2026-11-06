@@ -222,6 +222,7 @@ export interface KitchenReport {
   ratedCount: number
   avgRating: number
   goodRate: number
+  topTags: { name: string; count: number }[]
 }
 
 export interface KitchenStatus {

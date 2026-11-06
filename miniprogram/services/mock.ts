@@ -1383,6 +1383,19 @@ export async function getKitchenReport(): Promise<KitchenReport> {
           100
       )
     : 0
+  const tagMap: Record<string, number> = {}
+  active.forEach(order => {
+    ;(order.ratingTags || []).forEach(tag => {
+      const name = String(tag || '')
+      if (name) {
+        tagMap[name] = (tagMap[name] || 0) + 1
+      }
+    })
+  })
+  const topTags = Object.keys(tagMap)
+    .map(name => ({ name, count: tagMap[name] }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
   return {
     days,
     startDate: dateInputString(new Date(start)),
@@ -1398,7 +1411,8 @@ export async function getKitchenReport(): Promise<KitchenReport> {
     topDishes,
     ratedCount: rated.length,
     avgRating,
-    goodRate
+    goodRate,
+    topTags
   }
 }
 

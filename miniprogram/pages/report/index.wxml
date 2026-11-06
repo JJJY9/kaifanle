@@ -85,6 +85,15 @@
       <text>好评率 {{report.goodRate}}%</text>
     </view>
 
+    <view wx:if="{{report.topTags.length}}" class="tags-line card">
+      <text class="tags-title">她被夸</text>
+      <text
+        wx:for="{{report.topTags}}"
+        wx:key="name"
+        class="report-tag"
+      >{{item.name}} ×{{item.count}}</text>
+    </view>
+
     <view wx:if="{{compare}}" class="compare card">
       <view class="compare-head">
         <text class="compare-title">本周 vs 上周</text>

@@ -147,6 +147,30 @@
   font-weight: 600;
 }
 
+.tags-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10rpx;
+  margin-top: 18rpx;
+  padding: 16rpx 20rpx;
+}
+
+.tags-title {
+  color: #5C5C5C;
+  font-size: 21rpx;
+  font-weight: 700;
+}
+
+.report-tag {
+  padding: 4rpx 14rpx;
+  background: #E8F8EE;
+  border: 2rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
 .health-card {
   margin-top: 18rpx;
   padding: 18rpx 20rpx;
