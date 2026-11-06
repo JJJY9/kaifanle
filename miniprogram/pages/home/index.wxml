@@ -71,6 +71,16 @@
         bindtap="onToggleFavorites"
       >{{favoriteLabel}}</view>
     </view>
+
+    <scroll-view wx:if="{{sections.length}}" scroll-x class="cat-jump">
+      <view
+        wx:for="{{sections}}"
+        wx:key="id"
+        class="cat-jump-chip"
+        data-id="{{item.id}}"
+        bindtap="onCategoryJump"
+      >{{item.name}}</view>
+    </scroll-view>
   </view>
 
   <view wx:if="{{loading}}" class="loading">
@@ -117,7 +127,7 @@
       </view>
     </view>
 
-    <view wx:for="{{sections}}" wx:key="id" class="section">
+    <view wx:for="{{sections}}" wx:key="id" class="section" id="cat-{{item.id}}">
       <view class="section-head">
         <view class="section-dot" style="background: {{item.color}};"></view>
         <text class="section-title">{{item.name}}</text>

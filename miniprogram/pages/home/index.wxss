@@ -311,6 +311,30 @@
   transform: rotate(-1deg);
 }
 
+.cat-jump {
+  width: 100%;
+  margin-top: 14rpx;
+  white-space: nowrap;
+}
+
+.cat-jump-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 52rpx;
+  padding: 0 18rpx;
+  margin-right: 10rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 21rpx;
+  font-weight: 800;
+}
+
+.cat-jump-chip:active {
+  background: #FFD23F;
+}
+
 .hero {
   margin-top: 32rpx;
   background: #FFFFFF;

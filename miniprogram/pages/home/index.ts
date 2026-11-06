@@ -385,6 +385,14 @@ Page({
     })
   },
 
+  onCategoryJump(e: any) {
+    const id = e.currentTarget.dataset.id
+    if (!id) {
+      return
+    }
+    wx.pageScrollTo({ selector: '#cat-' + id, duration: 300 })
+  },
+
   onEmptyAction() {
     if (this.data.loadFailed) {
       this.loadMenu()
