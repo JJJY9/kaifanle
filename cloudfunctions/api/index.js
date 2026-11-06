@@ -2737,10 +2737,63 @@ function cleanTextArray(value, maxCount, maxLength) {
     .map(item => item.slice(0, maxLength))
 }
 
+// 批量改价只更新价格与价格历史，避免用整道菜的旧快照覆盖图片、状态等并发修改。
+async function updateDishPriceOnly(payload) {
+  const id = String(payload.id || '')
+  if (!id) {
+    throw new Error('缺少菜品 ID')
+  }
+  const price = Number(payload.price)
+  if (!isFinite(price) || price < 0 || price > 999) {
+    throw new Error('价格需要是 0-999 之间的数字')
+  }
+  const priceBase = Number(payload.priceBase)
+  if (!isFinite(priceBase) || priceBase < 0 || priceBase > 999) {
+    throw new Error('价格基线不正确')
+  }
+  let dish
+  try {
+    const res = await db.collection('dishes').doc(id).get()
+    dish = res.data
+  } catch (e) {
+    if (isMissingDocError(e)) {
+      throw new Error('菜品不存在')
+    }
+    throw e
+  }
+  if (Number(dish.price) !== priceBase || Number(dish.price) === price) {
+    return withId(dish)
+  }
+  const priceHistory = (Array.isArray(dish.priceHistory)
+    ? dish.priceHistory.slice()
+    : [])
+    .concat([
+      {
+        from: Number(dish.price) || 0,
+        to: price,
+        at: Date.now()
+      }
+    ])
+    .slice(-20)
+  const fields = { price, priceHistory }
+  const upd = await db
+    .collection('dishes')
+    .where({ _id: id, price: priceBase })
+    .update({ data: fields })
+  if (!upd.stats || upd.stats.updated !== 1) {
+    const latest = await db.collection('dishes').doc(id).get()
+    return withId(latest.data)
+  }
+  return withId(Object.assign({}, dish, fields))
+}
+
 async function saveDish(payload, openid) {
   await requireAdmin(openid)
   if (!payload || typeof payload !== 'object') {
     throw new Error('参数不完整')
+  }
+  if (payload.priceOnly === true) {
+    return updateDishPriceOnly(payload)
   }
 
   const name = String(payload.name || '').trim()

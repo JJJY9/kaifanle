@@ -784,6 +784,34 @@ export async function moveDish(
 
 export async function saveDish(payload: DishInput): Promise<Dish> {
   await delay(100)
+  if (payload.priceOnly === true) {
+    const existing = dishes.find(item => item.id === payload.id)
+    if (!existing) {
+      throw new Error('菜品不存在')
+    }
+    const price = Number(payload.price)
+    if (!isFinite(price) || price < 0 || price > 999) {
+      throw new Error('价格需要是 0-999 之间的数字')
+    }
+    const priceBase = Number(payload.priceBase)
+    if (!isFinite(priceBase) || priceBase < 0 || priceBase > 999) {
+      throw new Error('价格基线不正确')
+    }
+    if (Number(existing.price) !== priceBase || Number(existing.price) === price) {
+      return { ...existing }
+    }
+    existing.priceHistory = (existing.priceHistory || [])
+      .concat([
+        {
+          from: Number(existing.price) || 0,
+          to: price,
+          at: Date.now()
+        }
+      ])
+      .slice(-20)
+    existing.price = price
+    return { ...existing }
+  }
   const name = String(payload.name || '').trim()
   if (!name) {
     throw new Error('菜品名称不能为空')

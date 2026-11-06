@@ -33,6 +33,9 @@ const REPLY_PHRASES = [
   '抱歉翻车了，下次补偿'
 ]
 
+const MAX_BATCH_PRICE_DISHES = 50
+const MAX_PRICE_ADJUST_PERCENT = 90
+
 Page({
   data: {
     orders: [] as any[],
@@ -1002,11 +1005,18 @@ Page({
       const sheet: any = await wx.showActionSheet({
         itemList: [
           `上架当前 ${list.length} 道`,
-          `下架当前 ${list.length} 道`
+          `下架当前 ${list.length} 道`,
+          list.length > MAX_BATCH_PRICE_DISHES
+            ? `按百分比改价（需先筛选到 ${MAX_BATCH_PRICE_DISHES} 道内）`
+            : `按百分比改价（${list.length} 道）`
         ]
       })
       tapIndex = Number(sheet.tapIndex)
     } catch (e) {
+      return
+    }
+    if (tapIndex === 2) {
+      await this.onBatchPrice()
       return
     }
     const status: 'on' | 'off' = tapIndex === 0 ? 'on' : 'off'
@@ -1068,6 +1078,194 @@ Page({
       title: done
         ? `${action} ${done} 道${failed ? `，${failed} 道失败` : ''}`
         : '当前筛选已经是这个状态',
+      icon: 'none'
+    })
+  },
+
+  async onBatchPrice() {
+    if (this.data.batchBusy) {
+      return
+    }
+    const list = this.data.displayDishes || []
+    if (!list.length) {
+      wx.showToast({ title: '当前筛选没有菜品', icon: 'none' })
+      return
+    }
+    if (list.length > MAX_BATCH_PRICE_DISHES) {
+      wx.showToast({
+        title: `一次最多改 ${MAX_BATCH_PRICE_DISHES} 道，先缩小范围`,
+        icon: 'none'
+      })
+      return
+    }
+    const keyword = String(this.data.dishKeyword || '').trim()
+    const category = (this.data.dishCategoryOptions || []).find(
+      item => item.id === this.data.dishCategory
+    )
+    const filter = (this.data.dishFilters || []).find(
+      item => item.key === this.data.dishFilter
+    )
+    const scopeParts: string[] = []
+    if (keyword) {
+      scopeParts.push(`搜索「${keyword}」`)
+    }
+    if (this.data.dishCategory !== 'all' && category) {
+      scopeParts.push(category.name)
+    }
+    if (this.data.dishFilter !== 'all' && filter) {
+      scopeParts.push(filter.label)
+    }
+    const scopeText = scopeParts.length ? scopeParts.join(' · ') : '全部菜品'
+    let input: any
+    try {
+      input = await wx.showModal({
+        title: `批量改价 · ${list.length} 道`,
+        content: '',
+        editable: true,
+        placeholderText: `范围：${scopeText}；输入涨跌百分比，如 10 或 -5`,
+        confirmText: '下一步',
+        cancelText: '算了'
+      })
+    } catch (e) {
+      return
+    }
+    if (!input.confirm) {
+      return
+    }
+    const raw = String(input.content || '')
+      .trim()
+      .replace(/[％%]+$/, '')
+    if (!/^[+-]?\d+(\.\d{1,2})?$/.test(raw)) {
+      wx.showToast({ title: '请输入百分比，如 10 或 -5', icon: 'none' })
+      return
+    }
+    const percent = Number(raw)
+    if (!isFinite(percent) || percent === 0) {
+      wx.showToast({ title: '百分比不能为 0', icon: 'none' })
+      return
+    }
+    if (
+      percent < -MAX_PRICE_ADJUST_PERCENT ||
+      percent > MAX_PRICE_ADJUST_PERCENT
+    ) {
+      wx.showToast({
+        title: `百分比需在 -${MAX_PRICE_ADJUST_PERCENT}% 到 ${MAX_PRICE_ADJUST_PERCENT}% 之间`,
+        icon: 'none'
+      })
+      return
+    }
+    const factor = 100 + percent
+    let outOfRange = 0
+    const changes = list
+      .map(dish => {
+        const from = Number(dish.price)
+        if (!isFinite(from) || from < 0) {
+          outOfRange++
+          return null
+        }
+        const cents = Math.round(from * 100)
+        const next = Math.round((cents * factor) / 100) / 100
+        if (next > 999) {
+          outOfRange++
+          return null
+        }
+        if (next === from) {
+          return null
+        }
+        return { dish, from, price: next }
+      })
+      .filter(Boolean) as Array<{ dish: any; from: number; price: number }>
+    if (!changes.length) {
+      wx.showToast({
+        title: outOfRange ? '价格超出 0-999 范围' : '价格没有变化',
+        icon: 'none'
+      })
+      return
+    }
+    const preview = changes
+      .slice(0, 3)
+      .map(change => `${change.dish.name} ¥${change.from}→¥${change.price}`)
+      .join('，')
+    let confirm: any
+    try {
+      confirm = await wx.showModal({
+        title: percent > 0 ? `涨价 ${percent}%？` : `降价 ${-percent}%？`,
+        content: `${changes.length} 道：${preview}${
+          changes.length > 3 ? '…' : ''
+        }${outOfRange ? `；另有 ${outOfRange} 道超出价格范围，会跳过` : ''}`,
+        confirmText: '确认改价',
+        cancelText: '再想想'
+      })
+    } catch (e) {
+      return
+    }
+    if (!confirm.confirm) {
+      return
+    }
+    this.setData({ batchBusy: true })
+    wx.showLoading({ title: '正在改价', mask: true })
+    const priceMap: Record<string, number> = {}
+    const problems: string[] = []
+    let done = 0
+    let failed = 0
+    let stale = 0
+    try {
+      for (const change of changes) {
+        wx.showLoading({
+          title: `改价 ${done + failed + stale + 1}/${changes.length}`,
+          mask: true
+        })
+        try {
+          const saved = await saveDish({
+            id: change.dish.id,
+            price: change.price,
+            priceBase: change.from,
+            priceOnly: true
+          } as any)
+          const finalPrice =
+            saved && isFinite(Number(saved.price))
+              ? Number(saved.price)
+              : change.price
+          priceMap[change.dish.id] = finalPrice
+          if (finalPrice === change.price) {
+            done++
+          } else {
+            stale++
+            problems.push(`${change.dish.name}（价格已变）`)
+          }
+        } catch (e) {
+          failed++
+          problems.push(`${change.dish.name}（保存失败）`)
+        }
+      }
+    } finally {
+      wx.hideLoading()
+    }
+    const dishes = this.data.dishes.map(dish =>
+      priceMap[dish.id] !== undefined
+        ? { ...dish, price: priceMap[dish.id] }
+        : dish
+    )
+    this.setData({ dishes, batchBusy: false }, () => this.applyDishFilter())
+    if (problems.length) {
+      const summary = [
+        failed ? `${failed} 道保存失败` : '',
+        stale ? `${stale} 道价格已变` : ''
+      ]
+        .filter(Boolean)
+        .join('，')
+      wx.showModal({
+        title: '部分菜品没改成功',
+        content: `${summary}：${problems.slice(0, 6).join('、')}${
+          problems.length > 6 ? ' 等' : ''
+        }，刷新后再试。`,
+        showCancel: false,
+        confirmText: '知道了'
+      })
+      return
+    }
+    wx.showToast({
+      title: done ? `已改 ${done} 道` : '价格没有变化',
       icon: 'none'
     })
   },
