@@ -33,6 +33,7 @@ export interface Dish {
   emoji?: string
   cartoon?: string
   recipe?: string
+  ingredients?: string[]
 }
 
 export interface Category {
@@ -58,6 +59,7 @@ export interface DishInput {
   isRecommended: boolean
   image?: string
   recipe?: string
+  ingredients?: string[]
 }
 
 export interface CartLine {

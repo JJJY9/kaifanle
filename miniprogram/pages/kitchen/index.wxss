@@ -343,6 +343,18 @@
   margin-top: 14rpx;
 }
 
+.prep-ingredients {
+  margin-top: 16rpx;
+  padding-top: 12rpx;
+  border-top: 3rpx dashed rgba(17, 17, 17, 0.2);
+}
+
+.prep-ingredient-amount {
+  color: #2D6FD9;
+  font-size: 24rpx;
+  font-weight: 800;
+}
+
 .prep-group-title {
   margin-bottom: 4rpx;
   color: #5C5C5C;

@@ -527,6 +527,13 @@ function invoke(mp, body) {
         Number(data.prepTotal),
     `${prepGroups.map(group => group.mealText).join('、')} · ${data.prepTotal} 份`
   )
+  check(
+    'mock 采购食材汇总',
+    (data.prepIngredients || []).some(
+      item => item.name === '鸡腿' && String(item.text).indexOf('1只') > -1
+    ),
+    `${(data.prepIngredients || []).length} 种食材`
+  )
   const receiptOrder = (data.orders || [])[0]
   check(
     'mock 厨房待处理订单',
@@ -899,6 +906,11 @@ function invoke(mp, body) {
     'mock 菜品近30天销量',
     String(data.salesText || '').length > 0,
     data.salesText
+  )
+  check(
+    'mock 菜品食材用量',
+    String(data.ingredientsText || '').indexOf('番茄') > -1,
+    String(data.ingredientsText || '').split('\n').length + ' 行'
   )
   await invoke(mp, 'page.onCopyDish()')
   await sleep(1600)

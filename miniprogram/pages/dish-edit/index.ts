@@ -35,6 +35,7 @@ Page({
     price: '',
     stock: '-1',
     stockBase: -1,
+    ingredientsText: '',
     categoryId: '',
     meals: MEALS,
     selectedMeals: [] as MealId[],
@@ -169,6 +170,7 @@ Page({
         colorIndex: colorIndex > -1 ? colorIndex : 0,
         image: dish.image || '',
         recipe: dish.recipe || '',
+        ingredientsText: (dish.ingredients || []).join('\n'),
         status: dish.status,
         isRecommended: Boolean(dish.isRecommended),
         loading: false
@@ -287,6 +289,10 @@ Page({
 
   onRecipe(e: any) {
     this.setData({ recipe: e.detail.value })
+  },
+
+  onIngredients(e: any) {
+    this.setData({ ingredientsText: e.detail.value })
   },
 
   async onChooseImage() {
@@ -408,7 +414,12 @@ Page({
       stockBase: this.data.stockBase,
       isRecommended: this.data.isRecommended,
       image: this.data.image,
-      recipe: this.data.recipe.trim()
+      recipe: this.data.recipe.trim(),
+      ingredients: this.data.ingredientsText
+        .split('\n')
+        .map(line => line.trim().slice(0, 30))
+        .filter(Boolean)
+        .slice(0, 15)
     }
 
     this.setData({ saving: true })

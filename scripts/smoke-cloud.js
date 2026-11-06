@@ -430,7 +430,8 @@ async function run() {
     status: 'on',
     isRecommended: false,
     image: 'cloud://test.env/dishes/test.jpg',
-    recipe: '第一步切菜\n第二步开火'
+    recipe: '第一步切菜\n第二步开火',
+    ingredients: ['番茄 2个', '盐 适量']
   }
 
   res = await call('saveDish', dishPayload, 'girl-openid')
@@ -442,6 +443,7 @@ async function run() {
   assert.strictEqual(res.data.char, '测')
   assert.strictEqual(res.data.image, 'cloud://test.env/dishes/test.jpg')
   assert.strictEqual(res.data.recipe, '第一步切菜\n第二步开火')
+  assert.deepStrictEqual(res.data.ingredients, ['番茄 2个', '盐 适量'])
 
   // 同名菜品不能重复创建
   res = await call('saveDish', dishPayload, 'admin-openid')

@@ -73,7 +73,8 @@ const DISHES: Dish[] = [
     meals: ['lunch', 'dinner'],
     isRecommended: true,
     recipe:
-      '牛腩切块冷水下锅焯水\n番茄切块炒出汁，下牛腩翻炒\n小火炖 60 分钟，加盐收汁\n浇在热米饭上'
+      '牛腩切块冷水下锅焯水\n番茄切块炒出汁，下牛腩翻炒\n小火炖 60 分钟，加盐收汁\n浇在热米饭上',
+    ingredients: ['番茄 2个', '牛腩 300g', '米饭 1碗']
   },
   {
     id: 'd02',
@@ -87,7 +88,8 @@ const DISHES: Dish[] = [
     addons: [{ id: 'a2', name: '加饭', price: 1 }],
     status: 'on',
     color: '#2D9CFF',
-    meals: ['lunch', 'dinner']
+    meals: ['lunch', 'dinner'],
+    ingredients: ['鸡腿 1只', '米饭 1碗', '照烧汁 2勺']
   },
   {
     id: 'd03',
@@ -739,6 +741,10 @@ export async function saveDish(payload: DishInput): Promise<Dish> {
     categoryId: payload.categoryId,
     tags: payload.tags || [],
     spicyLevels: payload.spicyLevels || [],
+    ingredients: (payload.ingredients || [])
+      .map(line => String(line || '').trim().slice(0, 30))
+      .filter(Boolean)
+      .slice(0, 15),
     addons: (payload.addons || []).map(addon => ({ ...addon })),
     status: payload.status || 'on',
     color: payload.color || '#FFD23F',

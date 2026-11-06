@@ -66,6 +66,7 @@ Page({
     showPreorders: false,
     prepItems: [] as any[],
     prepGroups: [] as any[],
+    prepIngredients: [] as any[],
     prepTotal: 0,
     weekStats: null as any,
     weekBars: [] as any[],
@@ -429,6 +430,69 @@ Page({
       }).filter(group => group.items.length)
       const prepTotal = prepItems.reduce((sum, item) => sum + item.qty, 0)
 
+      // 采购食材：按菜品配方和订单份数汇总，数字用量可累加
+      const ingNum: Record<string, number> = {}
+      const ingText: Record<
+        string,
+        { name: string; amount: string; portions: number }
+      > = {}
+      active
+        .filter(
+          order =>
+            (order.scheduledDate ||
+              dateInputString(new Date(order.createdAt))) === todayKey
+        )
+        .forEach(order => {
+          order.items.forEach((item: any) => {
+            const dish = dishById[item.dishId]
+            if (!dish || !Array.isArray(dish.ingredients)) {
+              return
+            }
+            const qty = Number(item.qty || 0)
+            dish.ingredients.forEach((line: string) => {
+              const match = String(line || '').match(/^(\S+)\s*(.*)$/)
+              if (!match) {
+                return
+              }
+              const name = match[1]
+              const amount = String(match[2] || '').trim()
+              const num = amount.match(/^(\d+(?:\.\d+)?)\s*(.*)$/)
+              if (num) {
+                const key = `${name}|${num[2]}`
+                ingNum[key] = (ingNum[key] || 0) + Number(num[1]) * qty
+              } else {
+                const key = `${name}|${amount || '适量'}`
+                if (!ingText[key]) {
+                  ingText[key] = {
+                    name,
+                    amount: amount || '适量',
+                    portions: 0
+                  }
+                }
+                ingText[key].portions += qty
+              }
+            })
+          })
+        })
+      const formatAmount = (value: number) =>
+        String(Math.round(value * 10) / 10)
+      const prepIngredients = Object.keys(ingNum)
+        .map(key => {
+          const parts = key.split('|')
+          return {
+            name: parts[0],
+            text: `${formatAmount(ingNum[key])}${parts[1] || ''}`
+          }
+        })
+        .concat(
+          Object.keys(ingText).map(key => ({
+            name: ingText[key].name,
+            text: `${ingText[key].amount}（${ingText[key].portions} 份）`
+          }))
+        )
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .slice(0, 24)
+
       // 近 7 天经营概况（不含已取消订单）；静默轮询沿用上次结果
       let weekStats = this.data.weekStats
       let weekBars = this.data.weekBars
@@ -544,6 +608,7 @@ Page({
         stats,
         prepItems,
         prepGroups,
+        prepIngredients,
         prepTotal,
         todo,
         weekStats,
@@ -1176,16 +1241,23 @@ Page({
     })
   },
 
-  onCopyPrep() {    const items = this.data.prepItems || []
+  onCopyPrep() {
+    const items = this.data.prepItems || []
     if (!items.length) {
       wx.showToast({ title: '今天还没有要备的菜', icon: 'none' })
       return
     }
+    const ingredientLine = (this.data.prepIngredients || [])
+      .map((item: any) => `${item.name} ${item.text}`)
+      .join('，')
     const text = [
       '【张饱饭堂】今日采购清单',
       `共 ${this.data.prepTotal} 份`,
-      ...items.map((item: any) => `${item.name} × ${item.qty}`)
-    ].join('\n')
+      ...items.map((item: any) => `${item.name} × ${item.qty}`),
+      ingredientLine ? `食材：${ingredientLine}` : ''
+    ]
+      .filter(Boolean)
+      .join('\n')
     wx.setClipboardData({ data: text })
   },
 

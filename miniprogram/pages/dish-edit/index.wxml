@@ -118,6 +118,18 @@
     </view>
 
     <view class="card block">
+      <view class="block-title">食材用量</view>
+      <textarea
+        class="recipe-input"
+        placeholder="每行一个，比如：番茄 2个 / 牛腩 300g"
+        value="{{ingredientsText}}"
+        maxlength="400"
+        bindinput="onIngredients"
+      ></textarea>
+      <view class="recipe-tip">厨房备菜时会按订单份数汇总到采购清单</view>
+    </view>
+
+    <view class="card block">
       <view class="block-title">做法</view>
       <textarea
         class="recipe-input"
