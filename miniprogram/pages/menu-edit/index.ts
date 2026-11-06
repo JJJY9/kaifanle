@@ -77,6 +77,7 @@ Page({
     selectedMap: {} as Record<string, boolean>,
     open: true,
     loading: true,
+    loadFailed: false,
     saving: false,
     templates: [] as MenuTemplate[]
   },
@@ -93,15 +94,18 @@ Page({
   },
 
   _loadSeq: 0,
+  _loadedKey: '',
 
   async load() {
     const seq = ++this._loadSeq
-    this.setData({ loading: true })
+    const date = this.data.selectedDate
+    const meal = this.data.meal
+    this.setData({ loading: true, loadFailed: false })
     try {
       const [categories, dishes, menu] = await Promise.all([
         getCategories(),
         getDishes(),
-        getMenuForDate(this.data.selectedDate, this.data.meal)
+        getMenuForDate(date, meal)
       ])
       if (seq !== this._loadSeq) {
         return
@@ -111,8 +115,7 @@ Page({
         categoryMap[category.id] = category.name
       })
       const eligible = dishes.filter(
-        dish =>
-          dish.status !== 'off' && dish.meals.indexOf(this.data.meal) > -1
+        dish => dish.status !== 'off' && dish.meals.indexOf(meal) > -1
       )
       const selectedMap: Record<string, boolean> = {}
       if (menu.exists) {
@@ -129,22 +132,45 @@ Page({
         categoryName: categoryMap[dish.categoryId] || '',
         checked: Boolean(selectedMap[dish.id])
       }))
+      this._loadedKey = date + '_' + meal
       this.setData({
         dishes: views,
         selectedMap,
         open: menu.exists ? menu.open !== false : true,
-        loading: false
+        loading: false,
+        loadFailed: false
       })
     } catch (e: any) {
       if (seq !== this._loadSeq) {
         return
       }
-      this.setData({ loading: false })
+      // 加载失败时不能保留上一次日期/餐次的勾选，否则会把 A 的菜单存进 B
+      this._loadedKey = ''
+      this.setData({
+        loading: false,
+        loadFailed: true,
+        dishes: [],
+        selectedMap: {},
+        open: true
+      })
       wx.showToast({
         title: String((e && e.message) || '加载失败').slice(0, 40),
         icon: 'none'
       })
     }
+  },
+
+  ensureLoaded(): boolean {
+    const key = this.data.selectedDate + '_' + this.data.meal
+    if (this.data.loadFailed || this._loadedKey !== key) {
+      wx.showToast({ title: '菜单还没加载好，点重试', icon: 'none' })
+      return false
+    }
+    return true
+  },
+
+  onRetryLoad() {
+    this.load()
   },
 
   onSelectDate(e: any) {
@@ -185,6 +211,9 @@ Page({
   },
 
   async onSaveTemplate() {
+    if (!this.ensureLoaded()) {
+      return
+    }
     const dishIds = this.selectedDishIds()
     if (!dishIds.length) {
       wx.showToast({ title: '先选几道菜再存模板', icon: 'none' })
@@ -244,6 +273,9 @@ Page({
   },
 
   async onApplyTemplate() {
+    if (!this.ensureLoaded()) {
+      return
+    }
     const templates = this.data.templates
     if (!templates.length) {
       wx.showToast({ title: '还没有模板，先存一个', icon: 'none' })
@@ -320,7 +352,7 @@ Page({
   },
 
   async onSave() {
-    if (this.data.saving) {
+    if (this.data.saving || !this.ensureLoaded()) {
       return
     }
     const dishIds = this.data.dishes
@@ -349,7 +381,7 @@ Page({
   },
 
   async onCopyToComing() {
-    if (this.data.saving) {
+    if (this.data.saving || !this.ensureLoaded()) {
       return
     }
     const dishIds = this.data.dishes
@@ -359,25 +391,30 @@ Page({
       wx.showToast({ title: '先选几道菜再复制', icon: 'none' })
       return
     }
+    // 弹窗和 7 次保存之间用户可能切换餐次，先把这次要复制的目标固定下来
+    const meal = this.data.meal
+    const open = this.data.open
+    const mealName =
+      meal === 'breakfast' ? '早餐' : meal === 'lunch' ? '午餐' : '晚餐'
+    const targets = this.data.dates.slice(1, 8)
     const res: any = await wx.showModal({
       title: '复制到未来 7 天？',
-      content: `把这 ${dishIds.length} 道菜复制到未来 7 天（明天起）的${this.data.meal === 'breakfast' ? '早餐' : this.data.meal === 'lunch' ? '午餐' : '晚餐'}，会覆盖那几天已有的安排。`,
+      content: `把这 ${dishIds.length} 道菜复制到未来 7 天（明天起）的${mealName}，会覆盖那几天已有的安排。`,
       confirmText: '复制',
       cancelText: '算了'
     })
     if (!res.confirm) {
       return
     }
-    const targets = this.data.dates.slice(1, 8)
     this.setData({ saving: true })
     let done = 0
     try {
       for (const target of targets) {
         await saveMenu({
           date: target.value,
-          meal: this.data.meal,
+          meal,
           dishIds,
-          open: this.data.open
+          open
         })
         done++
       }
@@ -398,6 +435,9 @@ Page({
   },
 
   async onReset() {
+    if (!this.ensureLoaded()) {
+      return
+    }
     const res: any = await wx.showModal({
       title: '恢复默认菜单？',
       content: '会删除这一天的菜单，首页恢复显示所有适合这一餐的菜品。',

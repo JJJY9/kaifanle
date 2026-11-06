@@ -204,6 +204,10 @@ Page({
     if (!order || this.data.reordering) {
       return
     }
+    const app: any = getApp()
+    if (app && app.globalData) {
+      app.globalData.pendingReorder = null
+    }
     this.setData({ reordering: true })
     try {
       // 用当前菜价和供应状态重新加购，下架/售罄的菜跳过
@@ -242,9 +246,15 @@ Page({
         }
         cart.add({
           key: '',
+          meal: order.meal,
           dishId: item.dishId,
           name: dish ? dish.name : item.name,
-          price: dish ? dish.price : item.price,
+          price: dish
+            ? dish.price +
+              (dish.addons || [])
+                .filter(addon => item.specs.indexOf(addon.name) > -1)
+                .reduce((sum, addon) => sum + addon.price, 0)
+            : item.price,
           qty,
           specs: item.specs,
           note: item.note,
@@ -258,6 +268,18 @@ Page({
           icon: 'none'
         })
         return
+      }
+      const app: any = getApp()
+      if (app && app.globalData) {
+        const today = dateInputString()
+        const max = new Date()
+        max.setDate(max.getDate() + 7)
+        const maxDate = dateInputString(max)
+        const date = order.scheduledDate || ''
+        app.globalData.pendingReorder = {
+          meal: order.meal,
+          date: date && date >= today && date <= maxDate ? date : ''
+        }
       }
       wx.switchTab({ url: '/pages/home/index' })
       setTimeout(() => {

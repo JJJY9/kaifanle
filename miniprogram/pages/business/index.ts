@@ -55,6 +55,7 @@ function buildDateOptions(): DateView[] {
 Page({
   data: {
     loading: true,
+    loadFailed: false,
     saving: false,
     mealViews: [] as MealView[],
     closedNote: '',
@@ -63,11 +64,14 @@ Page({
     weekdays: [] as WeekdayView[]
   },
 
+  _loaded: false,
+
   onLoad() {
     this.load()
   },
 
   async load() {
+    this.setData({ loading: true, loadFailed: false })
     try {
       const business = await getBusiness()
       const mealViews: MealView[] = MEALS.map(meal => ({
@@ -90,21 +94,28 @@ Page({
         ...day,
         closed: weeklyClosed.indexOf(day.value) > -1
       }))
+      this._loaded = true
       this.setData({
         mealViews,
         closedNote: business.closedNote,
         notice: business.notice || '',
         dateOptions,
         weekdays,
-        loading: false
+        loading: false,
+        loadFailed: false
       })
     } catch (e: any) {
-      this.setData({ loading: false })
+      this._loaded = false
+      this.setData({ loading: false, loadFailed: true })
       wx.showToast({
         title: String((e && e.message) || '加载失败').slice(0, 40),
         icon: 'none'
       })
     }
+  },
+
+  onRetryLoad() {
+    this.load()
   },
 
   onToggle(e: any) {
@@ -153,6 +164,10 @@ Page({
 
   async onSave() {
     if (this.data.saving) {
+      return
+    }
+    if (!this._loaded) {
+      wx.showToast({ title: '设置还没加载好，点重试', icon: 'none' })
       return
     }
     const business: any = {

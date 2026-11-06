@@ -1,4 +1,4 @@
-import type { Category, Dish, MealId } from '../../services/types'
+import type { CartLine, Category, Dish, MealId } from '../../services/types'
 import {
   getCategories,
   getDishes,
@@ -50,6 +50,8 @@ Page({
   _unsub: null as null | (() => void),
   _favUnsub: null as null | (() => void),
   _available: [] as Dish[],
+  _cartLines: [] as CartLine[],
+  _pendingReorder: null as null | { meal: MealId; date: string },
   _categories: [] as Category[],
   _baseEmptyDesc: '',
   _loadSeq: 0,
@@ -68,9 +70,8 @@ Page({
     })
 
     this._unsub = cart.subscribe(lines => {
-      const count = lines.reduce((sum, line) => sum + line.qty, 0)
-      const total = lines.reduce((sum, line) => sum + line.qty * line.price, 0)
-      this.setData({ cartCount: count, cartTotal: total })
+      this._cartLines = lines
+      this.updateCartBadge()
     })
 
     this._favUnsub = favorites.subscribe(ids => {
@@ -93,6 +94,25 @@ Page({
       : null
     if (tabBar) {
       tabBar.setData({ selected: 0 })
+    }
+    const app: any = getApp()
+    const pending =
+      app && app.globalData ? app.globalData.pendingReorder : null
+    if (app && app.globalData) {
+      app.globalData.pendingReorder = null
+    }
+    if (pending && MEALS.some(item => item.id === pending.meal)) {
+      this._pendingReorder = {
+        meal: pending.meal,
+        date: pending.date || ''
+      }
+      if (pending.meal !== this.data.selectedMeal) {
+        this.setData({ selectedMeal: pending.meal }, () => {
+          this.updateCartBadge()
+          this.loadMenu()
+        })
+        return
+      }
     }
     // 每次回到首页都刷新菜单，保证厨房端的售罄/上架能同步过来
     this.loadMenu()
@@ -215,7 +235,22 @@ Page({
     if (meal === this.data.selectedMeal) {
       return
     }
-    this.setData({ selectedMeal: meal }, () => this.loadMenu())
+    if (this._pendingReorder && this._pendingReorder.meal !== meal) {
+      this._pendingReorder = null
+    }
+    this.setData({ selectedMeal: meal }, () => {
+      this.updateCartBadge()
+      this.loadMenu()
+    })
+  },
+
+  updateCartBadge() {
+    const lines = (this._cartLines || []).filter(
+      line => line.meal === this.data.selectedMeal
+    )
+    const count = lines.reduce((sum, line) => sum + line.qty, 0)
+    const total = lines.reduce((sum, line) => sum + line.qty * line.price, 0)
+    this.setData({ cartCount: count, cartTotal: total })
   },
 
   renderSections() {
@@ -332,7 +367,7 @@ Page({
     if (!dish) {
       return
     }
-    if (dish.stock === 0) {
+    if (dish.status === 'soldout' || dish.stock === 0) {
       wx.showToast({ title: '这一道卖完啦', icon: 'none' })
       return
     }
@@ -345,6 +380,7 @@ Page({
     }
     cart.add({
       key: '',
+      meal: this.data.selectedMeal,
       dishId: dish.id,
       name: dish.name,
       price: dish.price,
@@ -379,25 +415,28 @@ Page({
   },
 
   onSkuAdd(e: any) {
-    cart.add(e.detail.line)
+    cart.add({ ...e.detail.line, meal: this.data.selectedMeal })
     this.setData({ skuVisible: false })
     wx.showToast({ title: '已加购', icon: 'none' })
   },
 
   onCheckout() {
     if (this.data.cartCount <= 0) {
+      wx.showToast({ title: '这一餐还没选菜', icon: 'none' })
       return
     }
-    if (!this.data.isOpen) {
-      wx.showToast({
-        title: this.data.mealNotice || '这一餐休息中',
-        icon: 'none'
-      })
-      return
+    let url = `/pages/checkout/index?meal=${this.data.selectedMeal}`
+    const pending = this._pendingReorder
+    if (pending && pending.meal === this.data.selectedMeal && pending.date) {
+      const today = dateInputString()
+      const max = new Date()
+      max.setDate(max.getDate() + 7)
+      const maxDate = dateInputString(max)
+      if (pending.date >= today && pending.date <= maxDate) {
+        url += `&date=${pending.date}`
+      }
     }
-    wx.navigateTo({
-      url: `/pages/checkout/index?meal=${this.data.selectedMeal}`
-    })
+    wx.navigateTo({ url })
   },
 
   onPullDownRefresh() {

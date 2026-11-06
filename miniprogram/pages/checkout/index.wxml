@@ -61,12 +61,15 @@
       <view class="block-title">这顿吃点啥</view>
       <view class="clear-cart" bindtap="onClearCart">清空</view>
     </view>
-    <view wx:for="{{lines}}" wx:key="key" class="line">
+    <view wx:if="{{slotError}}" class="slot-error">{{slotError}}</view>
+    <view wx:if="{{!lines.length}}" class="slot-empty">这一餐的购物车是空的，切换餐次看看其他菜</view>
+    <view wx:for="{{lines}}" wx:key="key" class="line {{item.invalid ? 'invalid' : ''}}">
       <view class="line-media" style="background: {{item.color}};">{{item.char}}</view>
       <view class="line-info">
         <view class="line-name">{{item.name}} <text class="line-qty">×{{item.qty}}</text></view>
         <view wx:if="{{item.specText}}" class="line-spec">{{item.specText}}</view>
         <view wx:if="{{item.note}}" class="line-note">备注：{{item.note}}</view>
+        <view wx:if="{{item.invalid}}" class="line-invalid">{{item.invalidText}}</view>
       </view>
       <view class="line-right">
         <text class="line-price">¥{{item.lineTotal}}</text>
@@ -109,7 +112,7 @@
     <text class="submit-price">¥{{total}}</text>
   </view>
   <view
-    class="submit-btn {{submitting || closed ? 'disabled' : ''}}"
+    class="submit-btn {{submitting || closed || !lines.length || slotChecking || slotInvalidCount ? 'disabled' : ''}}"
     bindtap="onSubmit"
-  >{{submitting ? '提交中…' : '提交订单'}}</view>
+  >{{submitting ? '提交中…' : (slotChecking ? '检查中…' : '提交订单')}}</view>
 </view>

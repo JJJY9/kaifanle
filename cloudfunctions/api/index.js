@@ -386,7 +386,12 @@ async function getMyProfile(openid) {
     const res = await db.collection('users').doc(openid).get()
     return normalizeProfile(res.data)
   } catch (e) {
-    return normalizeProfile(null)
+    // 只有「还没有档案」才返回空档案；额度和网络错误必须上抛，
+    // 否则会被客户端当成空档案保存，冲掉已有的口味和地址。
+    if (isMissingDocError(e)) {
+      return normalizeProfile(null)
+    }
+    throw e
   }
 }
 
@@ -1195,74 +1200,85 @@ async function createOrder(payload, openid) {
       amount += unitPrice * qty
     }
   } catch (err) {
-    for (const item of decremented) {
-      try {
-        await db
-          .collection('dishes')
-          .doc(item.id)
-          .update({ data: { stock: _.inc(item.qty) } })
-      } catch (e) {
-        // 回滚失败时保留原始错误
-      }
-    }
+    await rollbackStock(decremented)
     throw err
   }
 
-  const expectedTime = String(payload.expectedTime || '尽快').slice(0, 20)
-  const mode = String(payload.mode || '在家吃').slice(0, 20)
-  const address = String(payload.address || '').slice(0, 60)
-  let buyerProfile = { dislikes: [], tastes: [] }
   try {
-    const savedProfile = await getMyProfile(openid)
-    buyerProfile = {
-      dislikes: savedProfile.dislikes,
-      tastes: savedProfile.tastes
+    const expectedTime = String(payload.expectedTime || '尽快').slice(0, 20)
+    const mode = String(payload.mode || '在家吃').slice(0, 20)
+    const address = String(payload.address || '').slice(0, 60)
+    let buyerProfile = { dislikes: [], tastes: [] }
+    try {
+      const savedProfile = await getMyProfile(openid)
+      buyerProfile = {
+        dislikes: savedProfile.dislikes,
+        tastes: savedProfile.tastes
+      }
+    } catch (e) {
+      // 没有口味档案时不影响下单
     }
-  } catch (e) {
-    // 没有口味档案时不影响下单
+
+    const seq = await reserveOrderSeq()
+
+    const now = Date.now()
+    const order = {
+      _openid: openid,
+      no: String(seq).padStart(3, '0'),
+      items,
+      amount,
+      meal,
+      expectedTime,
+      mode,
+      note,
+      address,
+      scheduledDate,
+      profile: buyerProfile,
+      status: 'pending',
+      urgedAt: 0,
+      urgeCount: 0,
+      urgeBucket: 0,
+      timeline: [{ status: 'pending', title: STEP_TITLES.pending, time: now }],
+      createdAt: now
+    }
+
+    const addRes = await db.collection('orders').add({ data: order })
+
+    // 新订单提醒：只发给已订阅「新订单提醒」模板的管理员。
+    // 发送失败（没订阅 / 模板未配置）不影响下单。
+    if (tpl.NEW_ORDER_TEMPLATE_ID) {
+      const adminOpenids = adminOpenidsFrom(config)
+      const data = tpl.newOrderData(order)
+      for (const adminOpenid of adminOpenids) {
+        await sendSubscribe(
+          adminOpenid,
+          tpl.NEW_ORDER_TEMPLATE_ID,
+          'pages/kitchen/index',
+          data
+        )
+      }
+    }
+
+    return Object.assign({}, order, { id: addRes._id })
+  } catch (err) {
+    // 取号或写入订单失败时，把已经扣掉的库存补回去
+    await rollbackStock(decremented)
+    console.error('[api] createOrder rollback:', decremented, err)
+    throw err
   }
+}
 
-  const seq = await reserveOrderSeq()
-
-  const now = Date.now()
-  const order = {
-    _openid: openid,
-    no: String(seq).padStart(3, '0'),
-    items,
-    amount,
-    meal,
-    expectedTime,
-    mode,
-    note,
-    address,
-    scheduledDate,
-    profile: buyerProfile,
-    status: 'pending',
-    urgedAt: 0,
-    urgeCount: 0,
-    urgeBucket: 0,
-    timeline: [{ status: 'pending', title: STEP_TITLES.pending, time: now }],
-    createdAt: now
-  }
-
-  const addRes = await db.collection('orders').add({ data: order })
-
-  // 新订单提醒：只发给已订阅「新订单提醒」模板的管理员。
-  // 发送失败（没订阅 / 模板未配置）不影响下单。
-  if (tpl.NEW_ORDER_TEMPLATE_ID) {
-    const adminOpenids = adminOpenidsFrom(config)
-    const data = tpl.newOrderData(order)
-    for (const adminOpenid of adminOpenids) {
-      await sendSubscribe(
-        adminOpenid,
-        tpl.NEW_ORDER_TEMPLATE_ID,
-        'pages/kitchen/index',
-        data
-      )
+async function rollbackStock(items) {
+  for (const item of items) {
+    try {
+      await db
+        .collection('dishes')
+        .doc(item.id)
+        .update({ data: { stock: _.inc(item.qty) } })
+    } catch (e) {
+      console.error('[api] rollback stock failed:', item, e)
     }
   }
-
-  return Object.assign({}, order, { id: addRes._id })
 }
 
 async function cancelOrder(payload, openid) {

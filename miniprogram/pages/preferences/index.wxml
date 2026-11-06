@@ -6,6 +6,14 @@
 
   <view wx:if="{{loading}}" class="skeleton sk"></view>
 
+  <empty-state
+    wx:elif="{{loadFailed}}"
+    title="档案加载失败"
+    desc="没有拿到已保存的口味和地址，先别保存，免得覆盖掉"
+    actionText="重试"
+    bind:action="onRetryLoad"
+  />
+
   <block wx:else>
     <view class="card block">
       <view class="field">

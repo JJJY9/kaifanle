@@ -37,6 +37,82 @@ function invoke(mp, body) {
   let data = await page.data()
   check('mock 首页加载', (data.sections || []).length > 0, `${data.sections.length} 个分类`)
 
+  // 购物车按餐次隔离：早餐加的菜不会出现在午餐购物车
+  await invoke(
+    mp,
+    "page.onSelectMeal({ currentTarget: { dataset: { meal: 'lunch' } } })"
+  )
+  await sleep(1400)
+  page = await current()
+  data = await page.data()
+  const lunchBefore = data.cartCount
+  await invoke(
+    mp,
+    "page.onSelectMeal({ currentTarget: { dataset: { meal: 'breakfast' } } })"
+  )
+  await sleep(1400)
+  page = await current()
+  data = await page.data()
+  const breakfastBefore = data.cartCount
+  const hasPorridge = (data.sections || []).some(section =>
+    (section.dishes || []).some(dish => dish.name === '皮蛋瘦肉粥')
+  )
+  check('mock 早餐菜品可加购', hasPorridge)
+  await invoke(
+    mp,
+    "page.quickAdd(page._available.find(dish => dish.name === '皮蛋瘦肉粥'))"
+  )
+  await sleep(500)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 早餐购物车数量',
+    data.cartCount === breakfastBefore + 1,
+    `早餐 ${data.cartCount} 件`
+  )
+  await invoke(
+    mp,
+    "page.onSelectMeal({ currentTarget: { dataset: { meal: 'lunch' } } })"
+  )
+  await sleep(1400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 购物车按餐次隔离',
+    data.cartCount === lunchBefore,
+    `午餐 ${data.cartCount} 件 / 早餐 ${breakfastBefore + 1} 件`
+  )
+  await mp.navigateTo('/pages/checkout/index?meal=breakfast')
+  await sleep(1800)
+  page = await current()
+  data = await page.data()
+  const porridgeLine = (data.lines || []).find(
+    line => line.name === '皮蛋瘦肉粥'
+  )
+  check(
+    'mock 结算只显示当前餐次',
+    data.meal === 'breakfast' &&
+      Boolean(porridgeLine) &&
+      (data.lines || []).every(line => line.meal === 'breakfast'),
+    `${(data.lines || []).length} 道`
+  )
+  if (porridgeLine) {
+    await invoke(
+      mp,
+      `page.onRemove({ currentTarget: { dataset: { key: ${JSON.stringify(
+        porridgeLine.key
+      )} } } })`
+    )
+    await sleep(800)
+  }
+  await mp.switchTab('/pages/home/index')
+  await sleep(1200)
+
+  await mp.reLaunch('/pages/home/index')
+  await sleep(1800)
+  page = await current()
+  data = await page.data()
+
   await invoke(mp, "page.onSearchInput({ detail: { value: '饭' } })")
   await sleep(400)
   page = await current()

@@ -2,7 +2,8 @@ import { CLOUD_ENV, USE_CLOUD } from './config'
 
 App({
   globalData: {
-    statusBarHeight: 20
+    statusBarHeight: 20,
+    pendingReorder: null as null | { meal: string; date: string }
   },
 
   onLaunch() {

@@ -13,6 +13,7 @@ const sentMessages = []
 let currentOpenid = 'admin-openid'
 let transactionsEnabled = true
 let beforeQueryUpdate = null
+let beforeAdd = null
 
 function chinaDate(offset) {
   const d = new Date(
@@ -167,6 +168,11 @@ function makeCollection(name) {
       }
     },
     async add(args) {
+      if (typeof beforeAdd === 'function') {
+        const hook = beforeAdd
+        beforeAdd = null
+        hook(name, args)
+      }
       const id = `${name}-${Math.random().toString(36).slice(2, 10)}`
       ensure(name).set(id, Object.assign({}, args.data, { _id: id }))
       return { _id: id }
@@ -1279,6 +1285,27 @@ async function run() {
     },
     'girl-openid'
   )
+  assert.strictEqual(res.ok, false)
+  res = await call('getDish', { id: limitedId }, 'admin-openid')
+  assert.strictEqual(res.data.stock, 5)
+
+  // 写单失败时，已经扣掉的库存要回补
+  beforeAdd = name => {
+    if (name === 'orders') {
+      throw new Error('模拟写单失败')
+    }
+  }
+  res = await call(
+    'createOrder',
+    {
+      items: [{ dishId: limitedId, qty: 2, specs: [] }],
+      meal: 'lunch',
+      expectedTime: '12:00',
+      mode: '在家吃'
+    },
+    'girl-openid'
+  )
+  beforeAdd = null
   assert.strictEqual(res.ok, false)
   res = await call('getDish', { id: limitedId }, 'admin-openid')
   assert.strictEqual(res.data.stock, 5)

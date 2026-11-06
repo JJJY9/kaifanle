@@ -61,6 +61,7 @@ export interface DishInput {
 
 export interface CartLine {
   key: string
+  meal: MealId
   dishId: string
   name: string
   price: number

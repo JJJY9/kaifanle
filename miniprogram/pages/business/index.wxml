@@ -11,6 +11,14 @@
 
   <view wx:if="{{loading}}" class="skeleton sk"></view>
 
+  <empty-state
+    wx:elif="{{loadFailed}}"
+    title="营业设置加载失败"
+    desc="没有拿到当前设置，先别保存，免得把已有配置覆盖掉"
+    actionText="重试"
+    bind:action="onRetryLoad"
+  />
+
   <block wx:else>
     <view wx:for="{{mealViews}}" wx:key="id" class="meal-card card">
       <view class="meal-top">

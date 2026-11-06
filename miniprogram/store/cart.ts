@@ -1,8 +1,18 @@
-import type { CartLine } from '../services/types'
+import type { CartLine, MealId } from '../services/types'
+import { currentMeal } from '../utils/format'
 
 type Listener = (lines: CartLine[]) => void
 
 const CART_KEY = 'kfl_cart_v1'
+const MEALS: MealId[] = ['breakfast', 'lunch', 'dinner']
+
+function normalizeMeal(value: any): MealId {
+  return MEALS.indexOf(value) > -1 ? value : currentMeal()
+}
+
+function lineKey(line: CartLine): string {
+  return [line.meal, line.dishId, line.specs.join('|'), line.note].join('::')
+}
 
 class CartStore {
   private lines: CartLine[] = []
@@ -14,7 +24,19 @@ class CartStore {
       if (raw) {
         const lines = JSON.parse(raw)
         if (Array.isArray(lines)) {
+          // 旧版购物车没有 meal，按打开时的餐次迁移，并重算包含餐次的 key
           this.lines = lines
+            .filter(line => line && line.dishId)
+            .map(line => {
+              const migrated: CartLine = {
+                ...line,
+                meal: normalizeMeal(line.meal),
+                specs: Array.isArray(line.specs) ? line.specs : [],
+                qty: Math.max(1, Number(line.qty) || 1)
+              }
+              migrated.key = lineKey(migrated)
+              return migrated
+            })
         }
       }
     } catch (e) {
@@ -31,8 +53,7 @@ class CartStore {
   }
 
   add(line: CartLine): void {
-    const key =
-      line.key || [line.dishId, line.specs.join('|'), line.note].join('::')
+    const key = lineKey(line)
     const found = this.lines.find(item => item.key === key)
     if (found) {
       found.qty += line.qty
@@ -64,6 +85,12 @@ class CartStore {
 
   clear(): void {
     this.lines = []
+    this.persist()
+    this.emit()
+  }
+
+  clearMeal(meal: MealId): void {
+    this.lines = this.lines.filter(line => line.meal !== meal)
     this.persist()
     this.emit()
   }

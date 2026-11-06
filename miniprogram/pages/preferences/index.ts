@@ -14,29 +14,40 @@ Page({
     tastesText: '',
     address: '',
     loading: true,
+    loadFailed: false,
     saving: false
   },
+
+  _loaded: false,
 
   onLoad() {
     this.load()
   },
 
   async load() {
+    this.setData({ loading: true, loadFailed: false })
     try {
       const profile = await getMyProfile()
+      this._loaded = true
       this.setData({
         dislikesText: profile.dislikes.join('，'),
         tastesText: profile.tastes.join('，'),
         address: profile.address,
-        loading: false
+        loading: false,
+        loadFailed: false
       })
     } catch (e: any) {
-      this.setData({ loading: false })
+      this._loaded = false
+      this.setData({ loading: false, loadFailed: true })
       wx.showToast({
         title: String((e && e.message) || '加载失败').slice(0, 40),
         icon: 'none'
       })
     }
+  },
+
+  onRetryLoad() {
+    this.load()
   },
 
   onDislikes(e: any) {
@@ -53,6 +64,10 @@ Page({
 
   async onSave() {
     if (this.data.saving) {
+      return
+    }
+    if (!this._loaded) {
+      wx.showToast({ title: '档案还没加载好，点重试', icon: 'none' })
       return
     }
     this.setData({ saving: true })

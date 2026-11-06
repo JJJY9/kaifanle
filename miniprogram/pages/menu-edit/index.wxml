@@ -31,6 +31,14 @@
 
   <view wx:if="{{loading}}" class="skeleton sk"></view>
 
+  <empty-state
+    wx:elif="{{loadFailed}}"
+    title="菜单加载失败"
+    desc="没有拿到这一餐的安排，检查网络后再试"
+    actionText="重试"
+    bind:action="onRetryLoad"
+  />
+
   <block wx:elif="{{dishes.length}}">
     <view class="dish-card card">
       <view
