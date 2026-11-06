@@ -258,6 +258,15 @@ Page({
             Number(order.urgeCount || 0) > 1
               ? ` · 催了 ${Number(order.urgeCount)} 次`
               : '',
+          ratingText:
+            order.rating === 3
+              ? '😋 好吃'
+              : order.rating === 2
+              ? '🙂 一般'
+              : order.rating === 1
+              ? '😵 翻车'
+              : '',
+          feedback: order.feedback || '',
           waitText: (() => {
             const minutes = Math.floor(
               (Date.now() - Number(order.createdAt || 0)) / 60000

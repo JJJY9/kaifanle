@@ -1,5 +1,5 @@
 import type { Dish, Order, OrderStatus } from '../../services/types'
-import { getOrder, cancelOrder, getDishes, urgeOrder } from '../../services/api'
+import { getOrder, cancelOrder, getDishes, urgeOrder, rateOrder } from '../../services/api'
 import { cart } from '../../store/cart'
 import { STATUS_STEP_TEXT, STATUS_TEXT, mealName } from '../../utils/constants'
 import {
@@ -26,7 +26,15 @@ Page({
     statusText: '',
     orderError: '',
     loading: true,
-    reordering: false
+    reordering: false,
+    rating: 0,
+    feedbackDraft: '',
+    submittingRating: false,
+    ratingOptions: [
+      { value: 3, emoji: '😋', label: '好吃' },
+      { value: 2, emoji: '🙂', label: '一般' },
+      { value: 1, emoji: '😵', label: '翻车' }
+    ]
   },
 
   orderId: '',
@@ -129,6 +137,8 @@ Page({
         },
         steps: this.buildSteps(order),
         statusText: STATUS_TEXT[order.status],
+        rating: Number(order.rating || 0),
+        feedbackDraft: order.feedback || '',
         loading: false
       })
     } catch (e: any) {
@@ -255,6 +265,38 @@ Page({
       }, 300)
     } finally {
       this.setData({ reordering: false })
+    }
+  },
+
+  onRate(e: any) {
+    this.setData({ rating: Number(e.currentTarget.dataset.value) })
+  },
+
+  onFeedback(e: any) {
+    this.setData({ feedbackDraft: e.detail.value })
+  },
+
+  async onSubmitRating() {
+    const order = this.data.order
+    if (!order || this.data.submittingRating) {
+      return
+    }
+    if (!this.data.rating) {
+      wx.showToast({ title: '先选一个评价吧', icon: 'none' })
+      return
+    }
+    this.setData({ submittingRating: true })
+    try {
+      await rateOrder(order.id, this.data.rating, this.data.feedbackDraft)
+      wx.showToast({ title: '评价收到啦', icon: 'none' })
+      this.load()
+    } catch (e: any) {
+      wx.showToast({
+        title: String((e && e.message) || '评价失败').slice(0, 40),
+        icon: 'none'
+      })
+    } finally {
+      this.setData({ submittingRating: false })
     }
   },
 

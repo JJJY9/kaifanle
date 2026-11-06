@@ -105,6 +105,9 @@ export interface Order {
   createdAt: number
   urgedAt?: number
   urgeCount?: number
+  rating?: number
+  feedback?: string
+  ratedAt?: number
 }
 
 export interface CreateOrderPayload {
@@ -153,6 +156,7 @@ export interface Business {
   dinner: MealBusiness
   closedNote: string
   notice?: string
+  closedDates?: string[]
 }
 
 export interface UserProfile {

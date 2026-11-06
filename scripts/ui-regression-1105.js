@@ -158,6 +158,14 @@ function invoke(mp, body) {
 
   await invoke(
     mp,
+    "page.setData({ order: Object.assign({}, page.data.order, { status: 'completed' }) })"
+  )
+  await sleep(300)
+  page = await current()
+  check('评价入口渲染', (await page.$$('.rating-option')).length === 3)
+
+  await invoke(
+    mp,
     "page.setData({ order: Object.assign({}, page.data.order, { status: 'pending', urgeCooling: false }) })"
   )
   await sleep(300)

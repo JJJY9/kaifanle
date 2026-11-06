@@ -58,6 +58,20 @@
       />
     </view>
 
+    <view class="card block">
+      <view class="block-title">休息日（未来 7 天）</view>
+      <view class="date-chips">
+        <view
+          wx:for="{{dateOptions}}"
+          wx:key="value"
+          class="date-chip {{item.closed ? 'closed' : ''}}"
+          data-value="{{item.value}}"
+          bindtap="onToggleClosedDate"
+        >{{item.label}}</view>
+      </view>
+      <view class="date-hint">点一下标记为休息日，那天不能下单</view>
+    </view>
+
     <view
       class="save-btn {{saving ? 'disabled' : ''}}"
       bindtap="onSave"

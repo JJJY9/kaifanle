@@ -242,6 +242,17 @@ export async function urgeOrder(id: string): Promise<Order | null> {
   return mock.urgeOrder(id)
 }
 
+export async function rateOrder(
+  id: string,
+  rating: number,
+  feedback: string
+): Promise<Order | null> {
+  if (USE_CLOUD) {
+    return callApi<Order | null>('rateOrder', { id, rating, feedback })
+  }
+  return mock.rateOrder(id, rating, feedback)
+}
+
 export async function updateOrderStatus(
   id: string,
   status: OrderStatus

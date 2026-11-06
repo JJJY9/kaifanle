@@ -33,7 +33,8 @@ const DEFAULT_BUSINESS: Business = {
   lunch: { open: true, deadline: '12:00' },
   dinner: { open: true, deadline: '20:00' },
   closedNote: '今天休息，明天见',
-  notice: ''
+  notice: '',
+  closedDates: []
 }
 
 const CATEGORIES: Category[] = [
@@ -710,6 +711,12 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
   if (isToday && nowMinutes > deadlineHour * 60 + deadlineMinute) {
     throw new Error('这一餐已经截单啦，下次早点来')
   }
+  if (
+    Array.isArray(business.closedDates) &&
+    business.closedDates.indexOf(scheduledDate) > -1
+  ) {
+    throw new Error('这一天休息，换个日子吧')
+  }
 
   const menu = loadMenus()[`${scheduledDate}_${payload.meal}`]
   if (menu && menu.open === false) {
@@ -813,6 +820,30 @@ export async function urgeOrder(id: string): Promise<Order | null> {
   }
   order.urgedAt = now
   order.urgeCount = Number(order.urgeCount || 0) + 1
+  saveOrders()
+  return { ...order }
+}
+
+export async function rateOrder(
+  id: string,
+  rating: number,
+  feedback: string
+): Promise<Order | null> {
+  await delay(60)
+  const orders = loadOrders()
+  const order = orders.find(item => item.id === id)
+  if (!order) {
+    return null
+  }
+  if (order.status !== 'completed') {
+    throw new Error('吃完才能评价哦')
+  }
+  if ([1, 2, 3].indexOf(Number(rating)) === -1) {
+    throw new Error('评价不太对')
+  }
+  order.rating = Number(rating)
+  order.feedback = String(feedback || '').trim().slice(0, 50)
+  order.ratedAt = Date.now()
   saveOrders()
   return { ...order }
 }
@@ -924,7 +955,9 @@ export async function updateWish(payload: {
 
 export async function getBusiness(): Promise<Business> {
   await delay(60)
-  return JSON.parse(JSON.stringify(loadBusiness()))
+  const data = JSON.parse(JSON.stringify(loadBusiness()))
+  data.closedDates = Array.isArray(data.closedDates) ? data.closedDates : []
+  return data
 }
 
 export async function updateBusiness(payload: Business): Promise<Business> {

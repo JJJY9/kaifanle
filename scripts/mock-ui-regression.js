@@ -167,6 +167,10 @@ function invoke(mp, body) {
   page = await current()
   data = await page.data()
   check('mock 营业设置加载', Array.isArray(data.mealViews) && data.mealViews.length === 3)
+  check(
+    'mock 休息日选项',
+    Array.isArray(data.dateOptions) && data.dateOptions.length === 8
+  )
   await invoke(mp, "page.setData({ notice: '今天只有一锅炖菜' })")
   await invoke(mp, 'page.onSave()')
   await sleep(1000)

@@ -131,8 +131,16 @@ Page({
 
       let isOpen = isOpenNow()
       let mealNotice = ''
+      const closedToday = Boolean(
+        business &&
+          Array.isArray(business.closedDates) &&
+          business.closedDates.indexOf(today) > -1
+      )
       const mealSetting = business ? business[meal] : null
-      if (menuActive && menu!.open === false) {
+      if (closedToday) {
+        isOpen = false
+        mealNotice = (business && business.closedNote) || '今天休息，明天见'
+      } else if (menuActive && menu!.open === false) {
         isOpen = false
         mealNotice = '这一餐还没排菜单'
       } else if (mealSetting) {

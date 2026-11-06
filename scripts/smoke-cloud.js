@@ -511,6 +511,34 @@ async function run() {
   )
   assert.strictEqual(res.ok, true)
 
+  // 评价：只能本人评、分数受限、内容安全
+  res = await call(
+    'rateOrder',
+    { id: created.data.id, rating: 3, feedback: '好吃' },
+    'stranger-openid'
+  )
+  assert.strictEqual(res.ok, false)
+  res = await call(
+    'rateOrder',
+    { id: created.data.id, rating: 5 },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, false)
+  res = await call(
+    'rateOrder',
+    { id: created.data.id, rating: 3, feedback: '超好吃' },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.rating, 3)
+  assert.strictEqual(res.data.feedback, '超好吃')
+  res = await call(
+    'rateOrder',
+    { id: created.data.id, rating: 3, feedback: '违规评价' },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, false)
+
   res = await call('toggleDishStatus', { id: 'd01' }, 'admin-openid')
   assert.strictEqual(res.ok, true)
   assert.strictEqual(res.data.status, 'soldout')
@@ -557,6 +585,14 @@ async function run() {
   assert.strictEqual(order2.ok, true)
   // 失败的订单不会占用订单号，成功订单连续递增
   assert.strictEqual(order2.data.no, '002')
+
+  // 未完成的订单不能评价
+  res = await call(
+    'rateOrder',
+    { id: order2.data.id, rating: 3 },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, false)
 
   // 催单：只有本人能催，5 分钟内不能重复
   res = await call('urgeOrder', { id: order2.data.id }, 'stranger-openid')
@@ -669,6 +705,38 @@ async function run() {
   )
   assert.strictEqual(res.ok, true)
   assert.strictEqual(res.data.dinner.open, false)
+
+  // 休息日：指定日期不能下单
+  const closedDate = chinaDate(5)
+  const businessWithClosed = {
+    breakfast: { open: true, deadline: '23:59' },
+    lunch: { open: true, deadline: '23:59' },
+    dinner: { open: false, deadline: '23:59' },
+    closedNote: '今天休息',
+    closedDates: [closedDate]
+  }
+  res = await call('updateBusiness', businessWithClosed, 'admin-openid')
+  assert.strictEqual(res.ok, true)
+  res = await call('getBusiness', {}, 'girl-openid')
+  assert.deepStrictEqual(res.data.closedDates, [closedDate])
+  res = await call(
+    'createOrder',
+    {
+      items: [{ dishId: 'd02', qty: 1, specs: [] }],
+      meal: 'lunch',
+      expectedTime: '12:00',
+      mode: '在家吃',
+      scheduledDate: closedDate
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, false)
+  res = await call(
+    'updateBusiness',
+    Object.assign({}, businessWithClosed, { closedDates: [] }),
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
 
   res = await call(
     'createOrder',

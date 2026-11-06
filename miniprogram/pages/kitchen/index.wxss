@@ -510,6 +510,21 @@
   margin-top: 6rpx;
 }
 
+.rating-badge {
+  padding: 4rpx 14rpx;
+  background: #FFD23F;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
+.order-feedback {
+  margin-top: 8rpx;
+  color: #5C5C5C;
+  font-size: 22rpx;
+}
+
 .menu {
   padding: 6rpx 24rpx;
 }

@@ -1,6 +1,7 @@
 import type { Business, MealId } from '../../services/types'
 import { getBusiness, updateBusiness } from '../../services/api'
 import { MEALS } from '../../utils/constants'
+import { dateInputString } from '../../utils/format'
 
 interface MealView {
   id: MealId
@@ -9,13 +10,40 @@ interface MealView {
   deadline: string
 }
 
+interface DateView {
+  value: string
+  label: string
+  closed: boolean
+}
+
+function buildDateOptions(): DateView[] {
+  const options: DateView[] = []
+  for (let i = 0; i <= 7; i++) {
+    const date = new Date()
+    date.setDate(date.getDate() + i)
+    let label = ''
+    if (i === 0) {
+      label = '今天'
+    } else if (i === 1) {
+      label = '明天'
+    } else if (i === 2) {
+      label = '后天'
+    } else {
+      label = `${date.getMonth() + 1}/${date.getDate()}`
+    }
+    options.push({ value: dateInputString(date), label, closed: false })
+  }
+  return options
+}
+
 Page({
   data: {
     loading: true,
     saving: false,
     mealViews: [] as MealView[],
     closedNote: '',
-    notice: ''
+    notice: '',
+    dateOptions: [] as DateView[]
   },
 
   onLoad() {
@@ -31,10 +59,18 @@ Page({
         open: business[meal.id].open,
         deadline: business[meal.id].deadline
       }))
+      const closedDates = Array.isArray(business.closedDates)
+        ? business.closedDates
+        : []
+      const dateOptions = buildDateOptions().map(option => ({
+        ...option,
+        closed: closedDates.indexOf(option.value) > -1
+      }))
       this.setData({
         mealViews,
         closedNote: business.closedNote,
         notice: business.notice || '',
+        dateOptions,
         loading: false
       })
     } catch (e: any) {
@@ -74,6 +110,14 @@ Page({
     this.setData({ notice: e.detail.value })
   },
 
+  onToggleClosedDate(e: any) {
+    const value = e.currentTarget.dataset.value
+    const dateOptions = this.data.dateOptions.map(option =>
+      option.value === value ? { ...option, closed: !option.closed } : option
+    )
+    this.setData({ dateOptions })
+  },
+
   async onSave() {
     if (this.data.saving) {
       return
@@ -81,7 +125,10 @@ Page({
     const business: any = {
       closedNote:
         this.data.closedNote.trim().slice(0, 40) || '今天休息，明天见',
-      notice: this.data.notice.trim().slice(0, 60)
+      notice: this.data.notice.trim().slice(0, 60),
+      closedDates: this.data.dateOptions
+        .filter(option => option.closed)
+        .map(option => option.value)
     }
     this.data.mealViews.forEach(view => {
       business[view.id] = {

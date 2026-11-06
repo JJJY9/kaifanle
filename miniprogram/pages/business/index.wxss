@@ -128,6 +128,33 @@
   font-size: 26rpx;
 }
 
+.date-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.date-chip {
+  padding: 10rpx 24rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 23rpx;
+  font-weight: 700;
+}
+
+.date-chip.closed {
+  background: #FF5C8A;
+  box-shadow: 3rpx 3rpx 0 #111111;
+  transform: rotate(-1deg);
+}
+
+.date-hint {
+  margin-top: 12rpx;
+  color: #8A8A8A;
+  font-size: 20rpx;
+}
+
 .save-btn {
   display: flex;
   align-items: center;

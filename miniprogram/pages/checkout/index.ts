@@ -103,11 +103,16 @@ Page({
       const isToday = this.data.scheduledDate === this.data.todayDate
       const pastDeadline =
         isToday && nowMinutes > deadlineHour * 60 + deadlineMinute
-      const closed = !setting.open || pastDeadline
+      const isClosedDate =
+        Array.isArray(business.closedDates) &&
+        business.closedDates.indexOf(this.data.scheduledDate) > -1
+      const closed = !setting.open || pastDeadline || isClosedDate
       this.setData({
         closed,
         closedText: closed
-          ? !setting.open
+          ? isClosedDate
+            ? '这一天休息，换个日子吧'
+            : !setting.open
             ? business.closedNote || '今天休息，明天见'
             : '这一餐已经截单啦，下次早点来'
           : ''

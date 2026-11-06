@@ -33,7 +33,8 @@ const DEFAULT_BUSINESS = {
   lunch: { open: true, deadline: '12:00' },
   dinner: { open: true, deadline: '20:00' },
   closedNote: '今天休息，明天见',
-  notice: ''
+  notice: '',
+  closedDates: []
 }
 
 exports.main = async event => {
@@ -98,6 +99,8 @@ async function route(action, payload, openid) {
       return cancelOrder(payload, openid)
     case 'urgeOrder':
       return urgeOrder(payload, openid)
+    case 'rateOrder':
+      return rateOrder(payload, openid)
     case 'updateOrderStatus':
       return updateOrderStatus(payload, openid)
     case 'toggleDishStatus':
@@ -268,7 +271,18 @@ function normalizeBusiness(value) {
       40
     ),
     // 今日公告：显示在首页，让她一眼看到
-    notice: String(source.notice || '').slice(0, 60)
+    notice: String(source.notice || '').slice(0, 60),
+    // 指定休息日（YYYY-MM-DD），最多 14 天
+    closedDates: Array.isArray(source.closedDates)
+      ? source.closedDates
+          .map(date => String(date || '').slice(0, 10))
+          .filter(
+            (date, index, list) =>
+              /^\d{4}-\d{2}-\d{2}$/.test(date) &&
+              list.indexOf(date) === index
+          )
+          .slice(0, 14)
+      : []
   }
   for (const meal of MEALS) {
     const item =
@@ -980,6 +994,13 @@ async function createOrder(payload, openid) {
     }
   }
 
+  if (
+    Array.isArray(business.closedDates) &&
+    business.closedDates.indexOf(scheduledDate) > -1
+  ) {
+    throw new Error('这一天休息，换个日子吧')
+  }
+
   const menu = await getMenuDoc(scheduledDate, meal)
   if (menu.exists && menu.open === false) {
     throw new Error('这一餐还没排菜单')
@@ -1224,6 +1245,35 @@ async function urgeOrder(payload, openid) {
       urgeBucket,
       urgeCount: Number(order.urgeCount || 0) + 1
     })
+  )
+}
+
+// 顾客给已完成的订单打分：1 翻车 / 2 一般 / 3 好吃，可附一句话
+async function rateOrder(payload, openid) {
+  if (!payload || !payload.id) {
+    throw new Error('缺少订单 ID')
+  }
+  const res = await db.collection('orders').doc(payload.id).get()
+  const order = res.data
+  if (order._openid !== openid) {
+    throw new Error('只能评价自己的订单')
+  }
+  if (order.status !== 'completed') {
+    throw new Error('吃完才能评价哦')
+  }
+  const rating = Number(payload.rating)
+  if ([1, 2, 3].indexOf(rating) === -1) {
+    throw new Error('评价不太对')
+  }
+  const feedback = String(payload.feedback || '').trim().slice(0, 50)
+  await checkContentSafety(openid, feedback)
+  const now = Date.now()
+  await db
+    .collection('orders')
+    .doc(payload.id)
+    .update({ data: { rating, feedback, ratedAt: now } })
+  return withId(
+    Object.assign({}, order, { rating, feedback, ratedAt: now })
   )
 }
 

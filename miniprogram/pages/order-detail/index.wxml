@@ -59,6 +59,33 @@
     </view>
   </view>
 
+  <view wx:if="{{order.status === 'completed'}}" class="block card">
+    <view class="block-title">这一顿怎么样？</view>
+    <view class="rating-row">
+      <view
+        wx:for="{{ratingOptions}}"
+        wx:key="value"
+        class="rating-option {{rating === item.value ? 'active' : ''}}"
+        data-value="{{item.value}}"
+        bindtap="onRate"
+      >
+        <text class="rating-emoji">{{item.emoji}}</text>
+        <text class="rating-label">{{item.label}}</text>
+      </view>
+    </view>
+    <input
+      class="rating-input"
+      placeholder="想对掌勺的说点什么（选填）"
+      value="{{feedbackDraft}}"
+      maxlength="50"
+      bindinput="onFeedback"
+    />
+    <view
+      class="rating-submit {{submittingRating ? 'disabled' : ''}}"
+      bindtap="onSubmitRating"
+    >{{submittingRating ? '提交中…' : (order.rating ? '更新评价' : '提交评价')}}</view>
+  </view>
+
   <view class="block card">
     <view class="block-title">小票</view>
     <view class="receipt-row">
