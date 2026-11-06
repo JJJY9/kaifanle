@@ -14,6 +14,7 @@ import type {
   OrderStatus,
   StoreStats,
   UserProfile,
+  WeekMenus,
   Wish,
   WishStatus
 } from './types'
@@ -1205,6 +1206,44 @@ export async function getMenuForDate(
     return { exists: false, date, meal, dishIds: [], open: true }
   }
   return JSON.parse(JSON.stringify(menu))
+}
+
+// mock 也按北京时间算日期，和云函数保持同一口径
+function chinaDateKey(ts: number): string {
+  const d = new Date(ts + 8 * 60 * 60 * 1000)
+  const month = String(d.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(d.getUTCDate()).padStart(2, '0')
+  return `${d.getUTCFullYear()}-${month}-${day}`
+}
+
+export async function getWeekMenus(): Promise<WeekMenus> {
+  await delay(60)
+  const menus = loadMenus()
+  const meals: MealId[] = ['breakfast', 'lunch', 'dinner']
+  const now = Date.now()
+  const dates: string[] = []
+  for (let i = 0; i < 7; i++) {
+    dates.push(chinaDateKey(now + i * 24 * 60 * 60 * 1000))
+  }
+  return JSON.parse(
+    JSON.stringify({
+      startDate: dates[0],
+      endDate: dates[dates.length - 1],
+      days: dates.map(date => ({
+        date,
+        weekday: new Date(
+          Date.parse(date + 'T00:00:00+08:00') + 8 * 60 * 60 * 1000
+        ).getUTCDay(),
+        menus: meals.map(meal => {
+          const menu = menus[`${date}_${meal}`]
+          if (!menu) {
+            return { exists: false, date, meal, dishIds: [], open: true }
+          }
+          return { ...menu }
+        })
+      }))
+    })
+  )
 }
 
 export async function saveMenu(payload: {

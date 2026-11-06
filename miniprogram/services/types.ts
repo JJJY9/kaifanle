@@ -204,3 +204,16 @@ export interface DailyMenu {
   dishIds: string[]
   open: boolean
 }
+
+export interface WeekMenusDay {
+  date: string
+  // 0=周日，由服务端按北京时间计算
+  weekday: number
+  menus: DailyMenu[]
+}
+
+export interface WeekMenus {
+  startDate: string
+  endDate: string
+  days: WeekMenusDay[]
+}

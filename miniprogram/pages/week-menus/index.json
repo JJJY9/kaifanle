@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "本周饭表",
+  "enablePullDownRefresh": true,
+  "backgroundColor": "#FFFDF6",
+  "backgroundTextStyle": "dark"
+}

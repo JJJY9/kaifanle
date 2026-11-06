@@ -296,8 +296,11 @@ Page({
     this.setData({ keyword: '', searchResults: [] })
   },
 
-  onSurprise() {
-    const pool = this._available.filter(
+  onWeekMenus() {
+    wx.navigateTo({ url: '/pages/week-menus/index' })
+  },
+
+  onSurprise() {    const pool = this._available.filter(
       dish => dish.status !== 'soldout' && dish.stock !== 0
     )
     if (!pool.length) {

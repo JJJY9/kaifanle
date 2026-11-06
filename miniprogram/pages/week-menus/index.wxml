@@ -1,0 +1,96 @@
+<view class="page">
+  <view class="head">
+    <view class="title-row">
+      <view class="title-wrap">
+        <text class="title display">本周饭表</text>
+        <view class="sticker">7天</view>
+      </view>
+      <view wx:if="{{isAdmin}}" class="edit-link" bindtap="onGoMenu">排菜单 ›</view>
+    </view>
+    <text class="sub"><text wx:if="{{rangeText}}">{{rangeText}} · </text>提前看看这周吃什么</text>
+  </view>
+
+  <view wx:if="{{loading}}" class="loading">
+    <view class="skeleton sk-card"></view>
+    <view class="skeleton sk-card"></view>
+    <view class="skeleton sk-card"></view>
+  </view>
+
+  <empty-state
+    wx:elif="{{error}}"
+    title="饭表加载失败"
+    desc="{{error}}"
+    actionText="再试一次"
+    bind:action="onRetry"
+  />
+
+  <empty-state
+    wx:elif="{{showEmpty}}"
+    title="{{emptyTitle}}"
+    desc="{{emptyDesc}}"
+    actionText="{{emptyAction}}"
+    bind:action="onEmptyAction"
+  />
+
+  <block wx:else>
+    <view
+      wx:for="{{days}}"
+      wx:key="date"
+      class="day-card card {{item.isToday ? 'today' : ''}} {{item.closed ? 'closed' : ''}}"
+    >
+      <view class="day-head">
+        <view class="day-date">
+          <text class="day-num display">{{item.dayNum}}</text>
+          <view class="day-date-info">
+            <text class="day-week">{{item.weekText}}</text>
+            <text class="day-month">{{item.monthText}}</text>
+          </view>
+        </view>
+        <view class="day-tags">
+          <text wx:if="{{item.isToday}}" class="tag today-tag">今天</text>
+          <text wx:elif="{{item.relativeTag}}" class="tag soon-tag">{{item.relativeTag}}</text>
+          <text wx:if="{{item.closed}}" class="tag rest-tag">休息</text>
+        </view>
+      </view>
+
+      <view wx:if="{{item.closed}}" class="closed-note">{{item.closedNote}}</view>
+
+      <view wx:else class="meal-list">
+        <view
+          wx:for="{{item.meals}}"
+          wx:for-item="meal"
+          wx:key="id"
+          class="meal-row {{meal.isNow ? 'now' : ''}}"
+        >
+          <view class="meal-name">
+            <text>{{meal.name}}</text>
+            <text wx:if="{{meal.isNow}}" class="now-tag">现在</text>
+          </view>
+          <view class="meal-body">
+            <view class="meal-top">
+              <text class="meal-state {{meal.state}}">{{meal.stateText}}</text>
+              <text wx:if="{{meal.hint}}" class="meal-hint">{{meal.hint}}</text>
+            </view>
+            <view wx:if="{{meal.dishes.length}}" class="dish-chips">
+              <view
+                wx:for="{{meal.dishes}}"
+                wx:for-item="dish"
+                wx:key="id"
+                class="dish-chip {{dish.soldout ? 'soldout' : ''}}"
+              >
+                <text class="dish-icon">{{dish.icon}}</text>
+                <text class="dish-name">{{dish.name}}</text>
+              </view>
+              <text wx:if="{{meal.moreCount}}" class="more-chip">+{{meal.moreCount}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="foot">
+      <view class="foot-btn" bindtap="onGoHome">去点餐</view>
+      <view wx:if="{{isAdmin}}" class="foot-link" bindtap="onGoMenu">去排菜单 →</view>
+    </view>
+  </block>
+</view>

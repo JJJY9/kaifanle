@@ -57,6 +57,10 @@
   background: #FF5C8A;
 }
 
+.notify-btn.week {
+  background: #FFFFFF;
+}
+
 .notify-btn.copy {
   background: #2FBF71;
 }

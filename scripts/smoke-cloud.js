@@ -981,6 +981,60 @@ async function run() {
   await call('deleteMenu', { date: tomorrowKey, meal: 'lunch' }, 'admin-openid')
   await call('deleteMenu', { date: todayKey, meal: 'lunch' }, 'admin-openid')
 
+  // 周饭表：公开读取今天起 7 天 × 3 餐，缺失的补占位
+  res = await call('getWeekMenus', {}, 'girl-openid')
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.days.length, 7)
+  assert.strictEqual(res.data.startDate, chinaDate(0))
+  assert.strictEqual(res.data.endDate, chinaDate(6))
+  const weekDays = res.data.days
+  weekDays.forEach((day, index) => {
+    assert.strictEqual(day.date, chinaDate(index))
+    // 独立按日历日期算星期，避免服务端整体偏移时相对断言仍通过
+    assert.strictEqual(
+      day.weekday,
+      new Date(chinaDate(index) + 'T00:00:00Z').getUTCDay()
+    )
+    assert.strictEqual(day.weekday, (weekDays[0].weekday + index) % 7)
+    assert.deepStrictEqual(
+      day.menus.map(menu => menu.meal),
+      ['breakfast', 'lunch', 'dinner']
+    )
+    day.menus.forEach(menu => {
+      assert.strictEqual(menu.exists, false)
+      assert.deepStrictEqual(menu.dishIds, [])
+      assert.strictEqual(menu.open, true)
+    })
+  })
+
+  await call(
+    'saveMenu',
+    { date: chinaDate(0), meal: 'lunch', dishIds: ['d02'], open: true },
+    'admin-openid'
+  )
+  await call(
+    'saveMenu',
+    { date: chinaDate(2), meal: 'dinner', dishIds: ['d01'], open: false },
+    'admin-openid'
+  )
+  res = await call('getWeekMenus', {}, 'girl-openid')
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.days[0].menus[1].exists, true)
+  assert.deepStrictEqual(res.data.days[0].menus[1].dishIds, ['d02'])
+  assert.strictEqual(res.data.days[2].menus[2].exists, true)
+  assert.strictEqual(res.data.days[2].menus[2].open, false)
+  assert.strictEqual(res.data.days[1].menus[1].exists, false)
+  await call(
+    'deleteMenu',
+    { date: chinaDate(0), meal: 'lunch' },
+    'admin-openid'
+  )
+  await call(
+    'deleteMenu',
+    { date: chinaDate(2), meal: 'dinner' },
+    'admin-openid'
+  )
+
   // 库存扣减与取消回补
   res = await call(
     'saveDish',

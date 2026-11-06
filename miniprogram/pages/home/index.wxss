@@ -176,6 +176,34 @@
   line-height: 1.4;
 }
 
+.week-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16rpx;
+  padding: 16rpx 20rpx;
+  background: #FFF7DA;
+  border: 3rpx solid #111111;
+  border-radius: 20rpx;
+  box-shadow: 4rpx 4rpx 0 #111111;
+}
+
+.week-entry:active {
+  transform: translate(4rpx, 4rpx);
+  box-shadow: none;
+}
+
+.week-entry-text {
+  font-size: 24rpx;
+  font-weight: 800;
+}
+
+.week-entry-arrow {
+  font-size: 30rpx;
+  font-weight: 800;
+  line-height: 1;
+}
+
 .search-bar {
   display: flex;
   align-items: center;
