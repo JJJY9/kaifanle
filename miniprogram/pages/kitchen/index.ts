@@ -37,6 +37,7 @@ Page({
     ordersView: [] as any[],
     orderKeyword: '',
     orderMeal: 'all' as 'all' | 'breakfast' | 'lunch' | 'dinner',
+    orderSort: 'wait' as 'wait' | 'new',
     mealOptions: MEALS,
     preorders: [] as any[],
     history: [] as any[],
@@ -270,7 +271,9 @@ Page({
         if (rankA !== rankB) {
           return rankA - rankB
         }
-        return Number(a.createdAt || 0) - Number(b.createdAt || 0)
+        const timeA = Number(a.createdAt || 0)
+        const timeB = Number(b.createdAt || 0)
+        return this.data.orderSort === 'new' ? timeB - timeA : timeA - timeB
       }
       // 待处理只放今天（含逾期），未来预订单独展示，避免占满今日待办
       const active = activeAll
@@ -1108,6 +1111,29 @@ Page({
     this.setData({ dishCategory: category }, () =>
       this.applyDishFilter()
     )
+  },
+
+  onOrderSort() {
+    const sort = this.data.orderSort === 'wait' ? 'new' : 'wait'
+    const rank: Record<string, number> = {
+      pending: 0,
+      accepted: 1,
+      cooking: 2,
+      ready: 3
+    }
+    const sorted = (this.data.orders || []).slice().sort((a: any, b: any) => {
+      const rankA = rank[a.status] === undefined ? 9 : rank[a.status]
+      const rankB = rank[b.status] === undefined ? 9 : rank[b.status]
+      if (rankA !== rankB) {
+        return rankA - rankB
+      }
+      const timeA = Number(a.createdAt || 0)
+      const timeB = Number(b.createdAt || 0)
+      return sort === 'new' ? timeB - timeA : timeA - timeB
+    })
+    this.setData({ orderSort: sort, orders: sorted }, () => {
+      this.setData({ ordersView: this.filterOrders(sorted) })
+    })
   },
 
   filterOrders(list: any[]): any[] {

@@ -653,6 +653,17 @@ function invoke(mp, body) {
       data.ordersView.every(order => order.meal === 'lunch'),
     `${(data.ordersView || []).length} 单`
   )
+  await invoke(mp, 'page.onOrderSort()')
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 厨房订单排序切换',
+    data.orderSort === 'new',
+    data.orderSort
+  )
+  await invoke(mp, 'page.onOrderSort()')
+  await sleep(300)
   await invoke(
     mp,
     "page.onOrderMeal({ currentTarget: { dataset: { meal: 'all' } } })"

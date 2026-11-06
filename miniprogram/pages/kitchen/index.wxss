@@ -1237,6 +1237,12 @@
   box-shadow: 2rpx 2rpx 0 #111111;
 }
 
+.order-meal.sort-toggle {
+  margin-left: auto;
+  color: #2D9CFF;
+  border-style: dashed;
+}
+
 .order-search-icon {
   font-size: 22rpx;
 }

@@ -194,6 +194,7 @@
         data-meal="{{item.id}}"
         bindtap="onOrderMeal"
       >{{item.name}}</view>
+      <view class="order-meal sort-toggle" bindtap="onOrderSort">{{orderSort === 'wait' ? '最久优先' : '最新优先'}}</view>
     </view>
     <view wx:if="{{orders.length}}" class="order-search">
       <text class="order-search-icon">🔍</text>
