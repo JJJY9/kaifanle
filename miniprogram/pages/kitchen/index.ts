@@ -34,6 +34,7 @@ Page({
     busyDishId: '',
     replyingId: '',
     restockingId: '',
+    restockingAll: false,
     historyOnlyPending: false,
     historyView: [] as any[],
     movingId: '',
@@ -623,6 +624,75 @@ Page({
     } finally {
       this.setData({ restockingId: '' })
     }
+  },
+
+  async onRestockAll() {
+    if (this.data.restockingAll) {
+      return
+    }
+    const low = (this.data.dishes || []).filter(
+      dish =>
+        dish.status === 'on' &&
+        typeof dish.stock === 'number' &&
+        dish.stock >= 0 &&
+        dish.stock <= 3
+    )
+    if (!low.length) {
+      wx.showToast({ title: '没有低库存的菜', icon: 'none' })
+      return
+    }
+    const res: any = await wx.showModal({
+      title: '全部补 5 份？',
+      content: `有 ${low.length} 道菜库存 ≤3 份，会给每道菜加 5 份。`,
+      confirmText: '补货',
+      cancelText: '算了'
+    })
+    if (!res.confirm) {
+      return
+    }
+    this.setData({ restockingAll: true })
+    let done = 0
+    let failed = 0
+    const stockMap: Record<string, number> = {}
+    for (const dish of low) {
+      try {
+        const updated = await saveDish({
+          ...dish,
+          stock: Number(dish.stock) + 5
+        } as any)
+        stockMap[dish.id] =
+          updated && typeof updated.stock === 'number'
+            ? updated.stock
+            : Number(dish.stock) + 5
+        done++
+      } catch (e) {
+        failed++
+      }
+    }
+    const dishes = this.data.dishes.map(dish =>
+      stockMap[dish.id] !== undefined
+        ? { ...dish, stock: stockMap[dish.id] }
+        : dish
+    )
+    const lowStock = dishes.filter(
+      dish =>
+        dish.status === 'on' &&
+        typeof dish.stock === 'number' &&
+        dish.stock >= 0 &&
+        dish.stock <= 3
+    ).length
+    this.setData(
+      {
+        dishes,
+        todo: { ...this.data.todo, lowStock },
+        restockingAll: false
+      },
+      () => this.applyDishFilter()
+    )
+    wx.showToast({
+      title: failed ? `补好 ${done} 道，${failed} 道失败` : `补好 ${done} 道`,
+      icon: 'none'
+    })
   },
 
   applyDishFilter() {

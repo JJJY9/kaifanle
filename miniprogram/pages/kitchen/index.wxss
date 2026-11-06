@@ -133,6 +133,31 @@
   font-size: 20rpx;
 }
 
+.todo-head-right {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.todo-restock {
+  padding: 6rpx 16rpx;
+  background: #FFD23F;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  box-shadow: 3rpx 3rpx 0 #111111;
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
+.todo-restock:active {
+  transform: translate(3rpx, 3rpx);
+  box-shadow: none;
+}
+
+.todo-restock.busy {
+  opacity: 0.6;
+}
+
 .todo-row {
   display: flex;
   gap: 14rpx;

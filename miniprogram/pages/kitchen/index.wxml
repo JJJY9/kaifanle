@@ -53,7 +53,14 @@
     <view wx:if="{{todo.pending || todo.replies || todo.lowStock}}" class="todo-card card">
       <view class="todo-head">
         <text class="todo-title">今日待办</text>
-        <text class="todo-sub">点一下跳过去</text>
+        <view class="todo-head-right">
+          <text class="todo-sub">点一下跳过去</text>
+          <view
+            wx:if="{{todo.lowStock}}"
+            class="todo-restock {{restockingAll ? 'busy' : ''}}"
+            catchtap="onRestockAll"
+          >{{restockingAll ? '补货中…' : '全部补5'}}</view>
+        </view>
       </view>
       <view class="todo-row">
         <view wx:if="{{todo.pending}}" class="todo-item pending" data-target="orders" bindtap="onTodoTap">
