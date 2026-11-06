@@ -116,6 +116,16 @@
       >{{item.label}}</view>
     </scroll-view>
 
+    <scroll-view wx:if="{{tagFilters.length > 1}}" scroll-x class="tag-filter-row">
+      <view
+        wx:for="{{tagFilters}}"
+        wx:key="key"
+        class="tag-filter-chip {{tagFilter === item.key ? 'active' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="onTagFilter"
+      >{{item.label}}<text wx:if="{{item.count}}" class="tag-filter-count">{{item.count}}</text></view>
+    </scroll-view>
+
     <view wx:if="{{lastOrder}}" class="last-order" bindtap="onRepeatLast">
       <view class="last-order-info">
         <text class="last-order-label">上次吃 · {{lastOrder.mealText}}</text>

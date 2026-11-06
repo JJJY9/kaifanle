@@ -92,7 +92,9 @@ Page({
     lastOrder: null as any,
     activeOrder: null as any,
     spiceFilter: 'all',
-    spiceFilters: [] as { key: string; label: string }[]
+    spiceFilters: [] as { key: string; label: string }[],
+    tagFilter: 'all',
+    tagFilters: [] as { key: string; label: string; count: number }[]
   },
 
   _unsub: null as null | (() => void),
@@ -478,7 +480,7 @@ Page({
     if (activeSpice !== this.data.spiceFilter) {
       this.setData({ spiceFilter: activeSpice })
     }
-    const pool = basePool.filter(dish => {
+    const spicePool = basePool.filter(dish => {
       if (activeSpice === 'all') {
         return true
       }
@@ -488,6 +490,38 @@ Page({
           : ['不辣']
       return list.indexOf(activeSpice) > -1
     })
+    // 标签筛选项按当前菜品池生成，取出现次数最多的前 5 个
+    const tagCount: Record<string, number> = {}
+    spicePool.forEach(dish => {
+      ;(dish.tags || []).forEach(tag => {
+        const name = String(tag || '').trim()
+        if (name) {
+          tagCount[name] = (tagCount[name] || 0) + 1
+        }
+      })
+    })
+    const tagNames = Object.keys(tagCount)
+      .sort((a, b) => tagCount[b] - tagCount[a])
+      .slice(0, 5)
+    const tagFilters = [{ key: 'all', label: '全部标签', count: 0 }].concat(
+      tagNames.map(name => ({
+        key: name,
+        label: name,
+        count: tagCount[name]
+      }))
+    )
+    const activeTag =
+      this.data.tagFilter === 'all' ||
+      tagNames.indexOf(this.data.tagFilter) > -1
+        ? this.data.tagFilter
+        : 'all'
+    if (activeTag !== this.data.tagFilter) {
+      this.setData({ tagFilter: activeTag })
+    }
+    const pool = spicePool.filter(
+      dish =>
+        activeTag === 'all' || (dish.tags || []).indexOf(activeTag) > -1
+    )
     const sections = this._categories
       .map(category => ({
         ...category,
@@ -509,17 +543,21 @@ Page({
       null
     const empty = sections.length === 0
     const spiceEmpty = empty && activeSpice !== 'all'
+    const tagEmpty = empty && activeTag !== 'all'
     this.setData({
       sections,
       hero,
       heroImageFailed: false,
       spiceFilters,
+      tagFilters,
       heroTag: favoriteHero ? '你收藏的' : this.data.recommendText || '今日推荐',
       emptyDesc:
         empty && this.data.onlyFavorites
           ? '还没有收藏，点开菜品点右上角的 ♡ 收藏'
           : empty && spiceEmpty
           ? '这个口味暂时没有菜，换一个试试'
+          : empty && tagEmpty
+          ? '这个标签暂时没有菜，换一个试试'
           : empty && this.data.onlyAvailable
           ? '能点的都卖完啦，看看全部菜吧'
           : this._baseEmptyDesc,
@@ -528,6 +566,8 @@ Page({
           ? '看看全部'
           : spiceEmpty
           ? '全部口味'
+          : tagEmpty
+          ? '全部标签'
           : this.data.onlyAvailable
           ? '看全部菜'
           : '去许愿'
@@ -673,6 +713,17 @@ Page({
     })
   },
 
+  onTagFilter(e: any) {
+    const key = String(e.currentTarget.dataset.key || 'all')
+    if (key === this.data.tagFilter) {
+      return
+    }
+    this.setData({ tagFilter: key }, () => {
+      this.renderSections()
+      this.setData({ searchResults: this.filterDishes(this.data.keyword) })
+    })
+  },
+
   onToggleFavorites() {
     this.setData({ onlyFavorites: !this.data.onlyFavorites }, () => {
       this.renderSections()
@@ -711,6 +762,13 @@ Page({
       })
       return
     }
+    if (this.data.tagFilter !== 'all') {
+      this.setData({ tagFilter: 'all' }, () => {
+        this.renderSections()
+        this.setData({ searchResults: this.filterDishes(this.data.keyword) })
+      })
+      return
+    }
     wx.navigateTo({ url: '/pages/wishes/index' })
   },
 
@@ -728,6 +786,7 @@ Page({
       ? pool.filter(dish => dish.status !== 'soldout' && dish.stock !== 0)
       : pool
     const spice = this.data.spiceFilter
+    const tag = this.data.tagFilter
     return availablePool.filter(dish => {
       if (spice !== 'all') {
         const levels =
@@ -737,6 +796,9 @@ Page({
         if (levels.indexOf(spice) === -1) {
           return false
         }
+      }
+      if (tag !== 'all' && (dish.tags || []).indexOf(tag) === -1) {
+        return false
       }
       const category = (this._categories || []).find(
         item => item.id === dish.categoryId

@@ -439,6 +439,37 @@
   box-shadow: 3rpx 3rpx 0 #111111;
 }
 
+.tag-filter-row {
+  width: 100%;
+  margin-top: 10rpx;
+  white-space: nowrap;
+}
+
+.tag-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6rpx;
+  height: 48rpx;
+  padding: 0 18rpx;
+  margin-right: 10rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 21rpx;
+  font-weight: 800;
+}
+
+.tag-filter-chip.active {
+  background: #2D9CFF;
+  color: #FFFFFF;
+  box-shadow: 2rpx 2rpx 0 #111111;
+}
+
+.tag-filter-count {
+  font-size: 18rpx;
+  opacity: 0.7;
+}
+
 .last-order-info {
   display: flex;
   flex-direction: column;

@@ -382,6 +382,39 @@ function invoke(mp, body) {
     `${(data.sections || []).length} 个分类`
   )
 
+  // 标签筛选：取当前第一个可用标签
+  const tagKey =
+    ((data.tagFilters || []).find(item => item.key !== 'all') || {}).key || ''
+  await invoke(
+    mp,
+    `page.onTagFilter({ currentTarget: { dataset: { key: ${JSON.stringify(
+      tagKey
+    )} } } })`
+  )
+  await sleep(500)
+  page = await current()
+  data = await page.data()
+  const tagDishes = (data.sections || []).reduce(
+    (acc, section) => acc.concat(section.dishes || []),
+    []
+  )
+  check(
+    'mock 菜品标签筛选',
+    Boolean(tagKey) &&
+      data.tagFilter === tagKey &&
+      tagDishes.length > 0 &&
+      tagDishes.every(dish => (dish.tags || []).indexOf(tagKey) > -1),
+    `${tagKey} · ${tagDishes.length} 道`
+  )
+  await invoke(
+    mp,
+    "page.onTagFilter({ currentTarget: { dataset: { key: 'all' } } })"
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check('mock 菜品标签筛选恢复', data.tagFilter === 'all')
+
   // 只看能点的：隐藏售罄/无库存的菜
   await invoke(mp, 'page.onToggleAvailable()')
   await sleep(500)
