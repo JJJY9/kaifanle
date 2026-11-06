@@ -2,6 +2,7 @@ import type { OrderStatus } from '../../services/types'
 import {
   getAllOrders,
   getActiveOrders,
+  getCategories,
   getDishes,
   getMe,
   getStats,
@@ -48,7 +49,9 @@ Page({
     todo: { pending: 0, replies: 0, lowStock: 0 },
     dishKeyword: '',
     dishFilter: 'all' as 'all' | 'low' | 'soldout' | 'off',
+    dishCategory: 'all',
     dishFilters: [] as any[],
+    dishCategoryOptions: [] as any[],
     displayDishes: [] as any[]
   },
 
@@ -58,6 +61,7 @@ Page({
   _knownPending: [] as string[],
   _statsAt: 0,
   _rawOrders: [] as any[],
+  _categories: [] as any[],
   _replyModalOpen: false as boolean,
   _lastPollErrorAt: 0,
   _loadSeq: 0,
@@ -199,7 +203,14 @@ Page({
       let dishes = this.data.dishes
       let stats = this.data.stats
       if (!silent || !dishes.length) {
-        dishes = await getDishes()
+        const [dishList, categories] = await Promise.all([
+          getDishes(),
+          getCategories().catch(() => [] as any[])
+        ])
+        dishes = dishList
+        if (categories.length) {
+          this._categories = categories
+        }
       }
       if (
         !silent ||
@@ -701,6 +712,7 @@ Page({
       .trim()
       .toLowerCase()
     const filter = this.data.dishFilter
+    const category = this.data.dishCategory
     const low = (dish: any) =>
       dish.status === 'on' &&
       typeof dish.stock === 'number' &&
@@ -709,9 +721,12 @@ Page({
     const soldout = (dish: any) =>
       dish.status === 'soldout' || dish.stock === 0
     const displayDishes = dishes.filter(dish => {
+      if (category !== 'all' && dish.categoryId !== category) {
+        return false
+      }
       if (
         keyword &&
-        `${dish.name} ${dish.desc || ''} ${dish.categoryName || ''}`
+        `${dish.name} ${dish.desc || ''}`
           .toLowerCase()
           .indexOf(keyword) === -1
       ) {
@@ -730,6 +745,14 @@ Page({
     })
     this.setData({
       displayDishes,
+      dishCategoryOptions: [
+        { id: 'all', name: '全部分类' }
+      ].concat(
+        (this._categories || []).map(category => ({
+          id: category.id,
+          name: category.name
+        }))
+      ),
       dishFilters: [
         { key: 'all', label: '全部', count: dishes.length },
         {
@@ -767,6 +790,16 @@ Page({
       return
     }
     this.setData({ dishFilter: filter }, () => this.applyDishFilter())
+  },
+
+  onDishCategory(e: any) {
+    const category = e.currentTarget.dataset.id
+    if (category === this.data.dishCategory) {
+      return
+    }
+    this.setData({ dishCategory: category }, () =>
+      this.applyDishFilter()
+    )
   },
 
   onToggleHistory() {

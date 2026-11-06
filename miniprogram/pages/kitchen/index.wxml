@@ -237,6 +237,15 @@
       />
       <view wx:if="{{dishKeyword}}" class="dish-search-clear" bindtap="onClearDishSearch">×</view>
     </view>
+    <view wx:if="{{dishCategoryOptions.length > 1}}" class="dish-filter-row">
+      <view
+        wx:for="{{dishCategoryOptions}}"
+        wx:key="id"
+        class="dish-filter {{dishCategory === item.id ? 'active' : ''}}"
+        data-id="{{item.id}}"
+        bindtap="onDishCategory"
+      >{{item.name}}</view>
+    </view>
     <view class="dish-filter-row">
       <view
         wx:for="{{dishFilters}}"

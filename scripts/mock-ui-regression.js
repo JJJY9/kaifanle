@@ -187,6 +187,25 @@ function invoke(mp, body) {
     "page.onDishFilter({ currentTarget: { dataset: { filter: 'all' } } })"
   )
   await sleep(300)
+  await invoke(
+    mp,
+    "page.onDishCategory({ currentTarget: { dataset: { id: 'staple' } } })"
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 厨房分类筛选',
+    (data.dishCategoryOptions || []).length > 1 &&
+      (data.displayDishes || []).length > 0 &&
+      data.displayDishes.every(dish => dish.categoryId === 'staple'),
+    `${(data.displayDishes || []).length} 道`
+  )
+  await invoke(
+    mp,
+    "page.onDishCategory({ currentTarget: { dataset: { id: 'all' } } })"
+  )
+  await sleep(300)
   const firstDish = (data.dishes || [])[0]
   const secondDish = (data.dishes || [])[1]
   if (firstDish && secondDish) {
