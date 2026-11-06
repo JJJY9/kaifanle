@@ -48,7 +48,12 @@
       class="export-btn {{exporting ? 'disabled' : ''}}"
       bindtap="onExport"
     >{{exporting ? '导出中…' : '复制订单 CSV'}}</view>
+    <view
+      class="export-btn {{exportingFile ? 'disabled' : ''}}"
+      bindtap="onExportFile"
+    >{{exportingFile ? '生成中…' : '导出 CSV 文件'}}</view>
     <view wx:if="{{exportCount}}" class="export-hint">已复制最近 {{exportCount}} 单，可以直接粘贴到表格</view>
+    <view wx:if="{{exportedFile}}" class="export-hint">CSV 文件已生成，可通过微信发送或保存</view>
 
     <view class="chart card">
       <view class="chart-head">

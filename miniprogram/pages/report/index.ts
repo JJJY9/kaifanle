@@ -18,7 +18,9 @@ Page({
     bars: [] as BarView[],
     maxAmount: 0,
     exporting: false,
-    exportCount: 0
+    exportCount: 0,
+    exportingFile: false,
+    exportedFile: false
   },
 
   _loadSeq: 0,
@@ -66,6 +68,48 @@ Page({
 
   onRetry() {
     this.load()
+  },
+
+  async onExportFile() {
+    if (this.data.exportingFile) {
+      return
+    }
+    this.setData({ exportingFile: true })
+    try {
+      const orders = await getAllOrders()
+      const csv = ordersToCsv(orders)
+      const filePath = `${wx.env.USER_DATA_PATH}/orders-${Date.now()}.csv`
+      await new Promise((resolve, reject) => {
+        wx.getFileSystemManager().writeFile({
+          filePath,
+          data: csv,
+          encoding: 'utf8',
+          success: resolve,
+          fail: reject
+        })
+      })
+      this.setData({ exportingFile: false, exportedFile: true })
+      if (typeof (wx as any).shareFileMessage === 'function') {
+        ;(wx as any).shareFileMessage({
+          filePath,
+          fileName: '订单.csv',
+          fail: () => {
+            wx.showToast({
+              title: '文件已生成，可先用复制 CSV',
+              icon: 'none'
+            })
+          }
+        })
+      } else {
+        wx.showToast({ title: '文件已生成', icon: 'none' })
+      }
+    } catch (e: any) {
+      this.setData({ exportingFile: false })
+      wx.showToast({
+        title: String((e && e.message) || '导出失败').slice(0, 40),
+        icon: 'none'
+      })
+    }
   },
 
   async onExport() {

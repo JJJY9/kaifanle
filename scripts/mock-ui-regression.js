@@ -711,6 +711,15 @@ function invoke(mp, body) {
     Number(data.exportCount) >= 1,
     `导出 ${data.exportCount} 单`
   )
+  await invoke(mp, 'page.onExportFile()')
+  await sleep(1400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 订单 CSV 文件',
+    data.exportedFile === true,
+    data.exportedFile ? '已生成' : '未生成'
+  )
   await mp.navigateBack()
   await sleep(600)
 
