@@ -3,6 +3,7 @@ import {
   acceptPendingOrders,
   getAllOrders,
   getActiveOrders,
+  getBusiness,
   getCategories,
   getDishes,
   getMe,
@@ -12,6 +13,7 @@ import {
   rollMenu,
   saveDish,
   toggleDishStatus,
+  updateBusiness,
   updateOrderStatus
 } from '../../services/api'
 import {
@@ -44,6 +46,7 @@ Page({
     dishes: [] as any[],
     stats: null as any,
     loading: true,
+    todayClosed: false,
     forbidden: false,
     error: '',
     busyId: '',
@@ -91,6 +94,7 @@ Page({
   _rawOrders: [] as any[],
   _categories: [] as any[],
   _replyModalOpen: false as boolean,
+  _restToggling: false as boolean,
   _lastPollErrorAt: 0,
   _loadSeq: 0,
 
@@ -231,6 +235,16 @@ Page({
       let dishes = this.data.dishes
       let stats = this.data.stats
       let statsRefreshed = false
+      let todayClosed = this.data.todayClosed
+      if (!silent) {
+        const business = await getBusiness().catch(() => null)
+        if (business) {
+          const closedDates = Array.isArray(business.closedDates)
+            ? business.closedDates
+            : []
+          todayClosed = closedDates.indexOf(dateInputString()) > -1
+        }
+      }
       if (!silent || !dishes.length) {
         const [dishList, categories] = await Promise.all([
           getDishes(),
@@ -643,6 +657,7 @@ Page({
         prepIngredients,
         prepTotal,
         todo,
+        todayClosed,
         posterPath: statsRefreshed ? '' : this.data.posterPath,
         weekStats,
         weekBars,
@@ -697,6 +712,51 @@ Page({
       })
     } finally {
       this.setData({ acceptingAll: false })
+    }
+  },
+
+  async onToggleTodayClosed() {
+    if (this._restToggling) {
+      return
+    }
+    const next = !this.data.todayClosed
+    const res: any = await wx.showModal({
+      title: next ? '今天休息？' : '恢复营业？',
+      content: next
+        ? '今天所有餐次都会停止接单，已下的订单不受影响'
+        : '今天恢复接单，按原来的营业时间',
+      confirmText: next ? '休息' : '营业',
+      cancelText: '算了'
+    })
+    if (!res.confirm) {
+      return
+    }
+    this._restToggling = true
+    try {
+      const business = await getBusiness()
+      const today = dateInputString()
+      const closedDates = (business.closedDates || []).filter(
+        date => date !== today
+      )
+      if (next) {
+        closedDates.push(today)
+      }
+      await updateBusiness(
+        Object.assign({}, business, { closedDates }) as any
+      )
+      this.setData({ todayClosed: next })
+      wx.showToast({
+        title: next ? '今天休息啦' : '恢复营业',
+        icon: 'none'
+      })
+      await this.load()
+    } catch (err: any) {
+      wx.showToast({
+        title: String((err && err.message) || '操作失败').slice(0, 40),
+        icon: 'none'
+      })
+    } finally {
+      this._restToggling = false
     }
   },
 

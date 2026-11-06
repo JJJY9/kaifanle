@@ -25,6 +25,7 @@
   <view class="notify-bar">
     <view class="notify-btn" bindtap="onSubscribeNotice">订阅新订单提醒</view>
     <view class="notify-btn settings" bindtap="onBusiness">营业设置</view>
+    <view class="notify-btn rest {{todayClosed ? 'closed' : ''}}" bindtap="onToggleTodayClosed">{{todayClosed ? '恢复营业' : '今天休息'}}</view>
     <view class="notify-btn menu" bindtap="onMenu">排菜单</view>
     <view class="notify-btn week" bindtap="onWeekMenus">本周饭表</view>
     <view class="notify-btn report" bindtap="onReport">经营月报</view>

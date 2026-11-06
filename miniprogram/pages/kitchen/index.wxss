@@ -69,6 +69,15 @@
   background: #2FBF71;
 }
 
+.notify-btn.rest {
+  background: #FFB3C7;
+}
+
+.notify-btn.rest.closed {
+  background: #2FBF71;
+  color: #FFFFFF;
+}
+
 .notify-hint {
   color: #5C5C5C;
   font-size: 22rpx;

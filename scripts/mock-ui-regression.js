@@ -558,6 +558,29 @@ function invoke(mp, body) {
   page = await current()
   data = await page.data()
   check('mock 厨房加载', (data.dishes || []).length > 0, `${data.dishes.length} 道菜`)
+  check(
+    'mock 今日营业开关初始',
+    data.todayClosed === false,
+    data.todayClosed ? '休息中' : '营业中'
+  )
+  await invoke(mp, 'page.onToggleTodayClosed()')
+  await sleep(1300)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 一键今天休息',
+    data.todayClosed === true,
+    data.todayClosed ? '已休息' : '仍在营业'
+  )
+  await invoke(mp, 'page.onToggleTodayClosed()')
+  await sleep(1300)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 一键恢复营业',
+    data.todayClosed === false,
+    data.todayClosed ? '仍休息' : '已恢复'
+  )
   await invoke(mp, 'page.onCopyTodaySummary()')
   await sleep(600)
   const summaryClip = await mp.evaluate(
