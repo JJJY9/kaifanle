@@ -1994,6 +1994,23 @@ async function run() {
   assert.strictEqual(res.data.count, 0)
   await call('deleteCoupon', { id: soonId }, 'admin-openid')
 
+  // 退回券池：只能退自己的未使用券，退回后可被别人领取
+  res = await call(
+    'createCoupon',
+    { title: '退回测试券', note: '' },
+    'admin-openid'
+  )
+  const releaseId = res.data.id
+  await call('claimCoupon', { id: releaseId }, 'girl-openid')
+  res = await call('releaseCoupon', { id: releaseId }, 'stranger-openid')
+  assert.strictEqual(res.ok, false)
+  res = await call('releaseCoupon', { id: releaseId }, 'girl-openid')
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.owner, '')
+  res = await call('claimCoupon', { id: releaseId }, 'stranger-openid')
+  assert.strictEqual(res.ok, true)
+  await call('deleteCoupon', { id: releaseId }, 'admin-openid')
+
   // 过期券不能领取，也不能使用
   res = await call(
     'createCoupon',

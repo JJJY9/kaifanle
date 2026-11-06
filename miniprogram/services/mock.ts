@@ -433,13 +433,9 @@ function loadCoupons(): Coupon[] {
       usedAt: 0
     })
   }
-  // 快过期示例券：过期、缺失或不是当前用户持有时续上一张，方便演示提醒
+  // 快过期示例券：过期或缺失时续上一张，方便演示提醒
   const seed2 = couponCache.find(item => item.id === 'coupon-seed-2')
-  if (
-    !seed2 ||
-    Number(seed2.expiresAt || 0) < now ||
-    seed2.owner !== 'mock-openid'
-  ) {
+  if (!seed2 || Number(seed2.expiresAt || 0) < now) {
     couponCache = couponCache.filter(item => item.id !== 'coupon-seed-2')
     couponCache.push({
       id: 'coupon-seed-2',
@@ -1839,6 +1835,27 @@ export async function useCoupon(id: string): Promise<Coupon> {
   }
   coupon.status = 'used'
   coupon.usedAt = Date.now()
+  saveCoupons()
+  return { ...coupon }
+}
+
+export async function releaseCoupon(id: string): Promise<Coupon> {
+  await delay(80)
+  const coupon = loadCoupons().find(item => item.id === id)
+  if (!coupon) {
+    throw new Error('券不存在')
+  }
+  if (coupon.owner !== 'mock-openid') {
+    throw new Error('这张券不是你的')
+  }
+  if (coupon.status === 'used') {
+    throw new Error('这张券已经用掉了')
+  }
+  if (coupon.expiresAt && coupon.expiresAt < Date.now()) {
+    throw new Error('这张券过期了')
+  }
+  coupon.owner = ''
+  coupon.claimedAt = 0
   saveCoupons()
   return { ...coupon }
 }

@@ -167,6 +167,8 @@ async function route(action, payload, openid) {
       return claimCoupon(payload, openid)
     case 'useCoupon':
       return useCoupon(payload, openid)
+    case 'releaseCoupon':
+      return releaseCoupon(payload, openid)
     case 'deleteCoupon':
       return deleteCoupon(payload, openid)
     case 'getMenuForDate':
@@ -1009,6 +1011,38 @@ async function useCoupon(payload, openid) {
     throw new Error('这张券已经用掉了')
   }
   return withId(Object.assign({}, coupon, { status: 'used', usedAt }))
+}
+
+// 把自己的未使用券退回券池，别人可以重新领取
+async function releaseCoupon(payload, openid) {
+  if (!payload || !payload.id) {
+    throw new Error('缺少券 ID')
+  }
+  const res = await db.collection('coupons').doc(payload.id).get()
+  const coupon = res.data
+  if (coupon.owner !== openid) {
+    throw new Error('这张券不是你的')
+  }
+  if (coupon.status === 'used') {
+    throw new Error('这张券已经用掉了')
+  }
+  if (coupon.expiresAt && Number(coupon.expiresAt) < Date.now()) {
+    throw new Error('这张券过期了')
+  }
+  const upd = await db
+    .collection('coupons')
+    .where({
+      _id: payload.id,
+      owner: openid,
+      status: 'unused'
+    })
+    .update({ data: { owner: '', claimedAt: 0 } })
+  if (!upd.stats || upd.stats.updated !== 1) {
+    throw new Error('这张券刚刚变了，刷新看看')
+  }
+  return withId(
+    Object.assign({}, coupon, { owner: '', claimedAt: 0 })
+  )
 }
 
 async function deleteCoupon(payload, openid) {

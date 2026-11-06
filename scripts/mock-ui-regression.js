@@ -523,6 +523,34 @@ function invoke(mp, body) {
       String(data.coupons[0].expiringText || '').length > 0,
     `${data.expiringCount} 张 · ${data.coupons && data.coupons[0] && data.coupons[0].expiringText}`
   )
+  await invoke(
+    mp,
+    "page.onRelease({ currentTarget: { dataset: { id: 'coupon-seed-2' } } })"
+  )
+  await sleep(900)
+  page = await current()
+  data = await page.data()
+  const released = (data.coupons || []).find(item => item.id === 'coupon-seed-2')
+  check(
+    'mock 优惠券退回券池',
+    Boolean(released) && !released.owner && released.statusText === '待领取',
+    released ? released.statusText : '没找到券'
+  )
+  await invoke(
+    mp,
+    "page.onClaim({ currentTarget: { dataset: { id: 'coupon-seed-2' } } })"
+  )
+  await sleep(900)
+  page = await current()
+  data = await page.data()
+  const reclaimed = (data.coupons || []).find(item => item.id === 'coupon-seed-2')
+  check(
+    'mock 退回后可重新领取',
+    Boolean(reclaimed) &&
+      reclaimed.statusText === '我的' &&
+      Number(data.expiringCount) >= 1,
+    reclaimed ? reclaimed.statusText : '没找到券'
+  )
   await mp.navigateBack()
   await sleep(800)
   await mp.navigateTo('/pages/kitchen/index')

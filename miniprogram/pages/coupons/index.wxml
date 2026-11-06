@@ -79,6 +79,12 @@
           >{{claimingId === item.id ? '领取中…' : '收下'}}</view>
           <view
             wx:if="{{item.canUse}}"
+            class="cbtn {{releasingId === item.id ? 'busy' : ''}}"
+            data-id="{{item.id}}"
+            bindtap="onRelease"
+          >{{releasingId === item.id ? '处理中…' : '退回'}}</view>
+          <view
+            wx:if="{{item.canUse}}"
             class="cbtn {{usingId === item.id ? 'busy' : ''}}"
             data-id="{{item.id}}"
             bindtap="onUse"

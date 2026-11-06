@@ -4,6 +4,7 @@ import {
   deleteCoupon,
   getCoupons,
   getMe,
+  releaseCoupon,
   useCoupon
 } from '../../services/api'
 import { formatDate } from '../../utils/format'
@@ -33,6 +34,7 @@ Page({
     creating: false,
     claimingId: '',
     usingId: '',
+    releasingId: '',
     deletingId: '',
     expiringCount: 0
   },
@@ -222,6 +224,35 @@ Page({
       })
     } finally {
       this.setData({ usingId: '' })
+    }
+  },
+
+  async onRelease(e: any) {
+    if (this.data.releasingId) {
+      return
+    }
+    const id = e.currentTarget.dataset.id
+    const res: any = await wx.showModal({
+      title: '退回这张券？',
+      content: '退回券池后别人可以领，确定吗？',
+      confirmText: '退回',
+      cancelText: '再留着'
+    })
+    if (!res.confirm) {
+      return
+    }
+    this.setData({ releasingId: id })
+    try {
+      await releaseCoupon(id)
+      wx.showToast({ title: '已退回券池', icon: 'none' })
+      this.load()
+    } catch (err: any) {
+      wx.showToast({
+        title: String((err && err.message) || '操作失败').slice(0, 40),
+        icon: 'none'
+      })
+    } finally {
+      this.setData({ releasingId: '' })
     }
   },
 

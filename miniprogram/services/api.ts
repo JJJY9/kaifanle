@@ -666,6 +666,14 @@ export async function useCoupon(id: string): Promise<Coupon> {
   return coupon
 }
 
+export async function releaseCoupon(id: string): Promise<Coupon> {
+  const coupon = USE_CLOUD
+    ? await callApi<Coupon>('releaseCoupon', { id })
+    : await mock.releaseCoupon(id)
+  expiringCouponsCache = null
+  return coupon
+}
+
 export async function deleteCoupon(id: string): Promise<{ id: string }> {
   const result = USE_CLOUD
     ? await callApi<{ id: string }>('deleteCoupon', { id })
