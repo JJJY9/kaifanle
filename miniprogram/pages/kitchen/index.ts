@@ -349,6 +349,15 @@ Page({
             )
             return minutes >= 10 ? `等了 ${minutes} 分钟` : ''
           })(),
+          urgent: (() => {
+            const minutes = Math.floor(
+              (Date.now() - Number(order.createdAt || 0)) / 60000
+            )
+            return (
+              minutes >= 15 &&
+              ['pending', 'accepted', 'cooking'].indexOf(order.status) > -1
+            )
+          })(),
           totalQty,
           itemLines: order.items.map((item: any, index: number) => ({
             key: `${order.id}-${index}`,

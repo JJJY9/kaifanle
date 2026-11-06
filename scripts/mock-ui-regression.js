@@ -549,6 +549,13 @@ function invoke(mp, body) {
     Boolean(receiptOrder),
     receiptOrder ? `#${receiptOrder.no}` : '没有待处理订单'
   )
+  check(
+    'mock 厨房超时订单高亮',
+    (data.orders || []).some(order => order.urgent),
+    (data.orders || []).find(order => order.urgent)
+      ? (data.orders || []).find(order => order.urgent).waitText
+      : '没有超时订单'
+  )
   const orderNoForSearch = receiptOrder ? String(receiptOrder.no) : ''
   await invoke(
     mp,

@@ -206,7 +206,7 @@
     </view>
     <view wx:if="{{!ordersView.length}}" class="empty-line">{{orderKeyword ? '没搜到相关订单' : '暂时没有待处理的订单，歇会儿吧'}}</view>
 
-    <view wx:for="{{ordersView}}" wx:key="id" class="order card">
+    <view wx:for="{{ordersView}}" wx:key="id" class="order card {{item.urgent ? 'urgent' : ''}}">
       <view class="order-top">
         <text class="no">#{{item.no}}</text>
         <view class="order-top-right">

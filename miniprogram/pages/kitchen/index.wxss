@@ -465,6 +465,17 @@
   margin-bottom: 20rpx;
 }
 
+.order.urgent {
+  border-color: #D9431C;
+  box-shadow: 6rpx 6rpx 0 #D9431C;
+}
+
+.order.urgent .order-wait {
+  background: #D9431C;
+  border-color: #D9431C;
+  color: #FFFFFF;
+}
+
 .order-top {
   display: flex;
   align-items: center;
