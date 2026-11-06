@@ -1035,3 +1035,38 @@
 .receipt-actions .kbtn {
   flex: 1;
 }
+
+.preorder {
+  margin-top: 20rpx;
+  padding: 24rpx;
+}
+
+.preorder-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.preorder-row {
+  padding: 18rpx 0;
+  border-top: 2rpx dashed #E0E0E0;
+}
+
+.preorder-row-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+
+.preorder-date {
+  font-size: 24rpx;
+  font-weight: 800;
+}
+
+.preorder-summary {
+  margin-top: 6rpx;
+  color: #5C5C5C;
+  font-size: 22rpx;
+  word-break: break-all;
+}

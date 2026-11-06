@@ -62,6 +62,7 @@ function receiptText(order: any, lines: any[]): string {
 Page({
   data: {
     orders: [] as any[],
+    preorders: [] as any[],
     history: [] as any[],
     dishes: [] as any[],
     stats: null as any,
@@ -82,6 +83,7 @@ Page({
     movingId: '',
     showHistory: false,
     showPrep: false,
+    showPreorders: false,
     prepItems: [] as any[],
     prepTotal: 0,
     weekStats: null as any,
@@ -267,21 +269,34 @@ Page({
         cooking: 2,
         ready: 3
       }
-      const active = orders
-        .filter(
-          order =>
-            order.status !== 'completed' && order.status !== 'cancelled'
+      const activeAll = orders.filter(
+        order =>
+          order.status !== 'completed' && order.status !== 'cancelled'
+      )
+      const todayKey = dateInputString()
+      const effectiveDate = (order: any) =>
+        order.scheduledDate || dateInputString(new Date(order.createdAt))
+      const sortActive = (a: any, b: any) => {
+        const rankA =
+          STATUS_RANK[a.status] === undefined ? 9 : STATUS_RANK[a.status]
+        const rankB =
+          STATUS_RANK[b.status] === undefined ? 9 : STATUS_RANK[b.status]
+        if (rankA !== rankB) {
+          return rankA - rankB
+        }
+        return Number(a.createdAt || 0) - Number(b.createdAt || 0)
+      }
+      // 待处理只放今天（含逾期），未来预订单独展示，避免占满今日待办
+      const active = activeAll
+        .filter(order => effectiveDate(order) <= todayKey)
+        .sort(sortActive)
+      const preorderOrders = activeAll
+        .filter(order => effectiveDate(order) > todayKey)
+        .sort(
+          (a, b) =>
+            effectiveDate(a).localeCompare(effectiveDate(b)) ||
+            Number(a.createdAt || 0) - Number(b.createdAt || 0)
         )
-        .sort((a, b) => {
-          const rankA =
-            STATUS_RANK[a.status] === undefined ? 9 : STATUS_RANK[a.status]
-          const rankB =
-            STATUS_RANK[b.status] === undefined ? 9 : STATUS_RANK[b.status]
-          if (rankA !== rankB) {
-            return rankA - rankB
-          }
-          return Number(a.createdAt || 0) - Number(b.createdAt || 0)
-        })
       const pendingIds = active
         .filter(order => order.status === 'pending')
         .map(order => order.id)
@@ -374,6 +389,7 @@ Page({
         }
       }
       const view = active.map(toView)
+      const preorders = preorderOrders.map(toView)
       const history = silent
         ? this.data.history
         : orders
@@ -385,7 +401,6 @@ Page({
             .map(toView)
 
       // 今日备菜：把今天所有未完成订单按菜名汇总
-      const todayKey = dateInputString()
       const prepMap: Record<string, number> = {}
       active
         .filter(
@@ -507,6 +522,7 @@ Page({
 
       this.setData({
         orders: view,
+        preorders,
         history,
         historyView: this.filterHistory(history),
         dishes,
@@ -985,6 +1001,10 @@ Page({
 
   onTogglePrep() {
     this.setData({ showPrep: !this.data.showPrep })
+  },
+
+  onTogglePreorders() {
+    this.setData({ showPreorders: !this.data.showPreorders })
   },
 
   onCopyPrep() {

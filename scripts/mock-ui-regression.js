@@ -295,6 +295,27 @@ function invoke(mp, body) {
     data = await page.data()
     check('mock 厨房小票关闭', data.receiptVisible === false)
   }
+  const kitchenToday = (() => {
+    const d = new Date()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${d.getFullYear()}-${m}-${day}`
+  })()
+  const preorder = (data.preorders || [])[0]
+  check(
+    'mock 厨房未来预订',
+    Boolean(preorder) &&
+      preorder.scheduledDate > kitchenToday &&
+      (preorder.itemLines || []).length >= 1,
+    preorder ? `${preorder.dateText} · ${preorder.summary}` : '没有预订单'
+  )
+  await invoke(mp, 'page.onTogglePreorders()')
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  check('mock 厨房预订展开', data.showPreorders === true)
+  await invoke(mp, 'page.onTogglePreorders()')
+  await sleep(200)
   check(
     'mock 近7天柱状图',
     Array.isArray(data.weekBars) && data.weekBars.length === 7,

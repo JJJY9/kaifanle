@@ -122,6 +122,31 @@
       </block>
     </view>
 
+    <view wx:if="{{preorders.length}}" class="preorder card">
+      <view class="preorder-head" bindtap="onTogglePreorders">
+        <view class="prep-text">
+          <view class="prep-title">未来预订</view>
+          <view class="prep-sub">提前下的单，到日子再做</view>
+        </view>
+        <view class="prep-badge">{{preorders.length}} 单 {{showPreorders ? '▾' : '▸'}}</view>
+      </view>
+      <block wx:if="{{showPreorders}}">
+        <view
+          wx:for="{{preorders}}"
+          wx:key="id"
+          class="preorder-row"
+          data-id="{{item.id}}"
+          bindtap="onHistoryTap"
+        >
+          <view class="preorder-row-top">
+            <text class="preorder-date">{{item.dateText}} · {{item.mealText}}</text>
+            <view class="status {{item.status}}">{{item.statusText}}</view>
+          </view>
+          <view class="preorder-summary">#{{item.no}} · {{item.summary}}</view>
+        </view>
+      </block>
+    </view>
+
     <view class="section-title display" id="orders-section">待处理订单</view>
     <view wx:if="{{!orders.length}}" class="empty-line">暂时没有待处理的订单，歇会儿吧</view>
 

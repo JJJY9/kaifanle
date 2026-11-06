@@ -505,6 +505,29 @@ function seedOrders(): Order[] {
         { status: 'completed', title: '已完成', time: t2 + 40 * 60000 }
       ],
       createdAt: t2
+    },
+    {
+      id: 'seed-3',
+      no: '003',
+      items: [
+        {
+          dishId: 'd02',
+          name: '照烧鸡腿饭',
+          price: 16,
+          qty: 2,
+          specs: [],
+          note: '明天中午吃'
+        }
+      ],
+      amount: 32,
+      meal: 'lunch',
+      expectedTime: '12:00',
+      mode: '在家吃',
+      note: '明天的午饭',
+      scheduledDate: dateInputString(new Date(now + 24 * 60 * 60 * 1000)),
+      status: 'pending',
+      timeline: [{ status: 'pending', title: '已下单', time: now - 10 * 60 * 1000 }],
+      createdAt: now - 10 * 60 * 1000
     }
   ]
 }
@@ -521,11 +544,13 @@ function loadOrders(): Order[] {
         // 种子订单是当天的演示数据；隔天打开时换一批新的，避免排队提示等
         // 依赖“今天”的界面在旧数据上表现异常
         const today = dateInputString()
-        const staleSeed = stored.some(
-          (order: Order) =>
-            /^seed-/.test(order.id) &&
-            dateInputString(new Date(order.createdAt)) !== today
-        )
+        const staleSeed =
+          !stored.some((order: Order) => order.id === 'seed-3') ||
+          stored.some(
+            (order: Order) =>
+              /^seed-/.test(order.id) &&
+              dateInputString(new Date(order.createdAt)) !== today
+          )
         orderCache = staleSeed
           ? stored
               .filter((order: Order) => !/^seed-/.test(order.id))
