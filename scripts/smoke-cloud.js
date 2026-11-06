@@ -1415,6 +1415,23 @@ async function run() {
   )
   assert.strictEqual(res.data.length, 0)
 
+  // 数据备份：仅管理员，返回配置与各集合快照
+  res = await call('exportData', {}, 'girl-openid')
+  assert.strictEqual(res.ok, false)
+  res = await call('exportData', {}, 'admin-openid')
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.version, '1.0')
+  assert.ok(res.data.exportedAt > 0)
+  assert.ok(res.data.counts.dishes >= 1)
+  assert.ok(Array.isArray(res.data.data.dishes))
+  assert.ok(Array.isArray(res.data.data.orders))
+  assert.ok(res.data.data.orders.length <= 200)
+  assert.ok(res.data.data.config && res.data.data.config.business)
+  assert.ok(!('_id' in res.data.data.config))
+  res.data.data.dishes.forEach(dish => {
+    assert.ok(!('_openid' in dish))
+  })
+
   // 周饭表：公开读取今天起 7 天 × 3 餐，缺失的补占位
   res = await call('getWeekMenus', {}, 'girl-openid')
   assert.strictEqual(res.ok, true)

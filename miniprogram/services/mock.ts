@@ -1,4 +1,5 @@
 import type {
+  BackupData,
   Business,
   Category,
   Coupon,
@@ -1462,6 +1463,46 @@ export async function getMenuTemplates(): Promise<MenuTemplate[]> {
     ...item,
     dishIds: [...item.dishIds]
   }))
+}
+
+export async function exportData(): Promise<BackupData> {
+  await delay(80)
+  const [categories, dishes, wishes, coupons, templates] = await Promise.all([
+    getCategories(),
+    getDishes(),
+    getWishes(),
+    getCoupons(),
+    getMenuTemplates()
+  ])
+  const menuMap = loadMenus()
+  const menus = Object.keys(menuMap).map(key => menuMap[key])
+  const orders = loadOrders().slice(0, 200)
+  return {
+    exportedAt: Date.now(),
+    version: '1.0',
+    ordersLimit: 200,
+    counts: {
+      categories: categories.length,
+      dishes: dishes.length,
+      menus: menus.length,
+      coupons: coupons.length,
+      wishes: wishes.length,
+      orders: orders.length
+    },
+    data: {
+      categories,
+      dishes,
+      menus,
+      coupons,
+      wishes,
+      orders,
+      config: {
+        initialized: true,
+        business: loadBusiness(),
+        menuTemplates: templates
+      }
+    }
+  }
 }
 
 export async function saveMenuTemplates(

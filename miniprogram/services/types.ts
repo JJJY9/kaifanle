@@ -274,3 +274,19 @@ export interface MenuTemplate {
   dishIds: string[]
   updatedAt: number
 }
+
+export interface BackupData {
+  exportedAt: number
+  version: string
+  ordersLimit: number
+  counts: Record<string, number>
+  data: {
+    categories: Category[]
+    dishes: Dish[]
+    menus: DailyMenu[]
+    coupons: Coupon[]
+    wishes: Wish[]
+    orders: Order[]
+    config: any
+  }
+}

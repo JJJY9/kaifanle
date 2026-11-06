@@ -92,6 +92,8 @@ async function route(action, payload, openid) {
       return getMyStats(openid)
     case 'getAllOrders':
       return getAllOrders(openid)
+    case 'exportData':
+      return exportData(openid)
     case 'getActiveOrders':
       return getActiveOrders(openid)
     case 'getOrder':
@@ -1325,6 +1327,67 @@ async function getAllOrders(openid) {
     .limit(100)
     .get()
   return res.data.map(withId)
+}
+
+// 管理员数据备份：配置 + 菜品/分类/菜单/券/许愿 + 最近订单。
+// 只用于换设备或误删后的恢复参考，不做自动回写。
+async function exportData(openid) {
+  await requireAdmin(openid)
+  const safeList = async (name, limit, orderField) => {
+    try {
+      let query = db.collection(name)
+      if (orderField) {
+        query = query.orderBy(orderField, 'desc')
+      }
+      const res = await query.limit(limit).get()
+      return (res.data || []).map(withId)
+    } catch (e) {
+      // 某个集合还没建或读取失败时，备份里留空数组
+      return []
+    }
+  }
+  const [categories, dishes, menus, coupons, wishes, orders] =
+    await Promise.all([
+      safeList('categories', 200),
+      safeList('dishes', 1000),
+      safeList('menus', 1000),
+      safeList('coupons', 1000),
+      safeList('wishes', 500),
+      safeList('orders', 200, 'createdAt')
+    ])
+  let config = null
+  try {
+    const raw = await getConfig()
+    if (raw) {
+      config = Object.assign({}, raw)
+      delete config._id
+      delete config._openid
+    }
+  } catch (e) {
+    config = null
+  }
+  return {
+    exportedAt: Date.now(),
+    version: '1.0',
+    ordersLimit: 200,
+    counts: {
+      categories: categories.length,
+      dishes: dishes.length,
+      menus: menus.length,
+      coupons: coupons.length,
+      wishes: wishes.length,
+      orders: orders.length
+    },
+    data: {
+      categories,
+      dishes,
+      menus,
+      coupons,
+      wishes,
+      orders,
+      config
+    }
+  }
 }
 
 // 厨房轮询专用：只取未完成订单，减少每次刷新读取的文档数

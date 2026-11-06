@@ -3,6 +3,7 @@ import { USE_CLOUD } from '../config'
 import { dishEmoji } from '../utils/dish-emoji'
 import { DISH_ART } from '../utils/dish-art-map'
 import type {
+  BackupData,
   Business,
   Category,
   Coupon,
@@ -270,6 +271,13 @@ export async function getAllOrders(): Promise<Order[]> {
     return callApi<Order[]>('getAllOrders')
   }
   return mock.getAllOrders()
+}
+
+export async function exportData(): Promise<BackupData> {
+  if (USE_CLOUD) {
+    return callApi<BackupData>('exportData')
+  }
+  return mock.exportData()
 }
 
 export async function getOrder(id: string): Promise<Order | null> {

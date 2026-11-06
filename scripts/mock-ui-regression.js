@@ -1046,6 +1046,15 @@ function invoke(mp, body) {
     data.exportedFile === true,
     data.exportedFile ? '已生成' : '未生成'
   )
+  await invoke(mp, 'page.onBackup()')
+  await sleep(1800)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 数据备份 JSON',
+    data.backupReady === true && Number(data.backupCount) >= 1,
+    `${data.backupCount} 项`
+  )
   await mp.navigateBack()
   await sleep(600)
 

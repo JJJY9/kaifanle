@@ -1,5 +1,10 @@
 import type { KitchenReport } from '../../services/types'
-import { getAllOrders, getDishes, getKitchenReport } from '../../services/api'
+import {
+  exportData,
+  getAllOrders,
+  getDishes,
+  getKitchenReport
+} from '../../services/api'
 import { ordersToCsv } from '../../utils/orders-csv'
 
 interface BarView {
@@ -21,7 +26,10 @@ Page({
     exporting: false,
     exportCount: 0,
     exportingFile: false,
-    exportedFile: false
+    exportedFile: false,
+    backupBusy: false,
+    backupCount: 0,
+    backupReady: false
   },
 
   _loadSeq: 0,
@@ -127,6 +135,53 @@ Page({
       this.setData({ exportingFile: false })
       wx.showToast({
         title: String((e && e.message) || '导出失败').slice(0, 40),
+        icon: 'none'
+      })
+    }
+  },
+
+  async onBackup() {
+    if (this.data.backupBusy) {
+      return
+    }
+    this.setData({ backupBusy: true })
+    try {
+      const backup = await exportData()
+      const json = JSON.stringify(backup, null, 2)
+      const filePath = `${wx.env.USER_DATA_PATH}/kaifanle-backup-${Date.now()}.json`
+      await new Promise((resolve, reject) => {
+        wx.getFileSystemManager().writeFile({
+          filePath,
+          data: json,
+          encoding: 'utf8',
+          success: resolve,
+          fail: reject
+        })
+      })
+      const total = Object.keys(backup.counts || {}).reduce(
+        (sum, key) => sum + Number(backup.counts[key] || 0),
+        0
+      )
+      this.setData({
+        backupBusy: false,
+        backupCount: total,
+        backupReady: true
+      })
+      if (typeof (wx as any).shareFileMessage === 'function') {
+        ;(wx as any).shareFileMessage({
+          filePath,
+          fileName: '张饱饭堂备份.json',
+          fail: () => {
+            wx.showToast({ title: '备份文件已生成', icon: 'none' })
+          }
+        })
+      } else {
+        wx.showToast({ title: '备份文件已生成', icon: 'none' })
+      }
+    } catch (e: any) {
+      this.setData({ backupBusy: false })
+      wx.showToast({
+        title: String((e && e.message) || '备份失败').slice(0, 40),
         icon: 'none'
       })
     }
