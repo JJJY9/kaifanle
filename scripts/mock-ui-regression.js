@@ -284,6 +284,21 @@ function invoke(mp, body) {
   page = await current()
   data = await page.data()
   check('mock 只看能点的恢复', data.onlyAvailable === false)
+
+  // 优惠券快过期提醒
+  await mp.navigateTo('/pages/coupons/index')
+  await sleep(1600)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 优惠券快过期提醒',
+    Number(data.expiringCount) >= 1 &&
+      Boolean(data.coupons && data.coupons[0] && data.coupons[0].expiringSoon) &&
+      String(data.coupons[0].expiringText || '').length > 0,
+    `${data.expiringCount} 张 · ${data.coupons && data.coupons[0] && data.coupons[0].expiringText}`
+  )
+  await mp.navigateBack()
+  await sleep(800)
   await mp.navigateTo('/pages/kitchen/index')
   await sleep(2200)
   page = await current()

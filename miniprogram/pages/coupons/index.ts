@@ -27,7 +27,8 @@ Page({
     creating: false,
     claimingId: '',
     usingId: '',
-    deletingId: ''
+    deletingId: '',
+    expiringCount: 0
   },
 
   onShow() {
@@ -38,14 +39,31 @@ Page({
     this.setData({ loading: true, loadFailed: false })
     try {
       const [me, coupons] = await Promise.all([getMe(), getCoupons()])
+      const now = Date.now()
+      const soonMs = 3 * 24 * 60 * 60 * 1000
       const view = coupons.map(coupon => {
         const mine = Boolean(coupon.owner && coupon.owner === me.openid)
         const expired = Boolean(
-          coupon.expiresAt && Number(coupon.expiresAt) < Date.now()
+          coupon.expiresAt && Number(coupon.expiresAt) < now
         )
+        const expiringSoon = Boolean(
+          !expired &&
+            coupon.status === 'unused' &&
+            coupon.expiresAt &&
+            Number(coupon.expiresAt) - now <= soonMs
+        )
+        const leftHours = coupon.expiresAt
+          ? (Number(coupon.expiresAt) - now) / (60 * 60 * 1000)
+          : 0
         return {
           ...coupon,
           expired,
+          expiringSoon,
+          expiringText: expiringSoon
+            ? leftHours <= 24
+              ? '今天到期'
+              : `还剩 ${Math.ceil(leftHours / 24)} 天`
+            : '',
           statusText: expired
             ? '已过期'
             : coupon.status === 'used'
@@ -64,8 +82,24 @@ Page({
             : ''
         }
       })
+      const rank = (item: any) => {
+        if (item.expiringSoon) {
+          return 0
+        }
+        if (item.canClaim || item.canUse) {
+          return 1
+        }
+        return item.expired ? 3 : 2
+      }
+      view.sort(
+        (a, b) =>
+          rank(a) - rank(b) ||
+          Number(a.expiresAt || Number.MAX_SAFE_INTEGER) -
+            Number(b.expiresAt || Number.MAX_SAFE_INTEGER)
+      )
       this.setData({
         coupons: view,
+        expiringCount: view.filter(item => item.expiringSoon).length,
         isAdmin: me.isAdmin,
         openid: me.openid,
         loading: false,

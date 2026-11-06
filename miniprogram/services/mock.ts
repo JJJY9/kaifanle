@@ -395,24 +395,44 @@ function loadCoupons(): Coupon[] {
   try {
     const raw = wx.getStorageSync(COUPONS_KEY)
     if (raw) {
-      couponCache = JSON.parse(raw)
-      return couponCache as Coupon[]
+      const stored = JSON.parse(raw)
+      couponCache = Array.isArray(stored) ? stored : []
     }
   } catch (e) {
     // 读取失败则使用种子数据
   }
-  couponCache = [
-    {
+  if (!Array.isArray(couponCache)) {
+    couponCache = []
+  }
+  const now = Date.now()
+  if (!couponCache.some(item => item.id === 'coupon-seed-1')) {
+    couponCache.unshift({
       id: 'coupon-seed-1',
       title: '洗碗券',
       note: '攒够 3 次可以换一次洗碗',
       status: 'unused',
       owner: '',
-      createdAt: Date.now() - 2 * 60 * 60 * 1000,
+      createdAt: now - 2 * 60 * 60 * 1000,
       claimedAt: 0,
       usedAt: 0
-    }
-  ]
+    })
+  }
+  // 快过期示例券：过期或缺失时续上一张，方便演示提醒
+  const seed2 = couponCache.find(item => item.id === 'coupon-seed-2')
+  if (!seed2 || Number(seed2.expiresAt || 0) < now) {
+    couponCache = couponCache.filter(item => item.id !== 'coupon-seed-2')
+    couponCache.push({
+      id: 'coupon-seed-2',
+      title: '奶茶券',
+      note: '三天内用掉，过期作废',
+      status: 'unused',
+      owner: '',
+      createdAt: now - 20 * 60 * 60 * 1000,
+      claimedAt: 0,
+      usedAt: 0,
+      expiresAt: now + 2 * 24 * 60 * 60 * 1000
+    })
+  }
   saveCoupons()
   return couponCache as Coupon[]
 }

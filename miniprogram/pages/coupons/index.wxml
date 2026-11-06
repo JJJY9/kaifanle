@@ -55,10 +55,14 @@
   />
 
   <block wx:elif="{{coupons.length}}">
+    <view wx:if="{{expiringCount}}" class="coupon-alert">⏰ 3 天内有 {{expiringCount}} 张券到期，别忘了用</view>
     <view wx:for="{{coupons}}" wx:key="id" class="coupon card">
       <view class="coupon-top">
         <view class="coupon-title">{{item.title}}</view>
-        <view class="coupon-status {{item.status}} {{item.canClaim ? 'pool' : ''}}">{{item.statusText}}</view>
+        <view class="coupon-tags">
+          <text wx:if="{{item.expiringSoon}}" class="coupon-soon">{{item.expiringText}}</text>
+          <view class="coupon-status {{item.status}} {{item.canClaim ? 'pool' : ''}}">{{item.statusText}}</view>
+        </view>
       </view>
       <view wx:if="{{item.note}}" class="coupon-note">{{item.note}}</view>
       <view class="coupon-foot">

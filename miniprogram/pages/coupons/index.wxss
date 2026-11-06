@@ -107,6 +107,32 @@
   justify-content: space-between;
 }
 
+.coupon-tags {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.coupon-soon {
+  padding: 4rpx 14rpx;
+  background: #FFB3C7;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
+.coupon-alert {
+  margin-bottom: 16rpx;
+  padding: 14rpx 20rpx;
+  background: #FFF4C2;
+  border: 3rpx solid #111111;
+  border-radius: 20rpx;
+  box-shadow: 3rpx 3rpx 0 #111111;
+  font-size: 23rpx;
+  font-weight: 700;
+}
+
 .coupon-title {
   font-family: 'SmileySans', 'PingFang SC', sans-serif;
   font-size: 36rpx;
