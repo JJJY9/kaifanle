@@ -550,9 +550,25 @@ Page({
       }))
       .filter(section => section.dishes.length > 0)
     const favoriteHero = pool.find(dish => favorites.has(dish.id))
+    const recommended = pool.filter(
+      dish =>
+        dish.isRecommended &&
+        dish.status !== 'soldout' &&
+        dish.stock !== 0
+    )
+    const heroCandidates = recommended.length
+      ? recommended
+      : pool.filter(dish => dish.status !== 'soldout' && dish.stock !== 0)
+    const rotatingHero =
+      heroCandidates.length > 0
+        ? heroCandidates[
+            Math.floor(Date.now() / (24 * 60 * 60 * 1000)) %
+              heroCandidates.length
+          ]
+        : null
     const hero =
       favoriteHero ||
-      pool.find(dish => dish.isRecommended) ||
+      (recommended.length === 1 ? recommended[0] : rotatingHero) ||
       pool[0] ||
       null
     const empty = sections.length === 0

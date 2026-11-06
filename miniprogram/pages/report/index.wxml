@@ -85,7 +85,7 @@
       <text>好评率 {{report.goodRate}}%</text>
     </view>
 
-    <view wx:if="{{report.topTags.length}}" class="tags-line card">
+    <view wx:if="{{report.topTags && report.topTags.length}}" class="tags-line card">
       <text class="tags-title">她被夸</text>
       <text
         wx:for="{{report.topTags}}"
@@ -109,7 +109,7 @@
       </view>
     </view>
 
-    <view wx:if="{{report.mealStats.length}}" class="meal-stats card">
+    <view wx:if="{{report.mealStats && report.mealStats.length}}" class="meal-stats card">
       <view wx:for="{{report.mealStats}}" wx:key="meal" class="meal-stat">
         <text class="meal-stat-name">{{item.meal === 'breakfast' ? '早餐' : (item.meal === 'lunch' ? '午餐' : '晚餐')}}</text>
         <text class="meal-stat-revenue">¥{{item.revenue}}</text>
