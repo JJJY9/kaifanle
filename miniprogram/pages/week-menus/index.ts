@@ -5,9 +5,9 @@ import type {
   MealId,
   WeekMenus
 } from '../../services/types'
-import { getBusiness, getDishes, getMe, getWeekMenus } from '../../services/api'
+import { getBusiness, getDishes, getMe, getOrders, getWeekMenus } from '../../services/api'
 import { MEALS } from '../../utils/constants'
-import { dateLabel } from '../../utils/format'
+import { dateInputString, dateLabel } from '../../utils/format'
 
 interface DishChip {
   id: string
@@ -33,6 +33,7 @@ interface MealRow {
   hint: string
   isNow: boolean
   bookable: boolean
+  booked: boolean
   dishes: DishChip[]
   moreCount: number
 }
@@ -99,7 +100,9 @@ function buildMeal(
   setting: any,
   isToday: boolean,
   nowMeal: MealId,
-  isAdmin: boolean
+  isAdmin: boolean,
+  date: string,
+  bookedKeys: Record<string, boolean>
 ): MealRow {
   const exists = Boolean(menu && menu.exists)
   const dishIds = exists && Array.isArray(menu!.dishIds) ? menu!.dishIds : []
@@ -161,6 +164,7 @@ function buildMeal(
     hint,
     isNow: isToday && state === 'ready' && meal === nowMeal,
     bookable: state === 'ready',
+    booked: Boolean(bookedKeys[`${date}::${meal}`]),
     dishes: chips.slice(0, MAX_CHIPS),
     moreCount: Math.max(0, chips.length - MAX_CHIPS)
   }
@@ -171,7 +175,8 @@ function buildDays(
   dishes: Dish[],
   business: Business | null,
   nowMeal: MealId,
-  isAdmin: boolean
+  isAdmin: boolean,
+  bookedKeys: Record<string, boolean>
 ): DayRow[] {
   const dishMap: Record<string, Dish> = {}
   dishes.forEach(dish => {
@@ -198,7 +203,9 @@ function buildDays(
             business ? (business as any)[item.id] : null,
             isToday,
             nowMeal,
-            isAdmin
+            isAdmin,
+            day.date,
+            bookedKeys
           )
         )
     return {
@@ -247,17 +254,35 @@ Page({
     }
     this.setData({ error: '' })
     try {
-      const [week, dishes, business, me] = await Promise.all([
+      const [week, dishes, business, me, orders] = await Promise.all([
         getWeekMenus(),
         getDishes(),
         getBusiness().catch(() => null),
-        getMe().catch(() => null)
+        getMe().catch(() => null),
+        getOrders().catch(() => [])
       ])
       if (seq !== this._loadSeq) {
         return
       }
       const isAdmin = Boolean(me && me.isAdmin)
-      const days = buildDays(week, dishes, business, beijingMeal(), isAdmin)
+      const bookedKeys: Record<string, boolean> = {}
+      ;(orders || []).forEach(order => {
+        if (order.status === 'cancelled') {
+          return
+        }
+        const date =
+          order.scheduledDate ||
+          dateInputString(new Date(order.createdAt))
+        bookedKeys[`${date}::${order.meal}`] = true
+      })
+      const days = buildDays(
+        week,
+        dishes,
+        business,
+        beijingMeal(),
+        isAdmin,
+        bookedKeys
+      )
       const allClosed = days.length > 0 && days.every(day => day.closed)
       const allRest =
         days.length > 0 &&

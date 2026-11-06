@@ -250,6 +250,17 @@
   font-size: 20rpx;
 }
 
+.meal-booked {
+  padding: 2rpx 12rpx;
+  background: #2D9CFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  color: #FFFFFF;
+  font-size: 19rpx;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
 .meal-row.now .meal-hint {
   color: #7A5A00;
 }
@@ -316,6 +327,11 @@
 .book-btn:active {
   transform: translate(3rpx, 3rpx);
   box-shadow: none;
+}
+
+.book-btn.booked {
+  background: #E9F1FF;
+  color: #2D6FD9;
 }
 
 .foot {

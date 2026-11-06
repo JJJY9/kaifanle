@@ -69,6 +69,7 @@
           <view class="meal-body">
             <view class="meal-top">
               <text class="meal-state {{meal.state}}">{{meal.stateText}}</text>
+              <text wx:if="{{meal.booked}}" class="meal-booked">已订</text>
               <text wx:if="{{meal.hint}}" class="meal-hint">{{meal.hint}}</text>
             </view>
             <view wx:if="{{meal.dishes.length}}" class="dish-chips">
@@ -86,11 +87,11 @@
           </view>
           <view
             wx:if="{{meal.bookable}}"
-            class="book-btn"
+            class="book-btn {{meal.booked ? 'booked' : ''}}"
             data-meal="{{meal.id}}"
             data-date="{{item.date}}"
             catchtap="onBook"
-          >预订</view>
+          >{{meal.booked ? '再加' : '预订'}}</view>
         </view>
       </view>
     </view>

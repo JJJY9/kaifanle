@@ -1044,6 +1044,16 @@ function invoke(mp, body) {
     page.path === 'pages/week-menus/index' && (data.days || []).length === 7,
     `${(data.days || []).length} 天`
   )
+  check(
+    'mock 饭表已订标记',
+    (data.days || []).some(day =>
+      (day.meals || []).some(meal => meal.booked)
+    ),
+    `${(data.days || []).reduce(
+      (sum, day) => sum + (day.meals || []).filter(meal => meal.booked).length,
+      0
+    )} 餐已订`
+  )
   const savedDay = (data.days || []).find(day => day.date === savedDate)
   const savedMealRow =
     savedDay && savedDay.meals.find(meal => meal.id === savedMeal)
