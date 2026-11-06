@@ -26,6 +26,35 @@
   font-weight: 700;
 }
 
+.price-history {
+  margin: 4rpx 0 14rpx;
+  padding: 10rpx 16rpx;
+  background: #F7F7F2;
+  border: 3rpx dashed #111111;
+  border-radius: 14rpx;
+}
+
+.price-history-title {
+  margin-bottom: 4rpx;
+  color: #5C5C5C;
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
+.price-history-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12rpx;
+  padding: 2rpx 0;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
+.price-history-time {
+  color: #9A9A9A;
+  font-weight: 400;
+}
+
 .sales-chart {
   display: flex;
   align-items: flex-end;

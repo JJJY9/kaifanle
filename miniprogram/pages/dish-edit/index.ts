@@ -62,6 +62,7 @@ Page({
     isRecommended: false,
     salesText: '',
     salesDaily: [] as any[],
+    priceHistory: [] as any[],
     stockLogs: [] as any[]
   },
 
@@ -182,6 +183,13 @@ Page({
         image: dish.image || '',
         recipe: dish.recipe || '',
         ingredientsText: (dish.ingredients || []).join('\n'),
+        priceHistory: (dish.priceHistory || [])
+          .slice(-3)
+          .reverse()
+          .map(item => ({
+            text: `¥${item.from} → ¥${item.to}`,
+            timeText: formatDate(item.at)
+          })),
         status: dish.status,
         isRecommended: Boolean(dish.isRecommended),
         loading: false

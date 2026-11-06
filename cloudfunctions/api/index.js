@@ -2642,6 +2642,20 @@ async function saveDish(payload, openid) {
           : stock
     }
     await db.collection('dishes').doc(id).update({ data: fields })
+    if (Number(dish.price) !== price) {
+      const priceHistory = Array.isArray(dish.priceHistory)
+        ? dish.priceHistory.slice()
+        : []
+      priceHistory.push({
+        from: Number(dish.price) || 0,
+        to: price,
+        at: Date.now()
+      })
+      await db
+        .collection('dishes')
+        .doc(id)
+        .update({ data: { priceHistory: priceHistory.slice(-20) } })
+    }
     const beforeStock =
       typeof dish.stock === 'number' ? Number(dish.stock) : null
     if (

@@ -54,6 +54,13 @@
           bindinput="onPrice"
         />
       </view>
+      <view wx:if="{{priceHistory.length}}" class="price-history">
+        <view class="price-history-title">最近调价</view>
+        <view wx:for="{{priceHistory}}" wx:key="index" class="price-history-row">
+          <text>{{item.text}}</text>
+          <text class="price-history-time">{{item.timeText}}</text>
+        </view>
+      </view>
 
       <view class="field">
         <text class="label">库存</text>

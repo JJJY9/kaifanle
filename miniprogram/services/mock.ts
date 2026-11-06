@@ -783,6 +783,17 @@ export async function saveDish(payload: DishInput): Promise<Dish> {
     }
     const beforeStock =
       typeof existing.stock === 'number' ? Number(existing.stock) : null
+    if (Number(existing.price) !== Number(fields.price)) {
+      fields.priceHistory = (existing.priceHistory || [])
+        .concat([
+          {
+            from: Number(existing.price) || 0,
+            to: Number(fields.price),
+            at: Date.now()
+          }
+        ])
+        .slice(-20)
+    }
     Object.assign(existing, fields)
     if (
       beforeStock !== null &&

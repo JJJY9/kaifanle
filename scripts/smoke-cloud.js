@@ -473,6 +473,11 @@ async function run() {
   // 编辑时不传 recipe 表示保持原做法
   assert.strictEqual(res.data.recipe, '第一步切菜\n第二步开火')
 
+  res = await call('getDish', { id: createdDishId }, 'admin-openid')
+  assert.strictEqual(res.data.priceHistory.length, 1)
+  assert.strictEqual(res.data.priceHistory[0].from, 12)
+  assert.strictEqual(res.data.priceHistory[0].to, 15)
+
   res = await call('getDishes', {}, 'admin-openid')
   assert.ok(
     res.data.some(dish => dish.id === createdDishId && dish.status === 'off')

@@ -34,6 +34,7 @@ export interface Dish {
   cartoon?: string
   recipe?: string
   ingredients?: string[]
+  priceHistory?: { from: number; to: number; at: number }[]
 }
 
 export interface Category {
