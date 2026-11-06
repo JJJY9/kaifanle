@@ -60,6 +60,8 @@ Page({
     receipt: null as any,
     receiptLines: [] as any[],
     copyingReceipts: false,
+    posterMaking: false,
+    posterPath: '',
     movingId: '',
     showHistory: false,
     showPrep: false,
@@ -1242,6 +1244,157 @@ Page({
         wx.showToast({ title: '今日小结已复制', icon: 'none' })
       }
     })
+  },
+
+  async onShareDailyPoster() {
+    if (this.data.posterMaking) {
+      return
+    }
+    const stats = this.data.stats || {}
+    this.setData({ posterMaking: true })
+    try {
+      const canvas: any = await new Promise((resolve, reject) => {
+        wx.createSelectorQuery()
+          .in(this)
+          .select('#dailyPoster')
+          .fields({ node: true, size: true })
+          .exec(res => {
+            const node = res && res[0] && res[0].node
+            if (node) {
+              resolve(node)
+            } else {
+              reject(new Error('画布还没准备好'))
+            }
+          })
+      })
+      const dpr = (wx.getWindowInfo && wx.getWindowInfo().pixelRatio) || 2
+      const width = 600
+      const height = 800
+      canvas.width = width * dpr
+      canvas.height = height * dpr
+      const ctx = canvas.getContext('2d')
+      ctx.scale(dpr, dpr)
+
+      ctx.fillStyle = '#FFFDF6'
+      ctx.fillRect(0, 0, width, height)
+      ctx.strokeStyle = '#111111'
+      ctx.lineWidth = 8
+      ctx.strokeRect(24, 24, width - 48, height - 48)
+
+      ctx.fillStyle = '#FFD23F'
+      ctx.fillRect(24, 24, width - 48, 110)
+      ctx.fillStyle = '#111111'
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'middle'
+      ctx.font = 'bold 38px "PingFang SC", sans-serif'
+      ctx.fillText('张饱饭堂 · 今日小结', 48, 78)
+
+      ctx.fillStyle = '#5C5C5C'
+      ctx.font = '24px "PingFang SC", sans-serif'
+      ctx.fillText(formatDate(), 48, 170)
+
+      ctx.fillStyle = '#5C5C5C'
+      ctx.font = '24px "PingFang SC", sans-serif'
+      ctx.fillText('今日营收', 48, 230)
+      ctx.fillStyle = '#FF6B35'
+      ctx.font = 'bold 82px "PingFang SC", sans-serif'
+      ctx.fillText(`¥${Number(stats.revenue || 0)}`, 48, 300)
+
+      ctx.fillStyle = '#111111'
+      ctx.font = 'bold 30px "PingFang SC", sans-serif'
+      ctx.fillText(
+        `订单 ${Number(stats.orderCount || 0)} 单 · 已完成 ${Number(
+          stats.completed || 0
+        )} 单`,
+        48,
+        390
+      )
+      ctx.font = '26px "PingFang SC", sans-serif'
+      ctx.fillStyle = '#5C5C5C'
+      ctx.fillText(
+        `待处理 ${Number(this.data.pendingCount || 0)} 单 · 未来预订 ${Number(
+          (this.data.preorders || []).length
+        )} 单`,
+        48,
+        440
+      )
+
+      if (stats.topDish) {
+        ctx.fillStyle = '#2FBF71'
+        ctx.fillRect(48, 500, width - 96, 80)
+        ctx.fillStyle = '#FFFFFF'
+        ctx.font = 'bold 28px "PingFang SC", sans-serif'
+        ctx.fillText(
+          `最受欢迎：${stats.topDish} ×${Number(stats.topQty || 0)}`,
+          68,
+          540
+        )
+      }
+
+      if (Number(stats.ratedCount || 0) > 0) {
+        ctx.fillStyle = '#5C5C5C'
+        ctx.font = '26px "PingFang SC", sans-serif'
+        ctx.fillText(
+          `今日评价 ${Number(stats.ratedCount)} 条 · 平均 ${Number(
+            stats.avgRating || 0
+          )} 分`,
+          48,
+          640
+        )
+      }
+
+      ctx.fillStyle = '#111111'
+      ctx.font = 'bold 26px "PingFang SC", sans-serif'
+      ctx.textAlign = 'left'
+      ctx.fillText('她点单，你掌勺', 48, height - 70)
+      ctx.fillStyle = '#5C5C5C'
+      ctx.font = '22px "PingFang SC", sans-serif'
+      ctx.textAlign = 'right'
+      ctx.fillText('开饭咯', width - 48, height - 70)
+
+      const path: string = await new Promise((resolve, reject) => {
+        wx.canvasToTempFilePath({
+          canvas,
+          destWidth: canvas.width,
+          destHeight: canvas.height,
+          success: res => resolve(res.tempFilePath),
+          fail: reject
+        } as any)
+      })
+      this.setData({ posterMaking: false, posterPath: path })
+      wx.showToast({ title: '小结图已生成', icon: 'none' })
+    } catch (e: any) {
+      this.setData({ posterMaking: false })
+      wx.showToast({
+        title: String((e && e.message) || '小结图生成失败').slice(0, 40),
+        icon: 'none'
+      })
+    }
+  },
+
+  onDailyPosterTap() {
+    if (this.data.posterPath) {
+      this.onPreviewDailyPoster()
+    } else {
+      this.onShareDailyPoster()
+    }
+  },
+
+  onPreviewDailyPoster() {
+    const path = this.data.posterPath
+    if (!path) {
+      return
+    }
+    if (typeof (wx as any).showShareImageMenu === 'function') {
+      ;(wx as any).showShareImageMenu({
+        path,
+        fail: () => {
+          wx.previewImage({ urls: [path] })
+        }
+      })
+    } else {
+      wx.previewImage({ urls: [path] })
+    }
   },
 
   onCopyPrep() {

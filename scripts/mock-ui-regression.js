@@ -518,6 +518,15 @@ function invoke(mp, body) {
       summaryClip.indexOf('营收') > -1,
     `${String(summaryClip || '').length} 字`
   )
+  await invoke(mp, 'page.onShareDailyPoster()')
+  await sleep(2200)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 今日小结图',
+    Boolean(data.posterPath),
+    data.posterPath ? '已生成' : '未生成'
+  )
   const prepGroups = data.prepGroups || []
   check(
     'mock 备菜按餐次',

@@ -227,6 +227,21 @@
   font-weight: 800;
 }
 
+.summary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+}
+
+.daily-poster-canvas {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  width: 600px;
+  height: 800px;
+  pointer-events: none;
+}
+
 .chart {
   margin-top: 20rpx;
   padding: 20rpx 24rpx 16rpx;
