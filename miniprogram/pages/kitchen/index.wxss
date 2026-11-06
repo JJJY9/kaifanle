@@ -582,6 +582,26 @@
   box-shadow: none;
 }
 
+.history-filter {
+  display: flex;
+  gap: 12rpx;
+  margin-bottom: 14rpx;
+}
+
+.history-chip {
+  padding: 6rpx 18rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
+.history-chip.active {
+  background: #111111;
+  color: #FFFFFF;
+}
+
 .history-reply-badge {
   margin-left: 8rpx;
   padding: 2rpx 10rpx;

@@ -34,6 +34,8 @@ Page({
     busyDishId: '',
     replyingId: '',
     restockingId: '',
+    historyOnlyPending: false,
+    historyView: [] as any[],
     movingId: '',
     showHistory: false,
     showPrep: false,
@@ -453,6 +455,7 @@ Page({
       this.setData({
         orders: view,
         history,
+        historyView: this.filterHistory(history),
         dishes,
         stats,
         prepItems,
@@ -700,12 +703,41 @@ Page({
     this.setData({ showHistory: !this.data.showHistory })
   },
 
+  filterHistory(list: any[]): any[] {
+    if (!this.data.historyOnlyPending) {
+      return list
+    }
+    return list.filter(
+      order => order.canReply && !order.ownerReply
+    )
+  },
+
+  applyHistoryFilter() {
+    this.setData({
+      historyView: this.filterHistory(this.data.history || [])
+    })
+  },
+
+  onHistoryFilter(e: any) {
+    const only = e.currentTarget.dataset.only === 'pending'
+    if (only === this.data.historyOnlyPending) {
+      return
+    }
+    this.setData({ historyOnlyPending: only }, () =>
+      this.applyHistoryFilter()
+    )
+  },
+
   onTodoTap(e: any) {
     const target = e.currentTarget.dataset.target
     if (target === 'replies') {
-      this.setData({ showHistory: true }, () => {
-        wx.pageScrollTo({ selector: '#history-section', duration: 300 })
-      })
+      this.setData(
+        { showHistory: true, historyOnlyPending: true },
+        () => {
+          this.applyHistoryFilter()
+          wx.pageScrollTo({ selector: '#history-section', duration: 300 })
+        }
+      )
       return
     }
     const selector =
@@ -842,7 +874,7 @@ Page({
           [`history[${index}].ownerReply`]: reply,
           [`history[${index}].ownerReplyAt`]: ownerReplyAt,
           todo
-        })
+        }, () => this.applyHistoryFilter())
       } else {
         await this.load()
       }

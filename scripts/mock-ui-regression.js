@@ -577,6 +577,22 @@ function invoke(mp, body) {
       repliesBefore >= 1,
       `${repliesBefore} 条待回复`
     )
+    await invoke(
+      mp,
+      "page.onTodoTap({ currentTarget: { dataset: { target: 'replies' } } })"
+    )
+    await sleep(600)
+    page = await current()
+    data = await page.data()
+    check(
+      'mock 厨房待回复筛选',
+      data.historyOnlyPending === true &&
+        (data.historyView || []).length === repliesBefore &&
+        data.historyView.every(
+          order => order.canReply && !order.ownerReply
+        ),
+      `${(data.historyView || []).length} 条`
+    )
     const beforeReply =
       ((data.history || []).find(order => order.id === 'seed-2') || {})
         .ownerReply || ''

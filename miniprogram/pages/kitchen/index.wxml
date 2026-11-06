@@ -175,9 +175,13 @@
       <view class="history-toggle">{{showHistory ? '收起' : '看最近 10 单'}}<text wx:if="{{todo.replies}}" class="history-reply-badge">{{todo.replies}} 待回复</text></view>
     </view>
     <block wx:if="{{showHistory}}">
-      <view wx:if="{{!history.length}}" class="empty-line">还没有历史订单</view>
+      <view class="history-filter">
+        <view class="history-chip {{!historyOnlyPending ? 'active' : ''}}" data-only="all" bindtap="onHistoryFilter">全部</view>
+        <view class="history-chip {{historyOnlyPending ? 'active' : ''}}" data-only="pending" bindtap="onHistoryFilter">待回复 {{todo.replies}}</view>
+      </view>
+      <view wx:if="{{!historyView.length}}" class="empty-line">{{historyOnlyPending ? '没有待回复的评价' : '还没有历史订单'}}</view>
       <view
-        wx:for="{{history}}"
+        wx:for="{{historyView}}"
         wx:key="id"
         class="order card history-order"
         data-id="{{item.id}}"
