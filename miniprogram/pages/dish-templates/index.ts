@@ -195,23 +195,29 @@ Page({
     }
     this.setData({ adding: true, addingName: '', addingText: '正在添加…' })
     let done = 0
-    try {
-      for (const template of missing) {
-        this.setData({ addingText: `正在添加：${template.name}` })
+    const failed: string[] = []
+    for (const template of missing) {
+      this.setData({ addingText: `正在添加：${template.name}` })
+      try {
         await saveDish(this.toInput(template))
         done++
+      } catch (err) {
+        failed.push(template.name)
       }
-      wx.showToast({ title: `已添加 ${done} 道菜`, icon: 'none' })
-      this.load()
-    } catch (err: any) {
-      wx.showToast({
-        title: `第 ${done + 1} 道失败：${String(
-          (err && err.message) || '请重试'
-        ).slice(0, 16)}`,
-        icon: 'none'
-      })
-    } finally {
-      this.setData({ adding: false, addingName: '', addingText: '' })
     }
+    if (failed.length) {
+      wx.showModal({
+        title: `已添加 ${done} 道`,
+        content: `有 ${failed.length} 道没加上：${failed
+          .slice(0, 6)
+          .join('、')}${failed.length > 6 ? '…' : ''}。可以再点一次全部添加重试。`,
+        showCancel: false,
+        confirmText: '知道了'
+      })
+    } else {
+      wx.showToast({ title: `已添加 ${done} 道菜`, icon: 'none' })
+    }
+    this.setData({ adding: false, addingName: '', addingText: '' })
+    this.load()
   }
 })

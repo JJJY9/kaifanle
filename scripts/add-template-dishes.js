@@ -25,14 +25,21 @@ const sleep = ms => new Promise(r => setTimeout(r, ms))
       const current = getCurrentPages()[getCurrentPages().length - 1]
       current.onAddAll()
     })
+    let seenAdding = false
     for (let i = 0; i < 300; i++) {
       await sleep(2000)
       page = await mp.currentPage()
       data = await page.data()
+      if (data.adding) {
+        seenAdding = true
+      }
       console.log(
         `进度：剩余 ${data.missingCount} 道 ${data.addingText || ''}`
       )
-      if (!data.adding && data.missingCount === 0) {
+      if (data.missingCount === 0) {
+        break
+      }
+      if (seenAdding && !data.adding) {
         break
       }
     }
