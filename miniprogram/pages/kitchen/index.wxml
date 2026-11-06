@@ -129,7 +129,7 @@
         </view>
         <view wx:if="{{prepIngredients.length}}" class="prep-ingredients">
           <view class="prep-group-title">采购食材</view>
-          <view wx:for="{{prepIngredients}}" wx:key="name" class="prep-row">
+          <view wx:for="{{prepIngredients}}" wx:key="key" class="prep-row">
             <text class="prep-name">{{item.name}}</text>
             <text class="prep-ingredient-amount">{{item.text}}</text>
           </view>

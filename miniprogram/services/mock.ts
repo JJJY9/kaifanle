@@ -1170,7 +1170,12 @@ export async function rateOrder(
   ;(Array.isArray(images) ? images : []).forEach(src => {
     const value = String(src || '').trim()
     if (
-      (/^cloud:\/\//.test(value) || /^https:\/\//.test(value) || value.indexOf('/') === 0) &&
+      (/^cloud:\/\//.test(value) ||
+        /^https:\/\//.test(value) ||
+        /^http:\/\/tmp\//.test(value) ||
+        /^http:\/\/usr\//.test(value) ||
+        /^wxfile:\/\//.test(value) ||
+        value.indexOf('/') === 0) &&
       ratingImages.indexOf(value) === -1 &&
       ratingImages.length < 3
     ) {

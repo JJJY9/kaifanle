@@ -93,7 +93,7 @@
           lazy-load
           data-src="{{item}}"
           data-index="{{reviewIndex}}"
-          bindtap="onPreviewImage"
+          catchtap="onPreviewImage"
         />
       </view>
       <view wx:if="{{item.feedback}}" class="review-feedback">“{{item.feedback}}”</view>

@@ -772,13 +772,6 @@ Page({
       this.setData({ onlyFavorites: false }, () => this.renderSections())
       return
     }
-    if (this.data.onlyAvailable) {
-      this.setData({ onlyAvailable: false }, () => {
-        this.renderSections()
-        this.setData({ searchResults: this.filterDishes(this.data.keyword) })
-      })
-      return
-    }
     if (this.data.spiceFilter !== 'all') {
       this.setData({ spiceFilter: 'all' }, () => {
         this.renderSections()
@@ -788,6 +781,13 @@ Page({
     }
     if (this.data.tagFilter !== 'all') {
       this.setData({ tagFilter: 'all' }, () => {
+        this.renderSections()
+        this.setData({ searchResults: this.filterDishes(this.data.keyword) })
+      })
+      return
+    }
+    if (this.data.onlyAvailable) {
+      this.setData({ onlyAvailable: false }, () => {
         this.renderSections()
         this.setData({ searchResults: this.filterDishes(this.data.keyword) })
       })

@@ -314,6 +314,19 @@ async function logStock(entry) {
     await db.collection('stock_logs').add({
       data: Object.assign({}, entry, { createdAt: Date.now() })
     })
+    // 偶尔清理 90 天前的旧日志，避免集合无限增长
+    if (Math.random() < 0.05) {
+      try {
+        await db
+          .collection('stock_logs')
+          .where({
+            createdAt: _.lt(Date.now() - 90 * 24 * 60 * 60 * 1000)
+          })
+          .remove()
+      } catch (e) {
+        // 清理失败不影响日志写入
+      }
+    }
   } catch (e) {
     console.warn('[api] logStock failed:', entry, e)
   }
@@ -860,13 +873,15 @@ async function getMyExpiringCoupons(openid) {
   const soon = now + 3 * 24 * 60 * 60 * 1000
   const res = await db
     .collection('coupons')
-    .where({ owner: openid, status: 'unused' })
+    .where({
+      owner: openid,
+      status: 'unused',
+      expiresAt: _.gte(now)
+    })
     .limit(50)
     .get()
   const count = (res.data || []).filter(
-    coupon =>
-      Number(coupon.expiresAt || 0) >= now &&
-      Number(coupon.expiresAt || 0) <= soon
+    coupon => Number(coupon.expiresAt || 0) <= soon
   ).length
   return { count }
 }
@@ -889,14 +904,33 @@ async function claimCoupon(payload, openid) {
   }
   if (!coupon.owner) {
     // 手里的未使用券太多时先别领，避免把券池占满；过期券不占名额
-    const held = await db
-      .collection('coupons')
-      .where({ owner: openid, status: 'unused' })
-      .limit(50)
-      .get()
-    const activeHeld = (held.data || []).filter(
-      item => !item.expiresAt || Number(item.expiresAt) >= Date.now()
-    ).length
+    const now = Date.now()
+    const [expiring, permanent, legacy] = await Promise.all([
+      db
+        .collection('coupons')
+        .where({
+          owner: openid,
+          status: 'unused',
+          expiresAt: _.gte(now)
+        })
+        .count(),
+      db
+        .collection('coupons')
+        .where({ owner: openid, status: 'unused', expiresAt: 0 })
+        .count(),
+      db
+        .collection('coupons')
+        .where({
+          owner: openid,
+          status: 'unused',
+          expiresAt: _.exists(false)
+        })
+        .count()
+    ])
+    const activeHeld =
+      Number(expiring.total || 0) +
+      Number(permanent.total || 0) +
+      Number(legacy.total || 0)
     if (activeHeld >= 5) {
       throw new Error('手里的券还没用完，先用掉再领')
     }
@@ -2197,7 +2231,7 @@ async function rateOrder(payload, openid) {
   ;(Array.isArray(payload.images) ? payload.images : []).forEach(src => {
     const value = String(src || '').trim()
     if (
-      (/^cloud:\/\//.test(value) || /^https:\/\//.test(value)) &&
+      /^cloud:\/\//.test(value) &&
       images.indexOf(value) === -1 &&
       images.length < 3
     ) {
@@ -2577,6 +2611,7 @@ async function saveDish(payload, openid) {
             : Math.max(0, currentStock + (stock - stockBase))
           : stock
     }
+    await db.collection('dishes').doc(id).update({ data: fields })
     const beforeStock =
       typeof dish.stock === 'number' ? Number(dish.stock) : null
     if (
@@ -2598,7 +2633,6 @@ async function saveDish(payload, openid) {
         openid
       })
     }
-    await db.collection('dishes').doc(id).update({ data: fields })
     // 换图后顺手删掉旧图，避免云存储堆积
     if (
       image !== null &&
