@@ -553,6 +553,20 @@ function invoke(mp, body) {
     String(data.salesText || '').length > 0,
     data.salesText
   )
+  await invoke(mp, 'page.onCopyDish()')
+  await sleep(1600)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 菜品复制预填',
+    page.path === 'pages/dish-edit/index' &&
+      data.isEdit === false &&
+      data.id === '' &&
+      String(data.name).indexOf('副本') > -1 &&
+      data.price === '18' &&
+      data.categoryId === 'staple',
+    `${data.name} · ¥${data.price}`
+  )
   await mp.navigateBack()
   await sleep(900)
 

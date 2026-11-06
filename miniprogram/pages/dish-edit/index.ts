@@ -63,6 +63,7 @@ Page({
 
   onLoad(options: any) {
     const id = options.id || ''
+    const copyFrom = String(options.copyFrom || '')
     let presetName = ''
     try {
       presetName = options.name
@@ -72,14 +73,15 @@ Page({
       presetName = String(options.name || '').slice(0, 12)
     }
     this._presetName = presetName
+    this._copyFrom = copyFrom
     this.setData({ id, isEdit: Boolean(id), loadFailed: false })
     wx.setNavigationBarTitle({
-      title: id ? '编辑菜品' : '新增菜品'
+      title: copyFrom ? '复制菜品' : id ? '编辑菜品' : '新增菜品'
     })
-    this.load(id)
+    this.load(copyFrom || id, Boolean(copyFrom))
   },
 
-  async load(id: string) {
+  async load(id: string, asCopy = false) {
     try {
       const categories = await getCategories()
       this.setData({ categories })
@@ -99,22 +101,26 @@ Page({
       if (!dish) {
         throw new Error('菜品不存在')
       }
-      getDishSales(dish.name)
-        .then(sales => {
-          this.setData({
-            salesText: sales.qty
-              ? `近 30 天卖出 ${sales.qty} 份 · ${sales.orders} 单`
-              : '近 30 天还没卖过'
+      if (!asCopy) {
+        getDishSales(dish.name)
+          .then(sales => {
+            this.setData({
+              salesText: sales.qty
+                ? `近 30 天卖出 ${sales.qty} 份 · ${sales.orders} 单`
+                : '近 30 天还没卖过'
+            })
           })
-        })
-        .catch(() => {})
+          .catch(() => {})
+      }
       const colorIndex = COLORS.indexOf(dish.color)
       const mealChecked: Record<string, boolean> = {}
       ;(dish.meals || []).forEach(meal => {
         mealChecked[meal] = true
       })
       this.setData({
-        name: dish.name,
+        id: asCopy ? '' : this.data.id,
+        isEdit: asCopy ? false : this.data.isEdit,
+        name: asCopy ? `${dish.name}副本`.slice(0, 12) : dish.name,
         desc: dish.desc,
         price: String(dish.price),
         stock: String(typeof dish.stock === 'number' ? dish.stock : -1),
@@ -149,7 +155,7 @@ Page({
 
   onRetryLoad() {
     this.setData({ loading: true, loadFailed: false })
-    this.load(this.data.id)
+    this.load(this._copyFrom || this.data.id, Boolean(this._copyFrom))
   },
 
   onName(e: any) {
@@ -351,7 +357,8 @@ Page({
     const addons = this.data.addons
       .filter(addon => addon.name.trim())
       .map((addon, index) => ({
-        id: addon.id || `a${index + 1}`,
+        // 重新编号，避免删掉再加后 id 重复
+        id: `a${index + 1}`,
         name: addon.name.trim(),
         price: Math.max(0, Number(addon.price) || 0)
       }))
@@ -388,6 +395,15 @@ Page({
     } finally {
       this.setData({ saving: false })
     }
+  },
+
+  onCopyDish() {
+    if (!this.data.id) {
+      return
+    }
+    wx.redirectTo({
+      url: `/pages/dish-edit/index?copyFrom=${this.data.id}`
+    })
   },
 
   async onDelete() {

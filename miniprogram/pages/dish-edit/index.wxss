@@ -302,6 +302,25 @@
   font-weight: 800;
 }
 
+.copy-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 80rpx;
+  margin-top: 24rpx;
+  background: #FFD23F;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  box-shadow: 3rpx 3rpx 0 #111111;
+  font-size: 26rpx;
+  font-weight: 800;
+}
+
+.copy-btn:active {
+  transform: translate(3rpx, 3rpx);
+  box-shadow: none;
+}
+
 .delete-btn.disabled {
   opacity: 0.5;
 }

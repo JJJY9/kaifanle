@@ -210,6 +210,12 @@
 
     <view
       wx:if="{{isEdit}}"
+      class="copy-btn"
+      bindtap="onCopyDish"
+    >复制成新菜</view>
+
+    <view
+      wx:if="{{isEdit}}"
       class="delete-btn {{deleting ? 'disabled' : ''}}"
       bindtap="onDelete"
     >{{deleting ? '删除中…' : '删除这道菜'}}</view>
