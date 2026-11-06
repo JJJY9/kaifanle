@@ -36,6 +36,7 @@ Page({
     menuDateLabel: '今天',
     deadlineText: '',
     hero: null as Dish | null,
+    heroTag: '今日推荐',
     sections: [] as Section[],
     cartCount: 0,
     cartTotal: 0,
@@ -342,12 +343,17 @@ Page({
           })
       }))
       .filter(section => section.dishes.length > 0)
+    const favoriteHero = pool.find(dish => favorites.has(dish.id))
     const hero =
-      pool.find(dish => dish.isRecommended) || pool[0] || null
+      favoriteHero ||
+      pool.find(dish => dish.isRecommended) ||
+      pool[0] ||
+      null
     const empty = sections.length === 0
     this.setData({
       sections,
       hero,
+      heroTag: favoriteHero ? '你收藏的' : '今日推荐',
       emptyDesc:
         empty && this.data.onlyFavorites
           ? '还没有收藏，点开菜品点右上角的 ♡ 收藏'
