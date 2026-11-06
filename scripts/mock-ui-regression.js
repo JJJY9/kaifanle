@@ -482,6 +482,33 @@ function invoke(mp, body) {
     data = await page.data()
     check('mock 提交评价', data.rating === 3, `评分 ${data.rating}`)
 
+    // 我的评价页：汇总评分与筛选
+    await mp.navigateTo('/pages/reviews/index')
+    await sleep(1800)
+    page = await current()
+    data = await page.data()
+    check(
+      'mock 我的评价加载',
+      (data.reviews || []).length >= 1 &&
+        Number((data.stats || {}).count || 0) >= 1,
+      `${(data.reviews || []).length} 条`
+    )
+    await invoke(
+      mp,
+      "page.onSelectFilter({ currentTarget: { dataset: { filter: '1' } } })"
+    )
+    await sleep(400)
+    page = await current()
+    data = await page.data()
+    check(
+      'mock 我的评价筛选',
+      data.filter === '1' &&
+        (data.display || []).every(review => review.rating === 1),
+      `翻车 ${(data.display || []).length} 条`
+    )
+    await mp.navigateBack()
+    await sleep(900)
+
     // 厨房回复评价 → 顾客订单详情能看到
     await mp.navigateTo('/pages/kitchen/index')
     await sleep(2400)

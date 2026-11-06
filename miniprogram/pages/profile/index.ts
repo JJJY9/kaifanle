@@ -60,6 +60,13 @@ Page({
         color: '#FFD23F'
       },
       {
+        key: 'reviews',
+        label: '我的评价',
+        desc: '吃过的每一顿和掌勺人的回复',
+        icon: '评',
+        color: '#2FBF71'
+      },
+      {
         key: 'prefs',
         label: '口味与地址',
         desc: '忌口、口味、常用地址',
@@ -181,6 +188,11 @@ Page({
 
     if (key === 'coupon') {
       wx.navigateTo({ url: '/pages/coupons/index' })
+      return
+    }
+
+    if (key === 'reviews') {
+      wx.navigateTo({ url: '/pages/reviews/index' })
       return
     }
 

@@ -1,0 +1,99 @@
+<view class="page">
+  <view class="head">
+    <view class="title-row">
+      <text class="title display">我的评价</text>
+      <view class="sticker">每一顿</view>
+    </view>
+    <text class="sub">吃过的、说过的，和掌勺人的回应</text>
+  </view>
+
+  <view wx:if="{{loading}}" class="loading">
+    <view class="skeleton sk-card"></view>
+    <view class="skeleton sk-card"></view>
+  </view>
+
+  <empty-state
+    wx:elif="{{error}}"
+    title="评价加载失败"
+    desc="{{error}}"
+    actionText="再试一次"
+    bind:action="onRetry"
+  />
+
+  <empty-state
+    wx:elif="{{!reviews.length}}"
+    title="还没有评价"
+    desc="吃完之后在订单详情里说一句，就会记在这里"
+    actionText="去点餐"
+    bind:action="onGoHome"
+  />
+
+  <block wx:else>
+    <view class="stats-card card">
+      <view class="stat">
+        <text class="stat-num">{{stats.count}}</text>
+        <text class="stat-label">已评价</text>
+      </view>
+      <view class="divider"></view>
+      <view class="stat">
+        <text class="stat-num">{{stats.goodRate}}%</text>
+        <text class="stat-label">好评率</text>
+      </view>
+      <view class="divider"></view>
+      <view class="stat">
+        <text class="stat-num">{{stats.replies}}</text>
+        <text class="stat-label">掌勺人回复</text>
+      </view>
+    </view>
+
+    <view class="filter-row">
+      <view
+        wx:for="{{filters}}"
+        wx:key="key"
+        class="filter-chip {{filter === item.key ? 'active' : ''}}"
+        data-filter="{{item.key}}"
+        bindtap="onSelectFilter"
+      >{{item.label}} {{item.count}}</view>
+    </view>
+
+    <empty-state
+      wx:if="{{!display.length}}"
+      title="这一档还没有"
+      desc="{{emptyText}}"
+    />
+
+    <view
+      wx:for="{{display}}"
+      wx:key="id"
+      class="review card"
+      data-id="{{item.id}}"
+      bindtap="onTapReview"
+    >
+      <view class="review-top">
+        <view class="rating-badge {{item.tone}}">
+          <text class="rating-emoji">{{item.emoji}}</text>
+          <text>{{item.label}}</text>
+        </view>
+        <text class="review-date">{{item.dateText}} · {{item.mealText}}</text>
+      </view>
+
+      <view class="review-dishes">{{item.dishes}}</view>
+
+      <view wx:if="{{item.feedback}}" class="review-feedback">“{{item.feedback}}”</view>
+      <view wx:else class="review-feedback muted">这顿没留文字</view>
+
+      <view wx:if="{{item.reply}}" class="owner-reply">
+        <view class="owner-reply-head">
+          <text class="owner-reply-label">掌勺人说</text>
+          <text wx:if="{{item.replyTime}}" class="owner-reply-time">{{item.replyTime}}</text>
+        </view>
+        <text class="owner-reply-text">{{item.reply}}</text>
+      </view>
+
+      <view class="review-foot">
+        <text class="review-no">#{{item.no}} · ¥{{item.amount}} · {{item.timeText}}</text>
+        <text class="review-arrow">查看订单 →</text>
+      </view>
+    </view>
+  </block>
+</view>
