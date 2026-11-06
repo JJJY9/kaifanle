@@ -301,6 +301,23 @@
   font-weight: 800;
 }
 
+.book-btn {
+  flex: 0 0 auto;
+  align-self: center;
+  padding: 8rpx 16rpx;
+  background: #FF6B35;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  box-shadow: 3rpx 3rpx 0 #111111;
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
+.book-btn:active {
+  transform: translate(3rpx, 3rpx);
+  box-shadow: none;
+}
+
 .foot {
   display: flex;
   flex-direction: column;

@@ -84,6 +84,13 @@
               <text wx:if="{{meal.moreCount}}" class="more-chip">+{{meal.moreCount}}</text>
             </view>
           </view>
+          <view
+            wx:if="{{meal.bookable}}"
+            class="book-btn"
+            data-meal="{{meal.id}}"
+            data-date="{{item.date}}"
+            catchtap="onBook"
+          >预订</view>
         </view>
       </view>
     </view>

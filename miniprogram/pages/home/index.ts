@@ -11,6 +11,7 @@ import { MEALS } from '../../utils/constants'
 import { USE_CLOUD } from '../../config'
 import {
   currentMeal,
+  dateLabel,
   formatDate,
   greeting,
   isOpenNow,
@@ -29,6 +30,10 @@ Page({
     isOpen: true,
     meals: MEALS,
     selectedMeal: 'lunch' as MealId,
+    selectedDate: '',
+    todayDate: '',
+    maxDate: '',
+    menuDateLabel: '今天',
     hero: null as Dish | null,
     sections: [] as Section[],
     cartCount: 0,
@@ -62,13 +67,20 @@ Page({
     const app = getApp()
     const statusBarHeight =
       (app && app.globalData && app.globalData.statusBarHeight) || 20
+    const today = dateInputString()
+    const max = new Date()
+    max.setDate(max.getDate() + 7)
 
     this.setData({
       navPad: statusBarHeight + 14,
       dateText: formatDate(),
       greetText: greeting(),
       isOpen: isOpenNow(),
-      selectedMeal: currentMeal()
+      selectedMeal: currentMeal(),
+      selectedDate: today,
+      todayDate: today,
+      maxDate: dateInputString(max),
+      menuDateLabel: '今天'
     })
 
     this._unsub = cart.subscribe(lines => {
@@ -104,15 +116,30 @@ Page({
       app.globalData.pendingReorder = null
     }
     if (pending && MEALS.some(item => item.id === pending.meal)) {
+      const today = this.data.todayDate || dateInputString()
+      const date =
+        pending.date && pending.date >= today && pending.date <= this.data.maxDate
+          ? pending.date
+          : today
       this._pendingReorder = {
         meal: pending.meal,
-        date: pending.date || ''
+        date
       }
-      if (pending.meal !== this.data.selectedMeal) {
-        this.setData({ selectedMeal: pending.meal }, () => {
-          this.updateCartBadge()
-          this.loadMenu()
-        })
+      if (
+        pending.meal !== this.data.selectedMeal ||
+        date !== this.data.selectedDate
+      ) {
+        this.setData(
+          {
+            selectedMeal: pending.meal,
+            selectedDate: date,
+            menuDateLabel: dateLabel(date, today)
+          },
+          () => {
+            this.updateCartBadge()
+            this.loadMenu()
+          }
+        )
         return
       }
     }
@@ -140,12 +167,14 @@ Page({
     }
     try {
       const meal = this.data.selectedMeal
-      const today = dateInputString()
+      const today = this.data.todayDate || dateInputString()
+      const date = this.data.selectedDate || today
+      const isToday = date === today
       const [categories, dishes, business, menu] = await Promise.all([
         getCategories(),
         getDishes(),
         getBusiness().catch(() => null),
-        getMenuForDate(today, meal).catch(() => null)
+        getMenuForDate(date, meal).catch(() => null)
       ])
       if (seq !== this._loadSeq) {
         return
@@ -166,17 +195,19 @@ Page({
             : '云数据库可能还没初始化，去「我的」看一眼'
           : '换个餐次看看，或者去许愿池点个菜'
 
-      let isOpen = isOpenNow()
+      let isOpen = isToday ? isOpenNow() : true
       let mealNotice = ''
-      const closedToday = Boolean(
+      const closedDate = Boolean(
         business &&
           ((Array.isArray(business.closedDates) &&
-            business.closedDates.indexOf(today) > -1) ||
+            business.closedDates.indexOf(date) > -1) ||
             (Array.isArray(business.weeklyClosed) &&
-              business.weeklyClosed.indexOf(new Date().getDay()) > -1))
+              business.weeklyClosed.indexOf(
+                new Date(date + 'T00:00:00').getDay()
+              ) > -1))
       )
       const mealSetting = business ? business[meal] : null
-      if (closedToday) {
+      if (closedDate) {
         isOpen = false
         mealNotice = (business && business.closedNote) || '今天休息，明天见'
       } else if (menuActive && menu!.open === false) {
@@ -189,7 +220,7 @@ Page({
           .split(':')
           .map(Number)
         const pastDeadline =
-          nowMinutes > deadlineHour * 60 + deadlineMinute
+          isToday && nowMinutes > deadlineHour * 60 + deadlineMinute
         isOpen = mealSetting.open && !pastDeadline
         mealNotice = !mealSetting.open
           ? business!.closedNote || '今天休息，明天见'
@@ -254,6 +285,23 @@ Page({
       this.updateCartBadge()
       this.loadMenu()
     })
+  },
+
+  onSelectDate(e: any) {
+    const date = e.detail.value
+    if (!date || date === this.data.selectedDate) {
+      return
+    }
+    if (this._pendingReorder && this._pendingReorder.date !== date) {
+      this._pendingReorder = null
+    }
+    this.setData(
+      {
+        selectedDate: date,
+        menuDateLabel: dateLabel(date, this.data.todayDate)
+      },
+      () => this.loadMenu()
+    )
   },
 
   updateCartBadge() {
@@ -441,17 +489,7 @@ Page({
       wx.showToast({ title: '这一餐还没选菜', icon: 'none' })
       return
     }
-    let url = `/pages/checkout/index?meal=${this.data.selectedMeal}`
-    const pending = this._pendingReorder
-    if (pending && pending.meal === this.data.selectedMeal && pending.date) {
-      const today = dateInputString()
-      const max = new Date()
-      max.setDate(max.getDate() + 7)
-      const maxDate = dateInputString(max)
-      if (pending.date >= today && pending.date <= maxDate) {
-        url += `&date=${pending.date}`
-      }
-    }
+    let url = `/pages/checkout/index?meal=${this.data.selectedMeal}&date=${this.data.selectedDate}`
     wx.navigateTo({ url })
   },
 

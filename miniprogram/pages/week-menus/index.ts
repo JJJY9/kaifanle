@@ -32,6 +32,7 @@ interface MealRow {
   stateText: string
   hint: string
   isNow: boolean
+  bookable: boolean
   dishes: DishChip[]
   moreCount: number
 }
@@ -159,6 +160,7 @@ function buildMeal(
     stateText,
     hint,
     isNow: isToday && state === 'ready' && meal === nowMeal,
+    bookable: state === 'ready',
     dishes: chips.slice(0, MAX_CHIPS),
     moreCount: Math.max(0, chips.length - MAX_CHIPS)
   }
@@ -338,6 +340,19 @@ Page({
   },
 
   onGoHome() {
+    wx.switchTab({ url: '/pages/home/index' })
+  },
+
+  onBook(e: any) {
+    const meal = e.currentTarget.dataset.meal as MealId
+    const date = e.currentTarget.dataset.date
+    if (!meal || !date) {
+      return
+    }
+    const app: any = getApp()
+    if (app && app.globalData) {
+      app.globalData.pendingReorder = { meal, date }
+    }
     wx.switchTab({ url: '/pages/home/index' })
   },
 

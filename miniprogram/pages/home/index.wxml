@@ -26,6 +26,19 @@
         bindtap="onSelectMeal"
       >{{item.name}}</view>
     </view>
+
+    <view class="date-row">
+      <picker
+        mode="date"
+        start="{{todayDate}}"
+        end="{{maxDate}}"
+        value="{{selectedDate}}"
+        bindchange="onSelectDate"
+      >
+        <view class="date-pill">📅 {{menuDateLabel}}</view>
+      </picker>
+      <text wx:if="{{selectedDate !== todayDate}}" class="date-hint">预订 / 预览</text>
+    </view>
     <view wx:if="{{mealNotice}}" class="meal-notice">{{mealNotice}}</view>
     <view wx:if="{{notice}}" class="notice-box">
       <text class="notice-tag">店长说</text>
