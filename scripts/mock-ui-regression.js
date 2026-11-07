@@ -2199,6 +2199,27 @@ function chinaDate(offset) {
       ? `${data.report.totalOrders} 单 / ¥${data.report.revenue}`
       : '没有数据'
   )
+  await invoke(
+    mp,
+    "page.onRange({ currentTarget: { dataset: { range: 7 } } })"
+  )
+  await sleep(1600)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 月报切换近7天',
+    Number(data.range) === 7 &&
+      data.report.days === 7 &&
+      (data.report.daily || []).length === 7,
+    `${data.report.days} 天 · ${(data.report.daily || []).length} 个数据点`
+  )
+  await invoke(
+    mp,
+    "page.onRange({ currentTarget: { dataset: { range: 30 } } })"
+  )
+  await sleep(1600)
+  page = await current()
+  data = await page.data()
   const weekSum = list =>
     Number(
       list.reduce((sum, day) => sum + Number(day.amount || 0), 0).toFixed(2)

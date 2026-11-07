@@ -2,9 +2,21 @@
   <view class="head">
     <view class="title-row">
       <text class="title display">经营月报</text>
-      <view class="sticker">近 30 天</view>
+      <view class="sticker">近 {{report.days || 30}} 天</view>
     </view>
     <text wx:if="{{report}}" class="sub">{{report.startDate}} 至 {{report.endDate}} · 只统计未取消订单</text>
+    <view class="range-row">
+      <view
+        class="range-chip {{range === 7 ? 'active' : ''}}"
+        data-range="7"
+        bindtap="onRange"
+      >近 7 天</view>
+      <view
+        class="range-chip {{range === 30 ? 'active' : ''}}"
+        data-range="30"
+        bindtap="onRange"
+      >近 30 天</view>
+    </view>
   </view>
 
   <view wx:if="{{loading}}" class="loading">
@@ -24,7 +36,7 @@
     <view class="stats-card card">
       <view class="stat">
         <text class="stat-num">¥{{report.revenue}}</text>
-        <text class="stat-label">30 天营收</text>
+        <text class="stat-label">{{report.days}} 天营收</text>
       </view>
       <view class="divider"></view>
       <view class="stat">
@@ -178,7 +190,7 @@
     </view>
 
     <view class="section-title display">菜品排行</view>
-    <view wx:if="{{!report.topDishes.length}}" class="empty-line">这 30 天还没有卖出的菜</view>
+    <view wx:if="{{!report.topDishes.length}}" class="empty-line">这 {{report.days}} 天还没有卖出的菜</view>
     <view wx:for="{{report.topDishes}}" wx:key="name" class="dish-row card">
       <view class="rank {{index < 3 ? 'top' : ''}}">{{index + 1}}</view>
       <view class="dish-info">
@@ -199,7 +211,7 @@
       <view class="rank slow">{{index + 1}}</view>
       <view class="dish-info">
         <view class="dish-name">{{item.name}}</view>
-        <view class="dish-sub">{{item.qty ? '卖出 ' + item.qty + ' 份 · ¥' + item.revenue : '这 30 天没卖出去'}}</view>
+        <view class="dish-sub">{{item.qty ? '卖出 ' + item.qty + ' 份 · ¥' + item.revenue : '这 ' + report.days + ' 天没卖出去'}}</view>
       </view>
       <view
         class="slow-toggle {{item.status === 'soldout' ? 'restore' : ''}} {{slowBusyId === item.id ? 'busy' : ''}}"

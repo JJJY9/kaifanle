@@ -162,7 +162,7 @@ async function route(action, payload, openid) {
     case 'getKitchenStatus':
       return getKitchenStatus()
     case 'getKitchenReport':
-      return getKitchenReport(openid)
+      return getKitchenReport(payload, openid)
     case 'getDishSales':
       return getDishSales(payload, openid)
     case 'getDishStats':
@@ -1029,9 +1029,9 @@ async function getDishSales(payload, openid) {
   return { name, qty, orders, daily }
 }
 
-async function getKitchenReport(openid) {
+async function getKitchenReport(payload, openid) {
   await requireAdmin(openid)
-  const days = 30
+  const days = Number(payload && payload.days) === 7 ? 7 : 30
   const todayStart = chinaStartOfDay()
   const start = todayStart - (days - 1) * 24 * 60 * 60 * 1000
   const res = await db

@@ -2218,6 +2218,14 @@ async function run() {
   assert.ok(res.data.revenue >= 40)
   assert.ok(res.data.topDishes.length >= 1)
   assert.ok(res.data.topDishes[0].qty >= 1)
+  const report30 = res
+  res = await call('getKitchenReport', { days: 7 }, 'admin-openid')
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.days, 7)
+  assert.strictEqual(res.data.daily.length, 7)
+  assert.strictEqual(res.data.startDate, chinaDate(-6))
+  assert.strictEqual(res.data.endDate, chinaDate(0))
+  res = report30
   assert.strictEqual(res.data.minRatedOrders, 2)
   assert.deepStrictEqual(res.data.topRatedDishes, [])
   assert.strictEqual(typeof res.data.repliedRatings, 'number')

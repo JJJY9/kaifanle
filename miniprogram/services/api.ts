@@ -616,11 +616,13 @@ export async function getStats(): Promise<StoreStats> {
   return mock.getStats()
 }
 
-export async function getKitchenReport(): Promise<KitchenReport> {
+export async function getKitchenReport(
+  days = 30
+): Promise<KitchenReport> {
   if (USE_CLOUD) {
-    return callApi<KitchenReport>('getKitchenReport')
+    return callApi<KitchenReport>('getKitchenReport', { days })
   }
-  return mock.getKitchenReport()
+  return mock.getKitchenReport(days)
 }
 
 export async function getKitchenStatus(): Promise<KitchenStatus> {

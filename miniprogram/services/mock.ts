@@ -1962,9 +1962,11 @@ function buildTopRatedDishes(orders: Order[]) {
     }))
 }
 
-export async function getKitchenReport(): Promise<KitchenReport> {
+export async function getKitchenReport(
+  rangeDays = 30
+): Promise<KitchenReport> {
   await delay(80)
-  const days = 30
+  const days = Number(rangeDays) === 7 ? 7 : 30
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const start = today.getTime() - (days - 1) * 24 * 60 * 60 * 1000

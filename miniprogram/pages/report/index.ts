@@ -33,7 +33,8 @@ Page({
     backupBusy: false,
     backupCount: 0,
     backupReady: false,
-    slowBusyId: ''
+    slowBusyId: '',
+    range: 30
   },
 
   _loadSeq: 0,
@@ -51,7 +52,7 @@ Page({
     this.setData({ loading: true, error: '' })
     try {
       const [report, dishes, business] = await Promise.all([
-        getKitchenReport(),
+        getKitchenReport(this.data.range),
         getDishes(),
         getBusiness().catch(() => null)
       ])
@@ -173,6 +174,14 @@ Page({
 
   onRetry() {
     this.load()
+  },
+
+  onRange(e: any) {
+    const range = Number(e.currentTarget.dataset.range) === 7 ? 7 : 30
+    if (range === this.data.range) {
+      return
+    }
+    this.setData({ range }, () => this.load())
   },
 
   onHealthJump(e: any) {
