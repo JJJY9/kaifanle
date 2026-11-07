@@ -3857,6 +3857,23 @@ function chinaDate(offset) {
       Number(data.streakDays) === 1,
     `${data.monthText} · ${data.monthOrders} 单 · 连吃 ${data.streakDays} 天`
   )
+  const footprintShare = await invoke(
+    mp,
+    'return page.onShareAppMessage()'
+  )
+  const footprintTimeline = await invoke(
+    mp,
+    'return page.onShareTimeline()'
+  )
+  check(
+    'mock 干饭足迹分享设置',
+    Boolean(footprintShare) &&
+      String(footprintShare.title || '').indexOf('干饭足迹') > -1 &&
+      footprintShare.path === '/pages/my-report/index' &&
+      Boolean(footprintTimeline) &&
+      String(footprintTimeline.title || '').indexOf('干饭足迹') > -1,
+    footprintShare ? footprintShare.title : '没有分享信息'
+  )
   const earnedAchievements = (data.achievements || []).filter(
     item => item.earned
   )

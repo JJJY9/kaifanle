@@ -309,3 +309,14 @@
   transform: translate(4rpx, 4rpx);
   box-shadow: none;
 }
+
+.foot-btn.share {
+  margin-top: 16rpx;
+  background: #FFD23F;
+  font-size: 24rpx;
+  line-height: 1;
+}
+
+.foot-btn.share::after {
+  border: none;
+}

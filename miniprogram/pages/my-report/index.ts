@@ -326,5 +326,19 @@ Page({
 
   onGoOrders() {
     wx.switchTab({ url: '/pages/orders/index' })
+  },
+
+  onShareAppMessage() {
+    return {
+      title: `我的干饭足迹 · 本月 ${Number(this.data.monthOrders || 0)} 单`,
+      path: '/pages/my-report/index'
+    }
+  },
+
+  onShareTimeline() {
+    return {
+      title: `我的干饭足迹 · 本月 ${Number(this.data.monthOrders || 0)} 单`,
+      query: ''
+    }
   }
 })
