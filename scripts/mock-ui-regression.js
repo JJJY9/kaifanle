@@ -3145,6 +3145,29 @@ function chinaDate(offset) {
       ) > -1,
     `${String(categoryCsv || '').length} 字`
   )
+  await invoke(
+    mp,
+    "page.onCategorySort({ currentTarget: { dataset: { sort: 'qty' } } })"
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  const qtySorted = (data.categoryStats || []).every(
+    (item, index, list) =>
+      index === 0 || Number(list[index - 1].qty) >= Number(item.qty)
+  )
+  check(
+    'mock 月报分类按份数排序',
+    data.categorySort === 'qty' && qtySorted,
+    (data.categoryStats || []).map(item => item.qty).join(' / ')
+  )
+  await invoke(
+    mp,
+    "page.onCategorySort({ currentTarget: { dataset: { sort: 'revenue' } } })"
+  )
+  await sleep(300)
+  page = await current()
+  data = await page.data()
   const firstCategoryStat = (data.categoryStats || [])[0]
   if (firstCategoryStat) {
     await invoke(

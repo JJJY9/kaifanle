@@ -28,6 +28,7 @@ Page({
     maxAmount: 0,
     health: null as any,
     categoryStats: [] as any[],
+    categorySort: 'revenue' as 'revenue' | 'qty',
     categoryExportCount: 0,
     compare: null as any,
     exporting: false,
@@ -153,7 +154,11 @@ Page({
           }
         })
         .filter(item => item.qty > 0)
-        .sort((a, b) => b.revenue - a.revenue)
+        .sort((a, b) =>
+          this.data.categorySort === 'qty'
+            ? b.qty - a.qty || b.revenue - a.revenue
+            : b.revenue - a.revenue || b.qty - a.qty
+        )
       const maxAmount = Math.max(
         0,
         ...(report.daily || []).map(day => day.amount)
@@ -519,6 +524,24 @@ Page({
         icon: 'none'
       })
     }
+  },
+
+  onCategorySort(e: any) {
+    const sort =
+      String((e.currentTarget && e.currentTarget.dataset.sort) || '') === 'qty'
+        ? 'qty'
+        : 'revenue'
+    if (sort === this.data.categorySort) {
+      return
+    }
+    const categoryStats = (this.data.categoryStats || [])
+      .slice()
+      .sort((a: any, b: any) =>
+        sort === 'qty'
+          ? b.qty - a.qty || b.revenue - a.revenue
+          : b.revenue - a.revenue || b.qty - a.qty
+      )
+    this.setData({ categorySort: sort, categoryStats })
   },
 
   onExportCategories() {

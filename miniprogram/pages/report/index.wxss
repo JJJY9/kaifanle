@@ -318,6 +318,26 @@
   font-size: 20rpx;
 }
 
+.category-sort {
+  display: flex;
+  gap: 8rpx;
+}
+
+.category-sort-item {
+  padding: 4rpx 14rpx;
+  background: #EFE9DC;
+  border: 2rpx solid #111111;
+  border-radius: 999rpx;
+  color: #5C5C5C;
+  font-size: 19rpx;
+  font-weight: 800;
+}
+
+.category-sort-item.active {
+  background: #FFD23F;
+  color: #111111;
+}
+
 .category-row {
   display: flex;
   align-items: center;

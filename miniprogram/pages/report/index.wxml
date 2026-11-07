@@ -198,7 +198,18 @@
     <view wx:if="{{categoryStats.length}}" class="category-stats card">
       <view class="compare-head">
         <text class="compare-title">分类表现</text>
-        <text class="compare-sub">{{report.days}} 天</text>
+        <view class="category-sort">
+          <text
+            class="category-sort-item {{categorySort === 'revenue' ? 'active' : ''}}"
+            data-sort="revenue"
+            bindtap="onCategorySort"
+          >营收</text>
+          <text
+            class="category-sort-item {{categorySort === 'qty' ? 'active' : ''}}"
+            data-sort="qty"
+            bindtap="onCategorySort"
+          >份数</text>
+        </view>
       </view>
       <view
         wx:for="{{categoryStats}}"
