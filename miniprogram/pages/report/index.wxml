@@ -228,6 +228,8 @@
     </view>
     <view wx:if="{{categoryStats.length}}" class="dish-export-btn" bindtap="onExportCategories">复制分类表现 CSV</view>
     <view wx:if="{{categoryStats.length}}" class="dish-export-btn" bindtap="onExportCategoriesFile">{{categoriesFileBusy ? '生成中…' : '分享分类表现 CSV 文件'}}</view>
+    <view wx:if="{{categoryStats.length}}" class="dish-export-btn" bindtap="onMakeCategoryPoster">{{categoryPosterMaking ? '生成中…' : '生成分类表现图片'}}</view>
+    <view wx:if="{{categoryPosterPath}}" class="export-hint" bindtap="onPreviewCategoryPoster">分类图已生成，点这里分享 ›</view>
     <view wx:if="{{categoryExportCount}}" class="export-hint">已复制 {{categoryExportCount}} 个分类，可以直接粘贴到表格</view>
     <view wx:if="{{categoriesFileReady}}" class="export-hint">CSV 文件已生成，可通过微信发送或保存</view>
 
@@ -315,3 +317,4 @@
     </view>
   </block>
 </view>
+<canvas type="2d" id="categoryPoster" class="category-poster-canvas"></canvas>

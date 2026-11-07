@@ -32,6 +32,8 @@ Page({
     categoryExportCount: 0,
     categoriesFileBusy: false,
     categoriesFileReady: false,
+    categoryPosterMaking: false,
+    categoryPosterPath: '',
     compare: null as any,
     exporting: false,
     exportCount: 0,
@@ -630,6 +632,132 @@ Page({
         icon: 'none'
       })
     }
+  },
+
+  async onMakeCategoryPoster() {
+    if (this.data.categoryPosterMaking) {
+      return
+    }
+    const rows = this.data.categoryStats || []
+    if (!rows.length) {
+      wx.showToast({ title: '当前区间没有分类数据', icon: 'none' })
+      return
+    }
+    this.setData({ categoryPosterMaking: true })
+    try {
+      const canvas: any = await new Promise((resolve, reject) => {
+        wx.createSelectorQuery()
+          .in(this)
+          .select('#categoryPoster')
+          .fields({ node: true, size: true })
+          .exec(res => {
+            const node = res && res[0] && res[0].node
+            if (node) {
+              resolve(node)
+            } else {
+              reject(new Error('画布还没准备好'))
+            }
+          })
+      })
+      const dpr = (wx.getWindowInfo && wx.getWindowInfo().pixelRatio) || 2
+      const width = 600
+      const height = Math.max(700, 220 + rows.length * 78 + 180)
+      canvas.width = width * dpr
+      canvas.height = height * dpr
+      const ctx = canvas.getContext('2d')
+      ctx.scale(dpr, dpr)
+
+      ctx.fillStyle = '#FFFDF6'
+      ctx.fillRect(0, 0, width, height)
+      ctx.strokeStyle = '#111111'
+      ctx.lineWidth = 8
+      ctx.strokeRect(24, 24, width - 48, height - 48)
+
+      ctx.fillStyle = '#2D9CFF'
+      ctx.fillRect(24, 24, width - 48, 132)
+      ctx.fillStyle = '#FFFFFF'
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'middle'
+      ctx.font = 'bold 38px "PingFang SC", sans-serif'
+      ctx.fillText('张饱饭堂 · 分类表现', 48, 76)
+      ctx.font = '23px "PingFang SC", sans-serif'
+      ctx.fillText(`近 ${this.data.report ? this.data.report.days : 30} 天`, 48, 120)
+
+      const maxRevenue = Math.max(
+        1,
+        ...rows.map((row: any) => Number(row.revenue || 0))
+      )
+      rows.forEach((row: any, index: number) => {
+        const y = 190 + index * 78
+        ctx.fillStyle = index % 2 === 0 ? '#F7F4EA' : '#FFFDF6'
+        ctx.fillRect(40, y, width - 80, 70)
+        ctx.fillStyle = '#111111'
+        ctx.textAlign = 'left'
+        ctx.font = 'bold 26px "PingFang SC", sans-serif'
+        ctx.fillText(String(row.name || ''), 48, y + 26)
+        ctx.fillStyle = '#5C5C5C'
+        ctx.font = '19px "PingFang SC", sans-serif'
+        const detail = [`${row.qty} 份`, `¥${row.revenue}`]
+        if (row.profit !== null && row.profit !== undefined) {
+          detail.push(`毛利 ¥${row.profit} · ${row.margin}%`)
+        }
+        ctx.fillText(detail.join(' · '), 48, y + 52)
+        const barWidth = Math.max(
+          6,
+          Math.round((Number(row.revenue || 0) / maxRevenue) * 180)
+        )
+        ctx.fillStyle = '#FFD23F'
+        ctx.fillRect(width - 48 - barWidth, y + 18, barWidth, 16)
+        ctx.strokeStyle = '#111111'
+        ctx.lineWidth = 2
+        ctx.strokeRect(width - 48 - barWidth, y + 18, barWidth, 16)
+      })
+
+      ctx.fillStyle = '#8C8C8C'
+      ctx.font = '20px "PingFang SC", sans-serif'
+      ctx.textAlign = 'left'
+      ctx.fillText('她点单，你掌勺', 48, height - 48)
+      ctx.textAlign = 'right'
+      ctx.fillText('开饭咯', width - 48, height - 48)
+
+      const path: string = await new Promise((resolve, reject) => {
+        wx.canvasToTempFilePath({
+          canvas,
+          destWidth: canvas.width,
+          destHeight: canvas.height,
+          success: res => resolve(res.tempFilePath),
+          fail: reject
+        } as any)
+      })
+      this.setData({
+        categoryPosterMaking: false,
+        categoryPosterPath: path
+      })
+      wx.showToast({ title: '分类图已生成', icon: 'none' })
+    } catch (e: any) {
+      this.setData({ categoryPosterMaking: false })
+      wx.showToast({
+        title: String((e && e.message) || '生成失败').slice(0, 40),
+        icon: 'none'
+      })
+    }
+  },
+
+  onPreviewCategoryPoster() {
+    const path = this.data.categoryPosterPath
+    if (!path) {
+      return
+    }
+    if (typeof (wx as any).showShareImageMenu === 'function') {
+      ;(wx as any).showShareImageMenu({
+        path,
+        fail: () => {
+          wx.previewImage({ urls: [path] })
+        }
+      })
+      return
+    }
+    wx.previewImage({ urls: [path] })
   },
 
   onExportDishes() {
