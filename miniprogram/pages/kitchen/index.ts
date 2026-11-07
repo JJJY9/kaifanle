@@ -1994,11 +1994,24 @@ Page({
     const prep = Object.keys(dishMap)
       .map(name => `${name}×${dishMap[name]}`)
       .join('，')
+    const goalText =
+      this.data.dailyGoal > 0
+        ? revenue >= this.data.dailyGoal
+          ? `目标 ¥${this.data.dailyGoal} · 已达成`
+          : `目标 ¥${this.data.dailyGoal} · 还差 ¥${Number(
+              (this.data.dailyGoal - revenue).toFixed(2)
+            )}`
+        : ''
+    const specialText = (this.data.specialDays || [])
+      .map(day => `${day.label}${day.daysText}`)
+      .join('，')
     const text = [
       `【张饱饭堂】${formatDate(Date.now())} 订单汇总`,
       `共 ${valid.length} 单 · 营收 ¥${revenue}`,
+      goalText,
       ...lines,
-      prep ? `备菜：${prep}` : ''
+      prep ? `备菜：${prep}` : '',
+      specialText ? `提醒：${specialText}` : ''
     ]
       .filter(Boolean)
       .join('\n')

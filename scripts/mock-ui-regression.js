@@ -2542,6 +2542,20 @@ function chinaDate(offset) {
       data.specialDaysError === '',
     specialRows.map(day => `${day.label}${day.daysText}`).join(' / ')
   )
+  await invoke(mp, 'page.onCopySummary()')
+  await sleep(600)
+  const orderSummaryClip = await mp.evaluate(
+    new Function(
+      "return new Promise(resolve => wx.getClipboardData({ success: r => resolve(r.data || ''), fail: () => resolve('') }))"
+    )
+  )
+  check(
+    'mock 厨房订单汇总含目标与提醒',
+    orderSummaryClip.indexOf('目标 ¥200') > -1 &&
+      orderSummaryClip.indexOf('提醒：') > -1 &&
+      orderSummaryClip.indexOf('生日') > -1,
+    `${String(orderSummaryClip || '').length} 字`
+  )
 
   const failed = results.filter(r => !r.ok)
   console.log(`\n结论：${results.length - failed.length}/${results.length} 通过`)
