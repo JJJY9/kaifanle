@@ -905,6 +905,37 @@ function chinaDate(offset) {
     "page.onHistoryRating({ currentTarget: { dataset: { rating: 'all' } } })"
   )
   await sleep(300)
+  await invoke(mp, "page.onHistorySearch({ detail: { value: '001' } })")
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 厨房历史搜索',
+    (data.historyView || []).length >= 1 &&
+      data.historyView.every(order => String(order.no).indexOf('001') > -1),
+    `${(data.historyView || []).length} 单`
+  )
+  await invoke(mp, 'page.onClearHistorySearch()')
+  await sleep(300)
+  await invoke(
+    mp,
+    "page.onHistoryMeal({ currentTarget: { dataset: { meal: 'lunch' } } })"
+  )
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 厨房历史餐次筛选',
+    data.historyMeal === 'lunch' &&
+      (data.historyView || []).length > 0 &&
+      data.historyView.every(order => order.meal === 'lunch'),
+    `${(data.historyView || []).length} 单午餐`
+  )
+  await invoke(
+    mp,
+    "page.onHistoryMeal({ currentTarget: { dataset: { meal: 'all' } } })"
+  )
+  await sleep(300)
   await invoke(mp, 'page.onToggleHistoryAll()')
   await sleep(200)
   await invoke(mp, 'page.onTogglePreorders()')

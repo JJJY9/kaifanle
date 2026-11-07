@@ -336,9 +336,25 @@
       </view>
     </view>
     <block wx:if="{{showHistory}}">
+      <view class="history-search">
+        <text class="history-search-icon">🔍</text>
+        <input
+          class="history-search-input"
+          placeholder="搜单号 / 菜名 / 备注"
+          value="{{historyKeyword}}"
+          bindinput="onHistorySearch"
+        />
+        <view wx:if="{{historyKeyword}}" class="history-search-clear" bindtap="onClearHistorySearch">×</view>
+      </view>
       <view class="history-filter">
         <view class="history-chip {{!historyOnlyPending ? 'active' : ''}}" data-only="all" bindtap="onHistoryFilter">全部</view>
         <view class="history-chip {{historyOnlyPending ? 'active' : ''}}" data-only="pending" bindtap="onHistoryFilter">待回复 {{todo.replies}}</view>
+      </view>
+      <view class="history-filter range">
+        <view class="history-chip {{historyMeal === 'all' ? 'active' : ''}}" data-meal="all" bindtap="onHistoryMeal">全部餐次</view>
+        <view class="history-chip {{historyMeal === 'breakfast' ? 'active' : ''}}" data-meal="breakfast" bindtap="onHistoryMeal">早餐</view>
+        <view class="history-chip {{historyMeal === 'lunch' ? 'active' : ''}}" data-meal="lunch" bindtap="onHistoryMeal">午餐</view>
+        <view class="history-chip {{historyMeal === 'dinner' ? 'active' : ''}}" data-meal="dinner" bindtap="onHistoryMeal">晚餐</view>
       </view>
       <view class="history-filter range">
         <view class="history-chip {{historyRange === 'today' ? 'active' : ''}}" data-range="today" bindtap="onHistoryRange">今天</view>

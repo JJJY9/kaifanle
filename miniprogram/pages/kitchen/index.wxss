@@ -891,6 +891,41 @@
   margin-bottom: 14rpx;
 }
 
+.history-search {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  height: 68rpx;
+  padding: 0 18rpx;
+  margin-bottom: 12rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+}
+
+.history-search-icon {
+  font-size: 22rpx;
+}
+
+.history-search-input {
+  flex: 1;
+  height: 68rpx;
+  font-size: 24rpx;
+}
+
+.history-search-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36rpx;
+  height: 36rpx;
+  background: #EFE9DC;
+  border-radius: 999rpx;
+  color: #5C5C5C;
+  font-size: 26rpx;
+  line-height: 1;
+}
+
 .history-filter.range {
   margin-top: -4rpx;
   flex-wrap: wrap;

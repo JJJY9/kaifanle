@@ -76,6 +76,8 @@ Page({
     historyOnlyPending: false,
     historyRange: 'all' as 'all' | 'today' | 'week',
     historyRating: 'all' as 'all' | 'good' | 'neutral' | 'bad',
+    historyMeal: 'all' as 'all' | 'breakfast' | 'lunch' | 'dinner',
+    historyKeyword: '',
     historyView: [] as any[],
     historyAll: false,
     receiptVisible: false,
@@ -1888,7 +1890,32 @@ Page({
               Number(order.rating) ===
               (rating === 'good' ? 3 : rating === 'neutral' ? 2 : 1)
           )
-    return rated.slice(0, this.data.historyAll ? 100 : 10)
+    const meal = this.data.historyMeal
+    const withMeal =
+      meal === 'all'
+        ? rated
+        : rated.filter(order => order.meal === meal)
+    const keyword = String(this.data.historyKeyword || '')
+      .trim()
+      .toLowerCase()
+    const matched = keyword
+      ? withMeal.filter(order => {
+          const haystack = [
+            order.no,
+            order.summary,
+            order.note,
+            order.address,
+            order.feedback,
+            order.ownerReply,
+            ...(order.items || []).map((item: any) => item.name)
+          ]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase()
+          return haystack.indexOf(keyword) > -1
+        })
+      : withMeal
+    return matched.slice(0, this.data.historyAll ? 100 : 10)
   },
 
   applyHistoryFilter() {
@@ -1927,6 +1954,29 @@ Page({
     this.setData({ historyRating: rating }, () => this.applyHistoryFilter())
   },
 
+  onHistoryMeal(e: any) {
+    const raw = String(e.currentTarget.dataset.meal || '')
+    const meal =
+      raw === 'breakfast' || raw === 'lunch' || raw === 'dinner'
+        ? raw
+        : 'all'
+    if (meal === this.data.historyMeal) {
+      return
+    }
+    this.setData({ historyMeal: meal }, () => this.applyHistoryFilter())
+  },
+
+  onHistorySearch(e: any) {
+    this.setData(
+      { historyKeyword: String(e.detail.value || '') },
+      () => this.applyHistoryFilter()
+    )
+  },
+
+  onClearHistorySearch() {
+    this.setData({ historyKeyword: '' }, () => this.applyHistoryFilter())
+  },
+
   onTodoTap(e: any) {
     const target = e.currentTarget.dataset.target
     if (target === 'replies') {
@@ -1935,7 +1985,9 @@ Page({
           showHistory: true,
           historyOnlyPending: true,
           historyRange: 'all',
-          historyRating: 'all'
+          historyRating: 'all',
+          historyMeal: 'all',
+          historyKeyword: ''
         },
         () => {
           this.applyHistoryFilter()
