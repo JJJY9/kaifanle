@@ -21,6 +21,7 @@ import type {
   MeInfo,
   MyStats,
   Order,
+  OrderMessage,
   OrderStatus,
   SpecialDays,
   StockLog,
@@ -431,6 +432,20 @@ export async function updateOrderNote(
     return callApi<Order | null>('updateOrderNote', { id, note })
   }
   return mock.updateOrderNote(id, note)
+}
+
+export async function sendOrderMessage(
+  id: string,
+  content: string
+): Promise<OrderMessage> {
+  if (USE_CLOUD) {
+    const res = await callApi<{ message: OrderMessage }>('sendOrderMessage', {
+      id,
+      content
+    })
+    return res.message
+  }
+  return mock.sendOrderMessage(id, content)
 }
 
 export async function updateOrderSlot(

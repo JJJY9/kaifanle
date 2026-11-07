@@ -1,5 +1,5 @@
 import type { Dish, Order, OrderStatus } from '../../services/types'
-import { getOrder, cancelOrder, getDishes, getKitchenStatus, urgeOrder, rateOrder, updateOrderNote, updateOrderSlot } from '../../services/api'
+import { getOrder, cancelOrder, getDishes, getKitchenStatus, urgeOrder, rateOrder, sendOrderMessage, updateOrderNote, updateOrderSlot } from '../../services/api'
 import { addOrderToCart } from '../../utils/reorder'
 import { orderReceiptLines, receiptText } from '../../utils/receipt'
 import { prepareImageForUpload } from '../../utils/image'
@@ -46,6 +46,9 @@ Page({
     todayDate: '',
     maxDate: '',
     slotSaving: false,
+    messageDraft: '',
+    messages: [] as any[],
+    sendingMessage: false,
     submittingRating: false,
     ratingOptions: [
       { value: 3, emoji: '😋', label: '好吃' },
@@ -151,6 +154,12 @@ Page({
           }
         }
       }
+      const messages = (order.messages || []).map((message, index) => ({
+        ...message,
+        key: message.id || `${index}-${message.at}`,
+        roleText: message.role === 'admin' ? '掌勺人' : '她',
+        timeText: `${formatDate(message.at)} ${formatTime(message.at)}`
+      }))
       const profile = order.profile
       const profileText =
         profile && (profile.dislikes.length || profile.tastes.length)
@@ -193,6 +202,7 @@ Page({
           }))
         },
         steps: this.buildSteps(order),
+        messages,
         statusText: STATUS_TEXT[order.status],
         queueText,
         rating: Number(order.rating || 0),
@@ -234,6 +244,34 @@ Page({
   onRetry() {
     this.setData({ loading: true })
     this.load()
+  },
+
+  onMessageInput(e: any) {
+    this.setData({ messageDraft: String(e.detail.value || '') })
+  },
+
+  async onSendMessage() {
+    if (this.data.sendingMessage) {
+      return
+    }
+    const content = String(this.data.messageDraft || '').trim()
+    if (!content) {
+      wx.showToast({ title: '说点什么吧', icon: 'none' })
+      return
+    }
+    this.setData({ sendingMessage: true })
+    try {
+      await sendOrderMessage(this.orderId, content)
+      this.setData({ messageDraft: '' })
+      await this.load(true)
+    } catch (e: any) {
+      wx.showToast({
+        title: String((e && e.message) || '发送失败').slice(0, 40),
+        icon: 'none'
+      })
+    } finally {
+      this.setData({ sendingMessage: false })
+    }
   },
 
   onPullDownRefresh() {

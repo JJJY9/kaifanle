@@ -17,6 +17,7 @@ import type {
   MeInfo,
   MyStats,
   Order,
+  OrderMessage,
   OrderStatus,
   SpecialDays,
   StockLog,
@@ -1294,6 +1295,32 @@ export async function updateOrderNote(
   order.noteUpdatedAt = Date.now()
   saveOrders()
   return { ...order }
+}
+
+export async function sendOrderMessage(
+  id: string,
+  content: string
+): Promise<OrderMessage> {
+  await delay(60)
+  const order = loadOrders().find(item => item.id === id)
+  if (!order) {
+    throw new Error('订单不存在')
+  }
+  const text = Array.from(String(content || '').trim())
+    .slice(0, 100)
+    .join('')
+  if (!text) {
+    throw new Error('说点什么吧')
+  }
+  const message: OrderMessage = {
+    id: `msg${Date.now()}${Math.floor(Math.random() * 1000)}`,
+    role: 'customer',
+    content: text,
+    at: Date.now()
+  }
+  order.messages = (order.messages || []).slice(-49).concat([message])
+  saveOrders()
+  return { ...message }
 }
 
 export async function updateOrderSlot(

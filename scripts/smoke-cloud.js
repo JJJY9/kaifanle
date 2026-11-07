@@ -668,6 +668,37 @@ async function run() {
   assert.strictEqual(created.data.status, 'pending')
   assert.strictEqual(created.data.no, '001')
 
+  // 订单留言：双方可发，外人不行，内容留存在订单里
+  res = await call(
+    'sendOrderMessage',
+    { id: created.data.id, content: '记得少放辣' },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.message.role, 'customer')
+  res = await call(
+    'sendOrderMessage',
+    { id: created.data.id, content: '收到，马上做' },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.message.role, 'admin')
+  res = await call('getOrder', { id: created.data.id }, 'girl-openid')
+  assert.strictEqual(res.data.messages.length, 2)
+  assert.strictEqual(res.data.messages[0].content, '记得少放辣')
+  res = await call(
+    'sendOrderMessage',
+    { id: created.data.id, content: '我也要说' },
+    'stranger-openid'
+  )
+  assert.strictEqual(res.ok, false)
+  res = await call(
+    'sendOrderMessage',
+    { id: created.data.id, content: '   ' },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, false)
+
   // 新订单通知发给管理员
   assert.strictEqual(sentMessages.length, 1)
   assert.strictEqual(sentMessages[0].touser, 'admin-openid')

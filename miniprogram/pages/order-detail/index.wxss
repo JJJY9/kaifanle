@@ -365,6 +365,80 @@
   font-weight: 700;
 }
 
+.message-empty {
+  padding: 12rpx 0 4rpx;
+  color: #8C8C8C;
+  font-size: 22rpx;
+}
+
+.message-row {
+  display: flex;
+  margin-top: 14rpx;
+}
+
+.message-row.admin {
+  justify-content: flex-end;
+}
+
+.message-bubble {
+  max-width: 82%;
+  padding: 12rpx 16rpx;
+  background: #F4EFE3;
+  border: 2rpx solid #111111;
+  border-radius: 18rpx;
+}
+
+.message-row.admin .message-bubble {
+  background: #FFF7DA;
+}
+
+.message-meta {
+  color: #8C8C8C;
+  font-size: 18rpx;
+}
+
+.message-text {
+  margin-top: 4rpx;
+  font-size: 24rpx;
+  line-height: 1.45;
+  word-break: break-all;
+}
+
+.message-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  margin-top: 18rpx;
+}
+
+.message-input {
+  flex: 1;
+  height: 68rpx;
+  padding: 0 16rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+}
+
+.message-send {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 64rpx;
+  padding: 0 22rpx;
+  background: #FF6B35;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  box-shadow: 3rpx 3rpx 0 #111111;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
+.message-send.disabled {
+  opacity: 0.5;
+}
+
 .item-price {
   font-family: 'SmileySans', 'PingFang SC', sans-serif;
   font-size: 28rpx;

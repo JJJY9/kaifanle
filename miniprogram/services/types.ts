@@ -99,6 +99,13 @@ export interface TimelineEntry {
   time: number
 }
 
+export interface OrderMessage {
+  id: string
+  role: 'customer' | 'admin'
+  content: string
+  at: number
+}
+
 export interface Order {
   id: string
   no: string
@@ -118,6 +125,7 @@ export interface Order {
   }
   status: OrderStatus
   timeline: TimelineEntry[]
+  messages?: OrderMessage[]
   createdAt: number
   urgedAt?: number
   urgeCount?: number

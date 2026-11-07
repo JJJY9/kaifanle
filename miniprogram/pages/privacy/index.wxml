@@ -6,12 +6,12 @@
 
   <view class="card block">
     <view class="block-title">会收集什么</view>
-    <view class="p">微信 openid（用来区分是谁在下单）、口味与忌口、常用地址、生日与纪念日（只用于重要日子提醒）、订单备注、订单评价与掌勺人回复、许愿内容、菜品偏好。</view>
+    <view class="p">微信 openid（用来区分是谁在下单）、口味与忌口、常用地址、生日与纪念日（只用于重要日子提醒）、订单备注、订单留言、订单评价与掌勺人回复、许愿内容、菜品偏好。</view>
   </view>
 
   <view class="card block">
     <view class="block-title">用来做什么</view>
-    <view class="p">完成点单和备餐、把忌口和地址带进订单、在出锅时提醒你，并在生日/纪念日前提醒掌勺人提前准备。不会用于广告，也不会卖给任何第三方。</view>
+    <view class="p">完成点单和备餐、和掌勺人沟通订单细节、把忌口和地址带进订单、在出锅时提醒你，并在生日/纪念日前提醒掌勺人提前准备。不会用于广告，也不会卖给任何第三方。</view>
   </view>
 
   <view class="card block">

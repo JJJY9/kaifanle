@@ -2449,6 +2449,23 @@ function chinaDate(offset) {
       String(data.queueText || '').length > 0,
     data.queueText
   )
+  await invoke(
+    mp,
+    "page.onMessageInput({ detail: { value: '记得少放辣' } })"
+  )
+  await invoke(mp, 'page.onSendMessage()')
+  await sleep(1200)
+  page = await current()
+  data = await page.data()
+  const messageEl = await page.$('.message-text')
+  const messageText = messageEl ? await messageEl.text() : ''
+  check(
+    'mock 订单留言',
+    (data.messages || []).some(message => message.content === '记得少放辣') &&
+      data.messageDraft === '' &&
+      messageText.indexOf('记得少放辣') > -1,
+    messageText || '没有留言'
+  )
   await mp.mockWxMethod('showModal', {
     confirm: true,
     cancel: false,

@@ -124,6 +124,8 @@ async function route(action, payload, openid) {
       return cancelOrder(payload, openid)
     case 'updateOrderNote':
       return updateOrderNote(payload, openid)
+    case 'sendOrderMessage':
+      return sendOrderMessage(payload, openid)
     case 'updateOrderSlot':
       return updateOrderSlot(payload, openid)
     case 'urgeOrder':
@@ -2725,6 +2727,50 @@ async function updateOrderNote(payload, openid) {
     throw new Error('订单状态刚刚变了，刷新看看')
   }
   return withId(Object.assign({}, order, data))
+}
+
+// 订单留言：顾客和掌勺人都能在订单里留一句，最多保留最近 50 条
+async function sendOrderMessage(payload, openid) {
+  const id = String((payload && payload.id) || '')
+  if (!id) {
+    throw new Error('缺少订单 ID')
+  }
+  const content = Array.from(String((payload && payload.content) || '').trim())
+    .slice(0, 100)
+    .join('')
+  if (!content) {
+    throw new Error('说点什么吧')
+  }
+  let order
+  try {
+    const res = await db.collection('orders').doc(id).get()
+    order = res.data
+  } catch (e) {
+    if (isMissingDocError(e)) {
+      throw new Error('订单不存在')
+    }
+    throw e
+  }
+  const admin = await isAdminOpenid(openid)
+  if (!admin && order._openid !== openid) {
+    throw new Error('只能在自己的订单里留言')
+  }
+  await checkContentSafety(openid, content)
+  const role = admin ? 'admin' : 'customer'
+  const message = {
+    id: `msg${Date.now()}${Math.floor(Math.random() * 1000)}`,
+    role,
+    content,
+    at: Date.now()
+  }
+  const messages = (Array.isArray(order.messages) ? order.messages : [])
+    .slice(-49)
+    .concat([message])
+  await db
+    .collection('orders')
+    .doc(id)
+    .update({ data: { messages } })
+  return { message }
 }
 
 // 顾客改餐次/日期：仅未接单时，重新校验营业状态与菜单供应
