@@ -2672,6 +2672,7 @@ function chinaDate(offset) {
         collapsedGroupRows[0].collapsed === true &&
         (data.displayOrders || []).length ===
           groupBeforeCount - (firstOrderGroup.groupCount || 1) + 1 &&
+        /^\d{2}-\d{2}$/.test(firstOrderGroup.groupDateText || '') &&
         storedCollapsedDates[firstOrderGroup.groupKey] === true,
       `${firstOrderGroup.dateText} · ${firstOrderGroup.groupCount} 单`
     )

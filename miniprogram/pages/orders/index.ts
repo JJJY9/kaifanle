@@ -138,6 +138,10 @@ Page({
       groupKey:
         order.scheduledDate ||
         dateInputString(new Date(order.createdAt)),
+      groupDateText: (
+        order.scheduledDate ||
+        dateInputString(new Date(order.createdAt))
+      ).slice(5),
       dateText: dateLabel(
         order.scheduledDate || dateInputString(new Date(order.createdAt))
       ),
