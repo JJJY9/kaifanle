@@ -83,6 +83,7 @@
       <view class="item-left">
         <view class="item-name">{{item.name}} <text class="item-qty">×{{item.qty}}</text></view>
         <view wx:if="{{item.specText}}" class="item-spec">{{item.specText}}</view>
+        <view wx:if="{{item.allergens && item.allergens.length}}" class="item-allergen">含：{{item.allergens}}</view>
         <view wx:if="{{item.note}}" class="item-spec">备注：{{item.note}}</view>
       </view>
       <text class="item-price">¥{{item.lineTotal}}</text>

@@ -346,6 +346,18 @@
   font-size: 22rpx;
 }
 
+.item-allergen {
+  display: inline-block;
+  margin-top: 6rpx;
+  padding: 2rpx 12rpx;
+  background: #FFF1F6;
+  border: 2rpx solid #FF5C8A;
+  border-radius: 999rpx;
+  color: #8A2D4A;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
 .item-price {
   font-family: 'SmileySans', 'PingFang SC', sans-serif;
   font-size: 28rpx;

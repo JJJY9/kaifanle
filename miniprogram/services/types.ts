@@ -90,6 +90,7 @@ export interface OrderItem {
   qty: number
   specs: string[]
   note: string
+  allergens?: string[]
 }
 
 export interface TimelineEntry {

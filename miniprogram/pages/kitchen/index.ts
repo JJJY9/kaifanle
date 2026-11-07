@@ -456,7 +456,11 @@ Page({
             const list: string[] = []
             order.items.forEach((item: any) => {
               const dish = dishById[item.dishId]
-              ;((dish && dish.allergens) || []).forEach((name: string) => {
+              const allergens =
+                Array.isArray(item.allergens) && item.allergens.length
+                  ? item.allergens
+                  : (dish && dish.allergens) || []
+              allergens.forEach((name: string) => {
                 if (name && !seen[name]) {
                   seen[name] = true
                   list.push(name)

@@ -2485,6 +2485,9 @@ async function createOrder(payload, openid) {
         qty,
         specs,
         note,
+        allergens: Array.isArray(dish.allergens)
+          ? dish.allergens.slice(0, 8)
+          : [],
         stockDeducted
       })
       amount += unitPrice * qty

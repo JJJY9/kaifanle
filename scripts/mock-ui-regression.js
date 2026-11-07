@@ -2086,6 +2086,16 @@ function chinaDate(offset) {
     Boolean(data.order) && data.order.status === 'completed',
     data.order && data.order.status
   )
+  check(
+    'mock 订单详情过敏原',
+    Boolean(data.order) &&
+      (data.order.items || []).some(
+        item =>
+          Array.isArray(item.allergens) &&
+          item.allergens.indexOf('花生') > -1
+      ),
+    data.order ? '含花生' : '没找到订单'
+  )
   if (data.order && data.order.status === 'completed') {
     const feedbackText = `回归评价 ${Date.now()}`
     await invoke(

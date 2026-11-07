@@ -638,6 +638,15 @@ async function run() {
   res = await call('getDishes', {}, 'admin-openid')
   assert.ok(!res.data.some(dish => dish.id === createdDishId))
 
+  const d01ForAllergy = await call('getDish', { id: 'd01' }, 'admin-openid')
+  res = await call(
+    'saveDish',
+    { ...d01ForAllergy.data, allergens: ['花生'] },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.deepStrictEqual(res.data.allergens, ['花生'])
+
   const created = await call(
     'createOrder',
     {
@@ -655,6 +664,7 @@ async function run() {
   assert.strictEqual(created.data._openid, undefined)
   assert.strictEqual(created.data.amount, 40)
   assert.strictEqual(created.data.items[0].price, 20)
+  assert.deepStrictEqual(created.data.items[0].allergens, ['花生'])
   assert.strictEqual(created.data.status, 'pending')
   assert.strictEqual(created.data.no, '001')
 

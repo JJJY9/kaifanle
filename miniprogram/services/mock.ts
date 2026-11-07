@@ -599,7 +599,8 @@ function seedOrders(): Order[] {
           price: 18,
           qty: 1,
           specs: ['微辣'],
-          note: ''
+          note: '',
+          allergens: ['花生']
         }
       ],
       amount: 18,
@@ -1182,6 +1183,7 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
     return {
       ...item,
       cost: Math.max(0, Math.min(999, Number(dish.cost) || 0)),
+      allergens: (dish.allergens || []).slice(0, 8),
       stockDeducted: limited
     }
   })
