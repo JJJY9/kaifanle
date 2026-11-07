@@ -81,16 +81,25 @@
   <view class="block card">
     <view class="block-title">留言</view>
     <view wx:if="{{!messages.length}}" class="message-empty">想说的话可以留在这里</view>
-    <view
-      wx:for="{{messages}}"
-      wx:key="key"
-      class="message-row {{item.role}}"
+    <scroll-view
+      wx:else
+      class="message-list {{messages.length > 3 ? 'scroll' : ''}}"
+      scroll-y
+      scroll-into-view="{{messageAnchor}}"
+      scroll-with-animation
     >
-      <view class="message-bubble">
-        <view class="message-meta">{{item.roleText}} · {{item.timeText}}</view>
-        <view class="message-text">{{item.content}}</view>
+      <view
+        wx:for="{{messages}}"
+        wx:key="key"
+        id="msg-{{index}}"
+        class="message-row {{item.role}}"
+      >
+        <view class="message-bubble">
+          <view class="message-meta">{{item.roleText}} · {{item.timeText}}</view>
+          <view class="message-text">{{item.content}}</view>
+        </view>
       </view>
-    </view>
+    </scroll-view>
     <view wx:if="{{order.status !== 'cancelled'}}" class="message-presets">
       <view
         wx:for="{{messagePresets}}"

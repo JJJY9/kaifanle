@@ -48,6 +48,7 @@ Page({
     slotSaving: false,
     messageDraft: '',
     messages: [] as any[],
+    messageAnchor: '',
     messagePresets: ['少放辣', '多放饭', '快好了吗', '谢谢啦'],
     sendingMessage: false,
     submittingRating: false,
@@ -155,12 +156,18 @@ Page({
           }
         }
       }
-      const messages = (order.messages || []).map((message, index) => ({
-        ...message,
-        key: message.id || `${index}-${message.at}`,
-        roleText: message.role === 'admin' ? '掌勺人' : '她',
-        timeText: `${formatDate(message.at)} ${formatTime(message.at)}`
-      }))
+      const messages = (order.messages || [])
+        .slice()
+        .sort((a, b) => Number(a.at || 0) - Number(b.at || 0))
+        .map((message, index) => ({
+          ...message,
+          key: message.id || `${index}-${message.at}`,
+          roleText: message.role === 'admin' ? '掌勺人' : '她',
+          timeText: `${formatDate(message.at)} ${formatTime(message.at)}`
+        }))
+      const messageAnchor = messages.length
+        ? `msg-${messages.length - 1}`
+        : ''
       const profile = order.profile
       const profileText =
         profile && (profile.dislikes.length || profile.tastes.length)
@@ -204,6 +211,7 @@ Page({
         },
         steps: this.buildSteps(order),
         messages,
+        messageAnchor,
         statusText: STATUS_TEXT[order.status],
         queueText,
         rating: Number(order.rating || 0),
@@ -276,9 +284,11 @@ Page({
         roleText: message.role === 'admin' ? '掌勺人' : '她',
         timeText: `${formatDate(message.at)} ${formatTime(message.at)}`
       }
+      const nextMessages = (this.data.messages || []).concat([view])
       this.setData({
         messageDraft: '',
-        messages: (this.data.messages || []).concat([view])
+        messages: nextMessages,
+        messageAnchor: `msg-${nextMessages.length - 1}`
       })
     } catch (e: any) {
       wx.showToast({

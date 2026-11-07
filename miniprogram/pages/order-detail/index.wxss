@@ -371,6 +371,14 @@
   font-size: 22rpx;
 }
 
+.message-list {
+  width: 100%;
+}
+
+.message-list.scroll {
+  height: 400rpx;
+}
+
 .message-row {
   display: flex;
   margin-top: 14rpx;

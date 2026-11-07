@@ -2570,6 +2570,7 @@ function chinaDate(offset) {
     'mock 订单留言',
     (data.messages || []).some(message => message.content === '记得少放辣') &&
       data.messageDraft === '' &&
+      data.messageAnchor === `msg-${(data.messages || []).length - 1}` &&
       messageText.indexOf('记得少放辣') > -1,
     messageText || '没有留言'
   )
