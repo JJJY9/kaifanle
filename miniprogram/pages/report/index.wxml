@@ -75,6 +75,17 @@
       </view>
     </view>
 
+    <view wx:if="{{monthlyGoal > 0}}" class="month-goal-card card">
+      <view class="month-goal-head">
+        <text class="month-goal-title">本月营收目标</text>
+        <text class="month-goal-amount">¥{{report.monthRevenue}} / ¥{{monthlyGoal}}</text>
+      </view>
+      <view class="month-goal-track">
+        <view class="month-goal-fill" style="width: {{monthGoalPercent}}%;"></view>
+      </view>
+      <view class="month-goal-text">{{monthGoalText}}</view>
+    </view>
+
     <view wx:if="{{health}}" class="health-card card">
       <view class="health-head">
         <text class="health-title">数据体检</text>

@@ -1603,7 +1603,7 @@ function chinaDate(offset) {
   )
   await invoke(
     mp,
-    "page.setData({ notice: '今天只有一锅炖菜', noticeFrom: '2000-01-01', recommendText: '雨天暖胃', noticeUntil: '2099-01-01', dailyGoal: '200' })"
+    "page.setData({ notice: '今天只有一锅炖菜', noticeFrom: '2000-01-01', recommendText: '雨天暖胃', noticeUntil: '2099-01-01', dailyGoal: '200', monthlyGoal: '5000' })"
   )
   await invoke(mp, 'page.onSave()')
   await sleep(1000)
@@ -2332,6 +2332,22 @@ function chinaDate(offset) {
       Number(data.report.costStats.profit) === 24 &&
       Number(data.report.costStats.margin) === 67,
     `¥${data.report.costStats.revenue} - ¥${data.report.costStats.cost} = ¥${data.report.costStats.profit} · ${data.report.costStats.margin}%`
+  )
+  const monthRevenue = Number(data.report.monthRevenue)
+  const expectedMonthPercent = Math.min(
+    100,
+    Math.round((monthRevenue / 5000) * 100)
+  )
+  const expectedMonthText =
+    monthRevenue >= 5000
+      ? '本月达标啦 🎉'
+      : `还差 ¥${Number((5000 - monthRevenue).toFixed(2))}`
+  check(
+    'mock 月报月度目标',
+    Number(data.monthlyGoal) === 5000 &&
+      Number(data.monthGoalPercent) === expectedMonthPercent &&
+      data.monthGoalText === expectedMonthText,
+    `¥${monthRevenue} / ¥5000 · ${data.monthGoalPercent}% · ${data.monthGoalText}`
   )
   check(
     'mock 月报滞销菜品',

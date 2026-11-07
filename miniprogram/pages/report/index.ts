@@ -34,7 +34,10 @@ Page({
     backupCount: 0,
     backupReady: false,
     slowBusyId: '',
-    range: 30
+    range: 30,
+    monthlyGoal: 0,
+    monthGoalPercent: 0,
+    monthGoalText: ''
   },
 
   _loadSeq: 0,
@@ -153,12 +156,33 @@ Page({
             ? Number(report.minRatedOrders)
             : 2
       })
+      const monthlyGoalValue = Number(business && business.monthlyGoal)
+      const monthlyGoal =
+        isFinite(monthlyGoalValue) &&
+        monthlyGoalValue >= 0 &&
+        monthlyGoalValue <= 999999
+          ? Math.floor(monthlyGoalValue)
+          : 0
+      const monthRevenue = Number(safeReport.monthRevenue || 0)
+      const monthGoalPercent =
+        monthlyGoal > 0
+          ? Math.min(100, Math.round((monthRevenue / monthlyGoal) * 100))
+          : 0
+      const monthGoalText =
+        monthlyGoal > 0
+          ? monthRevenue >= monthlyGoal
+            ? '本月达标啦 🎉'
+            : `还差 ¥${Number((monthlyGoal - monthRevenue).toFixed(2))}`
+          : ''
       this.setData({
         report: safeReport,
         bars,
         maxAmount,
         health,
         compare,
+        monthlyGoal,
+        monthGoalPercent,
+        monthGoalText,
         loading: false
       })
     } catch (e: any) {

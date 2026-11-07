@@ -50,6 +50,7 @@ const DEFAULT_BUSINESS: Business = {
   recommendText: '今日推荐',
   lowStockThreshold: 3,
   dailyGoal: 0,
+  monthlyGoal: 0,
   closedDates: [],
   weeklyClosed: []
 }
@@ -381,6 +382,16 @@ function normalizeDailyGoal(value: any): number {
     : 0
 }
 
+function normalizeMonthlyGoal(value: any): number {
+  if (value === undefined || value === null || String(value).trim() === '') {
+    return 0
+  }
+  const number = Number(value)
+  return isFinite(number) && number >= 0 && number <= 999999
+    ? Math.floor(number)
+    : 0
+}
+
 function loadBusiness(): Business {
   if (businessCache) {
     return businessCache
@@ -393,6 +404,9 @@ function loadBusiness(): Business {
         businessCache.lowStockThreshold
       )
       businessCache.dailyGoal = normalizeDailyGoal(businessCache.dailyGoal)
+      businessCache.monthlyGoal = normalizeMonthlyGoal(
+        businessCache.monthlyGoal
+      )
       businessCache.noticeUntil = /^\d{4}-\d{2}-\d{2}$/.test(
         String(businessCache.noticeUntil || '')
       )
@@ -1626,6 +1640,7 @@ export async function getBusiness(): Promise<Business> {
     data.lowStockThreshold
   )
   data.dailyGoal = normalizeDailyGoal(data.dailyGoal)
+  data.monthlyGoal = normalizeMonthlyGoal(data.monthlyGoal)
   data.noticeUntil = /^\d{4}-\d{2}-\d{2}$/.test(
     String(data.noticeUntil || '')
   )
@@ -1662,10 +1677,14 @@ export async function updateBusiness(payload: Business): Promise<Business> {
   if (next.dailyGoal === undefined) {
     next.dailyGoal = existing.dailyGoal
   }
+  if (next.monthlyGoal === undefined) {
+    next.monthlyGoal = existing.monthlyGoal
+  }
   next.lowStockThreshold = normalizeLowStockThreshold(
     next.lowStockThreshold
   )
   next.dailyGoal = normalizeDailyGoal(next.dailyGoal)
+  next.monthlyGoal = normalizeMonthlyGoal(next.monthlyGoal)
   next.noticeUntil = /^\d{4}-\d{2}-\d{2}$/.test(
     String(next.noticeUntil || '')
   )
@@ -1978,6 +1997,18 @@ export async function getKitchenReport(
     (sum, order) => sum + Number(order.amount || 0),
     0
   )
+  const monthStart = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    1
+  ).getTime()
+  const monthRevenue = loadOrders()
+    .filter(
+      order =>
+        Number(order.createdAt) >= monthStart &&
+        order.status !== 'cancelled'
+    )
+    .reduce((sum, order) => sum + Number(order.amount || 0), 0)
   const dailyMap: Record<string, any> = {}
   for (let i = 0; i < days; i++) {
     const date = dateInputString(
@@ -2125,6 +2156,7 @@ export async function getKitchenReport(
     cancelled: orders.length - active.length,
     completed: active.filter(order => order.status === 'completed').length,
     revenue: Number(revenue.toFixed(2)),
+    monthRevenue: Number(monthRevenue.toFixed(2)),
     avgOrder: active.length
       ? Number((revenue / active.length).toFixed(2))
       : 0,

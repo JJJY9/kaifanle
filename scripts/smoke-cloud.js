@@ -319,7 +319,8 @@ async function run() {
       noticeUntil: '2099-01-01',
       recommendText: '雨天暖胃',
       lowStockThreshold: 7,
-      dailyGoal: 200
+      dailyGoal: 200,
+      monthlyGoal: 5000
     },
     'admin-openid'
   )
@@ -327,6 +328,7 @@ async function run() {
   assert.strictEqual(res.data.recommendText, '雨天暖胃')
   assert.strictEqual(res.data.lowStockThreshold, 7)
   assert.strictEqual(res.data.dailyGoal, 200)
+  assert.strictEqual(res.data.monthlyGoal, 5000)
   assert.strictEqual(res.data.noticeFrom, '2000-01-01')
   assert.strictEqual(res.data.noticeUntil, '2099-01-01')
 
@@ -337,6 +339,7 @@ async function run() {
   assert.strictEqual(res.data.recommendText, '雨天暖胃')
   assert.strictEqual(res.data.lowStockThreshold, 7)
   assert.strictEqual(res.data.dailyGoal, 200)
+  assert.strictEqual(res.data.monthlyGoal, 5000)
   assert.strictEqual(res.data.noticeFrom, '2000-01-01')
   assert.strictEqual(res.data.noticeUntil, '2099-01-01')
 
@@ -1343,11 +1346,13 @@ async function run() {
   assert.strictEqual(res.data.lowStockThreshold, 7)
   assert.strictEqual(res.data.noticeUntil, '2099-01-01')
   assert.strictEqual(res.data.dailyGoal, 200)
+  assert.strictEqual(res.data.monthlyGoal, 5000)
   assert.strictEqual(res.data.noticeFrom, '2000-01-01')
   res = await call('getBusiness', {}, 'girl-openid')
   assert.strictEqual(res.data.lowStockThreshold, 7)
   assert.strictEqual(res.data.noticeUntil, '2099-01-01')
   assert.strictEqual(res.data.dailyGoal, 200)
+  assert.strictEqual(res.data.monthlyGoal, 5000)
   assert.strictEqual(res.data.noticeFrom, '2000-01-01')
 
   // 休息日：指定日期不能下单
@@ -2230,6 +2235,7 @@ async function run() {
   assert.strictEqual(res.data.endDate, chinaDate(0))
   assert.ok(res.data.totalOrders >= 1)
   assert.ok(res.data.revenue >= 40)
+  assert.ok(res.data.monthRevenue > 0)
   assert.ok(res.data.topDishes.length >= 1)
   assert.ok(res.data.topDishes[0].qty >= 1)
   const report30 = res

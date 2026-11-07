@@ -43,6 +43,7 @@ const DEFAULT_BUSINESS = {
   recommendText: '今日推荐',
   lowStockThreshold: 3,
   dailyGoal: 0,
+  monthlyGoal: 0,
   closedDates: [],
   weeklyClosed: []
 }
@@ -415,6 +416,16 @@ function normalizeBusiness(value) {
         ? Math.floor(value)
         : DEFAULT_BUSINESS.dailyGoal
     })(),
+    monthlyGoal: (() => {
+      const raw = source.monthlyGoal
+      if (raw === undefined || raw === null || String(raw).trim() === '') {
+        return DEFAULT_BUSINESS.monthlyGoal
+      }
+      const value = Number(raw)
+      return isFinite(value) && value >= 0 && value <= 999999
+        ? Math.floor(value)
+        : DEFAULT_BUSINESS.monthlyGoal
+    })(),
     // 指定休息日（YYYY-MM-DD），最多 14 天
     closedDates: Array.isArray(source.closedDates)
       ? source.closedDates
@@ -501,6 +512,9 @@ async function updateBusiness(payload, openid) {
   }
   if (source.dailyGoal === undefined) {
     source.dailyGoal = config.business && config.business.dailyGoal
+  }
+  if (source.monthlyGoal === undefined) {
+    source.monthlyGoal = config.business && config.business.monthlyGoal
   }
   if (source.noticeUntil === undefined) {
     source.noticeUntil =
@@ -1067,6 +1081,24 @@ async function getKitchenReport(payload, openid) {
     (sum, order) => sum + Number(order.amount || 0),
     0
   )
+  const monthStart = chinaStartOfMonth()
+  let monthOrders = active
+  if (start > monthStart) {
+    const monthRes = await db
+      .collection('orders')
+      .where({ createdAt: _.gte(monthStart) })
+      .limit(1000)
+      .get()
+    monthOrders = (monthRes.data || []).filter(
+      order => order.status !== 'cancelled'
+    )
+  } else {
+    monthOrders = active.filter(order => Number(order.createdAt) >= monthStart)
+  }
+  const monthRevenue = monthOrders.reduce(
+    (sum, order) => sum + Number(order.amount || 0),
+    0
+  )
 
   const dailyMap = {}
   for (let i = 0; i < days; i++) {
@@ -1220,6 +1252,7 @@ async function getKitchenReport(payload, openid) {
     cancelled: orders.length - active.length,
     completed: active.filter(order => order.status === 'completed').length,
     revenue: Number(revenue.toFixed(2)),
+    monthRevenue: Number(monthRevenue.toFixed(2)),
     avgOrder: active.length
       ? Number((revenue / active.length).toFixed(2))
       : 0,

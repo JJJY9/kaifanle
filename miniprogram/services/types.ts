@@ -183,6 +183,7 @@ export interface Business {
   recommendText?: string
   lowStockThreshold?: number
   dailyGoal?: number
+  monthlyGoal?: number
   closedDates?: string[]
   weeklyClosed?: number[]
 }
@@ -259,6 +260,7 @@ export interface KitchenReport {
   cancelled: number
   completed: number
   revenue: number
+  monthRevenue: number
   avgOrder: number
   daily: KitchenReportDay[]
   topDishes: KitchenReportDish[]
