@@ -848,12 +848,21 @@ export async function saveDish(payload: DishInput): Promise<Dish> {
   if (!name) {
     throw new Error('菜品名称不能为空')
   }
+  const hasCost =
+    payload.cost !== undefined &&
+    payload.cost !== null &&
+    String(payload.cost).trim() !== ''
+  const costValue = Number(payload.cost)
+  if (hasCost && (!isFinite(costValue) || costValue < 0 || costValue > 999)) {
+    throw new Error('成本需要是 0-999 之间的数字')
+  }
   const fields: Dish = {
     id: payload.id || `m${Date.now()}`,
     name,
     char: name.slice(0, 1),
     desc: String(payload.desc || '').trim(),
     price: Number(payload.price) || 0,
+    cost: hasCost ? Math.round(costValue * 100) / 100 : 0,
     categoryId: payload.categoryId,
     tags: payload.tags || [],
     spicyLevels: payload.spicyLevels || [],
@@ -910,6 +919,9 @@ export async function saveDish(payload: DishInput): Promise<Dish> {
       priceBase !== null && priceBase === Number(existing.price)
     if (!priceApplied) {
       fields.price = Number(existing.price)
+    }
+    if (!hasCost) {
+      fields.cost = Number(existing.cost) || 0
     }
     if (priceApplied && Number(existing.price) !== Number(fields.price)) {
       fields.priceHistory = (existing.priceHistory || [])

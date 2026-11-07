@@ -54,6 +54,18 @@
           bindinput="onPrice"
         />
       </view>
+
+      <view class="field">
+        <text class="label">成本</text>
+        <input
+          class="input"
+          type="digit"
+          placeholder="选填，每份食材成本"
+          value="{{cost}}"
+          bindinput="onCost"
+        />
+      </view>
+      <view wx:if="{{marginText}}" class="margin-hint">单份毛利：{{marginText}}</view>
       <view wx:if="{{priceHistory.length}}" class="price-history">
         <view class="price-history-title">最近调价</view>
         <view wx:for="{{priceHistory}}" wx:key="index" class="price-history-row">

@@ -20,6 +20,7 @@ export interface Dish {
   char: string
   desc: string
   price: number
+  cost?: number
   categoryId: string
   tags: string[]
   spicyLevels: string[]
@@ -49,6 +50,7 @@ export interface DishInput {
   name: string
   desc: string
   price: number
+  cost?: number
   priceBase?: number
   priceOnly?: boolean
   categoryId: string
