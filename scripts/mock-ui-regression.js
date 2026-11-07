@@ -3179,6 +3179,16 @@ function chinaDate(offset) {
       ) > -1,
     `${String(categoryCsv || '').length} 字`
   )
+  await invoke(mp, 'page.onExportCategoriesFile()')
+  await sleep(1000)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 月报分类 CSV 文件',
+    data.categoriesFileReady === true &&
+      data.categoriesFileBusy === false,
+    data.categoriesFileReady ? '已生成' : '未生成'
+  )
   await invoke(
     mp,
     "page.onCategorySort({ currentTarget: { dataset: { sort: 'qty' } } })"

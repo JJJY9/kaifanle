@@ -30,6 +30,8 @@ Page({
     categoryStats: [] as any[],
     categorySort: 'revenue' as 'revenue' | 'qty',
     categoryExportCount: 0,
+    categoriesFileBusy: false,
+    categoriesFileReady: false,
     compare: null as any,
     exporting: false,
     exportCount: 0,
@@ -544,11 +546,11 @@ Page({
     this.setData({ categorySort: sort, categoryStats })
   },
 
-  onExportCategories() {
+  buildCategoryCsv(): string {
     const rows = this.data.categoryStats || []
     if (!rows.length) {
       wx.showToast({ title: '当前区间没有分类数据', icon: 'none' })
-      return
+      return ''
     }
     const quote = (value: any) =>
       `"${String(value === null || value === undefined ? '' : value).replace(
@@ -568,12 +570,66 @@ Page({
         .map(quote)
         .join(',')
     )
+    return '﻿' + [header.join(','), ...lines].join('\n')
+  },
+
+  onExportCategories() {
+    const csv = this.buildCategoryCsv()
+    if (!csv) {
+      return
+    }
     wx.setClipboardData({
-      data: '﻿' + [header.join(','), ...lines].join('\n'),
+      data: csv,
       success: () => {
-        this.setData({ categoryExportCount: rows.length })
+        this.setData({
+          categoryExportCount: (this.data.categoryStats || []).length
+        })
       }
     })
+  },
+
+  async onExportCategoriesFile() {
+    if (this.data.categoriesFileBusy) {
+      return
+    }
+    const csv = this.buildCategoryCsv()
+    if (!csv) {
+      return
+    }
+    this.setData({ categoriesFileBusy: true })
+    try {
+      const filePath = `${wx.env.USER_DATA_PATH}/categories-${Date.now()}.csv`
+      await new Promise((resolve, reject) => {
+        wx.getFileSystemManager().writeFile({
+          filePath,
+          data: csv,
+          encoding: 'utf8',
+          success: resolve,
+          fail: reject
+        })
+      })
+      this.setData({ categoriesFileBusy: false, categoriesFileReady: true })
+      if (typeof (wx as any).shareFileMessage === 'function') {
+        ;(wx as any).shareFileMessage({
+          filePath,
+          fileName: '分类表现.csv',
+          fail: () => {
+            wx.showToast({
+              title: '文件已生成，可先用复制 CSV',
+              icon: 'none'
+            })
+          }
+        })
+      } else {
+        wx.showToast({ title: '文件已生成', icon: 'none' })
+      }
+    } catch (e: any) {
+      this.setData({ categoriesFileBusy: false })
+      wx.showToast({
+        title: String((e && e.message) || '导出失败').slice(0, 40),
+        icon: 'none'
+      })
+    }
   },
 
   onExportDishes() {
