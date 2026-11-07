@@ -200,6 +200,7 @@
             <view class="status {{item.status}}">{{item.statusText}}</view>
           </view>
           <view class="preorder-summary">#{{item.no}} · {{item.summary}}</view>
+          <view wx:if="{{item.allergyText}}" class="order-allergy">⚠️ 含过敏原：{{item.allergyText}}</view>
         </view>
       </block>
     </view>
@@ -353,6 +354,7 @@
           </view>
         </view>
         <view class="order-summary">{{item.summary}}</view>
+        <view wx:if="{{item.allergyText}}" class="order-allergy">⚠️ 含过敏原：{{item.allergyText}}</view>
         <view wx:if="{{item.status === 'cancelled' && item.cancelReason}}" class="order-cancel-reason">取消原因：{{item.cancelReason}}</view>
         <view wx:if="{{item.ratingTags.length}}" class="order-rating-tags">
           <text wx:for="{{item.ratingTags}}" wx:for-item="tag" wx:key="*this" class="order-rating-tag">{{tag}}</text>

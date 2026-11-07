@@ -843,6 +843,20 @@ function chinaDate(offset) {
   page = await current()
   data = await page.data()
   check('mock 厨房预订展开', data.showPreorders === true)
+  const allergyPreorder = (data.preorders || []).find(
+    order => order.id === 'seed-3'
+  )
+  const allergyPreorderEl = await page.$('.order-allergy')
+  const allergyPreorderText = allergyPreorderEl
+    ? await allergyPreorderEl.text()
+    : ''
+  check(
+    'mock 厨房预订过敏原',
+    Boolean(allergyPreorder) &&
+      String(allergyPreorder.allergyText || '').indexOf('花生') > -1 &&
+      allergyPreorderText.indexOf('花生') > -1,
+    allergyPreorderText || (allergyPreorder && allergyPreorder.allergyText) || '没找到预订单'
+  )
   await invoke(mp, 'page.onTogglePreorders()')
   await sleep(200)
   await invoke(mp, 'page.onCopyActiveReceipts()')
@@ -1631,7 +1645,10 @@ function chinaDate(offset) {
       String(data.specialBanner || '').indexOf('今天') > -1,
     data.specialBanner || '没有提醒'
   )
-  await invoke(mp, 'page.onWeekMenus()')
+  const specialReminder = await page.$('.special-reminder')
+  if (specialReminder) {
+    await specialReminder.tap()
+  }
   await sleep(1500)
   page = await current()
   check(

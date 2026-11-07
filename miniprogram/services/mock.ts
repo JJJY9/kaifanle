@@ -577,7 +577,8 @@ function seedOrders(): Order[] {
           price: 16,
           qty: 1,
           specs: [],
-          note: '多酱汁'
+          note: '多酱汁',
+          allergens: ['花生']
         }
       ],
       amount: 16,
@@ -628,7 +629,8 @@ function seedOrders(): Order[] {
           price: 16,
           qty: 2,
           specs: [],
-          note: '明天中午吃'
+          note: '明天中午吃',
+          allergens: ['花生']
         }
       ],
       amount: 32,
