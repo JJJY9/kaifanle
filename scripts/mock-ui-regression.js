@@ -36,6 +36,10 @@ function chinaDate(offset) {
     content: ''
   })
   await mp.mockWxMethod('showActionSheet', { tapIndex: 0 })
+  await mp.evaluate(() => {
+    wx.removeStorageSync('kfl_order_collapsed_dates_v1')
+    return true
+  })
   const current = () => mp.currentPage()
 
   // 清空上一轮残留的购物车，保证跨次运行结果稳定
@@ -1382,6 +1386,8 @@ function chinaDate(offset) {
   )
   await invoke(mp, 'page.onBatchStatus()')
   await sleep(2200)
+  await invoke(mp, 'page.load()')
+  await sleep(1200)
   page = await current()
   data = await page.data()
   let batchDish = (data.displayDishes || [])[0]
@@ -1403,6 +1409,8 @@ function chinaDate(offset) {
   )
   await invoke(mp, 'page.onBatchStatus()')
   await sleep(1900)
+  await invoke(mp, 'page.load()')
+  await sleep(1200)
   page = await current()
   data = await page.data()
   batchDish = (data.displayDishes || [])[0]
@@ -2609,12 +2617,22 @@ function chinaDate(offset) {
     const collapsedGroupRows = (data.displayOrders || []).filter(
       order => order.groupKey === firstOrderGroup.groupKey
     )
+    const storedCollapsedDates = await mp.evaluate(() => {
+      try {
+        return JSON.parse(
+          wx.getStorageSync('kfl_order_collapsed_dates_v1') || '{}'
+        )
+      } catch (e) {
+        return {}
+      }
+    })
     check(
       'mock 订单按日期折叠',
       collapsedGroupRows.length === 1 &&
         collapsedGroupRows[0].collapsed === true &&
         (data.displayOrders || []).length ===
-          groupBeforeCount - (firstOrderGroup.groupCount || 1) + 1,
+          groupBeforeCount - (firstOrderGroup.groupCount || 1) + 1 &&
+        storedCollapsedDates[firstOrderGroup.groupKey] === true,
       `${firstOrderGroup.dateText} · ${firstOrderGroup.groupCount} 单`
     )
     await invoke(

@@ -7,6 +7,35 @@ import {
   dateInputString
 } from '../../utils/format'
 
+const COLLAPSED_DATES_KEY = 'kfl_order_collapsed_dates_v1'
+
+function readCollapsedDates(): Record<string, boolean> {
+  try {
+    const raw = wx.getStorageSync(COLLAPSED_DATES_KEY)
+    const data = raw ? JSON.parse(raw) : {}
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      return {}
+    }
+    const result: Record<string, boolean> = {}
+    Object.keys(data).forEach(key => {
+      if (data[key]) {
+        result[key] = true
+      }
+    })
+    return result
+  } catch (e) {
+    return {}
+  }
+}
+
+function writeCollapsedDates(data: Record<string, boolean>) {
+  try {
+    wx.setStorageSync(COLLAPSED_DATES_KEY, JSON.stringify(data))
+  } catch (e) {
+    // 忽略存储失败
+  }
+}
+
 Page({
   data: {
     orders: [] as any[],
@@ -22,7 +51,7 @@ Page({
     emptyTitle: '这里还没有订单',
     emptyDesc: '去点一单吧',
     emptyAction: '',
-    collapsedDates: {} as Record<string, boolean>,
+    collapsedDates: readCollapsedDates(),
     counts: { all: 0, active: 0, done: 0, rate: 0, preorder: 0 }
   },
 
@@ -207,6 +236,7 @@ Page({
     }
     const collapsedDates = Object.assign({}, this.data.collapsedDates)
     collapsedDates[date] = !collapsedDates[date]
+    writeCollapsedDates(collapsedDates)
     this.setData({ collapsedDates }, () => this.applyFilter())
   },
 
