@@ -1468,6 +1468,32 @@ function chinaDate(offset) {
     (data.templates || []).length > 0 && data.missingCount > 0,
     `${(data.templates || []).length} 个模板 / 缺 ${data.missingCount}`
   )
+  const templateCategory = (data.filterCategories || [])[1]
+  if (templateCategory) {
+    await invoke(
+      mp,
+      `page.onSelectCategory({ currentTarget: { dataset: { id: ${JSON.stringify(
+        templateCategory.id
+      )} } } })`
+    )
+    await sleep(400)
+    page = await current()
+    data = await page.data()
+    const savedTemplateCategory = await mp.evaluate(() =>
+      wx.getStorageSync('templateCategoryFilter')
+    )
+    check(
+      'mock 菜品模板记住分类',
+      data.activeCategory === templateCategory.id &&
+        savedTemplateCategory === templateCategory.id,
+      templateCategory.name
+    )
+    await invoke(
+      mp,
+      "page.onSelectCategory({ currentTarget: { dataset: { id: 'all' } } })"
+    )
+    await sleep(300)
+  }
   await invoke(mp, 'page.onToggleMissing()')
   await sleep(400)
   page = await current()

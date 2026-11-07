@@ -4,6 +4,7 @@ import { DISH_TEMPLATES } from '../../utils/dish-templates'
 import { DISH_BANK } from '../../utils/dish-bank'
 
 const ALL_TEMPLATES = DISH_TEMPLATES.concat(DISH_BANK)
+const CATEGORY_KEY = 'templateCategoryFilter'
 
 const MEAL_NAMES: Record<string, string> = {
   breakfast: '早',
@@ -66,12 +67,25 @@ Page({
         exists: Boolean(existing[template.name.trim()])
       }))
       const missingCount = templates.filter(item => !item.exists).length
+      const filterCategories = [{ id: 'all', name: '全部' }].concat(
+        usedCategories
+      )
+      let savedCategory = 'all'
+      try {
+        savedCategory = String(wx.getStorageSync(CATEGORY_KEY) || 'all')
+      } catch (e) {
+        savedCategory = 'all'
+      }
+      const activeCategory = filterCategories.some(
+        category => category.id === savedCategory
+      )
+        ? savedCategory
+        : 'all'
       this.setData(
         {
           templates,
-          filterCategories: [{ id: 'all', name: '全部' }].concat(
-            usedCategories
-          ),
+          filterCategories,
+          activeCategory,
           missingCount,
           summaryText: missingCount
             ? `还有 ${missingCount} 道可以添加`
@@ -106,6 +120,11 @@ Page({
       return
     }
     this.setData({ activeCategory: id })
+    try {
+      wx.setStorageSync(CATEGORY_KEY, id)
+    } catch (e) {
+      // 存储失败时只影响下次记忆，不影响本次筛选
+    }
     this.applyFilter()
   },
 
