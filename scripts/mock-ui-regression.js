@@ -1336,6 +1336,19 @@ function chinaDate(offset) {
     (data.templates || []).length > 0 && data.missingCount > 0,
     `${(data.templates || []).length} 个模板 / 缺 ${data.missingCount}`
   )
+  await invoke(mp, 'page.onToggleMissing()')
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 菜品模板只看未添加',
+    data.onlyMissing === true &&
+      (data.displayTemplates || []).length === Number(data.missingCount) &&
+      data.displayTemplates.every(template => !template.exists),
+    `${(data.displayTemplates || []).length} 道未添加`
+  )
+  await invoke(mp, 'page.onToggleMissing()')
+  await sleep(300)
   await invoke(
     mp,
     'page.onAddOne({ currentTarget: { dataset: { index: 0 } } })'

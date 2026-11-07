@@ -25,6 +25,10 @@
         data-id="{{item.id}}"
         bindtap="onSelectCategory"
       >{{item.name}}</view>
+      <view
+        class="filter-chip missing {{onlyMissing ? 'active' : ''}}"
+        bindtap="onToggleMissing"
+      >只看未添加 {{missingCount}}</view>
     </view>
   </scroll-view>
 

@@ -17,6 +17,7 @@ Page({
     displayTemplates: [] as any[],
     filterCategories: [] as any[],
     activeCategory: 'all',
+    onlyMissing: false,
     keyword: '',
     missingCount: 0,
     summaryText: '',
@@ -111,7 +112,11 @@ Page({
   applyFilter() {
     const keyword = this.data.keyword.trim().toLowerCase()
     const category = this.data.activeCategory
+    const onlyMissing = this.data.onlyMissing
     const displayTemplates = this.data.templates.filter(template => {
+      if (onlyMissing && template.exists) {
+        return false
+      }
       if (category !== 'all' && template.categoryId !== category) {
         return false
       }
@@ -124,6 +129,12 @@ Page({
       return haystack.indexOf(keyword) > -1
     })
     this.setData({ displayTemplates })
+  },
+
+  onToggleMissing() {
+    this.setData({ onlyMissing: !this.data.onlyMissing }, () =>
+      this.applyFilter()
+    )
   },
 
   onImport() {

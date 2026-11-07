@@ -118,6 +118,11 @@
   transform: rotate(-1deg);
 }
 
+.filter-chip.missing.active {
+  background: #FF5C8A;
+  color: #FFFFFF;
+}
+
 .summary-info {
   flex: 1;
   min-width: 0;
