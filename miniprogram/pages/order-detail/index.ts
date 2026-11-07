@@ -241,6 +241,21 @@ Page({
   },
 
   buildSteps(order: Order) {
+    const spanText = (from: number, to: number) => {
+      if (!from || !to || to < from) {
+        return ''
+      }
+      const minutes = Math.max(0, Math.round((to - from) / 60000))
+      if (minutes < 1) {
+        return '不到 1 分钟'
+      }
+      if (minutes >= 60) {
+        const hours = Math.floor(minutes / 60)
+        const rest = minutes % 60
+        return rest ? `${hours} 小时 ${rest} 分钟` : `${hours} 小时`
+      }
+      return `${minutes} 分钟`
+    }
     if (order.status === 'cancelled') {
       const last = order.timeline[order.timeline.length - 1]
       return [
@@ -248,24 +263,36 @@ Page({
           status: 'pending',
           title: '已下单',
           time: formatTime(order.createdAt),
+          deltaText: '',
           done: true
         },
         {
           status: 'cancelled',
           title: '已取消',
           time: last ? formatTime(last.time) : '',
+          deltaText: last
+            ? spanText(Number(order.createdAt), Number(last.time))
+            : '',
           done: true
         }
       ]
     }
 
     const currentIndex = FLOW.indexOf(order.status)
+    let previousAt = Number(order.createdAt) || 0
     return FLOW.map((status, index) => {
       const entry = order.timeline.find(item => item.status === status)
+      const entryAt = entry ? Number(entry.time) || 0 : 0
+      const deltaText =
+        entry && index > 0 ? spanText(previousAt, entryAt) : ''
+      if (entryAt) {
+        previousAt = entryAt
+      }
       return {
         status,
         title: STATUS_STEP_TEXT[status],
         time: entry ? formatTime(entry.time) : '',
+        deltaText,
         done: index <= currentIndex
       }
     })

@@ -322,6 +322,13 @@
   font-size: 22rpx;
 }
 
+.tdelta {
+  margin-top: 2rpx;
+  color: #8A6D3B;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
 .item {
   display: flex;
   align-items: flex-start;

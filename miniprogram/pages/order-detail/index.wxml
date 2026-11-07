@@ -72,6 +72,7 @@
         <view class="tinfo">
           <view class="ttitle">{{item.title}}</view>
           <view wx:if="{{item.time}}" class="ttime">{{item.time}}</view>
+          <view wx:if="{{item.deltaText}}" class="tdelta">距上一步 {{item.deltaText}}</view>
         </view>
       </view>
     </view>

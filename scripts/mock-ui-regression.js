@@ -2330,6 +2330,15 @@ function chinaDate(offset) {
       ),
     data.order ? '含花生' : '没找到订单'
   )
+  check(
+    'mock 订单时间轴等待时长',
+    (data.steps || []).filter(step => String(step.deltaText || '').length > 0)
+      .length >= 1,
+    (data.steps || [])
+      .map(step => step.deltaText)
+      .filter(Boolean)
+      .join(' / ')
+  )
   await invoke(mp, 'page.onCopyOrderReceipt()')
   await sleep(400)
   const allergyReceipt = await mp.evaluate(
