@@ -2479,6 +2479,22 @@ Page({
     }
   },
 
+  onCopyPrepDish(e: any) {
+    const name = String((e.currentTarget && e.currentTarget.dataset.name) || '')
+    if (!name) {
+      return
+    }
+    const qty = Number(
+      (e.currentTarget && e.currentTarget.dataset.qty) || 0
+    )
+    wx.setClipboardData({
+      data: `${name} × ${qty}`,
+      success: () => {
+        wx.showToast({ title: '菜名已复制', icon: 'none' })
+      }
+    })
+  },
+
   onCopyPrepCsv() {
     const rows: string[][] = []
     ;(this.data.prepGroups || []).forEach((group: any) => {

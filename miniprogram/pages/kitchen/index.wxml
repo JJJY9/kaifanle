@@ -167,7 +167,15 @@
             <view class="prep-group-title">{{group.mealText}} · {{group.total}} 份<text wx:if="{{group.allergyText}}" class="prep-allergy"> · 含 {{group.allergyText}}</text></view>
             <view class="prep-group-copy" data-meal="{{group.meal}}" catchtap="onCopyPrepMeal">复制这餐</view>
           </view>
-          <view wx:for="{{group.items}}" wx:key="name" wx:for-item="dish" class="prep-row">
+          <view
+            wx:for="{{group.items}}"
+            wx:key="name"
+            wx:for-item="dish"
+            class="prep-row"
+            data-name="{{dish.name}}"
+            data-qty="{{dish.qty}}"
+            bindlongpress="onCopyPrepDish"
+          >
             <text class="prep-name">{{dish.name}}</text>
             <text class="prep-qty">×{{dish.qty}}</text>
           </view>

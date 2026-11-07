@@ -759,6 +759,25 @@ function chinaDate(offset) {
       String(prepCsv || '').indexOf('花生') > -1,
     `${String(prepCsv || '').length} 字`
   )
+  const prepFirstDish = prepGroups[0].items[0]
+  await invoke(
+    mp,
+    `page.onCopyPrepDish({ currentTarget: { dataset: { name: ${JSON.stringify(
+      prepFirstDish.name
+    )}, qty: ${Number(prepFirstDish.qty)} } } })`
+  )
+  await sleep(500)
+  const prepDishClip = await mp.evaluate(
+    new Function(
+      "return new Promise(resolve => wx.getClipboardData({ success: r => resolve(r.data || ''), fail: () => resolve('') }))"
+    )
+  )
+  check(
+    'mock 备菜单道菜复制',
+    String(prepDishClip || '') ===
+      `${prepFirstDish.name} × ${Number(prepFirstDish.qty)}`,
+    String(prepDishClip || '')
+  )
   const prepMealGroup = prepGroups[0] || {
     meal: 'lunch',
     mealText: '午餐',
