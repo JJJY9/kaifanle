@@ -796,6 +796,28 @@ export async function toggleDishStatus(id: string): Promise<Dish | null> {
   return { ...dish }
 }
 
+export async function batchUpdateDishCategory(
+  ids: string[],
+  categoryId: string
+): Promise<{ categoryId: string; updated: number }> {
+  await delay(80)
+  if (!CATEGORIES.some(category => category.id === categoryId)) {
+    throw new Error('分类不存在')
+  }
+  const unique = Array.from(
+    new Set((ids || []).map(id => String(id || '')).filter(Boolean))
+  ).slice(0, 50)
+  let updated = 0
+  unique.forEach(id => {
+    const dish = dishes.find(item => item.id === id)
+    if (dish && dish.categoryId !== categoryId) {
+      dish.categoryId = categoryId
+      updated++
+    }
+  })
+  return { categoryId, updated }
+}
+
 export async function moveDish(
   id: string,
   direction: 'up' | 'down'
@@ -2002,6 +2024,7 @@ export async function getKitchenReport(): Promise<KitchenReport> {
         id: dish.id,
         name: dish.name,
         status: dish.status || 'on',
+        stock: typeof dish.stock === 'number' ? dish.stock : null,
         qty: Number(stat.qty || 0),
         revenue: Number(Number(stat.revenue || 0).toFixed(2))
       }

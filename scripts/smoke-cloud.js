@@ -415,6 +415,35 @@ async function run() {
   res = await call('deleteCategory', { id: newCategoryId }, 'admin-openid')
   assert.strictEqual(res.ok, true)
 
+  // 批量改分类：权限、结果与恢复
+  res = await call(
+    'batchUpdateDishCategory',
+    { ids: ['d01', 'd02'], categoryId: 'soup' },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, false)
+  res = await call(
+    'batchUpdateDishCategory',
+    { ids: ['d01', 'd02'], categoryId: 'soup' },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.updated, 2)
+  res = await call('getDish', { id: 'd01' }, 'admin-openid')
+  assert.strictEqual(res.data.categoryId, 'soup')
+  res = await call(
+    'batchUpdateDishCategory',
+    { ids: ['d01', 'd02'], categoryId: 'staple' },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  res = await call(
+    'batchUpdateDishCategory',
+    { ids: ['d01'], categoryId: 'no-such' },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, false)
+
   res = await call('getDishes', {}, 'girl-openid')
   assert.strictEqual(res.ok, true)
   assert.strictEqual(res.data.length, 14)
@@ -2139,6 +2168,13 @@ async function run() {
   )
   assert.strictEqual(res.ok, true)
   assert.strictEqual(res.data.cost, 6)
+  res = await call('getDishes', {}, 'girl-openid')
+  const publicDish = res.data.find(dish => dish.id === 'd01')
+  assert.ok(publicDish && publicDish.cost === undefined)
+  res = await call('getDish', { id: 'd01' }, 'girl-openid')
+  assert.strictEqual(res.data.cost, undefined)
+  res = await call('getDish', { id: 'd01' }, 'admin-openid')
+  assert.strictEqual(res.data.cost, 6)
   const costOrder = await call(
     'createOrder',
     {
@@ -2151,7 +2187,26 @@ async function run() {
     'girl-openid'
   )
   assert.strictEqual(costOrder.ok, true)
-  assert.strictEqual(costOrder.data.items[0].cost, 6)
+  assert.strictEqual(costOrder.data.items[0].cost, undefined)
+  res = await call('getOrder', { id: costOrder.data.id }, 'girl-openid')
+  assert.strictEqual(res.data.items[0].cost, undefined)
+  res = await call('getOrders', {}, 'girl-openid')
+  assert.ok(
+    res.data.every(order =>
+      (order.items || []).every(item => item.cost === undefined)
+    )
+  )
+  // 下单后改成本：月报仍按下单时的 6 元快照计算
+  res = await call(
+    'saveDish',
+    {
+      ...d01ForCost.data,
+      cost: 1,
+      priceBase: Number(d01ForCost.data.price)
+    },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
   res = await call('getKitchenReport', {}, 'girl-openid')
   assert.strictEqual(res.ok, false)
   res = await call('getKitchenReport', {}, 'admin-openid')
@@ -2166,20 +2221,32 @@ async function run() {
   assert.strictEqual(res.data.minRatedOrders, 2)
   assert.deepStrictEqual(res.data.topRatedDishes, [])
   assert.strictEqual(typeof res.data.repliedRatings, 'number')
-  assert.ok(res.data.replyRate >= 0 && res.data.replyRate <= 100)
-  assert.ok(res.data.costStats.qty >= 1)
-  assert.ok(res.data.costStats.revenue > 0)
-  assert.ok(res.data.costStats.cost > 0)
-  assert.strictEqual(
-    res.data.costStats.profit,
-    Number(
-      (
-        res.data.costStats.revenue - res.data.costStats.cost
-      ).toFixed(2)
-    )
+  assert.ok(
+    res.data.replyRate ===
+      Math.round(
+        (res.data.repliedRatings / Math.max(1, res.data.ratedCount)) * 100
+      )
   )
-  assert.ok(res.data.costStats.margin > 0)
+  const d01Top = res.data.topDishes.find(
+    item => item.name === '番茄牛腩饭'
+  )
+  assert.ok(d01Top && d01Top.qty >= 2)
+  // 只有带 6 元快照的这一单计入；早先 0 成本快照的订单不回填
+  assert.strictEqual(res.data.costStats.qty, 1)
+  assert.strictEqual(res.data.costStats.revenue, 18)
+  assert.strictEqual(res.data.costStats.cost, 6)
+  assert.strictEqual(res.data.costStats.profit, 12)
+  assert.strictEqual(res.data.costStats.margin, 67)
   await call('cancelOrder', { id: costOrder.data.id }, 'girl-openid')
+  await call(
+    'saveDish',
+    {
+      ...d01ForCost.data,
+      cost: 0,
+      priceBase: Number(d01ForCost.data.price)
+    },
+    'admin-openid'
+  )
   const slowDishPayload = {
     name: '!慢销测试菜',
     desc: '滞销榜测试',

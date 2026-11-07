@@ -238,6 +238,7 @@ export interface KitchenReportDish {
   id?: string
   name: string
   status?: string
+  stock?: number | null
   qty: number
   revenue: number
 }

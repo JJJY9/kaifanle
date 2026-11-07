@@ -1342,6 +1342,28 @@ function chinaDate(offset) {
   )
   await invoke(mp, 'page.onClearDishSearch()')
   await sleep(300)
+  await invoke(mp, "page.onDishSearch({ detail: { value: '批量测试菜' } })")
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  const categoryTarget = (data.dishCategoryOptions || [])[2]
+  await mp.mockWxMethod('showActionSheet', { tapIndex: 1 })
+  await mp.mockWxMethod('showModal', { confirm: true })
+  await invoke(mp, 'page.onBatchCategory()')
+  await sleep(900)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 厨房批量改分类',
+    Boolean(categoryTarget) &&
+      data.displayDishes.length === 1 &&
+      data.displayDishes[0].categoryId === categoryTarget.id,
+    categoryTarget
+      ? `${data.displayDishes[0]?.name} → ${categoryTarget.name}`
+      : '没有分类'
+  )
+  await invoke(mp, 'page.onClearDishSearch()')
+  await sleep(300)
   await mp.navigateBack()
   await sleep(800)
   await mp.navigateBack()
@@ -2233,16 +2255,18 @@ function chinaDate(offset) {
   const slowDishes = data.report.slowDishes || []
   check(
     'mock 月报回复率',
-    Number(data.report.repliedRatings) >= 1 &&
-      Number(data.report.replyRate) > 0,
+    Number(data.report.repliedRatings) === 2 &&
+      Number(data.report.ratedCount) === 2 &&
+      Number(data.report.replyRate) === 100,
     `${data.report.repliedRatings}/${data.report.ratedCount} · ${data.report.replyRate}%`
   )
   check(
     'mock 月报成本毛利',
-    Number(data.report.costStats.qty) >= 1 &&
-      Number(data.report.costStats.revenue) > 0 &&
-      Number(data.report.costStats.cost) > 0 &&
-      Number(data.report.costStats.margin) > 0,
+    Number(data.report.costStats.qty) === 2 &&
+      Number(data.report.costStats.revenue) === 36 &&
+      Number(data.report.costStats.cost) === 12 &&
+      Number(data.report.costStats.profit) === 24 &&
+      Number(data.report.costStats.margin) === 67,
     `¥${data.report.costStats.revenue} - ¥${data.report.costStats.cost} = ¥${data.report.costStats.profit} · ${data.report.costStats.margin}%`
   )
   check(
@@ -2258,6 +2282,7 @@ function chinaDate(offset) {
   const slowTarget = slowDishes[0]
   if (slowTarget && slowTarget.id) {
     const beforeStatus = slowTarget.status
+    const healthBefore = Number(data.health && data.health.soldout)
     await invoke(
       mp,
       `page.onSlowToggle({ currentTarget: { dataset: { id: '${slowTarget.id}' } } })`
@@ -2272,6 +2297,18 @@ function chinaDate(offset) {
       'mock 月报滞销菜一键切换状态',
       Boolean(toggled) && toggled.status !== beforeStatus,
       toggled ? `${beforeStatus} → ${toggled.status}` : '没找到菜'
+    )
+    const beforeSoldout =
+      beforeStatus === 'soldout' || slowTarget.stock === 0
+    const afterSoldout =
+      Boolean(toggled) &&
+      (toggled.status === 'soldout' || slowTarget.stock === 0)
+    check(
+      'mock 月报切换同步体检数字',
+      Boolean(data.health) &&
+        Number(data.health.soldout) ===
+          healthBefore + (afterSoldout ? 1 : 0) - (beforeSoldout ? 1 : 0),
+      `${healthBefore} → ${data.health && data.health.soldout}`
     )
     await invoke(
       mp,
@@ -2335,7 +2372,7 @@ function chinaDate(offset) {
     Number(data.monthOrders) >= 1 &&
       (data.topDishes || []).length >= 1 &&
       Boolean(data.monthText) &&
-      Number(data.streakDays) >= 1,
+      Number(data.streakDays) === 1,
     `${data.monthText} · ${data.monthOrders} 单 · 连吃 ${data.streakDays} 天`
   )
   await invoke(mp, 'page.onSharePoster()')
@@ -2566,13 +2603,22 @@ function chinaDate(offset) {
     ),
     'seed-3'
   )
+  const goalRevenue = Number(data.stats && data.stats.revenue)
+  const goalTarget = Number(data.dailyGoal)
+  const expectedPercent = Math.min(
+    100,
+    Math.round((goalRevenue / goalTarget) * 100)
+  )
+  const expectedGoalText =
+    goalRevenue >= goalTarget
+      ? '今天达标啦 🎉'
+      : `还差 ¥${Number((goalTarget - goalRevenue).toFixed(2))}`
   check(
     'mock 厨房营收目标',
-    Number(data.dailyGoal) === 200 &&
-      Number(data.goalPercent) >= 0 &&
-      Number(data.goalPercent) <= 100 &&
-      Boolean(data.goalText),
-    `¥${data.stats && data.stats.revenue} / ¥${data.dailyGoal} · ${data.goalPercent}% · ${data.goalText}`
+    goalTarget === 200 &&
+      Number(data.goalPercent) === expectedPercent &&
+      data.goalText === expectedGoalText,
+    `¥${goalRevenue} / ¥${goalTarget} · ${data.goalPercent}% · ${data.goalText}`
   )
   const specialRows = data.specialDays || []
   const birthdayRow = specialRows.find(day => day.kind === 'birthday')
