@@ -396,9 +396,9 @@
       </view>
       <view class="history-csv" bindtap="onCopyHistoryCsv">复制筛选 CSV</view>
       <view wx:if="{{!historyView.length}}" class="empty-line">{{historyEmptyText}}</view>
-      <view
-        wx:for="{{historyView}}"
-        wx:key="id"
+      <block wx:for="{{historyView}}" wx:key="id">
+        <view wx:if="{{item.showDateHeader}}" class="history-date-header">{{item.dateText}} · {{item.dateGroupCount}} 单</view>
+        <view
         class="order card history-order"
         data-id="{{item.id}}"
         bindtap="onHistoryTap"
@@ -448,6 +448,7 @@
           >{{replyingId === item.id ? '回复中…' : (item.ownerReply ? '改一句回复' : '回复评价')}}</view>
         </view>
       </view>
+      </block>
     </block>
 
     <view class="menu-head" id="menu-section">

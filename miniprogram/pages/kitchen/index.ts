@@ -432,6 +432,9 @@ Page({
             order.scheduledDate ||
               dateInputString(new Date(order.createdAt))
           ),
+          groupKey:
+            order.scheduledDate ||
+            dateInputString(new Date(order.createdAt)),
           summary:
             itemSummary(order.items.map((item: any) => item.name)) +
             ` · 共 ${totalQty} 份`,
@@ -2080,7 +2083,24 @@ Page({
         : this.data.historyAll
         ? 100
         : 10
-    return matched.slice(0, limit)
+    const dateCounts: Record<string, number> = {}
+    matched.forEach((order: any) => {
+      const key = order.groupKey || order.dateText || ''
+      dateCounts[key] = (dateCounts[key] || 0) + 1
+    })
+    let lastDate = ''
+    return matched.slice(0, limit).map((order: any) => {
+      const key = order.groupKey || order.dateText || ''
+      const showDateHeader = key !== lastDate
+      if (showDateHeader) {
+        lastDate = key
+      }
+      return {
+        ...order,
+        showDateHeader,
+        dateGroupCount: dateCounts[key] || 1
+      }
+    })
   },
 
   applyHistoryFilter() {

@@ -1007,6 +1007,17 @@ function chinaDate(offset) {
     data.historyAll === true &&
       (data.historyView || []).length === (data.history || []).length
   )
+  const historyHeaderOrder = (data.historyView || []).find(
+    order => order.showDateHeader
+  )
+  check(
+    'mock 厨房历史日期分组',
+    Boolean(historyHeaderOrder) &&
+      Number(historyHeaderOrder.dateGroupCount) >= 1,
+    historyHeaderOrder
+      ? `${historyHeaderOrder.dateText} · ${historyHeaderOrder.dateGroupCount} 单`
+      : '没有日期分组'
+  )
   await invoke(mp, "page.onHistorySearch({ detail: { value: '001' } })")
   await sleep(400)
   await invoke(mp, 'page.onCopyHistoryCsv()')
@@ -1350,6 +1361,21 @@ function chinaDate(offset) {
   // 批量上下架：先筛到一道菜，下架再上架
   await invoke(mp, "page.onDishSearch({ detail: { value: '番茄' } })")
   await sleep(300)
+  page = await current()
+  data = await page.data()
+  let batchTarget = (data.displayDishes || [])[0]
+  if (batchTarget && batchTarget.status !== 'on') {
+    await invoke(
+      mp,
+      `page.onToggleDish({ currentTarget: { dataset: { id: ${JSON.stringify(
+        batchTarget.id
+      )} } } })`
+    )
+    await sleep(1600)
+    page = await current()
+    data = await page.data()
+    batchTarget = (data.displayDishes || [])[0]
+  }
   await mp.mockWxMethod('showActionSheet', { tapIndex: 1 })
   await invoke(mp, 'page.onBatchStatus()')
   await sleep(1900)

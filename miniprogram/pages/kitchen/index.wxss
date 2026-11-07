@@ -907,6 +907,13 @@
   margin-bottom: 14rpx;
 }
 
+.history-date-header {
+  margin: 18rpx 4rpx 10rpx;
+  color: #5C5C5C;
+  font-size: 24rpx;
+  font-weight: 800;
+}
+
 .history-search {
   display: flex;
   align-items: center;
