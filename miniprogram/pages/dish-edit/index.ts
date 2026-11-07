@@ -270,10 +270,13 @@ Page({
     const delta = Number(e.currentTarget.dataset.delta) === 1 ? 1 : -1
     const current = Number(this.data.stock)
     const safe = isFinite(current) ? Math.floor(current) : -1
-    const next = Math.max(-1, Math.min(9999, safe + delta))
-    if (safe === -1 && delta < 0) {
+    if (safe < 0) {
+      if (delta > 0) {
+        wx.showToast({ title: '当前不限量，直接输入份数', icon: 'none' })
+      }
       return
     }
+    const next = Math.max(0, Math.min(9999, safe + delta))
     this.setData({ stock: String(next) })
   },
 

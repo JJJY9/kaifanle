@@ -64,6 +64,19 @@ function chinaDate(offset) {
   let page = await current()
   let data = await page.data()
   check('mock 首页加载', (data.sections || []).length > 0, `${data.sections.length} 个分类`)
+  const heroBeforeSwitch = data.hero && data.hero.id
+  await invoke(mp, 'page.onNextHero()')
+  await sleep(400)
+  page = await current()
+  const heroData = await page.data()
+  const heroAfterSwitch = heroData.hero
+  check(
+    'mock 首页推荐换一道',
+    Boolean(heroBeforeSwitch) &&
+      Boolean(heroAfterSwitch) &&
+      heroAfterSwitch.id !== heroBeforeSwitch,
+    `${heroBeforeSwitch} → ${heroAfterSwitch && heroAfterSwitch.id}`
+  )
   check(
     'mock 首页进行中订单',
     Boolean(data.activeOrder) &&
@@ -692,12 +705,24 @@ function chinaDate(offset) {
         Number(data.prepTotal),
     `${prepGroups.map(group => group.mealText).join('、')} · ${data.prepTotal} 份`
   )
-  const prepMealGroup = prepGroups[0]
+  const prepMealGroup = prepGroups[0] || {
+    meal: 'lunch',
+    mealText: '午餐',
+    items: [{ name: '占位菜', qty: 1 }],
+    total: 1
+  }
+  const originalPrepGroups = prepGroups.map(group => ({
+    ...group,
+    items: (group.items || []).map(item => ({ ...item }))
+  }))
   await invoke(
     mp,
-    `page.onCopyPrepMeal({ currentTarget: { dataset: { meal: ${JSON.stringify(
-      prepMealGroup.meal
-    )} } } })`
+    `page.setData({ prepGroups: (page.data.prepGroups || []).concat([{ meal: 'dinner', mealText: '晚餐', items: [{ name: '测试晚餐菜', qty: 2 }], total: 2 }]) })`
+  )
+  await sleep(200)
+  await invoke(
+    mp,
+    `page.onCopyPrepMeal({ currentTarget: { dataset: { meal: 'dinner' } } })`
   )
   await sleep(500)
   const prepMealClip = await mp.evaluate(
@@ -705,12 +730,20 @@ function chinaDate(offset) {
       "return new Promise(resolve => wx.getClipboardData({ success: r => resolve(r.data || ''), fail: () => resolve('') }))"
     )
   )
+  const prepMealClipText = String(prepMealClip || '')
   check(
     'mock 按餐次复制采购清单',
-    String(prepMealClip || '').indexOf(`${prepMealGroup.mealText}备菜`) > -1 &&
-      String(prepMealClip || '').indexOf(prepMealGroup.items[0].name) > -1,
-    `${String(prepMealClip || '').length} 字`
+    prepMealClipText.indexOf('晚餐备菜') > -1 &&
+      prepMealClipText.indexOf('测试晚餐菜') > -1 &&
+      (!prepMealGroup.items[0] ||
+        prepMealClipText.indexOf(prepMealGroup.items[0].name) === -1),
+    `${prepMealClipText.length} 字`
   )
+  await invoke(
+    mp,
+    `page.setData({ prepGroups: ${JSON.stringify(originalPrepGroups)} })`
+  )
+  await sleep(200)
   check(
     'mock 采购食材汇总',
     (data.prepIngredients || []).some(
@@ -855,6 +888,30 @@ function chinaDate(offset) {
     data.historyAll === true &&
       (data.historyView || []).length === (data.history || []).length
   )
+  const oldHistoryOrder = {
+    id: 'history-old-test',
+    no: '900',
+    status: 'completed',
+    statusText: '已完成',
+    scheduledDate: chinaDate(-3),
+    createdAt: Date.now() - 3 * 24 * 60 * 60 * 1000,
+    meal: 'lunch',
+    mealText: '午餐',
+    rating: 1,
+    canReply: false,
+    ownerReply: '',
+    items: [{ dishId: 'd01', name: '旧订单测试菜', price: 1, qty: 1 }],
+    summary: '旧订单测试菜',
+    dateText: '',
+    timeText: ''
+  }
+  await invoke(
+    mp,
+    `page.setData({ history: page.data.history.concat([${JSON.stringify(
+      oldHistoryOrder
+    )}]) }, () => page.applyHistoryFilter())`
+  )
+  await sleep(300)
   await invoke(
     mp,
     "page.onHistoryRange({ currentTarget: { dataset: { range: 'today' } } })"
@@ -863,6 +920,9 @@ function chinaDate(offset) {
   page = await current()
   data = await page.data()
   const todayHistoryCount = (data.historyView || []).length
+  const todayHasOld = (data.historyView || []).some(
+    order => order.id === 'history-old-test'
+  )
   await invoke(
     mp,
     "page.onHistoryRange({ currentTarget: { dataset: { range: 'week' } } })"
@@ -871,6 +931,9 @@ function chinaDate(offset) {
   page = await current()
   data = await page.data()
   const weekHistoryCount = (data.historyView || []).length
+  const weekHasOld = (data.historyView || []).some(
+    order => order.id === 'history-old-test'
+  )
   await invoke(
     mp,
     "page.onHistoryRange({ currentTarget: { dataset: { range: 'all' } } })"
@@ -878,14 +941,24 @@ function chinaDate(offset) {
   await sleep(300)
   page = await current()
   data = await page.data()
+  const allHasOld = (data.historyView || []).some(
+    order => order.id === 'history-old-test'
+  )
   check(
     'mock 厨房历史日期筛选',
     data.historyRange === 'all' &&
-      todayHistoryCount > 0 &&
+      !todayHasOld &&
+      weekHasOld &&
+      allHasOld &&
       weekHistoryCount >= todayHistoryCount &&
       (data.historyView || []).length >= weekHistoryCount,
     `今天 ${todayHistoryCount} / 近7天 ${weekHistoryCount} / 全部 ${(data.historyView || []).length}`
   )
+  await invoke(
+    mp,
+    "page.setData({ history: page.data.history.filter(order => order.id !== 'history-old-test') }, () => page.applyHistoryFilter())"
+  )
+  await sleep(300)
   await invoke(
     mp,
     "page.onHistoryRating({ currentTarget: { dataset: { rating: 'neutral' } } })"
@@ -914,6 +987,21 @@ function chinaDate(offset) {
     (data.historyView || []).length >= 1 &&
       data.historyView.every(order => String(order.no).indexOf('001') > -1),
     `${(data.historyView || []).length} 单`
+  )
+  await invoke(mp, 'page.onClearHistorySearch()')
+  await sleep(300)
+  await invoke(
+    mp,
+    "page.onHistorySearch({ detail: { value: '没有这个订单zzz' } })"
+  )
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 厨房历史筛选空态',
+    (data.historyView || []).length === 0 &&
+      data.historyEmptyText === '当前筛选没有订单',
+    data.historyEmptyText
   )
   await invoke(mp, 'page.onClearHistorySearch()')
   await sleep(300)
@@ -1317,7 +1405,14 @@ function chinaDate(offset) {
   await sleep(300)
   page = await current()
   data = await page.data()
-  const stockAfterPlus = Number(data.stock)
+  const unlimitedStayed = Number(data.stock) === stockBeforeStep
+  await invoke(mp, "page.setData({ stock: '2' })")
+  await sleep(200)
+  await invoke(
+    mp,
+    "page.onStockStep({ currentTarget: { dataset: { delta: 1 } } })"
+  )
+  await sleep(200)
   await invoke(
     mp,
     "page.onStockStep({ currentTarget: { dataset: { delta: -1 } } })"
@@ -1325,11 +1420,13 @@ function chinaDate(offset) {
   await sleep(300)
   page = await current()
   data = await page.data()
+  const stockStepped = Number(data.stock) === 2
+  await invoke(mp, "page.setData({ stock: '-1' })")
+  await sleep(200)
   check(
     'mock 菜品库存加减',
-    stockAfterPlus === stockBeforeStep + 1 &&
-      Number(data.stock) === stockBeforeStep,
-    `${stockBeforeStep} → ${stockAfterPlus} → ${data.stock}`
+    stockBeforeStep === -1 && unlimitedStayed && stockStepped,
+    `不限量保持 ${stockBeforeStep} / 2 → 3 → ${data.stock}`
   )
   await invoke(mp, 'page.onCopyDish()')
   await sleep(1600)
@@ -1750,7 +1847,9 @@ function chinaDate(offset) {
   await sleep(300)
   page = await current()
   data = await page.data()
-  const categoryEmpty = (data.display || []).length === 0
+  const categoryEmpty =
+    (data.display || []).length === 0 &&
+    data.emptyTitle === '这个分类还没有收藏'
   await invoke(
     mp,
     "page.onCategory({ currentTarget: { dataset: { id: 'all' } } })"
@@ -2349,14 +2448,14 @@ function chinaDate(offset) {
       ),
     data.order ? '含花生' : '没找到订单'
   )
+  const stepDeltas = (data.steps || [])
+    .map(step => step.deltaText)
+    .filter(Boolean)
+    .join(' / ')
   check(
     'mock 订单时间轴等待时长',
-    (data.steps || []).filter(step => String(step.deltaText || '').length > 0)
-      .length >= 1,
-    (data.steps || [])
-      .map(step => step.deltaText)
-      .filter(Boolean)
-      .join(' / ')
+    stepDeltas === '5 分钟 / 10 分钟 / 15 分钟 / 10 分钟',
+    stepDeltas
   )
   await invoke(mp, 'page.onCopyOrderReceipt()')
   await sleep(400)
@@ -2627,7 +2726,9 @@ function chinaDate(offset) {
       ? `${data.report.totalOrders} 单 / ¥${data.report.revenue}`
       : '没有数据'
   )
-  const topDishId = (data.report.topDishes[0] || {}).id
+  const topDishId = ((data.report || {}).topDishes || [])[0]
+    ? data.report.topDishes[0].id
+    : ''
   check('mock 月报菜品带 ID', Boolean(topDishId), topDishId || '没有 ID')
   await invoke(
     mp,
@@ -2761,11 +2862,12 @@ function chinaDate(offset) {
       data.monthGoalText === expectedMonthText,
     `¥${monthRevenue} / ¥5000 · ${data.monthGoalPercent}% · ${data.monthGoalText}`
   )
+  const reportForMonth = data.report || {}
   check(
     'mock 月报上月同期',
-    Boolean(data.report.previousMonth) &&
-      Number(data.report.previousMonth.orders) === 0 &&
-      Number(data.report.monthOrders) >= 1 &&
+    Boolean(reportForMonth.previousMonth) &&
+      Number(reportForMonth.previousMonth.orders) === 0 &&
+      Number(reportForMonth.monthOrders) >= 1 &&
       Boolean(data.monthCompare) &&
       data.monthCompare.text === '上月同期还没有营收' &&
       data.monthCompare.rangeText.indexOf(' - ') > -1,

@@ -2315,6 +2315,28 @@ async function run() {
   assert.ok(d01Row && d01Row.qty >= 2)
   // 旧订单没有成本快照且部分菜品缺成本时，单菜成本留空，不给出误导毛利
   assert.strictEqual(d01Row.cost, null)
+  // 上月同期：构造一笔上月 1 日的订单，确认区间与金额真的被统计
+  const smokeChina = new Date(Date.now() + 8 * 60 * 60 * 1000)
+  const previousMonthTs =
+    Date.UTC(
+      smokeChina.getUTCFullYear(),
+      smokeChina.getUTCMonth() - 1,
+      1,
+      12
+    ) -
+    8 * 60 * 60 * 1000
+  ensure('orders').set('prev-month-smoke', {
+    _id: 'prev-month-smoke',
+    amount: 77,
+    status: 'completed',
+    createdAt: previousMonthTs,
+    meal: 'dinner',
+    items: [{ dishId: 'd01', name: '上月测试菜', price: 77, qty: 1 }]
+  })
+  res = await call('getKitchenReport', {}, 'admin-openid')
+  assert.strictEqual(res.data.previousMonth.revenue, 77)
+  assert.strictEqual(res.data.previousMonth.orders, 1)
+  ensure('orders').delete('prev-month-smoke')
   await call('cancelOrder', { id: costOrder.data.id }, 'girl-openid')
   await call(
     'saveDish',

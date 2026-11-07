@@ -110,6 +110,7 @@ Page({
   _unsub: null as null | (() => void),
   _favUnsub: null as null | (() => void),
   _available: [] as Dish[],
+  _heroCandidates: [] as Dish[],
   _cartLines: [] as CartLine[],
   _pendingReorder: null as null | { meal: MealId; date: string },
   _categories: [] as Category[],
@@ -630,6 +631,9 @@ Page({
     const heroCandidates = recommended.length
       ? recommended
       : pool.filter(dish => dish.status !== 'soldout' && dish.stock !== 0)
+    this._heroCandidates = pool.filter(
+      dish => dish.status !== 'soldout' && dish.stock !== 0
+    )
     const rotatingHero =
       heroCandidates.length > 0
         ? heroCandidates[
@@ -1051,6 +1055,22 @@ Page({
 
   onHeroAdd() {
     this.quickAdd(this.data.hero)
+  },
+
+  onNextHero() {
+    const list = this._heroCandidates || []
+    if (list.length < 2) {
+      wx.showToast({ title: '今天就这一道推荐', icon: 'none' })
+      return
+    }
+    const currentId = this.data.hero && this.data.hero.id
+    let index = list.findIndex(dish => dish.id === currentId)
+    index = (index + 1) % list.length
+    this.setData({
+      hero: list[index],
+      heroImageFailed: false,
+      heroTag: this.data.recommendText || '今日推荐'
+    })
   },
 
   onHeroImageError() {

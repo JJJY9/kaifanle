@@ -666,6 +666,21 @@
   font-size: 24rpx;
 }
 
+.hero-switch {
+  align-self: flex-start;
+  margin-top: 10rpx;
+  padding: 3rpx 14rpx;
+  background: #FFF7DA;
+  border: 2rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 19rpx;
+  font-weight: 800;
+}
+
+.hero-switch:active {
+  transform: translateY(2rpx);
+}
+
 .hero-foot {
   display: flex;
   align-items: center;

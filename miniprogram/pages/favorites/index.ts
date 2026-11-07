@@ -13,6 +13,8 @@ Page({
     sort: 'recent' as 'recent' | 'price',
     categories: [] as any[],
     category: 'all',
+    emptyTitle: '没搜到',
+    emptyDesc: '换个菜名试试',
     posterMaking: false,
     posterPath: ''
   },
@@ -108,7 +110,12 @@ Page({
       this.data.sort === 'price'
         ? matched.sort((a, b) => Number(a.price) - Number(b.price))
         : matched
-    this.setData({ display })
+    const hasKeyword = Boolean(keyword)
+    this.setData({
+      display,
+      emptyTitle: hasKeyword ? '没搜到' : '这个分类还没有收藏',
+      emptyDesc: hasKeyword ? '换个菜名试试' : '换个分类看看'
+    })
   },
 
   onCategory(e: any) {

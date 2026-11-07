@@ -70,8 +70,8 @@
 
     <empty-state
       wx:if="{{!display.length}}"
-      title="没搜到"
-      desc="换个菜名试试"
+      title="{{emptyTitle}}"
+      desc="{{emptyDesc}}"
     />
 
     <view

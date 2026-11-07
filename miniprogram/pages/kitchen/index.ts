@@ -78,6 +78,7 @@ Page({
     historyRating: 'all' as 'all' | 'good' | 'neutral' | 'bad',
     historyMeal: 'all' as 'all' | 'breakfast' | 'lunch' | 'dinner',
     historyKeyword: '',
+    historyEmptyText: '还没有历史订单',
     historyView: [] as any[],
     historyAll: false,
     receiptVisible: false,
@@ -778,7 +779,10 @@ Page({
         weekBarTotal,
         loading: false,
         error: ''
-      }, () => this.applyDishFilter())
+      }, () => {
+        this.applyDishFilter()
+        this.applyHistoryFilter()
+      })
     } catch (e: any) {
       if (seq !== this._loadSeq) {
         return
@@ -1919,8 +1923,20 @@ Page({
   },
 
   applyHistoryFilter() {
+    const historyView = this.filterHistory(this.data.history || [])
+    const hasFilter =
+      this.data.historyOnlyPending ||
+      this.data.historyRange !== 'all' ||
+      this.data.historyRating !== 'all' ||
+      this.data.historyMeal !== 'all' ||
+      Boolean(String(this.data.historyKeyword || '').trim())
     this.setData({
-      historyView: this.filterHistory(this.data.history || [])
+      historyView,
+      historyEmptyText: hasFilter
+        ? '当前筛选没有订单'
+        : this.data.historyOnlyPending
+        ? '没有待回复的评价'
+        : '还没有历史订单'
     })
   },
 

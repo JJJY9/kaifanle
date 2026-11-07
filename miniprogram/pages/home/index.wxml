@@ -194,6 +194,7 @@
       <view class="hero-body">
         <view class="hero-name">{{hero.name}}</view>
         <view class="hero-desc">{{hero.desc}}</view>
+        <view class="hero-switch" catchtap="onNextHero">换一道 ↻</view>
         <view class="hero-foot">
           <view class="hero-price">
             <text class="currency">¥</text>
