@@ -87,6 +87,16 @@
         bindinput="onLowStockThreshold"
       />
       <view class="note-hint">厨房低库存筛选、补货和月报体检按这个份数提醒</view>
+
+      <view class="block-title">今日营收目标</view>
+      <input
+        class="note"
+        type="number"
+        placeholder="0 表示不设目标"
+        value="{{dailyGoal}}"
+        bindinput="onDailyGoal"
+      />
+      <view class="note-hint">厨房顶部会显示今天的营收进度，0 表示不显示</view>
     </view>
 
     <view class="card block">

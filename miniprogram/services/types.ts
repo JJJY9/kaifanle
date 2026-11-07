@@ -178,6 +178,7 @@ export interface Business {
   noticeUntil?: string
   recommendText?: string
   lowStockThreshold?: number
+  dailyGoal?: number
   closedDates?: string[]
   weeklyClosed?: number[]
 }
