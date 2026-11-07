@@ -2284,6 +2284,11 @@ function chinaDate(offset) {
   page = await current()
   data = await page.data()
   check('mock 订单列表', (data.orders || []).length > 0, `${data.orders.length} 单`)
+  check(
+    'mock 订单菜品缩略图',
+    (data.orders || []).some(order => Boolean(order.thumb)),
+    `${(data.orders || []).filter(order => order.thumb).length} 单带图`
+  )
   await invoke(
     mp,
     "page.onSelectMeal({ currentTarget: { dataset: { meal: 'lunch' } } })"

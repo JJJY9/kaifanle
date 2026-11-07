@@ -69,7 +69,12 @@
         bindtap="onTapOrder"
       >
         <view class="order-top">
-          <text class="no">#{{item.no}}</text>
+          <view class="order-id">
+            <view wx:if="{{item.thumb}}" class="order-thumb">
+              <image class="order-thumb-img" src="{{item.thumb}}" mode="aspectFill" lazy-load />
+            </view>
+            <text class="no">#{{item.no}}</text>
+          </view>
           <view class="order-top-right">
             <text wx:if="{{item.isPreorder}}" class="preorder-chip">预订</text>
             <text wx:if="{{item.rated}}" class="rated-chip">已评</text>

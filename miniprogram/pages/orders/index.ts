@@ -1,4 +1,4 @@
-import { getMyStats, getOrdersPage } from '../../services/api'
+import { getDishes, getMyStats, getOrdersPage } from '../../services/api'
 import { STATUS_TEXT, mealName } from '../../utils/constants'
 import {
   formatTime,
@@ -33,18 +33,25 @@ Page({
   },
 
   _loadSeq: 0,
+  _dishMap: {} as Record<string, any>,
 
   async load() {
     const seq = ++this._loadSeq
     this.setData({ error: '' })
     try {
-      const [page, stats] = await Promise.all([
+      const [page, stats, dishes] = await Promise.all([
         getOrdersPage(undefined, 50),
-        getMyStats().catch(() => null)
+        getMyStats().catch(() => null),
+        getDishes().catch(() => [])
       ])
       if (seq !== this._loadSeq) {
         return
       }
+      const dishMap: Record<string, any> = {}
+      ;(dishes || []).forEach((dish: any) => {
+        dishMap[dish.id] = dish
+      })
+      this._dishMap = dishMap
       this.setData({
         monthText: stats
           ? `本月 ${Number(stats.month || 0)} 单 · ¥${Number(
@@ -73,6 +80,11 @@ Page({
       statusText: STATUS_TEXT[order.status],
       mealText: mealName(order.meal),
       timeText: formatTime(order.createdAt),
+      thumb: (() => {
+        const first = (order.items || [])[0]
+        const dish = first ? this._dishMap[first.dishId] : null
+        return dish ? dish.image || dish.cartoon || '' : ''
+      })(),
       groupKey:
         order.scheduledDate ||
         dateInputString(new Date(order.createdAt)),
