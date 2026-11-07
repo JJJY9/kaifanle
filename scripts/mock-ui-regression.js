@@ -1415,6 +1415,24 @@ function chinaDate(offset) {
     mp,
     "wx.showActionSheet = wx.__batchSheetOriginal; wx.showToast = wx.__batchToastOriginal; delete wx.__batchSheetOriginal; delete wx.__batchToastOriginal; true"
   )
+  await invoke(
+    mp,
+    "wx.__failModalOriginal = wx.showModal; wx.showModal = (o) => { wx.__failModal = o; return Promise.resolve({ confirm: false, cancel: true }) }; page.showBatchFailureModal('上架', [{ name: '测试菜', reason: '库存不对' }, { name: '另一道', reason: '分类不存在' }]); true"
+  )
+  await sleep(400)
+  const failModal = await mp.evaluate(() => wx.__failModal || null)
+  await invoke(
+    mp,
+    "wx.showModal = wx.__failModalOriginal; delete wx.__failModalOriginal; true"
+  )
+  check(
+    'mock 批量失败明细',
+    Boolean(failModal) &&
+      String(failModal.title || '').includes('2 道') &&
+      String(failModal.content || '').includes('测试菜') &&
+      String(failModal.content || '').includes('库存不对'),
+    failModal ? `${failModal.title} · ${failModal.content}` : '没有弹窗'
+  )
   await invoke(mp, 'page.onClearDishSearch()')
   await sleep(300)
   const firstDish = (data.dishes || [])[0]

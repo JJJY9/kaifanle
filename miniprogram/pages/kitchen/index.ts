@@ -1190,6 +1190,7 @@ Page({
     this.setData({ restockingAll: true })
     let done = 0
     let failed = 0
+    const failedItems: Array<{ name: string; reason: string }> = []
     const stockMap: Record<string, number> = {}
     for (const dish of low) {
       try {
@@ -1203,8 +1204,12 @@ Page({
             ? updated.stock
             : Number(dish.stock) + 5
         done++
-      } catch (e) {
+      } catch (e: any) {
         failed++
+        failedItems.push({
+          name: dish.name || dish.id,
+          reason: String((e && e.message) || '操作失败')
+        })
       }
     }
     const dishes = this.data.dishes.map(dish =>
@@ -1227,9 +1232,34 @@ Page({
       },
       () => this.applyDishFilter()
     )
+    if (failedItems.length) {
+      this.showBatchFailureModal('补库存', failedItems)
+      return
+    }
     wx.showToast({
-      title: failed ? `补好 ${done} 道，${failed} 道失败` : `补好 ${done} 道`,
+      title: `补好 ${done} 道`,
       icon: 'none'
+    })
+  },
+
+  showBatchFailureModal(
+    action: string,
+    failures: Array<{ name: string; reason: string }>
+  ) {
+    if (!failures.length) {
+      return
+    }
+    const lines = failures
+      .slice(0, 8)
+      .map(item => `${item.name}：${String(item.reason || '操作失败').slice(0, 30)}`)
+    if (failures.length > 8) {
+      lines.push(`还有 ${failures.length - 8} 道…`)
+    }
+    wx.showModal({
+      title: `${failures.length} 道${action}失败`,
+      content: lines.join('\n'),
+      showCancel: false,
+      confirmText: '知道了'
     })
   },
 
@@ -1290,6 +1320,7 @@ Page({
     let done = 0
     let failed = 0
     let lastError = ''
+    const failedItems: Array<{ name: string; reason: string }> = []
     for (const dish of list) {
       if (dish.status === status) {
         continue
@@ -1306,6 +1337,10 @@ Page({
       } catch (e: any) {
         failed++
         lastError = String((e && e.message) || '操作失败')
+        failedItems.push({
+          name: dish.name || dish.id,
+          reason: lastError
+        })
       }
     }
     const dishes = this.data.dishes.map(dish =>
@@ -1328,12 +1363,12 @@ Page({
       },
       () => this.applyDishFilter()
     )
+    if (failedItems.length) {
+      this.showBatchFailureModal(action, failedItems)
+      return
+    }
     wx.showToast({
-      title: done
-        ? `${action} ${done} 道${failed ? `，${failed} 道失败` : ''}`
-        : failed
-        ? lastError.slice(0, 40)
-        : '当前筛选已经是这个状态',
+      title: done ? `已${action} ${done} 道` : '当前筛选已经是这个状态',
       icon: 'none'
     })
   },
@@ -1645,6 +1680,7 @@ Page({
     const stockMap: Record<string, number> = {}
     let done = 0
     let failed = 0
+    const failedItems: Array<{ name: string; reason: string }> = []
     try {
       for (const dish of targets) {
         try {
@@ -1659,8 +1695,12 @@ Page({
               ? saved.stock
               : nextStock
           done++
-        } catch (e) {
+        } catch (e: any) {
           failed++
+          failedItems.push({
+            name: dish.name || dish.id,
+            reason: String((e && e.message) || '操作失败')
+          })
         }
       }
     } finally {
@@ -1686,10 +1726,12 @@ Page({
       },
       () => this.applyDishFilter()
     )
+    if (failedItems.length) {
+      this.showBatchFailureModal('补库存', failedItems)
+      return
+    }
     wx.showToast({
-      title: failed
-        ? `补好 ${done} 道，${failed} 道失败`
-        : `补好 ${done} 道，每道 +5`,
+      title: `补好 ${done} 道，每道 +5`,
       icon: 'none'
     })
   },
