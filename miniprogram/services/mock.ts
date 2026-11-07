@@ -718,7 +718,9 @@ function loadOrders(): Order[] {
             (seed1.status !== 'pending' ||
               Number(seed1.adminUnread) !== 1 ||
               !Array.isArray(seed1.messages) ||
-              !seed1.messages.length)
+              seed1.messages.length !== 1 ||
+              String((seed1.messages[0] && seed1.messages[0].content) || '') !==
+                '辛苦啦')
         )
         const staleSeed =
           seedBroken ||

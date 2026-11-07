@@ -128,7 +128,10 @@ Page({
     const display =
       this.data.sort === 'price'
         ? matched.sort((a, b) => Number(a.price) - Number(b.price))
-        : matched
+        : matched.sort(
+            (a: any, b: any) =>
+              Number(b.favoritedAt || 0) - Number(a.favoritedAt || 0)
+          )
     const hasKeyword = Boolean(keyword)
     this.setData({
       display,

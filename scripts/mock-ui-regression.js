@@ -1371,23 +1371,36 @@ function chinaDate(offset) {
         batchTarget.id
       )} } } })`
     )
-    await sleep(1600)
+    await sleep(3000)
     page = await current()
     data = await page.data()
     batchTarget = (data.displayDishes || [])[0]
   }
-  await mp.mockWxMethod('showActionSheet', { tapIndex: 1 })
+  await invoke(
+    mp,
+    "wx.__batchSheetOriginal = wx.showActionSheet; wx.__batchToastOriginal = wx.showToast; wx.showToast = (o) => { wx.__lastBatchToast = o && o.title }; wx.showActionSheet = () => Promise.resolve({ tapIndex: 1 }); true"
+  )
   await invoke(mp, 'page.onBatchStatus()')
-  await sleep(1900)
+  await sleep(2200)
   page = await current()
   data = await page.data()
   let batchDish = (data.displayDishes || [])[0]
+  const batchDownToast = await mp.evaluate(() => wx.__lastBatchToast || '')
   check(
     'mock 厨房批量下架',
     Boolean(batchDish) && batchDish.status === 'off',
-    batchDish ? batchDish.status : '没找到菜'
+    batchDish
+      ? `${batchDish.status} · toast ${batchDownToast} · filter ${
+          data.dishFilter
+        } · target ${batchTarget && batchTarget.status} · busy ${
+          data.batchBusy
+        }`
+      : '没找到菜'
   )
-  await mp.mockWxMethod('showActionSheet', { tapIndex: 0 })
+  await invoke(
+    mp,
+    "wx.showActionSheet = () => Promise.resolve({ tapIndex: 0 }); true"
+  )
   await invoke(mp, 'page.onBatchStatus()')
   await sleep(1900)
   page = await current()
@@ -1397,6 +1410,10 @@ function chinaDate(offset) {
     'mock 厨房批量上架',
     Boolean(batchDish) && batchDish.status === 'on',
     batchDish ? batchDish.status : '没找到菜'
+  )
+  await invoke(
+    mp,
+    "wx.showActionSheet = wx.__batchSheetOriginal; wx.showToast = wx.__batchToastOriginal; delete wx.__batchSheetOriginal; delete wx.__batchToastOriginal; true"
   )
   await invoke(mp, 'page.onClearDishSearch()')
   await sleep(300)
@@ -2123,6 +2140,43 @@ function chinaDate(offset) {
       ),
     `${(data.display || []).length} 道`
   )
+  const favoritesOriginal = data.allFavorites || []
+  const favoriteBase = favoritesOriginal[0]
+  if (favoriteBase) {
+    await invoke(
+      mp,
+      `page.setData({ allFavorites: [
+        ${JSON.stringify({
+          ...favoriteBase,
+          id: 'fav-old',
+          name: '旧收藏',
+          favoritedAt: 1000
+        })},
+        ${JSON.stringify({
+          ...favoriteBase,
+          id: 'fav-new',
+          name: '新收藏',
+          favoritedAt: 2000
+        })}
+      ], sort: 'recent' }, () => page.applyFilter())`
+    )
+    await sleep(400)
+    page = await current()
+    data = await page.data()
+    check(
+      'mock 收藏按时间排序',
+      (data.display || []).length === 2 &&
+        data.display[0].id === 'fav-new',
+      (data.display || []).map(dish => dish.id).join(' / ')
+    )
+    await invoke(
+      mp,
+      `page.setData({ allFavorites: ${JSON.stringify(
+        favoritesOriginal
+      )}, sort: 'recent' }, () => page.applyFilter())`
+    )
+    await sleep(300)
+  }
   await invoke(mp, 'page.onMakePoster()')
   await sleep(1200)
   page = await current()

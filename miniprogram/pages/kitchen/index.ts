@@ -1289,6 +1289,7 @@ Page({
     const statusMap: Record<string, string> = {}
     let done = 0
     let failed = 0
+    let lastError = ''
     for (const dish of list) {
       if (dish.status === status) {
         continue
@@ -1302,8 +1303,9 @@ Page({
         statusMap[dish.id] =
           saved && saved.status ? saved.status : status
         done++
-      } catch (e) {
+      } catch (e: any) {
         failed++
+        lastError = String((e && e.message) || '操作失败')
       }
     }
     const dishes = this.data.dishes.map(dish =>
@@ -1329,6 +1331,8 @@ Page({
     wx.showToast({
       title: done
         ? `${action} ${done} 道${failed ? `，${failed} 道失败` : ''}`
+        : failed
+        ? lastError.slice(0, 40)
         : '当前筛选已经是这个状态',
       icon: 'none'
     })
