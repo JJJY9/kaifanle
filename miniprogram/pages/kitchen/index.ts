@@ -1869,14 +1869,23 @@ Page({
     const pendingOnly = this.data.historyOnlyPending
       ? list.filter(order => order.canReply && !order.ownerReply)
       : list
+    const ordered = this.data.historyOnlyPending
+      ? pendingOnly
+          .slice()
+          .sort(
+            (a, b) =>
+              Number(a.rating || 0) - Number(b.rating || 0) ||
+              Number(b.createdAt || 0) - Number(a.createdAt || 0)
+          )
+      : pendingOnly
     const range = this.data.historyRange
-    let ranged = pendingOnly
+    let ranged = ordered
     if (range !== 'all') {
       const today = dateInputString()
       const weekStart = dateInputString(
         new Date(Date.now() - 6 * 24 * 60 * 60 * 1000)
       )
-      ranged = pendingOnly.filter(order => {
+      ranged = ordered.filter(order => {
         const date =
           order.scheduledDate ||
           dateInputString(new Date(Number(order.createdAt) || Date.now()))

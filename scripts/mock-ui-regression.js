@@ -2636,6 +2636,11 @@ function chinaDate(offset) {
         (data.historyView || []).length === repliesBefore &&
         data.historyView.every(
           order => order.canReply && !order.ownerReply
+        ) &&
+        data.historyView.every(
+          (order, index, list) =>
+            index === 0 ||
+            Number(list[index - 1].rating || 0) <= Number(order.rating || 0)
         ),
       `${(data.historyView || []).length} 条`
     )
