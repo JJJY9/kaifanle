@@ -64,6 +64,7 @@ Page({
     noticeUntil: '',
     recommendText: '',
     lowStockThreshold: '3',
+    dailyGoal: '0',
     dateOptions: [] as DateView[],
     weekdays: [] as WeekdayView[]
   },
@@ -109,6 +110,9 @@ Page({
           typeof business.lowStockThreshold === 'number'
             ? business.lowStockThreshold
             : 3
+        ),
+        dailyGoal: String(
+          typeof business.dailyGoal === 'number' ? business.dailyGoal : 0
         ),
         dateOptions,
         weekdays,
@@ -173,6 +177,10 @@ Page({
     this.setData({ lowStockThreshold: e.detail.value })
   },
 
+  onDailyGoal(e: any) {
+    this.setData({ dailyGoal: e.detail.value })
+  },
+
   onToggleClosedDate(e: any) {
     const value = e.currentTarget.dataset.value
     const dateOptions = this.data.dateOptions.map(option =>
@@ -212,6 +220,13 @@ Page({
         return raw && isFinite(value) && value >= 0 && value <= 99
           ? Math.floor(value)
           : 3
+      })(),
+      dailyGoal: (() => {
+        const raw = String(this.data.dailyGoal || '').trim()
+        const value = Number(raw)
+        return raw && isFinite(value) && value >= 0 && value <= 99999
+          ? Math.floor(value)
+          : 0
       })(),
       closedDates: this.data.dateOptions
         .filter(option => option.closed)

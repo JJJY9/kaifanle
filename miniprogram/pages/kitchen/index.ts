@@ -54,6 +54,9 @@ Page({
     loading: true,
     todayClosed: false,
     lowStockThreshold: 3,
+    dailyGoal: 0,
+    goalPercent: 0,
+    goalText: '',
     forbidden: false,
     error: '',
     busyId: '',
@@ -255,6 +258,7 @@ Page({
       let statsRefreshed = false
       let todayClosed = this.data.todayClosed
       let lowStockThreshold = this.data.lowStockThreshold || 3
+      let dailyGoal = this.data.dailyGoal || 0
       let specialDays = this.data.specialDays
       let specialDaysMore = this.data.specialDaysMore
       if (!silent) {
@@ -267,6 +271,10 @@ Page({
           const threshold = Number(business.lowStockThreshold)
           if (isFinite(threshold) && threshold >= 0 && threshold <= 99) {
             lowStockThreshold = Math.floor(threshold)
+          }
+          const goal = Number(business.dailyGoal)
+          if (isFinite(goal) && goal >= 0 && goal <= 99999) {
+            dailyGoal = Math.floor(goal)
           }
         }
       }
@@ -676,6 +684,18 @@ Page({
             ).length
           }
 
+      const revenue = stats ? Number(stats.revenue || 0) : 0
+      const goalPercent =
+        dailyGoal > 0
+          ? Math.min(100, Math.round((revenue / dailyGoal) * 100))
+          : 0
+      const goalText =
+        dailyGoal > 0
+          ? revenue >= dailyGoal
+            ? '今天达标啦 🎉'
+            : `还差 ¥${Number((dailyGoal - revenue).toFixed(2))}`
+          : ''
+
       this.setData({
         orders: view,
         ordersView: this.filterOrders(view),
@@ -687,6 +707,9 @@ Page({
         specialDays,
         specialDaysMore,
         stats,
+        dailyGoal,
+        goalPercent,
+        goalText,
         prepItems,
         prepGroups,
         prepIngredients,

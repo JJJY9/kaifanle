@@ -48,6 +48,7 @@ const DEFAULT_BUSINESS: Business = {
   noticeUntil: '',
   recommendText: '今日推荐',
   lowStockThreshold: 3,
+  dailyGoal: 0,
   closedDates: [],
   weeklyClosed: []
 }
@@ -368,6 +369,16 @@ function normalizeLowStockThreshold(value: any): number {
     : 3
 }
 
+function normalizeDailyGoal(value: any): number {
+  if (value === undefined || value === null || String(value).trim() === '') {
+    return 0
+  }
+  const number = Number(value)
+  return isFinite(number) && number >= 0 && number <= 99999
+    ? Math.floor(number)
+    : 0
+}
+
 function loadBusiness(): Business {
   if (businessCache) {
     return businessCache
@@ -379,6 +390,7 @@ function loadBusiness(): Business {
       businessCache.lowStockThreshold = normalizeLowStockThreshold(
         businessCache.lowStockThreshold
       )
+      businessCache.dailyGoal = normalizeDailyGoal(businessCache.dailyGoal)
       businessCache.noticeUntil = /^\d{4}-\d{2}-\d{2}$/.test(
         String(businessCache.noticeUntil || '')
       )
@@ -1568,6 +1580,7 @@ export async function getBusiness(): Promise<Business> {
   data.lowStockThreshold = normalizeLowStockThreshold(
     data.lowStockThreshold
   )
+  data.dailyGoal = normalizeDailyGoal(data.dailyGoal)
   data.noticeUntil = /^\d{4}-\d{2}-\d{2}$/.test(
     String(data.noticeUntil || '')
   )
@@ -1586,9 +1599,13 @@ export async function updateBusiness(payload: Business): Promise<Business> {
   if (next.noticeUntil === undefined) {
     next.noticeUntil = existing.noticeUntil
   }
+  if (next.dailyGoal === undefined) {
+    next.dailyGoal = existing.dailyGoal
+  }
   next.lowStockThreshold = normalizeLowStockThreshold(
     next.lowStockThreshold
   )
+  next.dailyGoal = normalizeDailyGoal(next.dailyGoal)
   next.noticeUntil = /^\d{4}-\d{2}-\d{2}$/.test(
     String(next.noticeUntil || '')
   )

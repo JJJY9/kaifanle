@@ -41,6 +41,7 @@ const DEFAULT_BUSINESS = {
   noticeUntil: '',
   recommendText: '今日推荐',
   lowStockThreshold: 3,
+  dailyGoal: 0,
   closedDates: [],
   weeklyClosed: []
 }
@@ -374,6 +375,16 @@ function normalizeBusiness(value) {
         ? Math.floor(value)
         : DEFAULT_BUSINESS.lowStockThreshold
     })(),
+    dailyGoal: (() => {
+      const raw = source.dailyGoal
+      if (raw === undefined || raw === null || String(raw).trim() === '') {
+        return DEFAULT_BUSINESS.dailyGoal
+      }
+      const value = Number(raw)
+      return isFinite(value) && value >= 0 && value <= 99999
+        ? Math.floor(value)
+        : DEFAULT_BUSINESS.dailyGoal
+    })(),
     // 指定休息日（YYYY-MM-DD），最多 14 天
     closedDates: Array.isArray(source.closedDates)
       ? source.closedDates
@@ -457,6 +468,9 @@ async function updateBusiness(payload, openid) {
     // 旧客户端不带这个字段时保留已配置的阈值
     source.lowStockThreshold =
       config.business && config.business.lowStockThreshold
+  }
+  if (source.dailyGoal === undefined) {
+    source.dailyGoal = config.business && config.business.dailyGoal
   }
   if (source.noticeUntil === undefined) {
     source.noticeUntil =

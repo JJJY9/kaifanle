@@ -1525,7 +1525,7 @@ function chinaDate(offset) {
   )
   await invoke(
     mp,
-    "page.setData({ notice: '今天只有一锅炖菜', recommendText: '雨天暖胃', noticeUntil: '2099-01-01' })"
+    "page.setData({ notice: '今天只有一锅炖菜', recommendText: '雨天暖胃', noticeUntil: '2099-01-01', dailyGoal: '200' })"
   )
   await invoke(mp, 'page.onSave()')
   await sleep(1000)
@@ -2513,6 +2513,14 @@ function chinaDate(offset) {
       order => order.id === 'seed-3' && order.slotUpdated
     ),
     'seed-3'
+  )
+  check(
+    'mock 厨房营收目标',
+    Number(data.dailyGoal) === 200 &&
+      Number(data.goalPercent) >= 0 &&
+      Number(data.goalPercent) <= 100 &&
+      Boolean(data.goalText),
+    `¥${data.stats && data.stats.revenue} / ¥${data.dailyGoal} · ${data.goalPercent}% · ${data.goalText}`
   )
   const specialRows = data.specialDays || []
   const birthdayRow = specialRows.find(day => day.kind === 'birthday')

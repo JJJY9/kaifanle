@@ -51,6 +51,17 @@
       </view>
     </view>
 
+    <view wx:if="{{dailyGoal > 0 && stats}}" class="goal-card card">
+      <view class="goal-head">
+        <text class="goal-title">今日营收目标</text>
+        <text class="goal-amount">¥{{stats.revenue}} / ¥{{dailyGoal}}</text>
+      </view>
+      <view class="goal-track">
+        <view class="goal-fill" style="width: {{goalPercent}}%;"></view>
+      </view>
+      <view class="goal-text">{{goalText}}</view>
+    </view>
+
     <view wx:if="{{specialDays.length}}" class="special-card card">
       <view class="special-head">
         <text class="special-title">重要日子提醒</text>
