@@ -120,6 +120,7 @@ Page({
   _categories: [] as any[],
   _replyModalOpen: false as boolean,
   _scrollToMenu: false as boolean,
+  _scrollToOrders: false as boolean,
   _restToggling: false as boolean,
   _lastPollErrorAt: 0,
   _loadSeq: 0,
@@ -823,6 +824,10 @@ Page({
         if (this._scrollToMenu) {
           this._scrollToMenu = false
           wx.pageScrollTo({ selector: '#menu-section', duration: 300 })
+        }
+        if (this._scrollToOrders) {
+          this._scrollToOrders = false
+          wx.pageScrollTo({ selector: '#orders-section', duration: 300 })
         }
       })
     } catch (e: any) {
@@ -1676,6 +1681,11 @@ Page({
     if (category) {
       this._scrollToMenu = true
       this.setData({ dishCategory: category })
+    }
+    const meal = String((options && options.meal) || '')
+    if (['breakfast', 'lunch', 'dinner'].indexOf(meal) > -1) {
+      this._scrollToOrders = true
+      this.setData({ orderMeal: meal })
     }
   },
 

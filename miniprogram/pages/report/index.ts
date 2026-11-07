@@ -316,6 +316,14 @@ Page({
     wx.navigateTo({ url: '/pages/recipe/index?id=' + id })
   },
 
+  onMealTap(e: any) {
+    const meal = String((e.currentTarget && e.currentTarget.dataset.meal) || '')
+    if (['breakfast', 'lunch', 'dinner'].indexOf(meal) === -1) {
+      return
+    }
+    wx.navigateTo({ url: `/pages/kitchen/index?meal=${meal}` })
+  },
+
   onCategoryTap(e: any) {
     const id = String((e.currentTarget && e.currentTarget.dataset.id) || '')
     if (!id) {

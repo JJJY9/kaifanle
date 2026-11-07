@@ -182,7 +182,13 @@
     </view>
 
     <view wx:if="{{report.mealStats && report.mealStats.length}}" class="meal-stats card">
-      <view wx:for="{{report.mealStats}}" wx:key="meal" class="meal-stat">
+      <view
+        wx:for="{{report.mealStats}}"
+        wx:key="meal"
+        class="meal-stat"
+        data-meal="{{item.meal}}"
+        bindtap="onMealTap"
+      >
         <text class="meal-stat-name">{{item.meal === 'breakfast' ? '早餐' : (item.meal === 'lunch' ? '午餐' : '晚餐')}}</text>
         <text class="meal-stat-revenue">¥{{item.revenue}}</text>
         <text class="meal-stat-count">{{item.count}} 单</text>

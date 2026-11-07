@@ -3229,6 +3229,30 @@ function chinaDate(offset) {
       .map(item => `${item.meal}:${item.count}`)
       .join(' ')
   )
+  const lunchMealStat = (data.report.mealStats || []).find(
+    item => item.meal === 'lunch'
+  )
+  if (lunchMealStat) {
+    await invoke(
+      mp,
+      "page.onMealTap({ currentTarget: { dataset: { meal: 'lunch' } } })"
+    )
+    await sleep(1900)
+    page = await current()
+    data = await page.data()
+    check(
+      'mock 月报餐次查看订单',
+      page.path === 'pages/kitchen/index' &&
+        data.orderMeal === 'lunch' &&
+        (data.ordersView || []).length >= 1 &&
+        data.ordersView.every(order => order.meal === 'lunch'),
+      `${(data.ordersView || []).length} 单午餐`
+    )
+    await mp.navigateBack()
+    await sleep(1000)
+    page = await current()
+    data = await page.data()
+  }
   check(
     'mock 月报好评菜品',
     Array.isArray(data.report.topRatedDishes) &&
