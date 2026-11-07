@@ -1054,6 +1054,19 @@ Page({
     this.setData({ searchHistory: [] })
   },
 
+  onRemoveHistory(e: any) {
+    const keyword = String(e.currentTarget.dataset.keyword || '')
+    if (!keyword) {
+      return
+    }
+    const searchHistory = (this.data.searchHistory || []).filter(
+      item => item !== keyword
+    )
+    writeSearchHistory(searchHistory)
+    this.setData({ searchHistory })
+    wx.showToast({ title: '已从搜索历史移除', icon: 'none' })
+  },
+
   onWeekMenus() {
     wx.navigateTo({ url: '/pages/week-menus/index' })
   },

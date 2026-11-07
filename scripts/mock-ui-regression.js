@@ -413,6 +413,19 @@ function chinaDate(offset) {
       (data.searchHistory || [])[1] === '汤',
     (data.searchHistory || []).join('、')
   )
+  await invoke(
+    mp,
+    "page.onRemoveHistory({ currentTarget: { dataset: { keyword: '汤' } } })"
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 搜索历史单条删除',
+    (data.searchHistory || []).length === 1 &&
+      data.searchHistory[0] === '饭',
+    (data.searchHistory || []).join('、')
+  )
   await invoke(mp, 'page.onClearHistory()')
   await sleep(300)
   page = await current()

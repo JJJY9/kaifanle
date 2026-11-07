@@ -104,6 +104,7 @@
         class="search-history-chip"
         data-keyword="{{item}}"
         bindtap="onHistoryTap"
+        bindlongpress="onRemoveHistory"
       >{{item}}</view>
       <text class="search-history-clear" bindtap="onClearHistory">清空</text>
     </view>
