@@ -367,6 +367,24 @@
   font-size: 26rpx;
 }
 
+.foot-btn.poster {
+  background: #FFD23F;
+  font-size: 26rpx;
+}
+
+.foot-btn.disabled {
+  opacity: 0.5;
+}
+
+.week-poster-canvas {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  width: 600px;
+  height: 1120px;
+  pointer-events: none;
+}
+
 button.foot-btn {
   width: 100%;
   padding: 0;

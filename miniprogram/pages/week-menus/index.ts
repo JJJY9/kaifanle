@@ -234,7 +234,9 @@ Page({
     emptyTitle: '',
     emptyDesc: '',
     emptyAction: '',
-    emptyKind: '' as '' | 'menu' | 'business' | 'home'
+    emptyKind: '' as '' | 'menu' | 'business' | 'home',
+    posterMaking: false,
+    posterPath: ''
   },
 
   _loadSeq: 0,
@@ -331,7 +333,8 @@ Page({
         emptyTitle,
         emptyDesc,
         emptyAction,
-        emptyKind
+        emptyKind,
+        posterPath: ''
       })
     } catch (e: any) {
       if (seq !== this._loadSeq) {
@@ -383,6 +386,142 @@ Page({
 
   onGoMenu() {
     wx.navigateTo({ url: '/pages/menu-edit/index' })
+  },
+
+  async onMakeWeekPoster() {
+    if (this.data.posterMaking) {
+      return
+    }
+    this.setData({ posterMaking: true })
+    try {
+      const canvas: any = await new Promise((resolve, reject) => {
+        wx.createSelectorQuery()
+          .in(this)
+          .select('#weekPoster')
+          .fields({ node: true, size: true })
+          .exec(res => {
+            const node = res && res[0] && res[0].node
+            if (node) {
+              resolve(node)
+            } else {
+              reject(new Error('画布还没准备好'))
+            }
+          })
+      })
+      const dpr = (wx.getWindowInfo && wx.getWindowInfo().pixelRatio) || 2
+      const width = 600
+      const height = 1120
+      canvas.width = width * dpr
+      canvas.height = height * dpr
+      const ctx = canvas.getContext('2d')
+      ctx.scale(dpr, dpr)
+
+      ctx.fillStyle = '#FFFDF6'
+      ctx.fillRect(0, 0, width, height)
+      ctx.strokeStyle = '#111111'
+      ctx.lineWidth = 8
+      ctx.strokeRect(24, 24, width - 48, height - 48)
+
+      ctx.fillStyle = '#2D9CFF'
+      ctx.fillRect(24, 24, width - 48, 130)
+      ctx.fillStyle = '#FFFFFF'
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'middle'
+      ctx.font = 'bold 40px "PingFang SC", sans-serif'
+      ctx.fillText('张饱饭堂 · 本周饭表', 48, 80)
+      ctx.font = '24px "PingFang SC", sans-serif'
+      ctx.fillText(this.data.rangeText || '', 48, 125)
+
+      const mealText = (meal: MealRow) => {
+        if (meal.state === 'ready' && meal.dishes.length) {
+          const names = meal.dishes.map(dish => dish.name).join('、')
+          return names.length > 18 ? names.slice(0, 18) + '…' : names
+        }
+        return meal.stateText || meal.hint || '—'
+      }
+      ;(this.data.days || []).slice(0, 7).forEach((day, index) => {
+        const y = 184 + index * 126
+        if (day.isToday) {
+          ctx.fillStyle = '#FFF4C2'
+          ctx.fillRect(40, y, width - 80, 118)
+        } else if (index % 2 === 0) {
+          ctx.fillStyle = '#F7F4EA'
+          ctx.fillRect(40, y, width - 80, 118)
+        }
+        ctx.strokeStyle = 'rgba(17,17,17,0.15)'
+        ctx.lineWidth = 2
+        ctx.beginPath()
+        ctx.moveTo(48, y + 118)
+        ctx.lineTo(width - 48, y + 118)
+        ctx.stroke()
+
+        ctx.fillStyle = '#111111'
+        ctx.font = 'bold 24px "PingFang SC", sans-serif'
+        ctx.fillText(
+          `${day.weekText} ${day.monthText}${day.dayNum}日${
+            day.isToday ? ' · 今天' : ''
+          }`,
+          48,
+          y + 28
+        )
+        if (day.closed) {
+          ctx.fillStyle = '#5C5C5C'
+          ctx.font = '22px "PingFang SC", sans-serif'
+          ctx.fillText(`休息 · ${day.closedNote || '今天不做饭'}`, 48, y + 72)
+          return
+        }
+        day.meals.forEach((meal, mealIndex) => {
+          ctx.fillStyle = '#5C5C5C'
+          ctx.font = 'bold 20px "PingFang SC", sans-serif'
+          ctx.fillText(`${meal.name}：`, 48, y + 58 + mealIndex * 28)
+          ctx.fillStyle = '#111111'
+          ctx.font = '20px "PingFang SC", sans-serif'
+          ctx.fillText(mealText(meal), 148, y + 58 + mealIndex * 28)
+        })
+      })
+
+      ctx.fillStyle = '#5C5C5C'
+      ctx.font = '22px "PingFang SC", sans-serif'
+      ctx.textAlign = 'left'
+      ctx.fillText('她点单，你掌勺', 48, height - 52)
+      ctx.textAlign = 'right'
+      ctx.fillText('开饭咯', width - 48, height - 52)
+
+      const path: string = await new Promise((resolve, reject) => {
+        wx.canvasToTempFilePath({
+          canvas,
+          destWidth: canvas.width,
+          destHeight: canvas.height,
+          success: res => resolve(res.tempFilePath),
+          fail: reject
+        } as any)
+      })
+      this.setData({ posterMaking: false, posterPath: path })
+      wx.showToast({ title: '饭表图已生成', icon: 'none' })
+    } catch (e: any) {
+      this.setData({ posterMaking: false })
+      wx.showToast({
+        title: String((e && e.message) || '生成失败').slice(0, 40),
+        icon: 'none'
+      })
+    }
+  },
+
+  onPreviewWeekPoster() {
+    const path = this.data.posterPath
+    if (!path) {
+      return
+    }
+    if (typeof (wx as any).showShareImageMenu === 'function') {
+      ;(wx as any).showShareImageMenu({
+        path,
+        fail: () => {
+          wx.previewImage({ urls: [path] })
+        }
+      })
+      return
+    }
+    wx.previewImage({ urls: [path] })
   },
 
   onShareAppMessage() {

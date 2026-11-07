@@ -1814,6 +1814,15 @@ function chinaDate(offset) {
       0
     )} 餐已订`
   )
+  await invoke(mp, 'page.onMakeWeekPoster()')
+  await sleep(2200)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 本周饭表图片',
+    Boolean(data.posterPath),
+    data.posterPath ? '已生成' : '未生成'
+  )
   const savedDay = (data.days || []).find(day => day.date === savedDate)
   const savedMealRow =
     savedDay && savedDay.meals.find(meal => meal.id === savedMeal)
