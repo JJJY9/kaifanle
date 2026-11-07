@@ -1986,6 +1986,8 @@ async function run() {
   assert.strictEqual(res.data.days[1].kind, 'anniversary')
   assert.strictEqual(res.data.days[1].openid, undefined)
   assert.strictEqual(res.data.days[1].address, undefined)
+  assert.strictEqual(res.data.days[1].dislikes, undefined)
+  assert.strictEqual(res.data.days[1].tastes, undefined)
 
   res = await call('getSpecialDays', {}, 'girl-openid')
   assert.strictEqual(res.ok, false)

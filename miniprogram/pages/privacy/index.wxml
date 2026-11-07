@@ -11,7 +11,7 @@
 
   <view class="card block">
     <view class="block-title">用来做什么</view>
-    <view class="p">完成点单和备餐、把忌口和地址带进订单、在出锅和重要日子前给你提醒。不会用于广告，也不会卖给任何第三方。</view>
+    <view class="p">完成点单和备餐、把忌口和地址带进订单、在出锅时提醒你，并在生日/纪念日前提醒掌勺人提前准备。不会用于广告，也不会卖给任何第三方。</view>
   </view>
 
   <view class="card block">

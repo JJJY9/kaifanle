@@ -543,8 +543,21 @@ async function getMyProfile(openid) {
 
 async function saveMyProfile(payload, openid) {
   await ensureCollection('users')
-  const existing = await getMyProfile(openid)
   const input = payload && typeof payload === 'object' ? payload : {}
+  const needsExisting = [
+    'dislikes',
+    'tastes',
+    'address',
+    'birthday',
+    'anniversary'
+  ].some(
+    key =>
+      !Object.prototype.hasOwnProperty.call(input, key) ||
+      input[key] === undefined
+  )
+  const existing = needsExisting
+    ? await getMyProfile(openid)
+    : normalizeProfile(null)
   const source = Object.assign({}, existing)
   ;['dislikes', 'tastes', 'address'].forEach(key => {
     if (Object.prototype.hasOwnProperty.call(input, key)) {
