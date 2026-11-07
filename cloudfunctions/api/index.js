@@ -157,6 +157,8 @@ async function route(action, payload, openid) {
       return saveMyProfile(payload, openid)
     case 'getSpecialDays':
       return getSpecialDays(openid)
+    case 'getMySpecialDays':
+      return getMySpecialDays(openid)
     case 'getStats':
       return getStats(openid)
     case 'getKitchenStatus':
@@ -672,13 +674,11 @@ function annualOccurrence(dateKey, todayKey) {
   }
 }
 
-async function getSpecialDays(openid) {
-  await requireAdmin(openid)
-  await ensureCollection('users')
-  const res = await db.collection('users').limit(1000).get()
-  const today = chinaDateString()
+const MY_SPECIAL_DAY_WINDOW = 4
+
+function collectSpecialDays(profiles, today, windowDays, limit) {
   const days = []
-  ;(res.data || []).forEach(user => {
+  ;(profiles || []).forEach(user => {
     ;[
       ['birthday', 'birthday'],
       ['anniversary', 'anniversary']
@@ -688,7 +688,7 @@ async function getSpecialDays(openid) {
         return
       }
       const occurrence = annualOccurrence(dateKey, today)
-      if (occurrence.days < 0 || occurrence.days >= SPECIAL_DAY_WINDOW) {
+      if (occurrence.days < 0 || occurrence.days >= windowDays) {
         return
       }
       days.push({
@@ -705,10 +705,32 @@ async function getSpecialDays(openid) {
   )
   return {
     today,
-    windowDays: SPECIAL_DAY_WINDOW,
+    windowDays,
     total: days.length,
-    days: days.slice(0, 10)
+    days: days.slice(0, limit)
   }
+}
+
+async function getSpecialDays(openid) {
+  await requireAdmin(openid)
+  await ensureCollection('users')
+  const res = await db.collection('users').limit(1000).get()
+  return collectSpecialDays(
+    res.data || [],
+    chinaDateString(),
+    SPECIAL_DAY_WINDOW,
+    10
+  )
+}
+
+async function getMySpecialDays(openid) {
+  const profile = await getMyProfile(openid)
+  return collectSpecialDays(
+    [profile],
+    chinaDateString(),
+    MY_SPECIAL_DAY_WINDOW,
+    10
+  )
 }
 
 function chinaStartOfDay() {

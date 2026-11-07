@@ -68,6 +68,7 @@ let pendingReviewCache: { at: number; count: number } | null = null
 let myStatsCache: { at: number; data: MyStats } | null = null
 let dishStatsCache: Record<string, { at: number; data: DishStats }> = {}
 let specialDaysCache: { at: number; data: SpecialDays } | null = null
+let mySpecialDaysCache: { at: number; data: SpecialDays } | null = null
 const BUSINESS_CACHE_TTL = 60 * 1000
 const MENU_CACHE_TTL = 60 * 1000
 const KITCHEN_STATUS_TTL = 30 * 1000
@@ -586,6 +587,7 @@ export async function saveMyProfile(
   if (USE_CLOUD) {
     const result = await callApi<UserProfile>('saveMyProfile', payload)
     specialDaysCache = null
+    mySpecialDaysCache = null
     return result
   }
   return mock.saveMyProfile(payload)
@@ -607,6 +609,24 @@ export async function getSpecialDays(force = false): Promise<SpecialDays> {
     return cloneData(data)
   }
   return mock.getSpecialDays()
+}
+
+export async function getMySpecialDays(force = false): Promise<SpecialDays> {
+  if (USE_CLOUD) {
+    const today = chinaTodayKey()
+    if (
+      !force &&
+      mySpecialDaysCache &&
+      mySpecialDaysCache.data.today === today &&
+      Date.now() - mySpecialDaysCache.at < SPECIAL_DAYS_TTL
+    ) {
+      return cloneData(mySpecialDaysCache.data)
+    }
+    const data = await callApi<SpecialDays>('getMySpecialDays')
+    mySpecialDaysCache = { at: Date.now(), data }
+    return cloneData(data)
+  }
+  return mock.getMySpecialDays()
 }
 
 export async function getStats(): Promise<StoreStats> {
