@@ -1454,7 +1454,8 @@ async function getMyStats(openid) {
         .reduce((sum, order) => sum + Number(order.amount || 0), 0)
         .toFixed(2)
     ),
-    weekFavorite
+    weekFavorite,
+    weekFavoriteQty: weekFavorite ? weekDishCount[weekFavorite] : 0
   }
 }
 

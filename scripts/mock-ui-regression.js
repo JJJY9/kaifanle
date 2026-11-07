@@ -92,7 +92,7 @@ function chinaDate(offset) {
     'mock 首页本周干饭',
     String(data.weekText || '').includes('本周已吃 2 顿') &&
       String(data.weekText || '').includes('¥36') &&
-      String(data.weekText || '').includes('番茄牛腩饭'),
+      String(data.weekText || '').includes('番茄牛腩饭 ×2'),
     data.weekText
   )
   await invoke(mp, 'page.onWeekReport()')

@@ -240,6 +240,7 @@ export interface MyStats {
   week?: number
   weekSpend?: number
   weekFavorite?: string
+  weekFavoriteQty?: number
 }
 
 export interface KitchenReportDay {

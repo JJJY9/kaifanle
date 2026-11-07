@@ -390,10 +390,15 @@ Page({
       const weekCount = stats ? Number(stats.week || 0) : 0
       const weekSpend = stats ? Number(stats.weekSpend || 0) : 0
       const weekFavorite = stats ? String(stats.weekFavorite || '') : ''
+      const weekFavoriteQty = stats ? Number(stats.weekFavoriteQty || 0) : 0
       const weekText =
         weekCount > 0
           ? `本周已吃 ${weekCount} 顿 · ¥${weekSpend}${
-              weekFavorite ? ` · 最常点 ${weekFavorite}` : ''
+              weekFavorite
+                ? ` · 最常点 ${weekFavorite}${
+                    weekFavoriteQty ? ` ×${weekFavoriteQty}` : ''
+                  }`
+                : ''
             }`
           : ''
       this.setData(
