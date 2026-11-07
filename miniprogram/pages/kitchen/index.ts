@@ -2286,6 +2286,23 @@ Page({
     wx.setClipboardData({ data: text })
   },
 
+  onCopyPrepMeal(e: any) {
+    const meal = String((e.currentTarget && e.currentTarget.dataset.meal) || '')
+    const group = (this.data.prepGroups || []).find(
+      (item: any) => item.meal === meal
+    )
+    if (!group || !group.items.length) {
+      wx.showToast({ title: '这餐还没有要备的菜', icon: 'none' })
+      return
+    }
+    const text = [
+      `【张饱饭堂】${group.mealText}备菜`,
+      `共 ${group.total} 份`,
+      ...group.items.map((item: any) => `${item.name} × ${item.qty}`)
+    ].join('\n')
+    wx.setClipboardData({ data: text })
+  },
+
   // 把今天的订单整理成一段文字，方便记账或发给家人
   onCopySummary() {
     const todayKey = dateInputString()

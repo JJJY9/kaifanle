@@ -515,10 +515,27 @@
   font-weight: 800;
 }
 
+.prep-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+
 .prep-group-title {
   margin-bottom: 4rpx;
   color: #5C5C5C;
   font-size: 21rpx;
+  font-weight: 800;
+}
+
+.prep-group-copy {
+  margin-bottom: 4rpx;
+  padding: 2rpx 12rpx;
+  background: #FFF7DA;
+  border: 2rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 18rpx;
   font-weight: 800;
 }
 

@@ -162,7 +162,10 @@
         <view wx:if="{{prepGroups.length}}" class="prep-copy" bindtap="onSharePrepPoster">{{prepPosterMaking ? '生成中…' : '生成采购图'}}</view>
         <view wx:if="{{prepPosterPath}}" class="prep-copy" bindtap="onPreviewPrepPoster">预览采购图</view>
         <view wx:for="{{prepGroups}}" wx:key="meal" wx:for-item="group" class="prep-group">
-          <view class="prep-group-title">{{group.mealText}} · {{group.total}} 份</view>
+          <view class="prep-group-head">
+            <view class="prep-group-title">{{group.mealText}} · {{group.total}} 份</view>
+            <view class="prep-group-copy" data-meal="{{group.meal}}" catchtap="onCopyPrepMeal">复制这餐</view>
+          </view>
           <view wx:for="{{group.items}}" wx:key="name" wx:for-item="dish" class="prep-row">
             <text class="prep-name">{{dish.name}}</text>
             <text class="prep-qty">×{{dish.qty}}</text>

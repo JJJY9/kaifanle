@@ -692,6 +692,25 @@ function chinaDate(offset) {
         Number(data.prepTotal),
     `${prepGroups.map(group => group.mealText).join('、')} · ${data.prepTotal} 份`
   )
+  const prepMealGroup = prepGroups[0]
+  await invoke(
+    mp,
+    `page.onCopyPrepMeal({ currentTarget: { dataset: { meal: ${JSON.stringify(
+      prepMealGroup.meal
+    )} } } })`
+  )
+  await sleep(500)
+  const prepMealClip = await mp.evaluate(
+    new Function(
+      "return new Promise(resolve => wx.getClipboardData({ success: r => resolve(r.data || ''), fail: () => resolve('') }))"
+    )
+  )
+  check(
+    'mock 按餐次复制采购清单',
+    String(prepMealClip || '').indexOf(`${prepMealGroup.mealText}备菜`) > -1 &&
+      String(prepMealClip || '').indexOf(prepMealGroup.items[0].name) > -1,
+    `${String(prepMealClip || '').length} 字`
+  )
   check(
     'mock 采购食材汇总',
     (data.prepIngredients || []).some(
