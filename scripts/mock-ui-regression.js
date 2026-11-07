@@ -2482,6 +2482,18 @@ function chinaDate(offset) {
       data.monthGoalText === expectedMonthText,
     `¥${monthRevenue} / ¥5000 · ${data.monthGoalPercent}% · ${data.monthGoalText}`
   )
+  check(
+    'mock 月报上月同期',
+    Boolean(data.report.previousMonth) &&
+      Number(data.report.previousMonth.orders) === 0 &&
+      Number(data.report.monthOrders) >= 1 &&
+      Boolean(data.monthCompare) &&
+      data.monthCompare.text === '上月同期还没有营收' &&
+      data.monthCompare.rangeText.indexOf(' - ') > -1,
+    data.monthCompare
+      ? `${data.monthCompare.rangeText} · ${data.monthCompare.text}`
+      : '没有上月同期数据'
+  )
   const d01ReportRow = (data.report.dishRows || []).find(
     item => item.name === '番茄牛腩饭'
   )

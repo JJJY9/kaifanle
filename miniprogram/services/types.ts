@@ -264,6 +264,13 @@ export interface KitchenDishRow {
   margin: number | null
 }
 
+export interface KitchenMonthCompare {
+  revenue: number
+  orders: number
+  startDate: string
+  endDate: string
+}
+
 export interface KitchenReport {
   days: number
   startDate: string
@@ -273,6 +280,8 @@ export interface KitchenReport {
   completed: number
   revenue: number
   monthRevenue: number
+  monthOrders?: number
+  previousMonth?: KitchenMonthCompare | null
   avgOrder: number
   daily: KitchenReportDay[]
   topDishes: KitchenReportDish[]

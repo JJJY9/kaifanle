@@ -39,7 +39,8 @@ Page({
     range: 30,
     monthlyGoal: 0,
     monthGoalPercent: 0,
-    monthGoalText: ''
+    monthGoalText: '',
+    monthCompare: null as any
   },
 
   _loadSeq: 0,
@@ -180,6 +181,34 @@ Page({
             ? '本月达标啦 🎉'
             : `还差 ¥${Number((monthlyGoal - monthRevenue).toFixed(2))}`
           : ''
+      const previousMonth = safeReport.previousMonth
+      let monthCompare: any = null
+      if (previousMonth) {
+        const prevRevenue = Number(previousMonth.revenue || 0)
+        const delta = percent(monthRevenue, prevRevenue)
+        const rangeText = `${String(previousMonth.startDate || '').slice(
+          5
+        )} - ${String(previousMonth.endDate || '').slice(5)}`
+        monthCompare = {
+          revenue: prevRevenue,
+          orders: Number(previousMonth.orders || 0),
+          rangeText,
+          text:
+            delta === null
+              ? prevRevenue === 0 && monthRevenue === 0
+                ? '持平'
+                : '上月同期还没有营收'
+              : `较上月同期 ${delta > 0 ? '+' : ''}${delta}%`,
+          trend:
+            delta === null
+              ? 'flat'
+              : delta > 0
+              ? 'up'
+              : delta < 0
+              ? 'down'
+              : 'flat'
+        }
+      }
       this.setData({
         report: safeReport,
         bars,
@@ -189,6 +218,7 @@ Page({
         monthlyGoal,
         monthGoalPercent,
         monthGoalText,
+        monthCompare,
         loading: false
       })
     } catch (e: any) {

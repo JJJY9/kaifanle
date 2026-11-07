@@ -2268,6 +2268,14 @@ async function run() {
   assert.ok(res.data.totalOrders >= 1)
   assert.ok(res.data.revenue >= 40)
   assert.ok(res.data.monthRevenue > 0)
+  assert.ok(res.data.monthOrders >= 1)
+  assert.ok(res.data.previousMonth)
+  assert.strictEqual(typeof res.data.previousMonth.revenue, 'number')
+  assert.strictEqual(typeof res.data.previousMonth.orders, 'number')
+  assert.ok(
+    /^\d{4}-\d{2}-\d{2}$/.test(res.data.previousMonth.startDate) &&
+      /^\d{4}-\d{2}-\d{2}$/.test(res.data.previousMonth.endDate)
+  )
   assert.ok(res.data.topDishes.length >= 1)
   assert.ok(res.data.topDishes[0].qty >= 1)
   const report30 = res

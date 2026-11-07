@@ -1106,6 +1106,45 @@ async function getKitchenReport(payload, openid) {
     0
   )
 
+  // 上月同期：上月 1 日到「今天」对应日期的整天，方便和本月至今对比
+  const china = new Date(Date.now() + 8 * 60 * 60 * 1000)
+  const chinaYear = china.getUTCFullYear()
+  const chinaMonth = china.getUTCMonth()
+  const previousMonthDays = new Date(
+    Date.UTC(chinaYear, chinaMonth, 0)
+  ).getUTCDate()
+  const previousSameDay = Math.min(china.getUTCDate(), previousMonthDays)
+  const previousMonthStart =
+    Date.UTC(chinaYear, chinaMonth - 1, 1) - 8 * 60 * 60 * 1000
+  const previousMonthEnd =
+    Date.UTC(chinaYear, chinaMonth - 1, previousSameDay + 1) -
+    8 * 60 * 60 * 1000
+  let previousMonth = null
+  try {
+    const previousRes = await db
+      .collection('orders')
+      .where({ createdAt: _.gte(previousMonthStart) })
+      .limit(1000)
+      .get()
+    const previousActive = (previousRes.data || []).filter(
+      order =>
+        Number(order.createdAt) < previousMonthEnd &&
+        order.status !== 'cancelled'
+    )
+    previousMonth = {
+      revenue: Number(
+        previousActive
+          .reduce((sum, order) => sum + Number(order.amount || 0), 0)
+          .toFixed(2)
+      ),
+      orders: previousActive.length,
+      startDate: chinaDateString(previousMonthStart),
+      endDate: chinaDateString(previousMonthEnd - 24 * 60 * 60 * 1000)
+    }
+  } catch (e) {
+    previousMonth = null
+  }
+
   const dailyMap = {}
   for (let i = 0; i < days; i++) {
     const date = chinaDateString(start + i * 24 * 60 * 60 * 1000)
@@ -1313,6 +1352,8 @@ async function getKitchenReport(payload, openid) {
     completed: active.filter(order => order.status === 'completed').length,
     revenue: Number(revenue.toFixed(2)),
     monthRevenue: Number(monthRevenue.toFixed(2)),
+    monthOrders: monthOrders.length,
+    previousMonth,
     avgOrder: active.length
       ? Number((revenue / active.length).toFixed(2))
       : 0,

@@ -2013,6 +2013,40 @@ export async function getKitchenReport(
         order.status !== 'cancelled'
     )
     .reduce((sum, order) => sum + Number(order.amount || 0), 0)
+  const previousMonthDays = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    0
+  ).getDate()
+  const previousSameDay = Math.min(today.getDate(), previousMonthDays)
+  const previousMonthStart = new Date(
+    today.getFullYear(),
+    today.getMonth() - 1,
+    1
+  ).getTime()
+  const previousMonthEnd = new Date(
+    today.getFullYear(),
+    today.getMonth() - 1,
+    previousSameDay + 1
+  ).getTime()
+  const previousActive = loadOrders().filter(
+    order =>
+      Number(order.createdAt) >= previousMonthStart &&
+      Number(order.createdAt) < previousMonthEnd &&
+      order.status !== 'cancelled'
+  )
+  const previousMonth = {
+    revenue: Number(
+      previousActive
+        .reduce((sum, order) => sum + Number(order.amount || 0), 0)
+        .toFixed(2)
+    ),
+    orders: previousActive.length,
+    startDate: dateInputString(new Date(previousMonthStart)),
+    endDate: dateInputString(
+      new Date(previousMonthEnd - 24 * 60 * 60 * 1000)
+    )
+  }
   const dailyMap: Record<string, any> = {}
   for (let i = 0; i < days; i++) {
     const date = dateInputString(
@@ -2213,6 +2247,12 @@ export async function getKitchenReport(
     completed: active.filter(order => order.status === 'completed').length,
     revenue: Number(revenue.toFixed(2)),
     monthRevenue: Number(monthRevenue.toFixed(2)),
+    monthOrders: loadOrders().filter(
+      order =>
+        Number(order.createdAt) >= monthStart &&
+        order.status !== 'cancelled'
+    ).length,
+    previousMonth,
     avgOrder: active.length
       ? Number((revenue / active.length).toFixed(2))
       : 0,

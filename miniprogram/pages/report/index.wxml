@@ -86,6 +86,21 @@
       <view class="month-goal-text">{{monthGoalText}}</view>
     </view>
 
+    <view wx:if="{{monthCompare}}" class="compare card">
+      <view class="compare-head">
+        <text class="compare-title">上月同期 · {{monthCompare.rangeText}}</text>
+        <text class="compare-badge {{monthCompare.trend}}">{{monthCompare.text}}</text>
+      </view>
+      <view class="compare-row">
+        <text class="compare-label">营收</text>
+        <text class="compare-value">¥{{monthCompare.revenue}} <text class="compare-prev">/ 本月至今 ¥{{report.monthRevenue}}</text></text>
+      </view>
+      <view class="compare-row">
+        <text class="compare-label">订单</text>
+        <text class="compare-value">{{monthCompare.orders}} 单 <text class="compare-prev">/ 本月至今 {{report.monthOrders || 0}} 单</text></text>
+      </view>
+    </view>
+
     <view wx:if="{{health}}" class="health-card card">
       <view class="health-head">
         <text class="health-title">数据体检</text>
