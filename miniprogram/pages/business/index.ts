@@ -215,16 +215,22 @@ Page({
       wx.showToast({ title: '设置还没加载好，点重试', icon: 'none' })
       return
     }
+    const noticeFrom = /^\d{4}-\d{2}-\d{2}$/.test(this.data.noticeFrom)
+      ? this.data.noticeFrom
+      : ''
+    const noticeUntil = /^\d{4}-\d{2}-\d{2}$/.test(this.data.noticeUntil)
+      ? this.data.noticeUntil
+      : ''
+    if (noticeFrom && noticeUntil && noticeFrom > noticeUntil) {
+      wx.showToast({ title: '公告开始日期不能晚于截止日期', icon: 'none' })
+      return
+    }
     const business: any = {
       closedNote:
         this.data.closedNote.trim().slice(0, 40) || '今天休息，明天见',
       notice: this.data.notice.trim().slice(0, 60),
-      noticeFrom: /^\d{4}-\d{2}-\d{2}$/.test(this.data.noticeFrom)
-        ? this.data.noticeFrom
-        : '',
-      noticeUntil: /^\d{4}-\d{2}-\d{2}$/.test(this.data.noticeUntil)
-        ? this.data.noticeUntil
-        : '',
+      noticeFrom,
+      noticeUntil,
       recommendText:
         this.data.recommendText.trim().slice(0, 12) || '今日推荐',
       lowStockThreshold: (() => {
