@@ -26,6 +26,11 @@
       data-filter="rate"
       bindtap="onSelectFilter"
     >待评价 {{counts.rate}}</view>
+    <view
+      class="filter-tab {{filter === 'preorder' ? 'active' : ''}}"
+      data-filter="preorder"
+      bindtap="onSelectFilter"
+    >预订 {{counts.preorder}}</view>
   </view>
 
   <view class="meal-row">

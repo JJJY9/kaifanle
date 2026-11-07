@@ -17,13 +17,13 @@ Page({
     monthText: '',
     error: '',
     keyword: '',
-    filter: 'all' as 'all' | 'active' | 'done' | 'rate',
+    filter: 'all' as 'all' | 'active' | 'done' | 'rate' | 'preorder',
     meal: 'all' as 'all' | 'breakfast' | 'lunch' | 'dinner',
     emptyTitle: '这里还没有订单',
     emptyDesc: '去点一单吧',
     emptyAction: '',
     collapsedDates: {} as Record<string, boolean>,
-    counts: { all: 0, active: 0, done: 0, rate: 0 }
+    counts: { all: 0, active: 0, done: 0, rate: 0, preorder: 0 }
   },
 
   onShow() {
@@ -128,6 +128,9 @@ Page({
       ).length,
       rate: view.filter(
         order => order.status === 'completed' && !order.rating
+      ).length,
+      preorder: view.filter(
+        order => order.isPreorder && order.status !== 'cancelled'
       ).length
     }
     this.setData(
@@ -235,6 +238,12 @@ Page({
       ) {
         return false
       }
+      if (
+        filter === 'preorder' &&
+        !(order.isPreorder && order.status !== 'cancelled')
+      ) {
+        return false
+      }
       if (keyword) {
         const haystack = `${order.no} ${order.summary} ${
           order.dateText
@@ -287,6 +296,8 @@ Page({
         ? '没搜到相关订单'
         : meal !== 'all'
         ? '这个餐次还没有订单'
+        : filter === 'preorder'
+        ? '还没有预订'
         : filter !== 'all'
         ? '这一档还没有订单'
         : '这里还没有订单',
@@ -294,6 +305,8 @@ Page({
         ? '换个菜名、订单号或日期试试'
         : meal !== 'all'
         ? '换个餐次看看'
+        : filter === 'preorder'
+        ? '提前点一单，到日子再做'
         : filter !== 'all'
         ? '换个筛选看看'
         : '去点一单吧',

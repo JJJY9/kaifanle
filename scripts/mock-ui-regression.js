@@ -2566,6 +2566,27 @@ function chinaDate(offset) {
     "page.onSelectFilter({ currentTarget: { dataset: { filter: 'all' } } })"
   )
   await sleep(300)
+  await invoke(
+    mp,
+    "page.onSelectFilter({ currentTarget: { dataset: { filter: 'preorder' } } })"
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 订单预订筛选',
+    data.filter === 'preorder' &&
+      (data.displayOrders || []).length === data.counts.preorder &&
+      data.displayOrders.every(
+        order => order.isPreorder && order.status !== 'cancelled'
+      ),
+    `${(data.displayOrders || []).length} 单预订`
+  )
+  await invoke(
+    mp,
+    "page.onSelectFilter({ currentTarget: { dataset: { filter: 'all' } } })"
+  )
+  await sleep(300)
 
   // 订单搜索
   const orderNo = String((data.orders || [])[0].no || '')
