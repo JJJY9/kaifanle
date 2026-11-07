@@ -38,6 +38,11 @@
       </view>
     </view>
 
+    <view wx:if="{{streakDays > 1}}" class="rating-line card">
+      <text>本月最长连吃 {{streakDays}} 天 🔥</text>
+      <text>连续干饭选手</text>
+    </view>
+
     <view wx:if="{{favorite}}" class="favorite-card card">
       <text class="favorite-label">最常点</text>
       <text class="favorite-name">{{favorite}}</text>

@@ -2283,8 +2283,9 @@ function chinaDate(offset) {
     'mock 干饭足迹加载',
     Number(data.monthOrders) >= 1 &&
       (data.topDishes || []).length >= 1 &&
-      Boolean(data.monthText),
-    `${data.monthText} · ${data.monthOrders} 单`
+      Boolean(data.monthText) &&
+      Number(data.streakDays) >= 1,
+    `${data.monthText} · ${data.monthOrders} 单 · 连吃 ${data.streakDays} 天`
   )
   await invoke(mp, 'page.onSharePoster()')
   await sleep(2200)

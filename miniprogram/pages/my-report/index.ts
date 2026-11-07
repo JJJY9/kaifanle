@@ -18,6 +18,7 @@ Page({
     topDishes: [] as FootprintDish[],
     ratedCount: 0,
     avgRating: 0,
+    streakDays: 0,
     posterMaking: false,
     posterPath: ''
   },
@@ -81,6 +82,37 @@ Page({
             ).toFixed(1)
           )
         : 0
+      const monthPrefix = `${now.getFullYear()}-${String(
+        now.getMonth() + 1
+      ).padStart(2, '0')}`
+      const dayNumbers = Array.from(
+        new Set(
+          active
+            .map(order => {
+              if (order.scheduledDate) {
+                return order.scheduledDate
+              }
+              const date = new Date(order.createdAt)
+              return `${date.getFullYear()}-${String(
+                date.getMonth() + 1
+              ).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+            })
+            .filter(date => date.indexOf(monthPrefix + '-') === 0)
+        )
+      )
+        .map(date => {
+          const parts = date.split('-').map(Number)
+          return Date.UTC(parts[0], parts[1] - 1, parts[2]) / 86400000
+        })
+        .sort((a, b) => a - b)
+      let streakDays = 0
+      let run = 0
+      let previous = -2
+      dayNumbers.forEach(day => {
+        run = day === previous + 1 ? run + 1 : 1
+        previous = day
+        streakDays = Math.max(streakDays, run)
+      })
       this.setData({
         loading: false,
         posterPath: '',
@@ -91,7 +123,8 @@ Page({
         favorite: stats.favorite || '',
         topDishes,
         ratedCount: rated.length,
-        avgRating
+        avgRating,
+        streakDays
       })
     } catch (e: any) {
       if (seq !== this._loadSeq) {
