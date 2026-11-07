@@ -1309,6 +1309,28 @@ function chinaDate(offset) {
       String(data.marginText || '').indexOf('72%') > -1,
     data.marginText
   )
+  const stockBeforeStep = Number(data.stock)
+  await invoke(
+    mp,
+    "page.onStockStep({ currentTarget: { dataset: { delta: 1 } } })"
+  )
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  const stockAfterPlus = Number(data.stock)
+  await invoke(
+    mp,
+    "page.onStockStep({ currentTarget: { dataset: { delta: -1 } } })"
+  )
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 菜品库存加减',
+    stockAfterPlus === stockBeforeStep + 1 &&
+      Number(data.stock) === stockBeforeStep,
+    `${stockBeforeStep} → ${stockAfterPlus} → ${data.stock}`
+  )
   await invoke(mp, 'page.onCopyDish()')
   await sleep(1600)
   page = await current()

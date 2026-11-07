@@ -932,23 +932,26 @@ export async function saveDish(payload: DishInput): Promise<Dish> {
       throw new Error('菜品不存在')
     }
     const stockBase = Number(payload.stockBase)
+    const currentStock =
+      typeof existing.stock === 'number' && isFinite(existing.stock)
+        ? Number(existing.stock)
+        : -1
     if (isFinite(stockBase) && stockBase >= -1) {
       const target = Number(fields.stock)
       if (target === stockBase) {
-        fields.stock = Number(existing.stock)
+        fields.stock = currentStock
       } else if (target === -1 || stockBase === -1) {
         fields.stock = target
       } else {
-        const current = Number(existing.stock)
         fields.stock =
-          isFinite(current) && current >= 0
-            ? current === stockBase
+          currentStock >= 0
+            ? currentStock === stockBase
               ? target
-              : Math.max(0, current + (target - stockBase))
+              : Math.max(0, currentStock + (target - stockBase))
             : target
       }
     } else {
-      fields.stock = Number(existing.stock)
+      fields.stock = currentStock
     }
     const beforeStock =
       typeof existing.stock === 'number' ? Number(existing.stock) : null

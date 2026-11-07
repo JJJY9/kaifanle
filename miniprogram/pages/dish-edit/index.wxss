@@ -179,6 +179,36 @@
   font-size: 26rpx;
 }
 
+.stock-row {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  flex: 1;
+  min-width: 0;
+}
+
+.stock-input {
+  min-width: 0;
+}
+
+.stock-step {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64rpx;
+  height: 64rpx;
+  flex: 0 0 64rpx;
+  background: #FFD23F;
+  border: 3rpx solid #111111;
+  border-radius: 16rpx;
+  font-size: 32rpx;
+  font-weight: 800;
+}
+
+.stock-step:active {
+  transform: translateY(2rpx);
+}
+
 .meal-quick {
   display: flex;
   gap: 10rpx;

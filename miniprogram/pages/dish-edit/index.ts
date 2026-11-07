@@ -167,6 +167,10 @@ Page({
       ;(dish.meals || []).forEach(meal => {
         mealChecked[meal] = true
       })
+      const stockValue =
+        typeof dish.stock === 'number' && isFinite(dish.stock)
+          ? dish.stock
+          : -1
       this.setData({
         id: asCopy ? '' : this.data.id,
         isEdit: asCopy ? false : this.data.isEdit,
@@ -178,9 +182,8 @@ Page({
         priceBase: Number(dish.price) || 0,
         cost:
           typeof dish.cost === 'number' ? String(dish.cost) : '',
-        stock: String(typeof dish.stock === 'number' ? dish.stock : -1),
-        stockBase:
-          typeof dish.stock === 'number' ? Number(dish.stock) : -1,
+        stock: String(stockValue),
+        stockBase: stockValue,
         categoryId: dish.categoryId,
         selectedMeals: dish.meals || [],
         mealChecked,
@@ -261,6 +264,17 @@ Page({
 
   onStock(e: any) {
     this.setData({ stock: e.detail.value })
+  },
+
+  onStockStep(e: any) {
+    const delta = Number(e.currentTarget.dataset.delta) === 1 ? 1 : -1
+    const current = Number(this.data.stock)
+    const safe = isFinite(current) ? Math.floor(current) : -1
+    const next = Math.max(-1, Math.min(9999, safe + delta))
+    if (safe === -1 && delta < 0) {
+      return
+    }
+    this.setData({ stock: String(next) })
   },
 
   onSelectCategory(e: any) {

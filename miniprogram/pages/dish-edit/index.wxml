@@ -76,13 +76,17 @@
 
       <view class="field">
         <text class="label">库存</text>
-        <input
-          class="input"
-          type="number"
-          placeholder="-1 表示不限量"
-          value="{{stock}}"
-          bindinput="onStock"
-        />
+        <view class="stock-row">
+          <view class="stock-step" data-delta="-1" bindtap="onStockStep">−</view>
+          <input
+            class="input stock-input"
+            type="number"
+            placeholder="-1 表示不限量"
+            value="{{stock}}"
+            bindinput="onStock"
+          />
+          <view class="stock-step" data-delta="1" bindtap="onStockStep">＋</view>
+        </view>
       </view>
       <view wx:if="{{stockLogs.length}}" class="stock-logs">
         <view class="stock-logs-title">最近库存变动</view>
