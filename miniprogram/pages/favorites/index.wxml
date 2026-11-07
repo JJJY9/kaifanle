@@ -97,6 +97,7 @@
         <view class="fav-tags">
           <text wx:for="{{item.tags}}" wx:key="*this" class="fav-tag">{{item}}</text>
         </view>
+        <view wx:if="{{item.favoritedText}}" class="fav-time">收藏于 {{item.favoritedText}}</view>
       </view>
       <view class="fav-right">
         <text class="fav-price">¥{{item.price}}</text>

@@ -3,9 +3,11 @@ import type { Dish } from '../services/types'
 type Listener = (ids: string[]) => void
 
 const FAVORITES_KEY = 'kfl_favorites_v1'
+const FAVORITES_TIMES_KEY = 'kfl_favorites_times_v1'
 
 class FavoritesStore {
   private ids: string[] = []
+  private times: Record<string, number> = {}
   private listeners: Listener[] = []
 
   constructor() {
@@ -15,6 +17,18 @@ class FavoritesStore {
         const ids = JSON.parse(raw)
         if (Array.isArray(ids)) {
           this.ids = ids.filter(id => typeof id === 'string')
+        }
+      }
+      const rawTimes = wx.getStorageSync(FAVORITES_TIMES_KEY)
+      if (rawTimes) {
+        const times = JSON.parse(rawTimes)
+        if (times && typeof times === 'object') {
+          Object.keys(times).forEach(id => {
+            const value = Number(times[id])
+            if (isFinite(value) && value > 0) {
+              this.times[id] = value
+            }
+          })
         }
       }
     } catch (e) {
@@ -33,8 +47,10 @@ class FavoritesStore {
     const index = this.ids.indexOf(id)
     if (index > -1) {
       this.ids.splice(index, 1)
+      delete this.times[id]
     } else {
       this.ids.push(id)
+      this.times[id] = Date.now()
     }
     this.persist()
     this.emit()
@@ -47,6 +63,10 @@ class FavoritesStore {
 
   count(): number {
     return this.ids.length
+  }
+
+  getTime(id: string): number {
+    return Number(this.times[id] || 0)
   }
 
   filter(dishes: Dish[]): Dish[] {
@@ -64,6 +84,7 @@ class FavoritesStore {
   private persist() {
     try {
       wx.setStorageSync(FAVORITES_KEY, JSON.stringify(this.ids))
+      wx.setStorageSync(FAVORITES_TIMES_KEY, JSON.stringify(this.times))
     } catch (e) {
       // 忽略存储失败
     }

@@ -2036,7 +2036,8 @@ function chinaDate(offset) {
   check(
     'mock 收藏页内容',
     (data.allFavorites || []).length >= 1 &&
-      data.allFavorites.some(dish => dish.id === 'd01'),
+      data.allFavorites.some(dish => dish.id === 'd01') &&
+      data.allFavorites.every(dish => Boolean(dish.favoritedText)),
     `${(data.allFavorites || []).length} 道`
   )
   check('mock 收藏默认最近排序', data.sort === 'recent')

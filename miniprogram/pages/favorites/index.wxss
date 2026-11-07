@@ -184,6 +184,12 @@
   margin-top: 6rpx;
 }
 
+.fav-time {
+  margin-top: 4rpx;
+  color: #9A9A9A;
+  font-size: 18rpx;
+}
+
 .fav-tag {
   padding: 1rpx 10rpx;
   background: #FFF7DA;

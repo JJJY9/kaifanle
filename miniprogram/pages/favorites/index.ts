@@ -1,6 +1,7 @@
 import type { Dish } from '../../services/types'
 import { getCategories, getDishes } from '../../services/api'
 import { favorites } from '../../store/favorites'
+import { formatDate } from '../../utils/format'
 
 const POSTER_THEMES = [
   { header: '#FF5C8A', row: '#FFF7DA', accent: '#FF6B35' },
@@ -60,7 +61,18 @@ Page({
         .getIds()
         .slice()
         .reverse()
-        .map(id => dishMap[id])
+        .map(id => {
+          const dish = dishMap[id]
+          if (!dish) {
+            return null
+          }
+          const at = favorites.getTime(id)
+          return {
+            ...dish,
+            favoritedAt: at,
+            favoritedText: at ? formatDate(at) : '较早'
+          }
+        })
         .filter(Boolean)
       this.setData(
         {
