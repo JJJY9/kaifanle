@@ -194,7 +194,13 @@
         <text class="compare-title">分类表现</text>
         <text class="compare-sub">{{report.days}} 天</text>
       </view>
-      <view wx:for="{{categoryStats}}" wx:key="id" class="category-row">
+      <view
+        wx:for="{{categoryStats}}"
+        wx:key="id"
+        class="category-row"
+        data-id="{{item.id}}"
+        bindtap="onCategoryTap"
+      >
         <text class="category-name">{{item.name}}</text>
         <text class="category-qty">{{item.qty}} 份</text>
         <text class="category-revenue">¥{{item.revenue}}</text>

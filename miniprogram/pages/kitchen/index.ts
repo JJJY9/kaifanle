@@ -117,6 +117,7 @@ Page({
   _rawOrders: [] as any[],
   _categories: [] as any[],
   _replyModalOpen: false as boolean,
+  _scrollToMenu: false as boolean,
   _restToggling: false as boolean,
   _lastPollErrorAt: 0,
   _loadSeq: 0,
@@ -795,6 +796,10 @@ Page({
       }, () => {
         this.applyDishFilter()
         this.applyHistoryFilter()
+        if (this._scrollToMenu) {
+          this._scrollToMenu = false
+          wx.pageScrollTo({ selector: '#menu-section', duration: 300 })
+        }
       })
     } catch (e: any) {
       if (seq !== this._loadSeq) {
@@ -1642,6 +1647,11 @@ Page({
     tag = tag.trim().slice(0, 8)
     if (tag) {
       this.setData({ showHistory: true, historyKeyword: tag })
+    }
+    const category = String((options && options.category) || '').trim()
+    if (category) {
+      this._scrollToMenu = true
+      this.setData({ dishCategory: category })
     }
   },
 

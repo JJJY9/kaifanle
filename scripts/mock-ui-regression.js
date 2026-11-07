@@ -2934,6 +2934,32 @@ function chinaDate(offset) {
       Math.abs(categoryRevenue - reportRevenue) < 0.1,
     `${(data.categoryStats || []).length} 个分类 / ¥${categoryRevenue}`
   )
+  const firstCategoryStat = (data.categoryStats || [])[0]
+  if (firstCategoryStat) {
+    await invoke(
+      mp,
+      `page.onCategoryTap({ currentTarget: { dataset: { id: ${JSON.stringify(
+        firstCategoryStat.id
+      )} } } })`
+    )
+    await sleep(1900)
+    page = await current()
+    data = await page.data()
+    check(
+      'mock 月报分类查看菜品',
+      page.path === 'pages/kitchen/index' &&
+        data.dishCategory === firstCategoryStat.id &&
+        (data.displayDishes || []).length > 0 &&
+        data.displayDishes.every(
+          dish => dish.categoryId === firstCategoryStat.id
+        ),
+      `${firstCategoryStat.name} → ${(data.displayDishes || []).length} 道`
+    )
+    await mp.navigateBack()
+    await sleep(1000)
+    page = await current()
+    data = await page.data()
+  }
   const topReportTag = ((data.report || {}).topTags || [])[0]
   if (topReportTag) {
     await invoke(

@@ -284,6 +284,16 @@ Page({
     wx.navigateTo({ url: '/pages/recipe/index?id=' + id })
   },
 
+  onCategoryTap(e: any) {
+    const id = String((e.currentTarget && e.currentTarget.dataset.id) || '')
+    if (!id) {
+      return
+    }
+    wx.navigateTo({
+      url: `/pages/kitchen/index?category=${encodeURIComponent(id)}`
+    })
+  },
+
   onTagTap(e: any) {
     const tag = String((e.currentTarget && e.currentTarget.dataset.name) || '')
       .trim()
