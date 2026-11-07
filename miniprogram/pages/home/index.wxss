@@ -188,6 +188,15 @@
   text-overflow: ellipsis;
 }
 
+.active-order-message {
+  margin-top: 2rpx;
+  color: #2F7D4F;
+  font-size: 20rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .active-order-arrow {
   flex-shrink: 0;
   color: #2F7D4F;

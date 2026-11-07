@@ -742,12 +742,23 @@ Page({
         (sum, item) => sum + Number(item.qty || 0),
         0
       )
+      const messages = order.messages || []
+      const lastMessage = messages[messages.length - 1]
+      const lastMessageText = lastMessage
+        ? `${
+            lastMessage.role === 'admin' ? '掌勺人' : '她'
+          }：${String(lastMessage.content || '').slice(0, 24)}${
+            String(lastMessage.content || '').length > 24 ? '…' : ''
+          }`
+        : ''
       this.setData({
         activeOrder: {
           id: order.id,
           status: order.status,
           statusText: STATUS_TEXT[order.status],
           mealText: mealName(order.meal),
+          lastMessageText,
+          messageBadge: Math.max(0, Number(order.customerUnread) || 0),
           summary:
             itemSummary((order.items || []).map(item => item.name)) +
             ` · 共 ${totalQty} 份`

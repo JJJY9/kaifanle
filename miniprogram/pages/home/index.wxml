@@ -54,6 +54,7 @@
       <view class="active-order-main">
         <text class="active-order-label">今天这单 · {{activeOrder.mealText}}</text>
         <text class="active-order-text">{{activeOrder.statusText}} · {{activeOrder.summary}}</text>
+        <text wx:if="{{activeOrder.lastMessageText}}" class="active-order-message">💬 {{activeOrder.lastMessageText}}</text>
       </view>
       <text class="active-order-arrow">查看 ›</text>
     </view>

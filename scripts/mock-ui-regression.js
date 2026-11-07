@@ -82,7 +82,8 @@ function chinaDate(offset) {
     Boolean(data.activeOrder) &&
       data.activeOrder.id === 'seed-1' &&
       String(data.activeOrder.statusText || '').length > 0 &&
-      String(data.activeOrder.summary || '').length > 0,
+      String(data.activeOrder.summary || '').length > 0 &&
+      String(data.activeOrder.lastMessageText || '').includes('辛苦啦'),
     data.activeOrder
       ? `${data.activeOrder.id} · ${data.activeOrder.mealText} · ${data.activeOrder.statusText}`
       : '没有进行中订单'
