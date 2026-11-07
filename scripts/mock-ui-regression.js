@@ -2825,6 +2825,34 @@ function chinaDate(offset) {
       repliesBefore >= 1,
       `${repliesBefore} 条待回复`
     )
+    const historyTagOption = (data.historyTags || []).find(
+      item => item.name === '好吃'
+    )
+    if (historyTagOption) {
+      await invoke(
+        mp,
+        "page.onHistoryTag({ currentTarget: { dataset: { tag: '好吃' } } })"
+      )
+      await sleep(400)
+      page = await current()
+      data = await page.data()
+      check(
+        'mock 厨房历史标签筛选',
+        data.historyTag === '好吃' &&
+          (data.historyView || []).length > 0 &&
+          data.historyView.every(
+            order => (order.ratingTags || []).indexOf('好吃') > -1
+          ),
+        `${(data.historyView || []).length} 单`
+      )
+      await invoke(
+        mp,
+        "page.onHistoryTag({ currentTarget: { dataset: { tag: 'all' } } })"
+      )
+      await sleep(300)
+      page = await current()
+      data = await page.data()
+    }
     const pendingLowOrder = {
       id: 'pending-low-test',
       no: '901',

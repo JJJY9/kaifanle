@@ -76,6 +76,8 @@ Page({
     historyOnlyPending: false,
     historyRange: 'all' as 'all' | 'today' | 'week',
     historyRating: 'all' as 'all' | 'good' | 'neutral' | 'bad',
+    historyTag: 'all',
+    historyTags: [] as any[],
     historyMeal: 'all' as 'all' | 'breakfast' | 'lunch' | 'dinner',
     historyKeyword: '',
     historyEmptyText: '还没有历史订单',
@@ -1963,11 +1965,18 @@ Page({
       meal === 'all'
         ? rated
         : rated.filter(order => order.meal === meal)
+    const tag = this.data.historyTag
+    const tagged =
+      tag === 'all'
+        ? withMeal
+        : withMeal.filter(
+            order => (order.ratingTags || []).indexOf(tag) > -1
+          )
     const keyword = String(this.data.historyKeyword || '')
       .trim()
       .toLowerCase()
     const matched = keyword
-      ? withMeal.filter(order => {
+      ? tagged.filter(order => {
           const haystack = [
             order.no,
             order.summary,
@@ -1983,7 +1992,7 @@ Page({
             .toLowerCase()
           return haystack.indexOf(keyword) > -1
         })
-      : withMeal
+      : tagged
     const limit =
       typeof cap === 'number'
         ? cap
@@ -1995,14 +2004,28 @@ Page({
 
   applyHistoryFilter() {
     const historyView = this.filterHistory(this.data.history || [])
+    const tagCount: Record<string, number> = {}
+    ;(this.data.history || []).forEach((order: any) => {
+      ;(order.ratingTags || []).forEach((name: string) => {
+        if (name) {
+          tagCount[name] = (tagCount[name] || 0) + 1
+        }
+      })
+    })
+    const historyTags = Object.keys(tagCount)
+      .map(name => ({ name, count: tagCount[name] }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6)
     const hasFilter =
       this.data.historyOnlyPending ||
       this.data.historyRange !== 'all' ||
       this.data.historyRating !== 'all' ||
       this.data.historyMeal !== 'all' ||
+      this.data.historyTag !== 'all' ||
       Boolean(String(this.data.historyKeyword || '').trim())
     this.setData({
       historyView,
+      historyTags,
       historyEmptyText: hasFilter
         ? '当前筛选没有订单'
         : this.data.historyOnlyPending
@@ -2051,6 +2074,15 @@ Page({
       return
     }
     this.setData({ historyMeal: meal }, () => this.applyHistoryFilter())
+  },
+
+  onHistoryTag(e: any) {
+    const raw = String(e.currentTarget.dataset.tag || '')
+    const tag = raw || 'all'
+    if (tag === this.data.historyTag) {
+      return
+    }
+    this.setData({ historyTag: tag }, () => this.applyHistoryFilter())
   },
 
   onHistorySearch(e: any) {
@@ -2105,6 +2137,7 @@ Page({
           historyRange: 'all',
           historyRating: 'all',
           historyMeal: 'all',
+          historyTag: 'all',
           historyKeyword: ''
         },
         () => {
