@@ -9,6 +9,7 @@ import {
   getMyActiveOrder,
   getMyExpiringCoupons,
   getMyPendingReviewCount,
+  getMyProfile,
   getMySpecialDays
 } from '../../services/api'
 import { cart } from '../../store/cart'
@@ -80,6 +81,8 @@ Page({
     loading: true,
     mealNotice: '',
     specialBanner: '',
+    dislikes: [] as string[],
+    avoidDislikes: false,
     notice: '',
     recommendText: '今日推荐',
     keyword: '',
@@ -269,15 +272,23 @@ Page({
           ? this.data.selectedDate
           : today
       const isToday = date === today
-      const [categories, dishes, business, menu, kitchenStatus, specialDays] =
-        await Promise.all([
-          getCategories(),
-          getDishes(),
-          getBusiness().catch(() => null),
-          getMenuForDate(date, meal),
-          getKitchenStatus().catch(() => null),
-          getMySpecialDays().catch(() => null)
-        ])
+      const [
+        categories,
+        dishes,
+        business,
+        menu,
+        kitchenStatus,
+        specialDays,
+        profile
+      ] = await Promise.all([
+        getCategories(),
+        getDishes(),
+        getBusiness().catch(() => null),
+        getMenuForDate(date, meal),
+        getKitchenStatus().catch(() => null),
+        getMySpecialDays().catch(() => null),
+        getMyProfile().catch(() => null)
+      ])
       if (seq !== this._loadSeq) {
         return
       }
@@ -348,6 +359,12 @@ Page({
 
       const nearestSpecial =
         specialDays && specialDays.days && specialDays.days[0]
+      const dislikes =
+        profile && Array.isArray(profile.dislikes)
+          ? profile.dislikes.filter(Boolean)
+          : []
+      const avoidDislikes =
+        Boolean(this.data.avoidDislikes) && dislikes.length > 0
       let specialBanner = ''
       if (nearestSpecial) {
         const label =
@@ -375,6 +392,8 @@ Page({
           isOpen,
           mealNotice,
           specialBanner,
+          dislikes,
+          avoidDislikes,
           notice:
             business &&
             business.notice &&
@@ -486,10 +505,34 @@ Page({
     wx.navigateTo({ url: '/pages/cart/index' })
   },
 
+  matchesDislikes(dish: Dish): boolean {
+    const dislikes = this.data.dislikes || []
+    if (!dislikes.length) {
+      return false
+    }
+    const text = [
+      dish.name,
+      dish.desc,
+      dish.recipe || '',
+      (dish.tags || []).join(' '),
+      (dish.ingredients || []).join(' '),
+      (dish.allergens || []).join(' ')
+    ]
+      .join(' ')
+      .toLowerCase()
+    return dislikes.some(item =>
+      text.indexOf(String(item || '').trim().toLowerCase()) > -1
+    )
+  },
+
   renderSections() {
+    const source =
+      this.data.avoidDislikes && this.data.dislikes.length
+        ? this._available.filter(dish => !this.matchesDislikes(dish))
+        : this._available
     const favoritePool = this.data.onlyFavorites
-      ? favorites.filter(this._available)
-      : this._available
+      ? favorites.filter(source)
+      : source
     const basePool = this.data.onlyAvailable
       ? favoritePool.filter(
           dish => dish.status !== 'soldout' && dish.stock !== 0
@@ -638,6 +681,17 @@ Page({
 
   onToggleAvailable() {
     this.setData({ onlyAvailable: !this.data.onlyAvailable }, () => {
+      this.renderSections()
+      this.setData({ searchResults: this.filterDishes(this.data.keyword) })
+    })
+  },
+
+  onToggleAvoidDislikes() {
+    if (!this.data.dislikes.length) {
+      wx.showToast({ title: '先去口味与档案填忌口', icon: 'none' })
+      return
+    }
+    this.setData({ avoidDislikes: !this.data.avoidDislikes }, () => {
       this.renderSections()
       this.setData({ searchResults: this.filterDishes(this.data.keyword) })
     })
@@ -866,9 +920,13 @@ Page({
     if (!kw) {
       return []
     }
+    const source =
+      this.data.avoidDislikes && this.data.dislikes.length
+        ? this._available.filter(dish => !this.matchesDislikes(dish))
+        : this._available
     const pool = this.data.onlyFavorites
-      ? favorites.filter(this._available)
-      : this._available
+      ? favorites.filter(source)
+      : source
     const availablePool = this.data.onlyAvailable
       ? pool.filter(dish => dish.status !== 'soldout' && dish.stock !== 0)
       : pool

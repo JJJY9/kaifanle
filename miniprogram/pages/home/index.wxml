@@ -111,6 +111,11 @@
         class="fav-chip {{onlyAvailable ? 'active' : ''}}"
         bindtap="onToggleAvailable"
       >只看能点的</view>
+      <view
+        wx:if="{{dislikes.length}}"
+        class="fav-chip {{avoidDislikes ? 'active' : ''}}"
+        bindtap="onToggleAvoidDislikes"
+      >避开忌口</view>
     </view>
 
     <scroll-view wx:if="{{spiceFilters.length > 1}}" scroll-x class="spice-row">

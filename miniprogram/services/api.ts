@@ -69,6 +69,7 @@ let myStatsCache: { at: number; data: MyStats } | null = null
 let dishStatsCache: Record<string, { at: number; data: DishStats }> = {}
 let specialDaysCache: { at: number; data: SpecialDays } | null = null
 let mySpecialDaysCache: { at: number; data: SpecialDays } | null = null
+let myProfileCache: { at: number; data: UserProfile } | null = null
 const BUSINESS_CACHE_TTL = 60 * 1000
 const MENU_CACHE_TTL = 60 * 1000
 const KITCHEN_STATUS_TTL = 30 * 1000
@@ -79,6 +80,7 @@ const PENDING_REVIEW_TTL = 2 * 60 * 1000
 const MY_STATS_TTL = 5 * 60 * 1000
 const DISH_STATS_TTL = 2 * 60 * 1000
 const SPECIAL_DAYS_TTL = 5 * 60 * 1000
+const PROFILE_TTL = 5 * 60 * 1000
 
 function cloneData<T>(value: T): T {
   return JSON.parse(JSON.stringify(value))
@@ -574,9 +576,18 @@ export async function updateBusiness(payload: Business): Promise<Business> {
   return mock.updateBusiness(payload)
 }
 
-export async function getMyProfile(): Promise<UserProfile> {
+export async function getMyProfile(force = false): Promise<UserProfile> {
   if (USE_CLOUD) {
-    return callApi<UserProfile>('getMyProfile')
+    if (
+      !force &&
+      myProfileCache &&
+      Date.now() - myProfileCache.at < PROFILE_TTL
+    ) {
+      return cloneData(myProfileCache.data)
+    }
+    const data = await callApi<UserProfile>('getMyProfile')
+    myProfileCache = { at: Date.now(), data }
+    return cloneData(data)
   }
   return mock.getMyProfile()
 }
@@ -588,6 +599,7 @@ export async function saveMyProfile(
     const result = await callApi<UserProfile>('saveMyProfile', payload)
     specialDaysCache = null
     mySpecialDaysCache = null
+    myProfileCache = null
     return result
   }
   return mock.saveMyProfile(payload)

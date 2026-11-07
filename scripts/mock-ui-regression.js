@@ -493,6 +493,33 @@ function chinaDate(offset) {
   data = await page.data()
   check('mock 只看能点的恢复', data.onlyAvailable === false)
 
+  await invoke(
+    mp,
+    `page.setData({ dislikes: ['皮蛋'], avoidDislikes: true }, () => { page.renderSections(); page.setData({ searchResults: page.filterDishes(page.data.keyword) }) })`
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  const allDishesAfterAvoid = (data.sections || []).reduce(
+    (list, section) => list.concat(section.dishes || []),
+    []
+  )
+  check(
+    'mock 首页避开忌口',
+    allDishesAfterAvoid.length > 0 &&
+      allDishesAfterAvoid.every(
+        dish =>
+          String(dish.name).indexOf('皮蛋') === -1 &&
+          String(dish.desc || '').indexOf('皮蛋') === -1
+      ),
+    `${allDishesAfterAvoid.length} 道`
+  )
+  await invoke(
+    mp,
+    `page.setData({ dislikes: [], avoidDislikes: false }, () => { page.renderSections(); page.setData({ searchResults: page.filterDishes(page.data.keyword) }) })`
+  )
+  await sleep(300)
+
   // 首页今天/明天快捷切换
   const tomorrowQuick = data.tomorrowDate
   await invoke(
