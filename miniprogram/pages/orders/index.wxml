@@ -83,6 +83,7 @@
           </view>
         </view>
         <view class="order-summary">{{item.summary}}</view>
+        <view wx:if="{{item.lastMessageText}}" class="order-last-message">💬 {{item.lastMessageText}}</view>
         <view class="order-meta">{{item.dateText}} · {{item.mealText}} · 共 {{item.totalQty}} 份 · {{item.timeText}}</view>
         <view class="order-foot">
           <text class="order-amount">¥{{item.amount}}</text>

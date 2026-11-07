@@ -85,6 +85,18 @@ Page({
         const dish = first ? this._dishMap[first.dishId] : null
         return dish ? dish.image || dish.cartoon || '' : ''
       })(),
+      lastMessageText: (() => {
+        const messages = order.messages || []
+        const last = messages[messages.length - 1]
+        if (!last) {
+          return ''
+        }
+        const prefix = last.role === 'admin' ? '掌勺人' : '她'
+        const content = String(last.content || '')
+        return `${prefix}：${
+          content.length > 24 ? content.slice(0, 24) + '…' : content
+        }`
+      })(),
       groupKey:
         order.scheduledDate ||
         dateInputString(new Date(order.createdAt)),

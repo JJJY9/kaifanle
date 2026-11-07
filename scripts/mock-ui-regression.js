@@ -2322,6 +2322,16 @@ function chinaDate(offset) {
     (data.orders || []).some(order => Boolean(order.thumb)),
     `${(data.orders || []).filter(order => order.thumb).length} 单带图`
   )
+  check(
+    'mock 订单列表最新留言',
+    (data.orders || []).some(order =>
+      String(order.lastMessageText || '').includes('辛苦啦')
+    ),
+    (data.orders || [])
+      .map(order => order.lastMessageText)
+      .filter(Boolean)
+      .join(' / ')
+  )
   await invoke(
     mp,
     "page.onSelectMeal({ currentTarget: { dataset: { meal: 'lunch' } } })"
