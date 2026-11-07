@@ -48,6 +48,7 @@ Page({
     slotSaving: false,
     messageDraft: '',
     messages: [] as any[],
+    messagePresets: ['少放辣', '多放饭', '快好了吗', '谢谢啦'],
     sendingMessage: false,
     submittingRating: false,
     ratingOptions: [
@@ -248,6 +249,13 @@ Page({
 
   onMessageInput(e: any) {
     this.setData({ messageDraft: String(e.detail.value || '') })
+  },
+
+  onMessagePreset(e: any) {
+    const text = String((e.currentTarget && e.currentTarget.dataset.text) || '')
+    if (text) {
+      this.setData({ messageDraft: text })
+    }
   },
 
   async onSendMessage() {

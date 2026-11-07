@@ -91,6 +91,15 @@
         <view class="message-text">{{item.content}}</view>
       </view>
     </view>
+    <view wx:if="{{order.status !== 'cancelled'}}" class="message-presets">
+      <view
+        wx:for="{{messagePresets}}"
+        wx:key="*this"
+        class="message-preset"
+        data-text="{{item}}"
+        bindtap="onMessagePreset"
+      >{{item}}</view>
+    </view>
     <view wx:if="{{order.status !== 'cancelled'}}" class="message-input-row">
       <input
         class="message-input"

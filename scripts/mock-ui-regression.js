@@ -2476,6 +2476,20 @@ function chinaDate(offset) {
       messageText.indexOf('记得少放辣') > -1,
     messageText || '没有留言'
   )
+  await invoke(
+    mp,
+    "page.onMessagePreset({ currentTarget: { dataset: { text: '多放饭' } } })"
+  )
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 订单留言快捷短语',
+    data.messageDraft === '多放饭',
+    data.messageDraft
+  )
+  await invoke(mp, "page.setData({ messageDraft: '' })")
+  await sleep(200)
   await mp.mockWxMethod('showModal', {
     confirm: true,
     cancel: false,

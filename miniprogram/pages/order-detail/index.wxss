@@ -411,6 +411,22 @@
   margin-top: 18rpx;
 }
 
+.message-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin-top: 14rpx;
+}
+
+.message-preset {
+  padding: 3rpx 14rpx;
+  background: #FFF7DA;
+  border: 2rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 19rpx;
+  font-weight: 800;
+}
+
 .message-input {
   flex: 1;
   height: 68rpx;
