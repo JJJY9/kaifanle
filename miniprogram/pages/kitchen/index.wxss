@@ -529,6 +529,11 @@
   font-weight: 800;
 }
 
+.prep-allergy {
+  color: #8A2D4A;
+  font-weight: 800;
+}
+
 .prep-group-copy {
   margin-bottom: 4rpx;
   padding: 2rpx 12rpx;

@@ -556,6 +556,27 @@ Page({
       const prepItems = Object.keys(prepMap)
         .map(name => ({ name, qty: prepMap[name] }))
         .sort((a, b) => b.qty - a.qty)
+      const prepMealAllergens: Record<string, Record<string, boolean>> = {
+        breakfast: {},
+        lunch: {},
+        dinner: {}
+      }
+      active
+        .filter(
+          order =>
+            (order.scheduledDate ||
+              dateInputString(new Date(order.createdAt))) === todayKey
+        )
+        .forEach(order => {
+          const bucket = prepMealAllergens[order.meal] || prepMealAllergens.lunch
+          ;(order.items || []).forEach((item: any) => {
+            ;(item.allergens || []).forEach((name: string) => {
+              if (name) {
+                bucket[name] = true
+              }
+            })
+          })
+        })
       const prepGroups = MEALS.map(meal => {
         const items = Object.keys(prepMealMap[meal.id] || {})
           .map(name => ({
@@ -567,7 +588,8 @@ Page({
           meal: meal.id,
           mealText: mealName(meal.id),
           items,
-          total: items.reduce((sum, item) => sum + item.qty, 0)
+          total: items.reduce((sum, item) => sum + item.qty, 0),
+          allergyText: Object.keys(prepMealAllergens[meal.id] || {}).join('、')
         }
       }).filter(group => group.items.length)
       const prepTotal = prepItems.reduce((sum, item) => sum + item.qty, 0)
@@ -2423,11 +2445,23 @@ Page({
     const ingredientLine = (this.data.prepIngredients || [])
       .map((item: any) => `${item.name} ${item.text}`)
       .join('，')
+    const allergyNames: string[] = []
+    ;(this.data.prepGroups || []).forEach((group: any) => {
+      String(group.allergyText || '')
+        .split('、')
+        .filter(Boolean)
+        .forEach(name => {
+          if (allergyNames.indexOf(name) === -1) {
+            allergyNames.push(name)
+          }
+        })
+    })
     const text = [
       '【张饱饭堂】今日采购清单',
       `共 ${this.data.prepTotal} 份`,
       ...items.map((item: any) => `${item.name} × ${item.qty}`),
-      ingredientLine ? `食材：${ingredientLine}` : ''
+      ingredientLine ? `食材：${ingredientLine}` : '',
+      allergyNames.length ? `含过敏原：${allergyNames.join('、')}` : ''
     ]
       .filter(Boolean)
       .join('\n')
@@ -2446,8 +2480,11 @@ Page({
     const text = [
       `【张饱饭堂】${group.mealText}备菜`,
       `共 ${group.total} 份`,
-      ...group.items.map((item: any) => `${item.name} × ${item.qty}`)
-    ].join('\n')
+      ...group.items.map((item: any) => `${item.name} × ${item.qty}`),
+      group.allergyText ? `含过敏原：${group.allergyText}` : ''
+    ]
+      .filter(Boolean)
+      .join('\n')
     wx.setClipboardData({ data: text })
   },
 

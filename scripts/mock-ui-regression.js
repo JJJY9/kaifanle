@@ -722,7 +722,8 @@ function chinaDate(offset) {
     prepGroups.length >= 1 &&
       prepGroups.every(group => group.items.length > 0) &&
       prepGroups.reduce((sum, group) => sum + group.total, 0) ===
-        Number(data.prepTotal),
+        Number(data.prepTotal) &&
+      prepGroups.some(group => String(group.allergyText || '').includes('花生')),
     `${prepGroups.map(group => group.mealText).join('、')} · ${data.prepTotal} 份`
   )
   const prepMealGroup = prepGroups[0] || {
