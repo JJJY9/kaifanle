@@ -2267,6 +2267,10 @@ async function run() {
   assert.strictEqual(res.data.daily.length, 7)
   assert.strictEqual(res.data.startDate, chinaDate(-6))
   assert.strictEqual(res.data.endDate, chinaDate(0))
+  assert.strictEqual(
+    res.data.monthRevenue,
+    report30.data.monthRevenue
+  )
   res = report30
   assert.strictEqual(res.data.minRatedOrders, 2)
   assert.deepStrictEqual(res.data.topRatedDishes, [])
