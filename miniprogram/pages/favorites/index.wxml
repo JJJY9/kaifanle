@@ -90,5 +90,11 @@
     </view>
 
     <view class="foot-btn" bindtap="onGoHome">去点餐</view>
+    <view
+      class="foot-btn poster {{posterMaking ? 'disabled' : ''}}"
+      bindtap="onMakePoster"
+    >{{posterMaking ? '生成中…' : '生成收藏海报'}}</view>
+    <view wx:if="{{posterPath}}" class="foot-link" bindtap="onPreviewPoster">收藏海报已生成，点这里分享 ›</view>
   </block>
+  <canvas type="2d" id="favoritesPoster" class="poster-canvas"></canvas>
 </view>

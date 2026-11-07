@@ -10,14 +10,16 @@ Page({
     display: [] as Dish[],
     keyword: '',
     count: 0,
-    sort: 'recent' as 'recent' | 'price'
+    sort: 'recent' as 'recent' | 'price',
+    posterMaking: false,
+    posterPath: ''
   },
 
   _unsub: null as null | (() => void),
 
   onLoad() {
     this._unsub = favorites.subscribe(() => {
-      this.applyFilter()
+      this.setData({ posterPath: '' }, () => this.applyFilter())
     })
   },
 
@@ -47,7 +49,13 @@ Page({
         .map(id => dishMap[id])
         .filter(Boolean)
       this.setData(
-        { allFavorites, count: allFavorites.length, loading: false, error: '' },
+        {
+          allFavorites,
+          count: allFavorites.length,
+          loading: false,
+          error: '',
+          posterPath: ''
+        },
         () => this.applyFilter()
       )
     } catch (e: any) {
@@ -108,5 +116,143 @@ Page({
   onRetry() {
     this.setData({ loading: true, error: '' })
     this.loadDishes()
+  },
+
+  async onMakePoster() {
+    if (this.data.posterMaking || !this.data.allFavorites.length) {
+      return
+    }
+    this.setData({ posterMaking: true })
+    try {
+      const canvas: any = await new Promise((resolve, reject) => {
+        wx.createSelectorQuery()
+          .in(this)
+          .select('#favoritesPoster')
+          .fields({ node: true, size: true })
+          .exec(res => {
+            const node = res && res[0] && res[0].node
+            if (node) {
+              resolve(node)
+            } else {
+              reject(new Error('画布还没准备好'))
+            }
+          })
+      })
+      const dpr = (wx.getWindowInfo && wx.getWindowInfo().pixelRatio) || 2
+      const width = 600
+      const height = 1080
+      canvas.width = width * dpr
+      canvas.height = height * dpr
+      const ctx = canvas.getContext('2d')
+      ctx.scale(dpr, dpr)
+
+      ctx.fillStyle = '#FFFDF6'
+      ctx.fillRect(0, 0, width, height)
+      ctx.strokeStyle = '#111111'
+      ctx.lineWidth = 8
+      ctx.strokeRect(24, 24, width - 48, height - 48)
+
+      ctx.fillStyle = '#FF5C8A'
+      ctx.fillRect(24, 24, width - 48, 132)
+      ctx.fillStyle = '#FFFFFF'
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'middle'
+      ctx.font = 'bold 38px "PingFang SC", sans-serif'
+      ctx.fillText('张饱饭堂 · 我的收藏', 48, 76)
+      ctx.font = '23px "PingFang SC", sans-serif'
+      ctx.fillText('想再吃一次的，都收在这里', 48, 120)
+      ctx.textAlign = 'right'
+      ctx.font = 'bold 30px "PingFang SC", sans-serif'
+      ctx.fillText(`♡ ${this.data.allFavorites.length}`, width - 48, 76)
+
+      const fit = (text: string, max: number) => {
+        const value = String(text || '')
+        return value.length > max ? value.slice(0, max) + '…' : value
+      }
+      const items = this.data.allFavorites.slice(0, 8)
+      items.forEach((dish, index) => {
+        const y = 188 + index * 92
+        if (index % 2 === 0) {
+          ctx.fillStyle = '#FFF7DA'
+          ctx.fillRect(40, y, width - 80, 84)
+        }
+        ctx.fillStyle = dish.color || '#FFD23F'
+        ctx.fillRect(48, y + 10, 64, 64)
+        ctx.strokeStyle = '#111111'
+        ctx.lineWidth = 3
+        ctx.strokeRect(48, y + 10, 64, 64)
+        ctx.fillStyle = '#111111'
+        ctx.textAlign = 'center'
+        ctx.font = '32px "PingFang SC", sans-serif'
+        ctx.fillText(dish.emoji || dish.char || '🍽', 80, y + 43)
+
+        ctx.textAlign = 'left'
+        ctx.fillStyle = '#111111'
+        ctx.font = 'bold 26px "PingFang SC", sans-serif'
+        ctx.fillText(fit(dish.name, 12), 130, y + 32)
+        ctx.fillStyle = '#5C5C5C'
+        ctx.font = '20px "PingFang SC", sans-serif'
+        const subText = (dish.tags || []).length
+          ? (dish.tags || []).join(' · ')
+          : dish.desc || ''
+        ctx.fillText(fit(subText, 18), 130, y + 64)
+
+        ctx.textAlign = 'right'
+        ctx.fillStyle = '#FF6B35'
+        ctx.font = 'bold 28px "PingFang SC", sans-serif'
+        ctx.fillText(`¥${dish.price}`, width - 48, y + 42)
+      })
+
+      ctx.textAlign = 'left'
+      if (this.data.allFavorites.length > 8) {
+        ctx.fillStyle = '#5C5C5C'
+        ctx.font = '21px "PingFang SC", sans-serif'
+        ctx.fillText(
+          `还有 ${this.data.allFavorites.length - 8} 道收藏没放进图里`,
+          48,
+          966
+        )
+      }
+      ctx.fillStyle = '#5C5C5C'
+      ctx.font = '22px "PingFang SC", sans-serif'
+      ctx.fillText('她点单，你掌勺', 48, height - 52)
+      ctx.textAlign = 'right'
+      ctx.fillText('开饭咯', width - 48, height - 52)
+
+      const path: string = await new Promise((resolve, reject) => {
+        wx.canvasToTempFilePath({
+          canvas,
+          destWidth: canvas.width,
+          destHeight: canvas.height,
+          success: res => resolve(res.tempFilePath),
+          fail: reject
+        } as any)
+      })
+      this.setData({ posterMaking: false, posterPath: path })
+      wx.showToast({ title: '收藏海报已生成', icon: 'none' })
+    } catch (e: any) {
+      this.setData({ posterMaking: false })
+      wx.showToast({
+        title: String((e && e.message) || '生成失败').slice(0, 40),
+        icon: 'none'
+      })
+    }
+  },
+
+  onPreviewPoster() {
+    const path = this.data.posterPath
+    if (!path) {
+      return
+    }
+    if (typeof (wx as any).showShareImageMenu === 'function') {
+      ;(wx as any).showShareImageMenu({
+        path,
+        fail: () => {
+          wx.previewImage({ urls: [path] })
+        }
+      })
+      return
+    }
+    wx.previewImage({ urls: [path] })
   }
 })

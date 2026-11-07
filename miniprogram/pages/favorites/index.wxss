@@ -207,3 +207,30 @@
   transform: translate(6rpx, 6rpx);
   box-shadow: none;
 }
+
+.foot-btn.poster {
+  margin-top: 18rpx;
+  background: #FFD23F;
+  font-size: 26rpx;
+}
+
+.foot-btn.disabled {
+  opacity: 0.5;
+}
+
+.foot-link {
+  padding: 10rpx 20rpx;
+  color: #5C5C5C;
+  font-size: 24rpx;
+  font-weight: 800;
+  text-align: center;
+}
+
+.poster-canvas {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  width: 600px;
+  height: 1080px;
+  pointer-events: none;
+}

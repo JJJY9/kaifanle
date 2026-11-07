@@ -1528,6 +1528,15 @@ function chinaDate(offset) {
       ),
     `${(data.display || []).length} 道`
   )
+  await invoke(mp, 'page.onMakePoster()')
+  await sleep(1200)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 收藏分享海报',
+    data.posterPath !== '' && data.posterMaking === false,
+    data.posterPath ? '已生成' : '未生成'
+  )
   await mp.navigateBack()
   await sleep(700)
   await invoke(mp, 'page.onToggleFavorite()')
