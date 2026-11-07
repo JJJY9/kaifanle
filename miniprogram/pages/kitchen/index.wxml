@@ -380,6 +380,7 @@
         <view class="order-top">
           <text class="no">#{{item.no}}</text>
           <view class="order-top-right">
+            <text wx:if="{{item.messageBadge}}" class="message-badge">留言 {{item.messageBadge}}</text>
             <text wx:if="{{item.ratingText}}" class="rating-badge">{{item.ratingText}}</text>
             <text wx:if="{{item.ownerReply}}" class="replied-badge">已回复</text>
             <view class="status {{item.status}}">{{item.statusText}}</view>

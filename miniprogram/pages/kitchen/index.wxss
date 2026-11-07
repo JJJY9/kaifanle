@@ -998,6 +998,16 @@
   font-weight: 800;
 }
 
+.message-badge {
+  padding: 4rpx 14rpx;
+  background: #2D9CFF;
+  color: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
 .order-feedback {
   margin-top: 8rpx;
   color: #5C5C5C;

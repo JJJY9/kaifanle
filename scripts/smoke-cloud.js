@@ -676,6 +676,10 @@ async function run() {
   )
   assert.strictEqual(res.ok, true)
   assert.strictEqual(res.data.message.role, 'customer')
+  res = await call('getAllOrders', {}, 'admin-openid')
+  let messageOrder = res.data.find(order => order.id === created.data.id)
+  assert.strictEqual(Number(messageOrder.adminUnread), 1)
+  assert.strictEqual(Number(messageOrder.customerUnread), 0)
   res = await call(
     'sendOrderMessage',
     { id: created.data.id, content: '收到，马上做' },
@@ -683,9 +687,19 @@ async function run() {
   )
   assert.strictEqual(res.ok, true)
   assert.strictEqual(res.data.message.role, 'admin')
+  res = await call('getAllOrders', {}, 'admin-openid')
+  messageOrder = res.data.find(order => order.id === created.data.id)
+  assert.strictEqual(Number(messageOrder.customerUnread), 1)
+  assert.strictEqual(Number(messageOrder.adminUnread), 1)
   res = await call('getOrder', { id: created.data.id }, 'girl-openid')
   assert.strictEqual(res.data.messages.length, 2)
   assert.strictEqual(res.data.messages[0].content, '记得少放辣')
+  assert.strictEqual(Number(res.data.customerUnread), 0)
+  res = await call('getAllOrders', {}, 'admin-openid')
+  messageOrder = res.data.find(order => order.id === created.data.id)
+  assert.strictEqual(Number(messageOrder.customerUnread), 0)
+  res = await call('getOrder', { id: created.data.id }, 'admin-openid')
+  assert.strictEqual(Number(res.data.adminUnread), 0)
   res = await call(
     'sendOrderMessage',
     { id: created.data.id, content: '我也要说' },

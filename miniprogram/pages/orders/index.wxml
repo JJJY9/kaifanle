@@ -76,6 +76,7 @@
             <text class="no">#{{item.no}}</text>
           </view>
           <view class="order-top-right">
+            <text wx:if="{{item.messageBadge}}" class="message-badge">新留言 {{item.messageBadge}}</text>
             <text wx:if="{{item.isPreorder}}" class="preorder-chip">预订</text>
             <text wx:if="{{item.rated}}" class="rated-chip">已评</text>
             <text wx:if="{{item.replied}}" class="replied-chip">已回复</text>

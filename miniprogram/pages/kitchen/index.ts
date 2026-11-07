@@ -468,6 +468,7 @@ Page({
               content.length > 30 ? content.slice(0, 30) + '…' : content
             }`
           })(),
+          messageBadge: Math.max(0, Number(order.adminUnread) || 0),
           allergyText: (() => {
             const seen: Record<string, boolean> = {}
             const list: string[] = []

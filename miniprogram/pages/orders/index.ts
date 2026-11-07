@@ -97,6 +97,7 @@ Page({
           content.length > 24 ? content.slice(0, 24) + '…' : content
         }`
       })(),
+      messageBadge: Math.max(0, Number(order.customerUnread) || 0),
       groupKey:
         order.scheduledDate ||
         dateInputString(new Date(order.createdAt)),

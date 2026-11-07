@@ -761,8 +761,11 @@ function chinaDate(offset) {
   check(
     'mock 厨房订单最新留言',
     Boolean(messageOrder) &&
-      String(messageOrder.lastMessageText || '').indexOf('辛苦啦') > -1,
-    messageOrder ? messageOrder.lastMessageText : '没找到订单'
+      String(messageOrder.lastMessageText || '').indexOf('辛苦啦') > -1 &&
+      Number(messageOrder.messageBadge) >= 1,
+    messageOrder
+      ? `${messageOrder.lastMessageText} · ${messageOrder.messageBadge} 条未读`
+      : '没找到订单'
   )
   check(
     'mock 厨房超时订单高亮',
@@ -2331,6 +2334,11 @@ function chinaDate(offset) {
       .map(order => order.lastMessageText)
       .filter(Boolean)
       .join(' / ')
+  )
+  check(
+    'mock 订单列表新留言标记',
+    (data.orders || []).some(order => Number(order.messageBadge) >= 1),
+    `${(data.orders || []).filter(order => order.messageBadge).length} 单有未读`
   )
   await invoke(
     mp,

@@ -126,6 +126,8 @@ export interface Order {
   status: OrderStatus
   timeline: TimelineEntry[]
   messages?: OrderMessage[]
+  customerUnread?: number
+  adminUnread?: number
   createdAt: number
   urgedAt?: number
   urgeCount?: number

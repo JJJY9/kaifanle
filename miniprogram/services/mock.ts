@@ -597,6 +597,8 @@ function seedOrders(): Order[] {
           at: t1 + 60000
         }
       ],
+      adminUnread: 1,
+      customerUnread: 0,
       createdAt: t1
     },
     {
@@ -618,6 +620,16 @@ function seedOrders(): Order[] {
       expectedTime: '08:30',
       mode: '在家吃',
       note: '',
+      messages: [
+        {
+          id: 'msg-seed-2',
+          role: 'admin',
+          content: '明天给你做',
+          at: t2 + 2 * 60 * 60 * 1000
+        }
+      ],
+      customerUnread: 1,
+      adminUnread: 0,
       status: 'completed',
       timeline: [
         { status: 'pending', title: '已下单', time: t2 },
@@ -704,6 +716,7 @@ function loadOrders(): Order[] {
         const seedBroken = Boolean(
           seed1 &&
             (seed1.status !== 'pending' ||
+              Number(seed1.adminUnread) !== 1 ||
               !Array.isArray(seed1.messages) ||
               !seed1.messages.length)
         )
@@ -1139,7 +1152,15 @@ export async function acceptPendingOrders(): Promise<{
 export async function getOrder(id: string): Promise<Order | null> {
   await delay(60)
   const order = loadOrders().find(item => item.id === id)
-  return order ? { ...order } : null
+  if (!order) {
+    return null
+  }
+  if (Number(order.adminUnread) || Number(order.customerUnread)) {
+    order.adminUnread = 0
+    order.customerUnread = 0
+    saveOrders()
+  }
+  return { ...order }
 }
 
 export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
@@ -1332,6 +1353,7 @@ export async function sendOrderMessage(
     at: Date.now()
   }
   order.messages = (order.messages || []).slice(-49).concat([message])
+  order.adminUnread = Math.max(0, Number(order.adminUnread) || 0) + 1
   saveOrders()
   return { ...message }
 }

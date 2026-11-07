@@ -2360,6 +2360,18 @@ async function getOrder(id, openid) {
   if (order._openid !== openid && !admin) {
     throw new Error('没有权限查看这个订单')
   }
+  const unreadField = admin ? 'adminUnread' : 'customerUnread'
+  if (Number(order[unreadField]) > 0) {
+    order[unreadField] = 0
+    try {
+      await db
+        .collection('orders')
+        .doc(id)
+        .update({ data: { [unreadField]: 0 } })
+    } catch (e) {
+      // 已读标记失败不影响查看订单
+    }
+  }
   return withId(order)
 }
 
@@ -2579,6 +2591,8 @@ async function createOrder(payload, openid) {
       scheduledDate,
       profile: buyerProfile,
       status: 'pending',
+      customerUnread: 0,
+      adminUnread: 0,
       urgedAt: 0,
       urgeCount: 0,
       urgeBucket: 0,
@@ -2766,10 +2780,16 @@ async function sendOrderMessage(payload, openid) {
   const messages = (Array.isArray(order.messages) ? order.messages : [])
     .slice(-49)
     .concat([message])
+  const customerUnread =
+    Math.max(0, Number(order.customerUnread) || 0) +
+    (role === 'admin' ? 1 : 0)
+  const adminUnread =
+    Math.max(0, Number(order.adminUnread) || 0) +
+    (role === 'customer' ? 1 : 0)
   await db
     .collection('orders')
     .doc(id)
-    .update({ data: { messages } })
+    .update({ data: { messages, customerUnread, adminUnread } })
   return { message }
 }
 
