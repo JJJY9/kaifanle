@@ -167,6 +167,29 @@ Page({
     wx.switchTab({ url: '/pages/home/index' })
   },
 
+  async onClearAll() {
+    if (!this.data.count) {
+      return
+    }
+    const res: any = await wx.showModal({
+      title: '清空全部收藏？',
+      content: '清空后可以重新收藏喜欢的菜。',
+      confirmText: '清空',
+      cancelText: '算了'
+    })
+    if (!res.confirm) {
+      return
+    }
+    favorites.clear()
+    this.setData({
+      allFavorites: [],
+      display: [],
+      count: 0,
+      posterPath: ''
+    })
+    wx.showToast({ title: '已清空收藏', icon: 'none' })
+  },
+
   onRetry() {
     this.setData({ loading: true, error: '' })
     this.loadDishes()

@@ -3,6 +3,7 @@
     <view class="title-row">
       <text class="title display">我的收藏</text>
       <view class="sticker">♡ {{count}}</view>
+      <view wx:if="{{count}}" class="clear-all" bindtap="onClearAll">清空</view>
     </view>
     <text class="sub">想再吃一次的，都收在这里</text>
   </view>

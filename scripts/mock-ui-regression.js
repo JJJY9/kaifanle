@@ -4149,6 +4149,31 @@ function chinaDate(offset) {
       orderSummaryClip.indexOf('生日') > -1,
     `${String(orderSummaryClip || '').length} 字`
   )
+  await mp.navigateTo('/pages/favorites/index')
+  await sleep(1200)
+  page = await current()
+  data = await page.data()
+  const clearFavoriteBase = (data.allFavorites || [])[0] || {
+    id: 'clear-test',
+    name: '清空测试菜',
+    price: 1,
+    categoryId: 'staple'
+  }
+  await invoke(
+    mp,
+    `page.setData({ count: 1, allFavorites: [${JSON.stringify(
+      clearFavoriteBase
+    )}], display: [${JSON.stringify(clearFavoriteBase)}] })`
+  )
+  await invoke(mp, 'page.onClearAll()')
+  await sleep(700)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 收藏一键清空',
+    Number(data.count) === 0 && (data.allFavorites || []).length === 0,
+    String(data.count)
+  )
 
   const failed = results.filter(r => !r.ok)
   console.log(`\n结论：${results.length - failed.length}/${results.length} 通过`)

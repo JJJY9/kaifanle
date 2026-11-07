@@ -69,6 +69,13 @@ class FavoritesStore {
     return Number(this.times[id] || 0)
   }
 
+  clear(): void {
+    this.ids = []
+    this.times = {}
+    this.persist()
+    this.emit()
+  }
+
   filter(dishes: Dish[]): Dish[] {
     return dishes.filter(dish => this.has(dish.id))
   }

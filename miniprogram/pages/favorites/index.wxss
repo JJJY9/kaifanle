@@ -33,6 +33,17 @@
   transform: rotate(4deg);
 }
 
+.clear-all {
+  margin-left: auto;
+  padding: 3rpx 14rpx;
+  background: #FFFFFF;
+  border: 2rpx solid #111111;
+  border-radius: 999rpx;
+  color: #D9431C;
+  font-size: 19rpx;
+  font-weight: 800;
+}
+
 .sub {
   margin-top: 8rpx;
   color: #5C5C5C;
