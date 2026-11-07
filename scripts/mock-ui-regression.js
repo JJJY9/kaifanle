@@ -768,6 +768,24 @@ function chinaDate(offset) {
       ? `${messageOrder.lastMessageText} · ${messageOrder.messageBadge} 条未读`
       : '没找到订单'
   )
+  const activeOrderCard = await page.$('.order.card')
+  if (activeOrderCard) {
+    await activeOrderCard.tap()
+    await sleep(1800)
+    page = await current()
+    data = await page.data()
+    check(
+      'mock 厨房订单卡片进详情',
+      page.path === 'pages/order-detail/index' &&
+        Boolean(data.order) &&
+        data.order.id === 'seed-1',
+      page.path
+    )
+    await mp.navigateBack()
+    await sleep(1200)
+    page = await current()
+    data = await page.data()
+  }
   check(
     'mock 厨房超时订单高亮',
     (data.orders || []).some(order => order.urgent),
@@ -899,6 +917,8 @@ function chinaDate(offset) {
     data.historyAll === true &&
       (data.historyView || []).length === (data.history || []).length
   )
+  await invoke(mp, "page.onHistorySearch({ detail: { value: '001' } })")
+  await sleep(400)
   await invoke(mp, 'page.onCopyHistoryCsv()')
   await sleep(500)
   const historyCsv = await mp.evaluate(
@@ -909,9 +929,30 @@ function chinaDate(offset) {
   check(
     'mock 厨房历史筛选 CSV',
     String(historyCsv || '').indexOf('订单号,日期,餐次,状态,金额,评分,菜品,备注') >
-      -1 && String(historyCsv || '').indexOf('001') > -1,
+      -1 &&
+      String(historyCsv || '').indexOf('001') > -1 &&
+      String(historyCsv || '').indexOf('002') === -1,
     `${String(historyCsv || '').length} 字`
   )
+  await invoke(mp, 'page.onClearHistorySearch()')
+  await sleep(300)
+  await invoke(
+    mp,
+    "page.onLoad({ tag: encodeURIComponent('分量足') })"
+  )
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 厨房标签参数解码',
+    data.historyKeyword === '分量足' && data.showHistory === true,
+    data.historyKeyword
+  )
+  await invoke(
+    mp,
+    "page.setData({ historyKeyword: '', showHistory: false })"
+  )
+  await sleep(200)
   const oldHistoryOrder = {
     id: 'history-old-test',
     no: '900',
@@ -1488,6 +1529,8 @@ function chinaDate(offset) {
       )} } } })`
     )
     await sleep(400)
+    await invoke(mp, 'page.load()')
+    await sleep(1200)
     page = await current()
     data = await page.data()
     const savedTemplateCategory = await mp.evaluate(() =>
@@ -2714,6 +2757,30 @@ function chinaDate(offset) {
       repliesBefore >= 1,
       `${repliesBefore} 条待回复`
     )
+    const pendingLowOrder = {
+      id: 'pending-low-test',
+      no: '901',
+      status: 'completed',
+      statusText: '已完成',
+      scheduledDate: chinaDate(0),
+      createdAt: Date.now(),
+      meal: 'lunch',
+      mealText: '午餐',
+      rating: 1,
+      canReply: true,
+      ownerReply: '',
+      items: [{ dishId: 'd01', name: '差评测试菜', price: 1, qty: 1 }],
+      summary: '差评测试菜',
+      dateText: '',
+      timeText: ''
+    }
+    await invoke(
+      mp,
+      `page.setData({ history: page.data.history.concat([${JSON.stringify(
+        pendingLowOrder
+      )}]) }, () => page.applyHistoryFilter())`
+    )
+    await sleep(300)
     await invoke(
       mp,
       "page.onTodoTap({ currentTarget: { dataset: { target: 'replies' } } })"
@@ -2724,10 +2791,11 @@ function chinaDate(offset) {
     check(
       'mock 厨房待回复筛选',
       data.historyOnlyPending === true &&
-        (data.historyView || []).length === repliesBefore &&
+        (data.historyView || []).length === repliesBefore + 1 &&
         data.historyView.every(
           order => order.canReply && !order.ownerReply
         ) &&
+        Number(data.historyView[0].rating) === 1 &&
         data.historyView.every(
           (order, index, list) =>
             index === 0 ||
@@ -2735,6 +2803,13 @@ function chinaDate(offset) {
         ),
       `${(data.historyView || []).length} 条`
     )
+    await invoke(
+      mp,
+      "page.setData({ history: page.data.history.filter(order => order.id !== 'pending-low-test') }, () => page.applyHistoryFilter())"
+    )
+    await sleep(300)
+    page = await current()
+    data = await page.data()
     const beforeReply =
       ((data.history || []).find(order => order.id === 'seed-2') || {})
         .ownerReply || ''
@@ -2864,7 +2939,12 @@ function chinaDate(offset) {
       page.path === 'pages/kitchen/index' &&
         data.showHistory === true &&
         data.historyKeyword === topReportTag.name &&
-        (data.historyView || []).length > 0,
+        (data.historyView || []).length > 0 &&
+        data.historyView.every(
+          order =>
+            (order.ratingTags || []).indexOf(topReportTag.name) > -1 ||
+            String(order.feedback || '').indexOf(topReportTag.name) > -1
+        ),
       `${topReportTag.name} → ${(data.historyView || []).length} 单`
     )
     await mp.navigateBack()

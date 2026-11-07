@@ -268,10 +268,17 @@
     </view>
     <view wx:if="{{!ordersView.length}}" class="empty-line">{{orderKeyword ? '没搜到相关订单' : '暂时没有待处理的订单，歇会儿吧'}}</view>
 
-    <view wx:for="{{ordersView}}" wx:key="id" class="order card {{item.urgent ? 'urgent' : ''}}">
+    <view
+      wx:for="{{ordersView}}"
+      wx:key="id"
+      class="order card {{item.urgent ? 'urgent' : ''}}"
+      data-id="{{item.id}}"
+      bindtap="onHistoryTap"
+    >
       <view class="order-top">
         <text class="no">#{{item.no}}</text>
         <view class="order-top-right">
+          <text wx:if="{{item.messageBadge}}" class="message-badge">留言 {{item.messageBadge}}</text>
           <text wx:if="{{item.slotUpdated}}" class="slot-updated">改过时间</text>
           <text wx:if="{{item.waitText}}" class="order-wait">{{item.waitText}}</text>
           <view class="status {{item.status}}">{{item.statusText}}</view>
@@ -314,13 +321,13 @@
           wx:if="{{item.status === 'pending'}}"
           class="kbtn ghost {{busyId === item.id ? 'busy' : ''}}"
           data-id="{{item.id}}"
-          bindtap="onReject"
+          catchtap="onReject"
         >{{busyId === item.id ? '处理中…' : '拒单'}}</view>
         <view
           class="kbtn primary {{busyId === item.id ? 'busy' : ''}}"
           data-id="{{item.id}}"
           data-status="{{item.status}}"
-          bindtap="onAdvance"
+          catchtap="onAdvance"
         >{{busyId === item.id ? '处理中…' : item.actionLabel}}</view>
       </view>
     </view>

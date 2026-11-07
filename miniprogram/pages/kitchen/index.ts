@@ -1633,12 +1633,13 @@ Page({
     if (['low', 'soldout', 'off', 'missing', 'cost'].indexOf(filter) > -1) {
       this.setData({ dishFilter: filter })
     }
-    let tag = String((options && options.tag) || '').trim().slice(0, 24)
+    let tag = String((options && options.tag) || '')
     try {
-      tag = decodeURIComponent(tag).trim().slice(0, 8)
+      tag = decodeURIComponent(tag)
     } catch (e) {
-      tag = tag.slice(0, 8)
+      // 保留原值，下面统一截断
     }
+    tag = tag.trim().slice(0, 8)
     if (tag) {
       this.setData({ showHistory: true, historyKeyword: tag })
     }
@@ -1887,7 +1888,7 @@ Page({
     wx.previewImage({ current: src, urls: order.ratingImages })
   },
 
-  filterHistory(list: any[]): any[] {
+  filterHistory(list: any[], cap?: number): any[] {
     const pendingOnly = this.data.historyOnlyPending
       ? list.filter(order => order.canReply && !order.ownerReply)
       : list
@@ -1951,7 +1952,13 @@ Page({
           return haystack.indexOf(keyword) > -1
         })
       : withMeal
-    return matched.slice(0, this.data.historyAll ? 100 : 10)
+    const limit =
+      typeof cap === 'number'
+        ? cap
+        : this.data.historyAll
+        ? 100
+        : 10
+    return matched.slice(0, limit)
   },
 
   applyHistoryFilter() {
@@ -2026,7 +2033,7 @@ Page({
   },
 
   onCopyHistoryCsv() {
-    const rows = this.data.historyView || []
+    const rows = this.filterHistory(this.data.history || [], 100)
     if (!rows.length) {
       wx.showToast({ title: '当前筛选没有订单', icon: 'none' })
       return

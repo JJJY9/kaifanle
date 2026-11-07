@@ -2350,6 +2350,43 @@ async function getActiveOrders(openid) {
     .map(withId)
 }
 
+async function clearOrderUnread(id, field) {
+  if (typeof db.startTransaction === 'function') {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      let transaction = null
+      try {
+        transaction = await db.startTransaction()
+        const res = await transaction.collection('orders').doc(id).get()
+        if (!res.data) {
+          await transaction.commit()
+          return
+        }
+        if (Number(res.data[field]) > 0) {
+          await transaction
+            .collection('orders')
+            .doc(id)
+            .update({ data: { [field]: 0 } })
+        }
+        await transaction.commit()
+        return
+      } catch (err) {
+        if (transaction) {
+          try {
+            await transaction.rollback()
+          } catch (e) {
+            // 回滚失败时忽略，继续重试
+          }
+        }
+        if (attempt === 1) {
+          break
+        }
+        await new Promise(resolve => setTimeout(resolve, 20))
+      }
+    }
+  }
+  await db.collection('orders').doc(id).update({ data: { [field]: 0 } })
+}
+
 async function getOrder(id, openid) {
   if (!id) {
     throw new Error('缺少订单 ID')
@@ -2364,10 +2401,7 @@ async function getOrder(id, openid) {
   if (Number(order[unreadField]) > 0) {
     order[unreadField] = 0
     try {
-      await db
-        .collection('orders')
-        .doc(id)
-        .update({ data: { [unreadField]: 0 } })
+      await clearOrderUnread(id, unreadField)
     } catch (e) {
       // 已读标记失败不影响查看订单
     }
@@ -2743,6 +2777,58 @@ async function updateOrderNote(payload, openid) {
   return withId(Object.assign({}, order, data))
 }
 
+async function appendOrderMessage(id, message, role) {
+  const buildData = order => ({
+    messages: (Array.isArray(order.messages) ? order.messages : [])
+      .slice(-49)
+      .concat([message]),
+    customerUnread:
+      Math.max(0, Number(order.customerUnread) || 0) +
+      (role === 'admin' ? 1 : 0),
+    adminUnread:
+      Math.max(0, Number(order.adminUnread) || 0) +
+      (role === 'customer' ? 1 : 0)
+  })
+  if (typeof db.startTransaction === 'function') {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      let transaction = null
+      try {
+        transaction = await db.startTransaction()
+        const res = await transaction.collection('orders').doc(id).get()
+        if (!res.data) {
+          throw new Error('订单不存在')
+        }
+        await transaction
+          .collection('orders')
+          .doc(id)
+          .update({ data: buildData(res.data) })
+        await transaction.commit()
+        return
+      } catch (err) {
+        if (transaction) {
+          try {
+            await transaction.rollback()
+          } catch (e) {
+            // 回滚失败时忽略，继续重试
+          }
+        }
+        if (attempt === 2) {
+          console.warn('[api] 订单留言事务失败，退化为原子追加:', err)
+          break
+        }
+        await new Promise(resolve => setTimeout(resolve, 20 * (attempt + 1)))
+      }
+    }
+  }
+  const data = { messages: _.push([message]) }
+  if (role === 'admin') {
+    data.customerUnread = _.inc(1)
+  } else {
+    data.adminUnread = _.inc(1)
+  }
+  await db.collection('orders').doc(id).update({ data })
+}
+
 // 订单留言：顾客和掌勺人都能在订单里留一句，最多保留最近 50 条
 async function sendOrderMessage(payload, openid) {
   const id = String((payload && payload.id) || '')
@@ -2777,19 +2863,7 @@ async function sendOrderMessage(payload, openid) {
     content,
     at: Date.now()
   }
-  const messages = (Array.isArray(order.messages) ? order.messages : [])
-    .slice(-49)
-    .concat([message])
-  const customerUnread =
-    Math.max(0, Number(order.customerUnread) || 0) +
-    (role === 'admin' ? 1 : 0)
-  const adminUnread =
-    Math.max(0, Number(order.adminUnread) || 0) +
-    (role === 'customer' ? 1 : 0)
-  await db
-    .collection('orders')
-    .doc(id)
-    .update({ data: { messages, customerUnread, adminUnread } })
+  await appendOrderMessage(id, message, role)
   return { message }
 }
 

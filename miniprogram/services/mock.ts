@@ -1155,9 +1155,8 @@ export async function getOrder(id: string): Promise<Order | null> {
   if (!order) {
     return null
   }
-  if (Number(order.adminUnread) || Number(order.customerUnread)) {
+  if (Number(order.adminUnread)) {
     order.adminUnread = 0
-    order.customerUnread = 0
     saveOrders()
   }
   return { ...order }

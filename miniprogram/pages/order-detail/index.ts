@@ -269,9 +269,17 @@ Page({
     }
     this.setData({ sendingMessage: true })
     try {
-      await sendOrderMessage(this.orderId, content)
-      this.setData({ messageDraft: '' })
-      await this.load(true)
+      const message = await sendOrderMessage(this.orderId, content)
+      const view = {
+        ...message,
+        key: message.id,
+        roleText: message.role === 'admin' ? '掌勺人' : '她',
+        timeText: `${formatDate(message.at)} ${formatTime(message.at)}`
+      }
+      this.setData({
+        messageDraft: '',
+        messages: (this.data.messages || []).concat([view])
+      })
     } catch (e: any) {
       wx.showToast({
         title: String((e && e.message) || '发送失败').slice(0, 40),
