@@ -1739,6 +1739,37 @@ function chinaDate(offset) {
     )
     await sleep(300)
   }
+  await invoke(
+    mp,
+    "page.onSearchConfirm({ detail: { value: '香菇' } })"
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 菜品模板搜索历史',
+    data.keyword === '香菇' && (data.searchHistory || [])[0] === '香菇',
+    (data.searchHistory || []).join('、')
+  )
+  await invoke(mp, 'page.onClearSearch()')
+  await invoke(
+    mp,
+    "page.onHistoryTap({ currentTarget: { dataset: { keyword: '香菇' } } })"
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  const templateHistoryTapOk = data.keyword === '香菇'
+  await invoke(mp, 'page.onClearSearch()')
+  await invoke(mp, 'page.onClearHistory()')
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 菜品模板搜索历史回填与清空',
+    templateHistoryTapOk && (data.searchHistory || []).length === 0,
+    String((data.searchHistory || []).length)
+  )
   await invoke(mp, 'page.onToggleMissing()')
   await sleep(400)
   page = await current()

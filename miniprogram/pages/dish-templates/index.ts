@@ -5,6 +5,28 @@ import { DISH_BANK } from '../../utils/dish-bank'
 
 const ALL_TEMPLATES = DISH_TEMPLATES.concat(DISH_BANK)
 const CATEGORY_KEY = 'templateCategoryFilter'
+const SEARCH_HISTORY_KEY = 'kfl_template_search_history_v1'
+const SEARCH_HISTORY_MAX = 6
+
+function readSearchHistory(): string[] {
+  try {
+    const raw = wx.getStorageSync(SEARCH_HISTORY_KEY)
+    const list = raw ? JSON.parse(raw) : []
+    return Array.isArray(list)
+      ? list.filter(item => typeof item === 'string').slice(0, SEARCH_HISTORY_MAX)
+      : []
+  } catch (e) {
+    return []
+  }
+}
+
+function writeSearchHistory(list: string[]) {
+  try {
+    wx.setStorageSync(SEARCH_HISTORY_KEY, JSON.stringify(list))
+  } catch (e) {
+    // 忽略存储失败
+  }
+}
 
 const MEAL_NAMES: Record<string, string> = {
   breakfast: '早',
@@ -20,6 +42,7 @@ Page({
     activeCategory: 'all',
     onlyMissing: false,
     keyword: '',
+    searchHistory: readSearchHistory(),
     missingCount: 0,
     summaryText: '',
     addingText: '',
@@ -112,6 +135,49 @@ Page({
   onClearSearch() {
     this.setData({ keyword: '' })
     this.applyFilter()
+  },
+
+  onSearchConfirm(e: any) {
+    const value = String(
+      (e && e.detail && e.detail.value) || this.data.keyword || ''
+    )
+      .trim()
+      .slice(0, 20)
+    if (!value) {
+      return
+    }
+    const searchHistory = [value]
+      .concat((this.data.searchHistory || []).filter(item => item !== value))
+      .slice(0, SEARCH_HISTORY_MAX)
+    writeSearchHistory(searchHistory)
+    this.setData({ keyword: value, searchHistory })
+    this.applyFilter()
+  },
+
+  onHistoryTap(e: any) {
+    const keyword = String(e.currentTarget.dataset.keyword || '')
+    if (!keyword) {
+      return
+    }
+    this.setData({ keyword })
+    this.applyFilter()
+  },
+
+  onClearHistory() {
+    writeSearchHistory([])
+    this.setData({ searchHistory: [] })
+  },
+
+  onRemoveHistory(e: any) {
+    const keyword = String(e.currentTarget.dataset.keyword || '')
+    if (!keyword) {
+      return
+    }
+    const searchHistory = (this.data.searchHistory || []).filter(
+      item => item !== keyword
+    )
+    writeSearchHistory(searchHistory)
+    this.setData({ searchHistory })
   },
 
   onSelectCategory(e: any) {

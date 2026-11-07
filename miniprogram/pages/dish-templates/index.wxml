@@ -12,8 +12,21 @@
       value="{{keyword}}"
       confirm-type="search"
       bindinput="onSearch"
+      bindconfirm="onSearchConfirm"
     />
     <view wx:if="{{keyword}}" class="search-clear" bindtap="onClearSearch">×</view>
+  </view>
+  <view wx:if="{{!keyword && searchHistory.length}}" class="search-history">
+    <text class="search-history-label">最近搜</text>
+    <view
+      wx:for="{{searchHistory}}"
+      wx:key="*this"
+      class="search-history-chip"
+      data-keyword="{{item}}"
+      bindtap="onHistoryTap"
+      bindlongpress="onRemoveHistory"
+    >{{item}}</view>
+    <text class="search-history-clear" bindtap="onClearHistory">清空</text>
   </view>
 
   <scroll-view class="chip-scroll" scroll-x>

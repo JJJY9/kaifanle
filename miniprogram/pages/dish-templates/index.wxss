@@ -66,6 +66,33 @@
   box-shadow: 4rpx 4rpx 0 #111111;
 }
 
+.search-history {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8rpx;
+  margin: -6rpx 0 14rpx;
+}
+
+.search-history-label {
+  color: #8C8C8C;
+  font-size: 19rpx;
+}
+
+.search-history-chip {
+  padding: 3rpx 14rpx;
+  background: #FFF7DA;
+  border: 2rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 19rpx;
+  font-weight: 700;
+}
+
+.search-history-clear {
+  color: #8C8C8C;
+  font-size: 19rpx;
+}
+
 .search-icon {
   font-size: 26rpx;
 }
