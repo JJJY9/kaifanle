@@ -149,7 +149,7 @@ async function route(action, payload, openid) {
     case 'initDb':
       return initDb(openid)
     case 'getBusiness':
-      return getBusiness()
+      return getBusiness(openid)
     case 'updateBusiness':
       return updateBusiness(payload, openid)
     case 'getMyProfile':
@@ -493,9 +493,15 @@ function chinaDateString(ts) {  const d = new Date((ts || Date.now()) + 8 * 60 *
   )
 }
 
-async function getBusiness() {
+async function getBusiness(openid) {
   const config = await getConfig()
-  return normalizeBusiness(config && config.business)
+  const business = normalizeBusiness(config && config.business)
+  const admin = adminOpenidsFrom(config).indexOf(openid) > -1
+  if (!admin) {
+    delete business.dailyGoal
+    delete business.monthlyGoal
+  }
+  return business
 }
 
 async function updateBusiness(payload, openid) {

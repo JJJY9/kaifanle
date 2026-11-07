@@ -118,7 +118,7 @@ Page({
         before > 0 ? Math.round(((now - before) / before) * 100) : null
       const revenueDelta = percent(thisRevenue, prevRevenue)
       const countDelta = percent(thisCount, prevCount)
-      const compare = {
+      let compare: any = {
         thisRevenue,
         prevRevenue,
         thisCount,
@@ -145,6 +145,9 @@ Page({
             : revenueDelta < 0
             ? 'down'
             : 'flat'
+      }
+      if (report.days === 7) {
+        compare = null
       }
       const safeReport = Object.assign({}, report, {
         topRatedDishes: Array.isArray(report.topRatedDishes)

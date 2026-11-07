@@ -495,30 +495,51 @@ function chinaDate(offset) {
 
   await invoke(
     mp,
-    `page.setData({ dislikes: ['皮蛋'], avoidDislikes: true }, () => { page.renderSections(); page.setData({ searchResults: page.filterDishes(page.data.keyword) }) })`
+    "page.onSelectMeal({ currentTarget: { dataset: { meal: 'breakfast' } } })"
   )
+  await sleep(1600)
+  page = await current()
+  data = await page.data()
+  const beforeAvoidNames = (data.sections || []).reduce(
+    (list, section) =>
+      list.concat((section.dishes || []).map(dish => dish.name)),
+    []
+  )
+  const hadDislikeDish = beforeAvoidNames.some(
+    name => String(name).indexOf('皮蛋') > -1
+  )
+  await invoke(
+    mp,
+    "page.setData({ dislikes: ['皮蛋'], avoidDislikes: false })"
+  )
+  await sleep(200)
+  await invoke(mp, 'page.onToggleAvoidDislikes()')
   await sleep(400)
   page = await current()
   data = await page.data()
-  const allDishesAfterAvoid = (data.sections || []).reduce(
-    (list, section) => list.concat(section.dishes || []),
+  const afterAvoidNames = (data.sections || []).reduce(
+    (list, section) =>
+      list.concat((section.dishes || []).map(dish => dish.name)),
     []
   )
   check(
     'mock 首页避开忌口',
-    allDishesAfterAvoid.length > 0 &&
-      allDishesAfterAvoid.every(
-        dish =>
-          String(dish.name).indexOf('皮蛋') === -1 &&
-          String(dish.desc || '').indexOf('皮蛋') === -1
-      ),
-    `${allDishesAfterAvoid.length} 道`
+    data.avoidDislikes === true &&
+      hadDislikeDish &&
+      afterAvoidNames.length < beforeAvoidNames.length &&
+      afterAvoidNames.every(name => String(name).indexOf('皮蛋') === -1),
+    `${beforeAvoidNames.length} → ${afterAvoidNames.length} 道`
   )
+  await invoke(mp, 'page.onToggleAvoidDislikes()')
+  await sleep(300)
+  await invoke(mp, 'page.setData({ dislikes: [] })')
   await invoke(
     mp,
-    `page.setData({ dislikes: [], avoidDislikes: false }, () => { page.renderSections(); page.setData({ searchResults: page.filterDishes(page.data.keyword) }) })`
+    "page.onSelectMeal({ currentTarget: { dataset: { meal: 'lunch' } } })"
   )
-  await sleep(300)
+  await sleep(1500)
+  page = await current()
+  data = await page.data()
 
   // 首页今天/明天快捷切换
   const tomorrowQuick = data.tomorrowDate
@@ -2248,8 +2269,9 @@ function chinaDate(offset) {
     'mock 月报切换近7天',
     Number(data.range) === 7 &&
       data.report.days === 7 &&
-      (data.report.daily || []).length === 7,
-    `${data.report.days} 天 · ${(data.report.daily || []).length} 个数据点`
+      (data.report.daily || []).length === 7 &&
+      data.compare === null,
+    `${data.report.days} 天 · ${(data.report.daily || []).length} 个数据点 · 周对比${data.compare ? '显示' : '隐藏'}`
   )
   await invoke(
     mp,
@@ -2344,7 +2366,8 @@ function chinaDate(offset) {
       : `还差 ¥${Number((5000 - monthRevenue).toFixed(2))}`
   check(
     'mock 月报月度目标',
-    Number(data.monthlyGoal) === 5000 &&
+    monthRevenue > 0 &&
+      Number(data.monthlyGoal) === 5000 &&
       Number(data.monthGoalPercent) === expectedMonthPercent &&
       data.monthGoalText === expectedMonthText,
     `¥${monthRevenue} / ¥5000 · ${data.monthGoalPercent}% · ${data.monthGoalText}`

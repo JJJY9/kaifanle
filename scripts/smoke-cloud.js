@@ -338,10 +338,12 @@ async function run() {
   assert.strictEqual(res.data.notice, '今晚有炖汤')
   assert.strictEqual(res.data.recommendText, '雨天暖胃')
   assert.strictEqual(res.data.lowStockThreshold, 7)
-  assert.strictEqual(res.data.dailyGoal, 200)
-  assert.strictEqual(res.data.monthlyGoal, 5000)
   assert.strictEqual(res.data.noticeFrom, '2000-01-01')
   assert.strictEqual(res.data.noticeUntil, '2099-01-01')
+  // 顾客端不返回营收目标
+  res = await call('getBusiness', {}, 'girl-openid')
+  assert.strictEqual(res.data.dailyGoal, undefined)
+  assert.strictEqual(res.data.monthlyGoal, undefined)
 
   // 公告开始日期不能晚于截止日期
   res = await call(
@@ -1351,8 +1353,8 @@ async function run() {
   res = await call('getBusiness', {}, 'girl-openid')
   assert.strictEqual(res.data.lowStockThreshold, 7)
   assert.strictEqual(res.data.noticeUntil, '2099-01-01')
-  assert.strictEqual(res.data.dailyGoal, 200)
-  assert.strictEqual(res.data.monthlyGoal, 5000)
+  assert.strictEqual(res.data.dailyGoal, undefined)
+  assert.strictEqual(res.data.monthlyGoal, undefined)
   assert.strictEqual(res.data.noticeFrom, '2000-01-01')
 
   // 休息日：指定日期不能下单
@@ -2150,6 +2152,26 @@ async function run() {
   assert.strictEqual(res.ok, false)
   res = await call('getMyProfile', {}, 'girl-openid')
   assert.strictEqual(res.data.birthday, '2000-02-29')
+
+  // 顾客首页只显示今天起 4 个日历日（0-3），第 4 天不提醒
+  await call(
+    'saveMyProfile',
+    {
+      birthday: `2000-${chinaDate(3).slice(5)}`,
+      anniversary: `2000-${chinaDate(4).slice(5)}`
+    },
+    'girl-openid'
+  )
+  res = await call('getMySpecialDays', {}, 'girl-openid')
+  assert.strictEqual(res.data.windowDays, 4)
+  assert.strictEqual(res.data.days.length, 1)
+  assert.strictEqual(res.data.days[0].kind, 'birthday')
+  assert.strictEqual(res.data.days[0].days, 3)
+  await call(
+    'saveMyProfile',
+    { birthday: '', anniversary: '' },
+    'girl-openid'
+  )
 
   res = await call('getMyProfile', {}, 'admin-openid')
   assert.deepStrictEqual(res.data.dislikes, [])

@@ -512,9 +512,6 @@ Page({
     }
     const text = [
       dish.name,
-      dish.desc,
-      dish.recipe || '',
-      (dish.tags || []).join(' '),
       (dish.ingredients || []).join(' '),
       (dish.allergens || []).join(' ')
     ]
@@ -648,10 +645,13 @@ Page({
     const empty = sections.length === 0
     const spiceEmpty = empty && activeSpice !== 'all'
     const tagEmpty = empty && activeTag !== 'all'
+    const avoidEmpty =
+      empty && this.data.avoidDislikes && this.data.dislikes.length > 0
     this.setData({
       sections,
       hero,
       heroImageFailed: false,
+      emptyTitle: avoidEmpty ? '避开忌口后没有菜' : '这一餐还没开火',
       spiceFilters,
       tagFilters,
       heroTag: favoriteHero ? '你收藏的' : this.data.recommendText || '今日推荐',
@@ -662,6 +662,8 @@ Page({
           ? '这个口味暂时没有菜，换一个试试'
           : empty && tagEmpty
           ? '这个标签暂时没有菜，换一个试试'
+          : avoidEmpty
+          ? '避开忌口后没有菜了，可以关掉筛选看看'
           : empty && this.data.onlyAvailable
           ? '能点的都卖完啦，看看全部菜吧'
           : this._baseEmptyDesc,
@@ -672,6 +674,8 @@ Page({
           ? '全部口味'
           : tagEmpty
           ? '全部标签'
+          : avoidEmpty
+          ? '关掉避开忌口'
           : this.data.onlyAvailable
           ? '看全部菜'
           : '去许愿'
@@ -903,6 +907,13 @@ Page({
       })
       return
     }
+    if (this.data.avoidDislikes) {
+      this.setData({ avoidDislikes: false }, () => {
+        this.renderSections()
+        this.setData({ searchResults: this.filterDishes(this.data.keyword) })
+      })
+      return
+    }
     if (this.data.onlyAvailable) {
       this.setData({ onlyAvailable: false }, () => {
         this.renderSections()
@@ -1009,7 +1020,12 @@ Page({
     wx.navigateTo({ url: '/pages/week-menus/index' })
   },
 
-  onSurprise() {    const pool = this._available.filter(
+  onSurprise() {
+    const source =
+      this.data.avoidDislikes && this.data.dislikes.length
+        ? this._available.filter(dish => !this.matchesDislikes(dish))
+        : this._available
+    const pool = source.filter(
       dish => dish.status !== 'soldout' && dish.stock !== 0
     )
     if (!pool.length) {
