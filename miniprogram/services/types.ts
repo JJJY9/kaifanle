@@ -186,6 +186,21 @@ export interface UserProfile {
   dislikes: string[]
   tastes: string[]
   address: string
+  birthday?: string
+  anniversary?: string
+}
+
+export interface SpecialDay {
+  kind: 'birthday' | 'anniversary'
+  date: string
+  days: number
+}
+
+export interface SpecialDays {
+  today: string
+  windowDays: number
+  total?: number
+  days: SpecialDay[]
 }
 
 export interface StoreStats {

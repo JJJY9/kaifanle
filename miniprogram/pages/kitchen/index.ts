@@ -7,6 +7,7 @@ import {
   getCategories,
   getDishes,
   getMe,
+  getSpecialDays,
   getStats,
   moveDish,
   replyRating,
@@ -47,6 +48,8 @@ Page({
     preorders: [] as any[],
     history: [] as any[],
     dishes: [] as any[],
+    specialDays: [] as any[],
+    specialDaysMore: 0,
     stats: null as any,
     loading: true,
     todayClosed: false,
@@ -103,6 +106,7 @@ Page({
   _restToggling: false as boolean,
   _lastPollErrorAt: 0,
   _loadSeq: 0,
+  _forceSpecialDays: false,
 
   onShow() {
     this.guard()
@@ -162,7 +166,9 @@ Page({
           error: '',
           loading: false,
           orders: [],
-          dishes: []
+          dishes: [],
+          specialDays: [],
+          specialDaysMore: 0
         })
         return
       }
@@ -195,6 +201,7 @@ Page({
   },
 
   onRetry() {
+    this._forceSpecialDays = true
     this.setData({ error: '', loading: true })
     this.guard()
   },
@@ -215,11 +222,14 @@ Page({
   },
 
   onPullDownRefresh() {
+    this._forceSpecialDays = true
     this.guard().then(() => wx.stopPullDownRefresh())
   },
 
   async load(silent = false) {
     const seq = ++this._loadSeq
+    const forceSpecialDays = this._forceSpecialDays
+    this._forceSpecialDays = false
     try {
       // 静默轮询只取未完成订单；首次/操作后加载全量（含历史）
       let orders: any[]
@@ -243,6 +253,8 @@ Page({
       let statsRefreshed = false
       let todayClosed = this.data.todayClosed
       let lowStockThreshold = this.data.lowStockThreshold || 3
+      let specialDays = this.data.specialDays
+      let specialDaysMore = this.data.specialDaysMore
       if (!silent) {
         const business = await getBusiness().catch(() => null)
         if (business) {
@@ -257,13 +269,21 @@ Page({
         }
       }
       if (!silent || !dishes.length) {
-        const [dishList, categories] = await Promise.all([
+        const [dishList, categories, special] = await Promise.all([
           getDishes(),
-          getCategories().catch(() => [] as any[])
+          getCategories().catch(() => [] as any[]),
+          getSpecialDays(forceSpecialDays).catch(() => null)
         ])
         dishes = dishList
         if (categories.length) {
           this._categories = categories
+        }
+        if (special) {
+          specialDays = this.decorateSpecialDays(special.days)
+          specialDaysMore = Math.max(
+            0,
+            Number(special.total || special.days.length) - special.days.length
+          )
         }
       }
       if (
@@ -662,6 +682,8 @@ Page({
         history,
         historyView: this.filterHistory(history),
         dishes,
+        specialDays,
+        specialDaysMore,
         stats,
         prepItems,
         prepGroups,
@@ -1401,6 +1423,30 @@ Page({
     })
     this.setData({ orderSort: sort, orders: sorted }, () => {
       this.setData({ ordersView: this.filterOrders(sorted) })
+    })
+  },
+
+  decorateSpecialDays(days: any[]): any[] {
+    return (days || []).map((day, index) => {
+      const dateParts = String(day.date || '').split('-')
+      return {
+        key: `${day.kind}-${day.date}-${index}`,
+        kind: day.kind,
+        days: Number(day.days),
+        emoji: day.kind === 'birthday' ? '🎂' : '💗',
+        label: day.kind === 'birthday' ? '生日' : '纪念日',
+        dateText:
+          dateParts.length === 2
+            ? `${Number(dateParts[0])}月${Number(dateParts[1])}日`
+            : String(day.date || ''),
+        daysText:
+          day.days === 0
+            ? '今天'
+            : day.days === 1
+            ? '明天'
+            : `还有 ${day.days} 天`,
+        urgent: Number(day.days) <= 3
+      }
     })
   },
 

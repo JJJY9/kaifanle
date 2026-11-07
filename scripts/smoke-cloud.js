@@ -1956,6 +1956,106 @@ async function run() {
   assert.deepStrictEqual(res.data.dislikes, ['香菜'])
   assert.strictEqual(res.data.address, '家里')
 
+  // 生日 / 纪念日：保存、提醒排序、30 天窗口与旧客户端保留
+  const specialBirthday = `1990-${chinaDate(2).slice(5)}`
+  const specialAnniversary = `2010-${chinaDate(2).slice(5)}`
+  const specialBirthday29 = `1990-${chinaDate(29).slice(5)}`
+  const specialAnniversary30 = `2010-${chinaDate(30).slice(5)}`
+  res = await call(
+    'saveMyProfile',
+    {
+      dislikes: ['香菜'],
+      tastes: ['微辣'],
+      address: '家里',
+      birthday: specialBirthday,
+      anniversary: specialAnniversary
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.birthday, specialBirthday)
+  assert.strictEqual(res.data.anniversary, specialAnniversary)
+
+  res = await call('getSpecialDays', {}, 'admin-openid')
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.today, chinaDate(0))
+  assert.strictEqual(res.data.days.length, 2)
+  assert.strictEqual(res.data.days[0].kind, 'birthday')
+  assert.strictEqual(res.data.days[0].date, chinaDate(2).slice(5))
+  assert.strictEqual(res.data.days[0].days, 2)
+  assert.strictEqual(res.data.days[1].kind, 'anniversary')
+  assert.strictEqual(res.data.days[1].openid, undefined)
+  assert.strictEqual(res.data.days[1].address, undefined)
+
+  res = await call('getSpecialDays', {}, 'girl-openid')
+  assert.strictEqual(res.ok, false)
+
+  // 窗口是今天起 30 个日历日（0-29 天）
+  await call(
+    'saveMyProfile',
+    {
+      birthday: specialBirthday29,
+      anniversary: specialAnniversary30
+    },
+    'girl-openid'
+  )
+  res = await call('getSpecialDays', {}, 'admin-openid')
+  assert.strictEqual(res.data.days.length, 1)
+  assert.strictEqual(res.data.days[0].kind, 'birthday')
+  assert.strictEqual(res.data.days[0].days, 29)
+
+  // 旧客户端不带日期字段：不能清空已保存的日期
+  res = await call(
+    'saveMyProfile',
+    { dislikes: ['香菜'], tastes: ['微辣'], address: '家里' },
+    'girl-openid'
+  )
+  assert.strictEqual(res.data.birthday, specialBirthday29)
+  assert.strictEqual(res.data.anniversary, specialAnniversary30)
+
+  // 显式空字符串可以清除
+  res = await call(
+    'saveMyProfile',
+    {
+      dislikes: ['香菜'],
+      tastes: ['微辣'],
+      address: '家里',
+      birthday: '',
+      anniversary: ''
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(res.data.birthday, '')
+  assert.strictEqual(res.data.anniversary, '')
+  res = await call('getSpecialDays', {}, 'admin-openid')
+  assert.strictEqual(res.data.days.length, 0)
+
+  // 非法日期拒绝保存，不会静默清掉原值
+  res = await call(
+    'saveMyProfile',
+    { birthday: '2026-02-30' },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, false)
+  res = await call('getMyProfile', {}, 'girl-openid')
+  assert.strictEqual(res.data.birthday, '')
+
+  // 闰日：2000-02-29 合法，2001-02-29 不合法
+  res = await call(
+    'saveMyProfile',
+    { birthday: '2000-02-29' },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  res = await call(
+    'saveMyProfile',
+    { birthday: '2001-02-29' },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, false)
+  res = await call('getMyProfile', {}, 'girl-openid')
+  assert.strictEqual(res.data.birthday, '2000-02-29')
+
   res = await call('getMyProfile', {}, 'admin-openid')
   assert.deepStrictEqual(res.data.dislikes, [])
 

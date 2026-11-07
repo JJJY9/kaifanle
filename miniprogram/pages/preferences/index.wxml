@@ -1,6 +1,6 @@
 <view class="page">
   <view class="head">
-    <text class="title display">口味与地址</text>
+    <text class="title display">口味与档案</text>
     <text class="sub">让每一顿都合口味</text>
   </view>
 
@@ -44,6 +44,39 @@
           bindinput="onAddress"
         />
       </view>
+      <view class="field">
+        <text class="label">生日</text>
+        <view class="date-row">
+          <picker
+            class="date-picker"
+            mode="date"
+            value="{{birthday}}"
+            start="1900-01-01"
+            end="{{today}}"
+            bindchange="onBirthday"
+          >
+            <view class="date-value {{birthday ? '' : 'placeholder'}}">{{birthday || '选择生日'}}</view>
+          </picker>
+          <view wx:if="{{birthday}}" class="date-clear" catchtap="onClearBirthday">清除</view>
+        </view>
+      </view>
+      <view class="field">
+        <text class="label">纪念日</text>
+        <view class="date-row">
+          <picker
+            class="date-picker"
+            mode="date"
+            value="{{anniversary}}"
+            start="1900-01-01"
+            end="2100-12-31"
+            bindchange="onAnniversary"
+          >
+            <view class="date-value {{anniversary ? '' : 'placeholder'}}">{{anniversary || '选择纪念日'}}</view>
+          </picker>
+          <view wx:if="{{anniversary}}" class="date-clear" catchtap="onClearAnniversary">清除</view>
+        </view>
+      </view>
+      <view class="date-hint">保存后，未来 30 天内会在厨房端提醒掌勺人。</view>
     </view>
 
     <view

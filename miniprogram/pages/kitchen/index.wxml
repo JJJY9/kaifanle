@@ -51,6 +51,24 @@
       </view>
     </view>
 
+    <view wx:if="{{specialDays.length}}" class="special-card card">
+      <view class="special-head">
+        <text class="special-title">重要日子提醒</text>
+        <text class="special-sub">未来 30 天 · 只有你能看到</text>
+      </view>
+      <view
+        wx:for="{{specialDays}}"
+        wx:key="key"
+        class="special-row {{item.urgent ? 'urgent' : ''}}"
+      >
+        <text class="special-emoji">{{item.emoji}}</text>
+        <text class="special-label">{{item.label}}</text>
+        <text class="special-date">{{item.dateText}}</text>
+        <text class="special-days">{{item.daysText}}</text>
+      </view>
+      <view wx:if="{{specialDaysMore}}" class="special-more">还有 {{specialDaysMore}} 个重要日子未展示</view>
+    </view>
+
     <view wx:if="{{todo.pending || todo.replies || todo.lowStock || todo.preorders}}" class="todo-card card">
       <view class="todo-head">
         <text class="todo-title">今日待办</text>

@@ -18,6 +18,7 @@ import type {
   MyStats,
   Order,
   OrderStatus,
+  SpecialDays,
   StockLog,
   StoreStats,
   UserProfile,
@@ -409,13 +410,26 @@ function loadProfile(): UserProfile {
   try {
     const raw = wx.getStorageSync(PROFILE_KEY)
     if (raw) {
-      profileCache = JSON.parse(raw)
+      const saved = JSON.parse(raw)
+      profileCache = {
+        dislikes: Array.isArray(saved.dislikes) ? saved.dislikes : [],
+        tastes: Array.isArray(saved.tastes) ? saved.tastes : [],
+        address: String(saved.address || ''),
+        birthday: String(saved.birthday || ''),
+        anniversary: String(saved.anniversary || '')
+      }
       return profileCache as UserProfile
     }
   } catch (e) {
     // 读取失败则使用默认值
   }
-  profileCache = { dislikes: [], tastes: [], address: '' }
+  profileCache = {
+    dislikes: [],
+    tastes: [],
+    address: '',
+    birthday: '',
+    anniversary: ''
+  }
   saveProfile()
   return profileCache as UserProfile
 }
@@ -1594,7 +1608,31 @@ export async function saveMyProfile(
   payload: UserProfile
 ): Promise<UserProfile> {
   await delay(80)
-  profileCache = JSON.parse(JSON.stringify(payload))
+  const existing = loadProfile()
+  const input: any = payload || {}
+  const nextDate = (key: 'birthday' | 'anniversary', label: string) => {
+    if (!Object.prototype.hasOwnProperty.call(input, key) || input[key] === undefined) {
+      return existing[key] || ''
+    }
+    const text = String(input[key] || '').trim()
+    if (!text) {
+      return ''
+    }
+    const normalized = normalizeSpecialDate(text)
+    if (!normalized) {
+      throw new Error(`${label}日期格式不正确`)
+    }
+    return normalized
+  }
+  profileCache = {
+    dislikes:
+      input.dislikes !== undefined ? input.dislikes : existing.dislikes,
+    tastes: input.tastes !== undefined ? input.tastes : existing.tastes,
+    address:
+      input.address !== undefined ? String(input.address) : existing.address,
+    birthday: nextDate('birthday', '生日'),
+    anniversary: nextDate('anniversary', '纪念日')
+  } as UserProfile
   saveProfile()
   return JSON.parse(JSON.stringify(profileCache))
 }
@@ -2270,6 +2308,91 @@ function chinaDateKey(ts: number): string {
   const month = String(d.getUTCMonth() + 1).padStart(2, '0')
   const day = String(d.getUTCDate()).padStart(2, '0')
   return `${d.getUTCFullYear()}-${month}-${day}`
+}
+
+function normalizeSpecialDate(value: any): string {
+  const text = String(value || '').trim()
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    return ''
+  }
+  const parts = text.split('-').map(Number)
+  const date = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]))
+  if (
+    date.getUTCFullYear() !== parts[0] ||
+    date.getUTCMonth() !== parts[1] - 1 ||
+    date.getUTCDate() !== parts[2] ||
+    parts[0] < 1900 ||
+    parts[0] > 2100
+  ) {
+    return ''
+  }
+  return text
+}
+
+function annualOccurrence(
+  dateKey: string,
+  todayKey: string
+): { days: number; date: string } {
+  const todayParts = todayKey.split('-').map(Number)
+  const dateParts = dateKey.split('-').map(Number)
+  const todayUtc = Date.UTC(
+    todayParts[0],
+    todayParts[1] - 1,
+    todayParts[2]
+  )
+  const occurrence = (year: number) => {
+    const month = dateParts[1]
+    const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate()
+    return Date.UTC(year, month - 1, Math.min(dateParts[2], lastDay))
+  }
+  let year = todayParts[0]
+  let next = occurrence(year)
+  if (next < todayUtc) {
+    year += 1
+    next = occurrence(year)
+  }
+  const date = new Date(next)
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(date.getUTCDate()).padStart(2, '0')
+  return {
+    days: Math.round((next - todayUtc) / (24 * 60 * 60 * 1000)),
+    date: `${month}-${day}`
+  }
+}
+
+export async function getSpecialDays(): Promise<SpecialDays> {
+  await delay(60)
+  const profile = loadProfile()
+  const today = chinaDateKey(Date.now())
+  const days: SpecialDays['days'] = []
+  ;[
+    ['birthday', 'birthday'],
+    ['anniversary', 'anniversary']
+  ].forEach(([key, kind]) => {
+    const dateKey = normalizeSpecialDate((profile as any)[key])
+    if (!dateKey) {
+      return
+    }
+    const remain = annualOccurrence(dateKey, today)
+    if (remain.days >= 0 && remain.days < 30) {
+      days.push({
+        kind: kind as SpecialDays['days'][number]['kind'],
+        date: remain.date,
+        days: remain.days
+      })
+    }
+  })
+  days.sort(
+    (a, b) =>
+      a.days - b.days ||
+      (a.kind === b.kind ? 0 : a.kind === 'birthday' ? -1 : 1)
+  )
+  return {
+    today,
+    windowDays: 30,
+    total: days.length,
+    days: days.slice(0, 10)
+  }
 }
 
 export async function getWeekMenus(): Promise<WeekMenus> {
