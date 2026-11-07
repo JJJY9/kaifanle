@@ -514,6 +514,11 @@
   margin-bottom: 14rpx;
 }
 
+.dish-row:active {
+  transform: translateY(2rpx);
+  opacity: 0.85;
+}
+
 .rank {
   display: flex;
   align-items: center;

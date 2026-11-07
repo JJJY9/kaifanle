@@ -1187,6 +1187,13 @@ async function getKitchenReport(payload, openid) {
     .slice(0, 8)
 
   const dishRes = await db.collection('dishes').limit(1000).get()
+  const dishIdByName = {}
+  ;(dishRes.data || []).forEach(dish => {
+    dishIdByName[dish.name] = dish.id || dish._id
+  })
+  topDishes.forEach(dish => {
+    dish.id = dishIdByName[dish.name] || ''
+  })
   const slowDishes = (dishRes.data || [])
     .filter(dish => dish.status !== 'off')
     .map(dish => {

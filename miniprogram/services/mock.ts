@@ -2087,6 +2087,13 @@ export async function getKitchenReport(
     }))
     .sort((a, b) => b.qty - a.qty || b.revenue - a.revenue)
     .slice(0, 8)
+  const dishIdByName: Record<string, string> = {}
+  dishes.forEach(dish => {
+    dishIdByName[dish.name] = dish.id
+  })
+  topDishes.forEach(dish => {
+    dish.id = dishIdByName[dish.name] || ''
+  })
   const slowDishes = dishes
     .filter(dish => dish.status !== 'off')
     .map(dish => {

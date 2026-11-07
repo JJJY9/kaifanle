@@ -2437,6 +2437,26 @@ function chinaDate(offset) {
       ? `${data.report.totalOrders} 单 / ¥${data.report.revenue}`
       : '没有数据'
   )
+  const topDishId = (data.report.topDishes[0] || {}).id
+  check('mock 月报菜品带 ID', Boolean(topDishId), topDishId || '没有 ID')
+  await invoke(
+    mp,
+    `page.onDishTap({ currentTarget: { dataset: { id: ${JSON.stringify(
+      topDishId
+    )} } } })`
+  )
+  await sleep(1800)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 月报菜品进菜谱',
+    page.path === 'pages/recipe/index' &&
+      Boolean(data.dish) &&
+      data.dish.id === topDishId,
+    page.path
+  )
+  await mp.navigateBack()
+  await sleep(1200)
   await invoke(
     mp,
     "page.onRange({ currentTarget: { dataset: { range: 7 } } })"

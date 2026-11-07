@@ -223,7 +223,7 @@
 
     <view class="section-title display">菜品排行</view>
     <view wx:if="{{!report.topDishes.length}}" class="empty-line">这 {{report.days}} 天还没有卖出的菜</view>
-    <view wx:for="{{report.topDishes}}" wx:key="name" class="dish-row card">
+    <view wx:for="{{report.topDishes}}" wx:key="name" class="dish-row card" data-id="{{item.id}}" bindtap="onDishTap">
       <view class="rank {{index < 3 ? 'top' : ''}}">{{index + 1}}</view>
       <view class="dish-info">
         <view class="dish-name">{{item.name}}</view>
@@ -239,7 +239,7 @@
 
     <view class="section-title display">卖得最少</view>
     <view wx:if="{{!report.slowDishes.length}}" class="empty-line">菜单里的菜都在正常卖</view>
-    <view wx:for="{{report.slowDishes}}" wx:key="name" class="dish-row card">
+    <view wx:for="{{report.slowDishes}}" wx:key="name" class="dish-row card" data-id="{{item.id}}" bindtap="onDishTap">
       <view class="rank slow">{{index + 1}}</view>
       <view class="dish-info">
         <view class="dish-name">{{item.name}}</view>

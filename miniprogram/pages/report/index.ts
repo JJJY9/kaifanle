@@ -244,6 +244,14 @@ Page({
     this.setData({ range }, () => this.load())
   },
 
+  onDishTap(e: any) {
+    const id = String((e.currentTarget && e.currentTarget.dataset.id) || '')
+    if (!id) {
+      return
+    }
+    wx.navigateTo({ url: '/pages/recipe/index?id=' + id })
+  },
+
   onHealthJump(e: any) {
     const filter = String(e.currentTarget.dataset.filter || '')
     if (!filter) {
