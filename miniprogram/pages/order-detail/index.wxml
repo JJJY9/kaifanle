@@ -1,7 +1,7 @@
 <view wx:if="{{order}}" class="page">  <view class="status-card card">
     <view class="status-top">
       <view class="status-badge {{order.status}}">{{statusText}}</view>
-      <text class="status-no">#{{order.no}}</text>
+      <text class="status-no" bindtap="onCopyOrderNo">#{{order.no}}</text>
     </view>
     <view class="status-sub">{{order.mealText}} · {{order.mode}} · {{order.expectedTime}}</view>
     <view wx:if="{{order.status === 'cancelled'}}" class="cancel-reason">

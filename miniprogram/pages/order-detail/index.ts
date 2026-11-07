@@ -700,6 +700,19 @@ Page({
     }
   },
 
+  onCopyOrderNo() {
+    const order = this.data.order
+    if (!order || !order.no) {
+      return
+    }
+    wx.setClipboardData({
+      data: String(order.no),
+      success: () => {
+        wx.showToast({ title: '订单号已复制', icon: 'none' })
+      }
+    })
+  },
+
   onCopyOrderReceipt() {
     const order = this.data.order
     if (!order) {

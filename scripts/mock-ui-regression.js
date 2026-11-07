@@ -2886,6 +2886,18 @@ function chinaDate(offset) {
       String(data.queueText || '').length > 0,
     data.queueText
   )
+  await invoke(mp, 'page.onCopyOrderNo()')
+  await sleep(500)
+  const orderNoClip = await mp.evaluate(
+    new Function(
+      "return new Promise(resolve => wx.getClipboardData({ success: r => resolve(r.data || ''), fail: () => resolve('') }))"
+    )
+  )
+  check(
+    'mock 订单号复制',
+    String(orderNoClip || '') === String(data.order.no),
+    String(orderNoClip || '')
+  )
   await invoke(
     mp,
     "page.onMessageInput({ detail: { value: '记得少放辣' } })"
