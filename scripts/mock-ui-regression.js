@@ -2428,6 +2428,15 @@ function chinaDate(offset) {
       dishCsv.indexOf('番茄牛腩饭') > -1,
     `${String(dishCsv || '').length} 字`
   )
+  await invoke(mp, 'page.onExportDishesFile()')
+  await sleep(900)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 菜品销量 CSV 文件',
+    data.dishesFileReady === true && data.dishesFileBusy === false,
+    data.dishesFileReady ? '已生成' : '未生成'
+  )
   check(
     'mock 月报滞销菜品',
     slowDishes.length >= 1 &&

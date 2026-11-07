@@ -30,6 +30,8 @@ Page({
     exportCount: 0,
     exportingFile: false,
     exportedFile: false,
+    dishesFileBusy: false,
+    dishesFileReady: false,
     backupBusy: false,
     backupCount: 0,
     backupReady: false,
@@ -382,10 +384,23 @@ Page({
   },
 
   onExportDishes() {
+    const csv = this.buildDishCsv()
+    if (!csv) {
+      return
+    }
+    wx.setClipboardData({
+      data: csv,
+      fail: () => {
+        wx.showToast({ title: '复制失败，再试一次', icon: 'none' })
+      }
+    })
+  },
+
+  buildDishCsv(): string {
     const rows = (this.data.report && this.data.report.dishRows) || []
     if (!rows.length) {
       wx.showToast({ title: '还没有菜品数据', icon: 'none' })
-      return
+      return ''
     }
     const statusText = (status: string) =>
       status === 'off' ? '已下架' : status === 'soldout' ? '售罄' : '供应中'
@@ -408,13 +423,51 @@ Page({
         .map(quote)
         .join(',')
     )
-    const csv = '﻿' + [header.join(','), ...lines].join('\n')
-    wx.setClipboardData({
-      data: csv,
-      fail: () => {
-        wx.showToast({ title: '复制失败，再试一次', icon: 'none' })
+    return '﻿' + [header.join(','), ...lines].join('\n')
+  },
+
+  async onExportDishesFile() {
+    if (this.data.dishesFileBusy) {
+      return
+    }
+    const csv = this.buildDishCsv()
+    if (!csv) {
+      return
+    }
+    this.setData({ dishesFileBusy: true })
+    try {
+      const filePath = `${wx.env.USER_DATA_PATH}/dishes-${Date.now()}.csv`
+      await new Promise((resolve, reject) => {
+        wx.getFileSystemManager().writeFile({
+          filePath,
+          data: csv,
+          encoding: 'utf8',
+          success: resolve,
+          fail: reject
+        })
+      })
+      this.setData({ dishesFileBusy: false, dishesFileReady: true })
+      if (typeof (wx as any).shareFileMessage === 'function') {
+        ;(wx as any).shareFileMessage({
+          filePath,
+          fileName: '菜品销量.csv',
+          fail: () => {
+            wx.showToast({
+              title: '文件已生成，可先用复制 CSV',
+              icon: 'none'
+            })
+          }
+        })
+      } else {
+        wx.showToast({ title: '文件已生成', icon: 'none' })
       }
-    })
+    } catch (e: any) {
+      this.setData({ dishesFileBusy: false })
+      wx.showToast({
+        title: String((e && e.message) || '导出失败').slice(0, 40),
+        icon: 'none'
+      })
+    }
   },
 
   async onExport() {

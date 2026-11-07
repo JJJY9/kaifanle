@@ -232,6 +232,8 @@
     </view>
 
     <view class="dish-export-btn" bindtap="onExportDishes">复制全部菜品销量 CSV</view>
+    <view class="dish-export-btn" bindtap="onExportDishesFile">{{dishesFileBusy ? '生成中…' : '分享菜品销量 CSV 文件'}}</view>
+    <view wx:if="{{dishesFileReady}}" class="export-hint">CSV 文件已生成，可通过微信发送或保存</view>
 
     <view class="section-title display">好评菜品</view>
     <view wx:if="{{!report.topRatedDishes.length}}" class="empty-line">还没有满 {{report.minRatedOrders}} 次评价的菜</view>
