@@ -348,5 +348,19 @@ Page({
       return
     }
     wx.previewImage({ urls: [path] })
+  },
+
+  onShareAppMessage() {
+    return {
+      title: `我的收藏 · ${this.data.count} 道想再吃的菜`,
+      path: '/pages/favorites/index'
+    }
+  },
+
+  onShareTimeline() {
+    return {
+      title: `我的收藏 · ${this.data.count} 道想再吃的菜`,
+      query: ''
+    }
   }
 })

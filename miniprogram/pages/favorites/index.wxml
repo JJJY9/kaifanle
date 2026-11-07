@@ -107,6 +107,7 @@
     </view>
 
     <view class="foot-btn" bindtap="onGoHome">去点餐</view>
+    <button class="foot-btn share" open-type="share">分享我的收藏</button>
     <view class="foot-link" bindtap="onCyclePosterTheme">换一套海报配色</view>
     <view
       class="foot-btn poster {{posterMaking ? 'disabled' : ''}}"

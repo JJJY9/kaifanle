@@ -2161,6 +2161,17 @@ function chinaDate(offset) {
       data.allFavorites.every(dish => Boolean(dish.favoritedText)),
     `${(data.allFavorites || []).length} 道`
   )
+  const favoritesShare = await invoke(mp, 'return page.onShareAppMessage()')
+  const favoritesTimeline = await invoke(mp, 'return page.onShareTimeline()')
+  check(
+    'mock 收藏分享设置',
+    Boolean(favoritesShare) &&
+      String(favoritesShare.title || '').indexOf('我的收藏') > -1 &&
+      favoritesShare.path === '/pages/favorites/index' &&
+      Boolean(favoritesTimeline) &&
+      String(favoritesTimeline.title || '').indexOf('我的收藏') > -1,
+    favoritesShare ? favoritesShare.title : '没有分享信息'
+  )
   check('mock 收藏默认最近排序', data.sort === 'recent')
   const favoriteCategory = (data.allFavorites[0] || {}).categoryId
   await invoke(

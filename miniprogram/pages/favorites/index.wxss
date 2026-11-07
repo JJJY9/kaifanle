@@ -253,6 +253,17 @@
   font-size: 26rpx;
 }
 
+.foot-btn.share {
+  margin-top: 14rpx;
+  background: #FFFFFF;
+  font-size: 26rpx;
+  line-height: 1;
+}
+
+.foot-btn.share::after {
+  border: none;
+}
+
 .foot-btn.disabled {
   opacity: 0.5;
 }
