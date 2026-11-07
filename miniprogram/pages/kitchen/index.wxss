@@ -926,6 +926,20 @@
   line-height: 1;
 }
 
+.history-csv {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60rpx;
+  margin: -4rpx 0 14rpx;
+  background: #FFFFFF;
+  border: 3rpx dashed #111111;
+  border-radius: 999rpx;
+  color: #5C5C5C;
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
 .history-filter.range {
   margin-top: -4rpx;
   flex-wrap: wrap;

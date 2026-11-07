@@ -367,6 +367,7 @@
         <view class="history-chip {{historyRating === 'neutral' ? 'active' : ''}}" data-rating="neutral" bindtap="onHistoryRating">一般</view>
         <view class="history-chip {{historyRating === 'bad' ? 'active' : ''}}" data-rating="bad" bindtap="onHistoryRating">翻车</view>
       </view>
+      <view class="history-csv" bindtap="onCopyHistoryCsv">复制筛选 CSV</view>
       <view wx:if="{{!historyView.length}}" class="empty-line">{{historyEmptyText}}</view>
       <view
         wx:for="{{historyView}}"

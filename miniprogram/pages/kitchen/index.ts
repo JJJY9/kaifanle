@@ -1993,6 +1993,37 @@ Page({
     this.setData({ historyKeyword: '' }, () => this.applyHistoryFilter())
   },
 
+  onCopyHistoryCsv() {
+    const rows = this.data.historyView || []
+    if (!rows.length) {
+      wx.showToast({ title: '当前筛选没有订单', icon: 'none' })
+      return
+    }
+    const quote = (value: any) =>
+      `"${String(value === null || value === undefined ? '' : value).replace(
+        /"/g,
+        '""'
+      )}"`
+    const header = ['订单号', '日期', '餐次', '状态', '金额', '评分', '菜品', '备注']
+    const lines = rows.map((order: any) =>
+      [
+        order.no,
+        order.groupKey || order.scheduledDate || order.dateText,
+        order.mealText,
+        order.statusText,
+        order.amount,
+        order.rating || '',
+        order.summary,
+        order.note
+      ]
+        .map(quote)
+        .join(',')
+    )
+    wx.setClipboardData({
+      data: '﻿' + [header.join(','), ...lines].join('\n')
+    })
+  },
+
   onTodoTap(e: any) {
     const target = e.currentTarget.dataset.target
     if (target === 'replies') {

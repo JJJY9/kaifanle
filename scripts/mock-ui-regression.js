@@ -888,6 +888,19 @@ function chinaDate(offset) {
     data.historyAll === true &&
       (data.historyView || []).length === (data.history || []).length
   )
+  await invoke(mp, 'page.onCopyHistoryCsv()')
+  await sleep(500)
+  const historyCsv = await mp.evaluate(
+    new Function(
+      "return new Promise(resolve => wx.getClipboardData({ success: r => resolve(r.data || ''), fail: () => resolve('') }))"
+    )
+  )
+  check(
+    'mock 厨房历史筛选 CSV',
+    String(historyCsv || '').indexOf('订单号,日期,餐次,状态,金额,评分,菜品,备注') >
+      -1 && String(historyCsv || '').indexOf('001') > -1,
+    `${String(historyCsv || '').length} 字`
+  )
   const oldHistoryOrder = {
     id: 'history-old-test',
     no: '900',
