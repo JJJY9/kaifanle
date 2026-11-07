@@ -28,6 +28,7 @@ Page({
     maxAmount: 0,
     health: null as any,
     categoryStats: [] as any[],
+    categoryExportCount: 0,
     compare: null as any,
     exporting: false,
     exportCount: 0,
@@ -510,6 +511,38 @@ Page({
         icon: 'none'
       })
     }
+  },
+
+  onExportCategories() {
+    const rows = this.data.categoryStats || []
+    if (!rows.length) {
+      wx.showToast({ title: '当前区间没有分类数据', icon: 'none' })
+      return
+    }
+    const quote = (value: any) =>
+      `"${String(value === null || value === undefined ? '' : value).replace(
+        /"/g,
+        '""'
+      )}"`
+    const header = ['分类', '份数', '营收', '成本', '毛利', '毛利率']
+    const lines = rows.map((row: any) =>
+      [
+        row.name,
+        row.qty,
+        row.revenue,
+        row.cost === null ? '' : row.cost,
+        row.profit === null ? '' : row.profit,
+        row.margin === null ? '' : `${row.margin}%`
+      ]
+        .map(quote)
+        .join(',')
+    )
+    wx.setClipboardData({
+      data: '﻿' + [header.join(','), ...lines].join('\n'),
+      success: () => {
+        this.setData({ categoryExportCount: rows.length })
+      }
+    })
   },
 
   onExportDishes() {

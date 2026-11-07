@@ -3023,6 +3023,22 @@ function chinaDate(offset) {
     Number(rangeExportCount) === 1,
     `${rangeExportCount} 单在区间内`
   )
+  await invoke(mp, 'page.onExportCategories()')
+  await sleep(500)
+  const categoryCsv = await mp.evaluate(
+    new Function(
+      "return new Promise(resolve => wx.getClipboardData({ success: r => resolve(r.data || ''), fail: () => resolve('') }))"
+    )
+  )
+  check(
+    'mock 月报分类 CSV',
+    String(categoryCsv || '').indexOf('分类,份数,营收,成本,毛利,毛利率') >
+      -1 &&
+      String(categoryCsv || '').indexOf(
+        String(((data.categoryStats || [])[0] || {}).name || '')
+      ) > -1,
+    `${String(categoryCsv || '').length} 字`
+  )
   const firstCategoryStat = (data.categoryStats || [])[0]
   if (firstCategoryStat) {
     await invoke(
