@@ -17,7 +17,7 @@
       <view class="surprise" bindtap="onSurprise">🎲 帮我选</view>
     </view>
 
-    <view wx:if="{{weekText}}" class="week-summary">🍚 {{weekText}}</view>
+    <view wx:if="{{weekText}}" class="week-summary" bindtap="onWeekReport">🍚 {{weekText}}</view>
 
     <view class="meal-tabs">
       <view

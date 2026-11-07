@@ -95,6 +95,18 @@ function chinaDate(offset) {
       String(data.weekText || '').includes('番茄牛腩饭'),
     data.weekText
   )
+  await invoke(mp, 'page.onWeekReport()')
+  await sleep(1800)
+  page = await current()
+  check(
+    'mock 首页本周小结进足迹',
+    page.path === 'pages/my-report/index',
+    page.path
+  )
+  await mp.navigateBack()
+  await sleep(1000)
+  page = await current()
+  data = await page.data()
   check(
     'mock 首页券到期提醒',
     Number(data.couponExpiring) >= 1,

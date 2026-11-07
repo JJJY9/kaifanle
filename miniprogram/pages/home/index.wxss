@@ -92,6 +92,11 @@
   font-weight: 700;
 }
 
+.week-summary:active {
+  transform: translateY(2rpx);
+  opacity: 0.85;
+}
+
 .sub-row {
   display: flex;
   align-items: center;

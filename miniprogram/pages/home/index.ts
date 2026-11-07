@@ -732,6 +732,10 @@ Page({
     wx.switchTab({ url: '/pages/orders/index' })
   },
 
+  onWeekReport() {
+    wx.navigateTo({ url: '/pages/my-report/index' })
+  },
+
   async loadCouponReminder() {
     try {
       const result = await getMyExpiringCoupons()
