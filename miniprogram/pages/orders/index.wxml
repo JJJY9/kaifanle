@@ -96,9 +96,9 @@
 
   <empty-state
     wx:elif="{{orders.length}}"
-    title="{{keyword ? '没搜到相关订单' : '这里还没有订单'}}"
-    desc="{{keyword ? '换个菜名、订单号或日期试试' : '换个分类看看'}}"
-    actionText="{{keyword ? '清空搜索' : ''}}"
+    title="{{emptyTitle}}"
+    desc="{{emptyDesc}}"
+    actionText="{{emptyAction}}"
     bind:action="onClearSearch"
   />
 

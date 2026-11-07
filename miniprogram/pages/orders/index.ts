@@ -19,6 +19,9 @@ Page({
     keyword: '',
     filter: 'all' as 'all' | 'active' | 'done' | 'rate',
     meal: 'all' as 'all' | 'breakfast' | 'lunch' | 'dinner',
+    emptyTitle: '这里还没有订单',
+    emptyDesc: '去点一单吧',
+    emptyAction: '',
     counts: { all: 0, active: 0, done: 0, rate: 0 }
   },
 
@@ -250,7 +253,24 @@ Page({
         lastLabel = label
         return { ...order, showHeader }
       })
-    this.setData({ displayOrders })
+    this.setData({
+      displayOrders,
+      emptyTitle: keyword
+        ? '没搜到相关订单'
+        : meal !== 'all'
+        ? '这个餐次还没有订单'
+        : filter !== 'all'
+        ? '这一档还没有订单'
+        : '这里还没有订单',
+      emptyDesc: keyword
+        ? '换个菜名、订单号或日期试试'
+        : meal !== 'all'
+        ? '换个餐次看看'
+        : filter !== 'all'
+        ? '换个筛选看看'
+        : '去点一单吧',
+      emptyAction: keyword ? '清空搜索' : ''
+    })
   },
 
   onTapOrder(e: any) {

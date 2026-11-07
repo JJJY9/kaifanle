@@ -2419,6 +2419,19 @@ function chinaDate(offset) {
   )
   await invoke(
     mp,
+    "page.onSelectMeal({ currentTarget: { dataset: { meal: 'dinner' } } })"
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 订单餐次空态',
+    (data.displayOrders || []).length === 0 &&
+      data.emptyTitle === '这个餐次还没有订单',
+    data.emptyTitle
+  )
+  await invoke(
+    mp,
     "page.onSelectMeal({ currentTarget: { dataset: { meal: 'all' } } })"
   )
   await sleep(300)
@@ -2511,7 +2524,9 @@ function chinaDate(offset) {
   data = await page.data()
   check(
     'mock 订单搜索无结果',
-    data.displayOrders.length === 0 && data.keyword === 'zzz查无此单',
+    data.displayOrders.length === 0 &&
+      data.keyword === 'zzz查无此单' &&
+      data.emptyTitle === '没搜到相关订单',
     `还剩 ${data.displayOrders.length} 单`
   )
 
