@@ -1426,6 +1426,10 @@
   background: #FFD23F;
 }
 
+.copy-receipts.advance {
+  background: #DDF6E8;
+}
+
 .copy-receipts.disabled {
   opacity: 0.5;
 }

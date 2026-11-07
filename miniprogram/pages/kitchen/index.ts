@@ -64,6 +64,9 @@ Page({
     busyId: '',
     busyDishId: '',
     acceptingAll: false,
+    batchAdvancing: false,
+    acceptedCount: 0,
+    cookingCount: 0,
     pendingCount: 0,
     replyingId: '',
     restockingId: '',
@@ -699,6 +702,12 @@ Page({
             ).length
           }
 
+      const acceptedCount = active.filter(
+        order => order.status === 'accepted'
+      ).length
+      const cookingCount = active.filter(
+        order => order.status === 'cooking'
+      ).length
       const revenue = stats ? Number(stats.revenue || 0) : 0
       const goalPercent =
         dailyGoal > 0
@@ -716,6 +725,8 @@ Page({
         ordersView: this.filterOrders(view),
         preorders,
         pendingCount: active.filter(order => order.status === 'pending').length,
+        acceptedCount,
+        cookingCount,
         history,
         historyView: this.filterHistory(history),
         dishes,
@@ -859,6 +870,56 @@ Page({
     } finally {
       this.setData({ busyId: '' })
     }
+  },
+
+  async onBatchAdvance(e: any) {
+    if (this.data.batchAdvancing) {
+      return
+    }
+    const status = String(e.currentTarget.dataset.status || '')
+    const expected = status === 'ready' ? 'cooking' : 'accepted'
+    const next = status === 'ready' ? 'ready' : 'cooking'
+    const targets = (this.data.orders || []).filter(
+      order => order.status === expected
+    )
+    if (!targets.length) {
+      wx.showToast({
+        title: status === 'ready' ? '没有制作中的订单' : '没有待开火的订单',
+        icon: 'none'
+      })
+      return
+    }
+    const action = status === 'ready' ? '出锅' : '开火'
+    const confirm: any = await wx.showModal({
+      title: `全部${action}？`,
+      content: `今天的 ${targets.length} 单会一起变成「${
+        status === 'ready' ? '已出锅' : '制作中'
+      }」。`,
+      confirmText: action,
+      cancelText: '算了'
+    })
+    if (!confirm.confirm) {
+      return
+    }
+    this.setData({ batchAdvancing: true })
+    let done = 0
+    let failed = 0
+    for (const order of targets) {
+      try {
+        await updateOrderStatus(order.id, next as OrderStatus)
+        done++
+      } catch (err) {
+        failed++
+      }
+    }
+    await this.load()
+    this.setData({ batchAdvancing: false })
+    wx.showToast({
+      title: failed
+        ? `${action} ${done} 单，${failed} 单失败`
+        : `已${action} ${done} 单`,
+      icon: 'none'
+    })
   },
 
   async onReject(e: any) {

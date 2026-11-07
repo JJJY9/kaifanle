@@ -213,6 +213,18 @@
           bindtap="onAcceptAll"
         >{{acceptingAll ? '接单中…' : '全部接单'}}</view>
         <view
+          wx:if="{{acceptedCount}}"
+          class="copy-receipts advance {{batchAdvancing ? 'disabled' : ''}}"
+          data-status="cooking"
+          bindtap="onBatchAdvance"
+        >{{batchAdvancing ? '处理中…' : '全部开火'}}</view>
+        <view
+          wx:if="{{cookingCount}}"
+          class="copy-receipts advance {{batchAdvancing ? 'disabled' : ''}}"
+          data-status="ready"
+          bindtap="onBatchAdvance"
+        >{{batchAdvancing ? '处理中…' : '全部出锅'}}</view>
+        <view
           wx:if="{{orders.length}}"
           class="copy-receipts {{copyingReceipts ? 'disabled' : ''}}"
           bindtap="onCopyActiveReceipts"

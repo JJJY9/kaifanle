@@ -2763,6 +2763,22 @@ function chinaDate(offset) {
       (data.orders || []).every(order => order.status !== 'pending'),
     `剩余待接 ${data.pendingCount} 单`
   )
+  await mp.mockWxMethod('showModal', { confirm: true })
+  await invoke(
+    mp,
+    "page.onBatchAdvance({ currentTarget: { dataset: { status: 'cooking' } } })"
+  )
+  await sleep(1800)
+  page = await current()
+  data = await page.data()
+  const cookingOrder = (data.orders || []).find(
+    order => order.id === 'seed-1'
+  )
+  check(
+    'mock 厨房批量开火',
+    Boolean(cookingOrder) && cookingOrder.status === 'cooking',
+    cookingOrder ? cookingOrder.status : '没找到订单'
+  )
   check(
     'mock 全部接单不动预订单',
     (data.preorders || []).some(
