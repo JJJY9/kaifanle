@@ -2050,6 +2050,20 @@ async function run() {
   res = await call('getSpecialDays', {}, 'girl-openid')
   assert.strictEqual(res.ok, false)
 
+  res = await call('getMySpecialDays', {}, 'girl-openid')
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.today, chinaDate(0))
+  assert.strictEqual(res.data.days.length, 2)
+  assert.strictEqual(res.data.days[0].kind, 'birthday')
+  assert.strictEqual(res.data.days[0].days, 0)
+  assert.strictEqual(res.data.days[0].date, chinaDate(0).slice(5))
+  assert.strictEqual(res.data.days[1].kind, 'anniversary')
+  assert.strictEqual(res.data.days[1].days, 1)
+  assert.strictEqual(res.data.days[1].date, chinaDate(1).slice(5))
+  res = await call('getMySpecialDays', {}, 'admin-openid')
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.days.length, 0)
+
   // 未来日期不能作为生日/纪念日，也不能清掉已有值
   res = await call(
     'saveMyProfile',

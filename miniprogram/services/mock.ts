@@ -2509,8 +2509,7 @@ function annualOccurrence(
   }
 }
 
-export async function getSpecialDays(): Promise<SpecialDays> {
-  await delay(60)
+function collectMockSpecialDays(windowDays: number): SpecialDays {
   const profile = loadProfile()
   const today = chinaDateKey(Date.now())
   const days: SpecialDays['days'] = []
@@ -2523,7 +2522,7 @@ export async function getSpecialDays(): Promise<SpecialDays> {
       return
     }
     const remain = annualOccurrence(dateKey, today)
-    if (remain.days >= 0 && remain.days < 30) {
+    if (remain.days >= 0 && remain.days < windowDays) {
       days.push({
         kind: kind as SpecialDays['days'][number]['kind'],
         date: remain.date,
@@ -2538,10 +2537,20 @@ export async function getSpecialDays(): Promise<SpecialDays> {
   )
   return {
     today,
-    windowDays: 30,
+    windowDays,
     total: days.length,
     days: days.slice(0, 10)
   }
+}
+
+export async function getSpecialDays(): Promise<SpecialDays> {
+  await delay(60)
+  return collectMockSpecialDays(30)
+}
+
+export async function getMySpecialDays(): Promise<SpecialDays> {
+  await delay(60)
+  return collectMockSpecialDays(4)
 }
 
 export async function getWeekMenus(): Promise<WeekMenus> {

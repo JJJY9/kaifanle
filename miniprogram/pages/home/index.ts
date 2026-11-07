@@ -8,7 +8,8 @@ import {
   getMenuForDate,
   getMyActiveOrder,
   getMyExpiringCoupons,
-  getMyPendingReviewCount
+  getMyPendingReviewCount,
+  getMySpecialDays
 } from '../../services/api'
 import { cart } from '../../store/cart'
 import { favorites } from '../../store/favorites'
@@ -78,6 +79,7 @@ Page({
     activeDish: null as Dish | null,
     loading: true,
     mealNotice: '',
+    specialBanner: '',
     notice: '',
     recommendText: '今日推荐',
     keyword: '',
@@ -267,13 +269,14 @@ Page({
           ? this.data.selectedDate
           : today
       const isToday = date === today
-      const [categories, dishes, business, menu, kitchenStatus] =
+      const [categories, dishes, business, menu, kitchenStatus, specialDays] =
         await Promise.all([
           getCategories(),
           getDishes(),
           getBusiness().catch(() => null),
           getMenuForDate(date, meal),
-          getKitchenStatus().catch(() => null)
+          getKitchenStatus().catch(() => null),
+          getMySpecialDays().catch(() => null)
         ])
       if (seq !== this._loadSeq) {
         return
@@ -343,6 +346,25 @@ Page({
           : '厨房现在空闲'
       }
 
+      const nearestSpecial =
+        specialDays && specialDays.days && specialDays.days[0]
+      let specialBanner = ''
+      if (nearestSpecial) {
+        const label =
+          nearestSpecial.kind === 'birthday' ? '生日' : '纪念日'
+        const icon = nearestSpecial.kind === 'birthday' ? '🎂' : '💗'
+        const when =
+          nearestSpecial.days === 0
+            ? '今天'
+            : nearestSpecial.days === 1
+            ? '明天'
+            : `还有 ${nearestSpecial.days} 天`
+        specialBanner =
+          nearestSpecial.days === 0
+            ? `${icon} 今天是你的${label}，掌勺人会提前准备`
+            : `${icon} ${when}是你的${label}，掌勺人会提前准备`
+      }
+
       this.setData(
         {
           loading: false,
@@ -352,6 +374,7 @@ Page({
           busyText,
           isOpen,
           mealNotice,
+          specialBanner,
           notice:
             business &&
             business.notice &&
@@ -386,6 +409,7 @@ Page({
         emptyTitle: '菜单加载失败',
         deadlineText: '',
         busyText: '',
+        specialBanner: '',
         sections: [],
         hero: null,
         searchResults: [],

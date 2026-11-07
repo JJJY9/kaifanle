@@ -1521,6 +1521,17 @@ function chinaDate(offset) {
   )
   await mp.navigateBack()
   await sleep(800)
+  await mp.switchTab('/pages/home/index')
+  await sleep(1600)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 首页重要日子提醒',
+    page.path === 'pages/home/index' &&
+      String(data.specialBanner || '').indexOf('纪念日') > -1 &&
+      String(data.specialBanner || '').indexOf('今天') > -1,
+    data.specialBanner || '没有提醒'
+  )
 
   // 菜谱大全
   await mp.navigateTo('/pages/recipe-list/index')
