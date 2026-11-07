@@ -1211,10 +1211,21 @@ async function run() {
   assert.strictEqual(res.ok, true)
   assert.ok(res.data.no.indexOf('003') === 0)
   assert.ok(res.data.no.length > 3)
+  const fallbackOrderId = res.data.id
+  res = await call(
+    'sendOrderMessage',
+    { id: fallbackOrderId, content: '事务关闭时也能留言' },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  res = await call('getOrder', { id: fallbackOrderId }, 'girl-openid')
+  assert.ok(
+    res.data.messages.some(item => item.content === '事务关闭时也能留言')
+  )
   transactionsEnabled = true
 
   // 厨房拒单可带原因，顾客能看到
-  const adminCancelId = res.data.id
+  const adminCancelId = fallbackOrderId
   res = await call(
     'updateOrderStatus',
     { id: adminCancelId, status: 'cancelled', reason: '今天太忙了' },
