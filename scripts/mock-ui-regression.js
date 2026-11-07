@@ -1039,6 +1039,15 @@ function chinaDate(offset) {
       String(historyCsv || '').indexOf('002') === -1,
     `${String(historyCsv || '').length} 字`
   )
+  await invoke(mp, 'page.onExportHistoryFile()')
+  await sleep(1000)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 厨房历史 CSV 文件',
+    data.historyFileReady === true && data.historyFileBusy === false,
+    data.historyFileReady ? '已生成' : '未生成'
+  )
   await invoke(mp, 'page.onClearHistorySearch()')
   await sleep(300)
   await invoke(

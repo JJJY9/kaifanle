@@ -963,6 +963,13 @@
   font-weight: 800;
 }
 
+.history-file-hint {
+  margin: -6rpx 0 14rpx;
+  color: #8C8C8C;
+  font-size: 19rpx;
+  text-align: center;
+}
+
 .history-filter.range {
   margin-top: -4rpx;
   flex-wrap: wrap;

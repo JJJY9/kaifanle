@@ -395,6 +395,8 @@
         >{{item.name}} {{item.count}}</view>
       </view>
       <view class="history-csv" bindtap="onCopyHistoryCsv">复制筛选 CSV</view>
+      <view class="history-csv" bindtap="onExportHistoryFile">{{historyFileBusy ? '生成中…' : '分享筛选 CSV 文件'}}</view>
+      <view wx:if="{{historyFileReady}}" class="history-file-hint">CSV 文件已生成，可通过微信发送或保存</view>
       <view wx:if="{{!historyView.length}}" class="empty-line">{{historyEmptyText}}</view>
       <block wx:for="{{historyView}}" wx:key="id">
         <view wx:if="{{item.showDateHeader}}" class="history-date-header">{{item.dateText}} · {{item.dateGroupCount}} 单</view>

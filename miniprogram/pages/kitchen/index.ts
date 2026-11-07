@@ -105,6 +105,8 @@ Page({
     historyMeal: 'all' as 'all' | 'breakfast' | 'lunch' | 'dinner',
     historyKeyword: '',
     historyEmptyText: '还没有历史订单',
+    historyFileBusy: false,
+    historyFileReady: false,
     historyView: [] as any[],
     historyAll: false,
     receiptVisible: false,
@@ -2243,11 +2245,10 @@ Page({
     this.setData({ historyKeyword: '' }, () => this.applyHistoryFilter())
   },
 
-  onCopyHistoryCsv() {
+  buildHistoryCsv(): string {
     const rows = this.filterHistory(this.data.history || [], 100)
     if (!rows.length) {
-      wx.showToast({ title: '当前筛选没有订单', icon: 'none' })
-      return
+      return ''
     }
     const quote = (value: any) =>
       `"${String(value === null || value === undefined ? '' : value).replace(
@@ -2269,9 +2270,61 @@ Page({
         .map(quote)
         .join(',')
     )
-    wx.setClipboardData({
-      data: '﻿' + [header.join(','), ...lines].join('\n')
-    })
+    return '﻿' + [header.join(','), ...lines].join('\n')
+  },
+
+  onCopyHistoryCsv() {
+    const csv = this.buildHistoryCsv()
+    if (!csv) {
+      wx.showToast({ title: '当前筛选没有订单', icon: 'none' })
+      return
+    }
+    wx.setClipboardData({ data: csv })
+  },
+
+  async onExportHistoryFile() {
+    if (this.data.historyFileBusy) {
+      return
+    }
+    const csv = this.buildHistoryCsv()
+    if (!csv) {
+      wx.showToast({ title: '当前筛选没有订单', icon: 'none' })
+      return
+    }
+    this.setData({ historyFileBusy: true })
+    try {
+      const filePath = `${wx.env.USER_DATA_PATH}/history-${Date.now()}.csv`
+      await new Promise((resolve, reject) => {
+        wx.getFileSystemManager().writeFile({
+          filePath,
+          data: csv,
+          encoding: 'utf8',
+          success: resolve,
+          fail: reject
+        })
+      })
+      this.setData({ historyFileBusy: false, historyFileReady: true })
+      if (typeof (wx as any).shareFileMessage === 'function') {
+        ;(wx as any).shareFileMessage({
+          filePath,
+          fileName: '历史订单.csv',
+          fail: () => {
+            wx.showToast({
+              title: '文件已生成，可先用复制 CSV',
+              icon: 'none'
+            })
+          }
+        })
+      } else {
+        wx.showToast({ title: '文件已生成', icon: 'none' })
+      }
+    } catch (e: any) {
+      this.setData({ historyFileBusy: false })
+      wx.showToast({
+        title: String((e && e.message) || '导出失败').slice(0, 40),
+        icon: 'none'
+      })
+    }
   },
 
   onTodoTap(e: any) {
