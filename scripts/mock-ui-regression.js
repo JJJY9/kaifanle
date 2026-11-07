@@ -395,6 +395,24 @@ function chinaDate(offset) {
     data.keyword === '饭' && (data.searchResults || []).length > 0,
     `${(data.searchResults || []).length} 条`
   )
+  await invoke(
+    mp,
+    "page.onSearchConfirm({ detail: { value: '汤' } })"
+  )
+  await sleep(300)
+  await invoke(
+    mp,
+    "page.onSearchConfirm({ detail: { value: '饭' } })"
+  )
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 搜索历史最近使用排序',
+    (data.searchHistory || [])[0] === '饭' &&
+      (data.searchHistory || [])[1] === '汤',
+    (data.searchHistory || []).join('、')
+  )
   await invoke(mp, 'page.onClearHistory()')
   await sleep(300)
   page = await current()
