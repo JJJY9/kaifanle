@@ -37,6 +37,30 @@ const REPLY_PHRASES = [
 
 const MAX_BATCH_PRICE_DISHES = 50
 const MAX_PRICE_ADJUST_PERCENT = 90
+const DISH_SEARCH_HISTORY_KEY = 'kfl_kitchen_dish_search_v1'
+const DISH_SEARCH_HISTORY_MAX = 6
+
+function readDishSearchHistory(): string[] {
+  try {
+    const raw = wx.getStorageSync(DISH_SEARCH_HISTORY_KEY)
+    const list = raw ? JSON.parse(raw) : []
+    return Array.isArray(list)
+      ? list
+          .filter(item => typeof item === 'string')
+          .slice(0, DISH_SEARCH_HISTORY_MAX)
+      : []
+  } catch (e) {
+    return []
+  }
+}
+
+function writeDishSearchHistory(list: string[]) {
+  try {
+    wx.setStorageSync(DISH_SEARCH_HISTORY_KEY, JSON.stringify(list))
+  } catch (e) {
+    // 忽略存储失败
+  }
+}
 
 Page({
   data: {
@@ -104,6 +128,7 @@ Page({
     weekBarTotal: 0,
     todo: { pending: 0, replies: 0, lowStock: 0, preorders: 0 },
     dishKeyword: '',
+    dishSearchHistory: [] as string[],
     dishFilter: 'all' as 'all' | 'low' | 'soldout' | 'off' | 'missing' | 'cost',
     dishCategory: 'all',
     dishFilters: [] as any[],
@@ -1663,6 +1688,7 @@ Page({
   },
 
   onLoad(options: any) {
+    this.setData({ dishSearchHistory: readDishSearchHistory() })
     const filter = String((options && options.filter) || '')
     if (['low', 'soldout', 'off', 'missing', 'cost'].indexOf(filter) > -1) {
       this.setData({ dishFilter: filter })
@@ -1778,6 +1804,51 @@ Page({
     this.setData({ dishKeyword: String(e.detail.value || '') }, () =>
       this.applyDishFilter()
     )
+  },
+
+  onDishSearchConfirm(e: any) {
+    const value = String(
+      (e && e.detail && e.detail.value) || this.data.dishKeyword || ''
+    )
+      .trim()
+      .slice(0, 20)
+    if (!value) {
+      return
+    }
+    const dishSearchHistory = [value]
+      .concat(
+        (this.data.dishSearchHistory || []).filter(item => item !== value)
+      )
+      .slice(0, DISH_SEARCH_HISTORY_MAX)
+    writeDishSearchHistory(dishSearchHistory)
+    this.setData({ dishKeyword: value, dishSearchHistory }, () =>
+      this.applyDishFilter()
+    )
+  },
+
+  onDishHistoryTap(e: any) {
+    const keyword = String(e.currentTarget.dataset.keyword || '')
+    if (!keyword) {
+      return
+    }
+    this.setData({ dishKeyword: keyword }, () => this.applyDishFilter())
+  },
+
+  onClearDishHistory() {
+    writeDishSearchHistory([])
+    this.setData({ dishSearchHistory: [] })
+  },
+
+  onRemoveDishHistory(e: any) {
+    const keyword = String(e.currentTarget.dataset.keyword || '')
+    if (!keyword) {
+      return
+    }
+    const dishSearchHistory = (this.data.dishSearchHistory || []).filter(
+      item => item !== keyword
+    )
+    writeDishSearchHistory(dishSearchHistory)
+    this.setData({ dishSearchHistory })
   },
 
   onClearDishSearch() {

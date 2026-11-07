@@ -1120,6 +1120,33 @@
   font-size: 24rpx;
 }
 
+.dish-search-history {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8rpx;
+  margin: 10rpx 0 14rpx;
+}
+
+.dish-history-label {
+  color: #8C8C8C;
+  font-size: 19rpx;
+}
+
+.dish-history-chip {
+  padding: 3rpx 14rpx;
+  background: #FFF7DA;
+  border: 2rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 19rpx;
+  font-weight: 700;
+}
+
+.dish-history-clear {
+  color: #8C8C8C;
+  font-size: 19rpx;
+}
+
 .dish-search-clear {
   display: flex;
   align-items: center;

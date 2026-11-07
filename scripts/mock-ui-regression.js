@@ -1273,6 +1273,38 @@ function chinaDate(offset) {
   await invoke(mp, 'page.onClearDishSearch()')
   await invoke(
     mp,
+    "page.onDishSearchConfirm({ detail: { value: '番茄' } })"
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 厨房菜品搜索历史',
+    data.dishKeyword === '番茄' &&
+      (data.dishSearchHistory || [])[0] === '番茄',
+    (data.dishSearchHistory || []).join('、')
+  )
+  await invoke(mp, 'page.onClearDishSearch()')
+  await invoke(
+    mp,
+    "page.onDishHistoryTap({ currentTarget: { dataset: { keyword: '番茄' } } })"
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  const dishHistoryTapOk = data.dishKeyword === '番茄'
+  await invoke(mp, 'page.onClearDishSearch()')
+  await invoke(mp, 'page.onClearDishHistory()')
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 厨房菜品搜索历史回填与清空',
+    dishHistoryTapOk && (data.dishSearchHistory || []).length === 0,
+    String((data.dishSearchHistory || []).length)
+  )
+  await invoke(
+    mp,
     "page.onDishFilter({ currentTarget: { dataset: { filter: 'soldout' } } })"
   )
   await sleep(400)

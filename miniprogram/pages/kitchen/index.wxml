@@ -465,9 +465,23 @@
         class="dish-search-input"
         value="{{dishKeyword}}"
         placeholder="搜菜名 / 描述"
+        confirm-type="search"
         bindinput="onDishSearch"
+        bindconfirm="onDishSearchConfirm"
       />
       <view wx:if="{{dishKeyword}}" class="dish-search-clear" bindtap="onClearDishSearch">×</view>
+    </view>
+    <view wx:if="{{!dishKeyword && dishSearchHistory.length}}" class="dish-search-history">
+      <text class="dish-history-label">最近搜</text>
+      <view
+        wx:for="{{dishSearchHistory}}"
+        wx:key="*this"
+        class="dish-history-chip"
+        data-keyword="{{item}}"
+        bindtap="onDishHistoryTap"
+        bindlongpress="onRemoveDishHistory"
+      >{{item}}</view>
+      <text class="dish-history-clear" bindtap="onClearDishHistory">清空</text>
     </view>
     <view wx:if="{{dishCategoryOptions.length > 1}}" class="dish-filter-row">
       <view
