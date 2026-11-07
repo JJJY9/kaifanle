@@ -228,8 +228,10 @@ Page({
 
   async load(silent = false) {
     const seq = ++this._loadSeq
-    const forceSpecialDays = this._forceSpecialDays
-    this._forceSpecialDays = false
+    const forceSpecialDays = !silent && this._forceSpecialDays
+    if (!silent) {
+      this._forceSpecialDays = false
+    }
     try {
       // 静默轮询只取未完成订单；首次/操作后加载全量（含历史）
       let orders: any[]
@@ -269,22 +271,22 @@ Page({
         }
       }
       if (!silent || !dishes.length) {
-        const [dishList, categories, special] = await Promise.all([
+        const [dishList, categories] = await Promise.all([
           getDishes(),
-          getCategories().catch(() => [] as any[]),
-          getSpecialDays(forceSpecialDays).catch(() => null)
+          getCategories().catch(() => [] as any[])
         ])
         dishes = dishList
         if (categories.length) {
           this._categories = categories
         }
-        if (special) {
-          specialDays = this.decorateSpecialDays(special.days)
-          specialDaysMore = Math.max(
-            0,
-            Number(special.total || special.days.length) - special.days.length
-          )
-        }
+      }
+      const special = await getSpecialDays(forceSpecialDays).catch(() => null)
+      if (special) {
+        specialDays = this.decorateSpecialDays(special.days)
+        specialDaysMore = Math.max(
+          0,
+          Number(special.total || special.days.length) - special.days.length
+        )
       }
       if (
         !silent ||

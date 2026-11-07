@@ -167,6 +167,16 @@
       </view>
     </view>
 
+    <view class="section-title display">卖得最少</view>
+    <view wx:if="{{!report.slowDishes.length}}" class="empty-line">菜单里的菜都在正常卖</view>
+    <view wx:for="{{report.slowDishes}}" wx:key="name" class="dish-row card">
+      <view class="rank slow">{{index + 1}}</view>
+      <view class="dish-info">
+        <view class="dish-name">{{item.name}}</view>
+        <view class="dish-sub">{{item.qty ? '卖出 ' + item.qty + ' 份 · ¥' + item.revenue : '这 30 天没卖出去'}}</view>
+      </view>
+    </view>
+
     <view class="section-title display">好评菜品</view>
     <view wx:if="{{!report.topRatedDishes.length}}" class="empty-line">还没有满 {{report.minRatedOrders}} 次评价的菜</view>
     <view wx:for="{{report.topRatedDishes}}" wx:key="name" class="dish-row card">

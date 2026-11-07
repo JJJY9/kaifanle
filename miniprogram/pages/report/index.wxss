@@ -402,6 +402,10 @@
   transform: rotate(-3deg);
 }
 
+.rank.slow {
+  background: #E5F0FF;
+}
+
 .dish-info {
   flex: 0 0 250rpx;
   min-width: 0;
