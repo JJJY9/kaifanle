@@ -232,7 +232,9 @@ export interface KitchenReportDay {
 }
 
 export interface KitchenReportDish {
+  id?: string
   name: string
+  status?: string
   qty: number
   revenue: number
 }

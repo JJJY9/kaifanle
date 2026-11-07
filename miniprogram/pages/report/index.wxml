@@ -176,6 +176,11 @@
         <view class="dish-name">{{item.name}}</view>
         <view class="dish-sub">{{item.qty ? '卖出 ' + item.qty + ' 份 · ¥' + item.revenue : '这 30 天没卖出去'}}</view>
       </view>
+      <view
+        class="slow-toggle {{item.status === 'soldout' ? 'restore' : ''}} {{slowBusyId === item.id ? 'busy' : ''}}"
+        data-id="{{item.id}}"
+        catchtap="onSlowToggle"
+      >{{slowBusyId === item.id ? '处理中…' : (item.status === 'soldout' ? '恢复供应' : '设售罄')}}</view>
     </view>
 
     <view class="section-title display">好评菜品</view>

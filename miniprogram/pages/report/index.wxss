@@ -406,6 +406,24 @@
   background: #E5F0FF;
 }
 
+.slow-toggle {
+  flex: 0 0 auto;
+  padding: 8rpx 18rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 21rpx;
+  font-weight: 800;
+}
+
+.slow-toggle.restore {
+  background: #DDF6E8;
+}
+
+.slow-toggle.busy {
+  opacity: 0.5;
+}
+
 .dish-info {
   flex: 0 0 250rpx;
   min-width: 0;

@@ -904,6 +904,9 @@ async function run() {
   assert.strictEqual(res.data.timeline.length, timelineBeforeReply)
   const oldRatedAt = res.data.ratedAt
 
+  // 保证改评时间戳与旧快照不同（同毫秒内连续调用会让条件更新误通过）
+  await new Promise(resolve => setTimeout(resolve, 5))
+
   // 顾客改评后旧回复应清空，旧评价快照不能再回复
   res = await call(
     'rateOrder',
@@ -2158,6 +2161,11 @@ async function run() {
       item => item.name === '!慢销测试菜' && item.qty === 0
     )
   )
+  const slowFixture = res.data.slowDishes.find(
+    item => item.name === '!慢销测试菜'
+  )
+  assert.ok(slowFixture.id)
+  assert.strictEqual(slowFixture.status, 'on')
   await call(
     'deleteDish',
     { id: slowDishRes.data.id },

@@ -4,7 +4,8 @@ import {
   getAllOrders,
   getBusiness,
   getDishes,
-  getKitchenReport
+  getKitchenReport,
+  toggleDishStatus
 } from '../../services/api'
 import { ordersToCsv } from '../../utils/orders-csv'
 
@@ -31,7 +32,8 @@ Page({
     exportedFile: false,
     backupBusy: false,
     backupCount: 0,
-    backupReady: false
+    backupReady: false,
+    slowBusyId: ''
   },
 
   _loadSeq: 0,
@@ -181,6 +183,45 @@ Page({
     wx.navigateTo({
       url: `/pages/kitchen/index?filter=${filter}`
     })
+  },
+
+  async onSlowToggle(e: any) {
+    const dishId = String(
+      (e.currentTarget && e.currentTarget.dataset.id) || ''
+    )
+    if (!dishId || this.data.slowBusyId) {
+      return
+    }
+    this.setData({ slowBusyId: dishId })
+    try {
+      const updated = await toggleDishStatus(dishId)
+      if (updated) {
+        const report = this.data.report
+        if (report) {
+          this.setData({
+            report: {
+              ...report,
+              slowDishes: report.slowDishes.map(item =>
+                item.id === dishId
+                  ? { ...item, status: updated.status }
+                  : item
+              )
+            }
+          })
+        }
+        wx.showToast({
+          title: updated.status === 'soldout' ? '已设为售罄' : '已恢复供应',
+          icon: 'none'
+        })
+      }
+    } catch (err: any) {
+      wx.showToast({
+        title: String((err && err.message) || '操作失败').slice(0, 40),
+        icon: 'none'
+      })
+    } finally {
+      this.setData({ slowBusyId: '' })
+    }
   },
 
   async onExportFile() {

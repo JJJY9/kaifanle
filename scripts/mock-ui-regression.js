@@ -2236,6 +2236,30 @@ function chinaDate(offset) {
       ),
     slowDishes.map(item => `${item.name}:${item.qty}`).join('、')
   )
+  const slowTarget = slowDishes[0]
+  if (slowTarget && slowTarget.id) {
+    const beforeStatus = slowTarget.status
+    await invoke(
+      mp,
+      `page.onSlowToggle({ currentTarget: { dataset: { id: '${slowTarget.id}' } } })`
+    )
+    await sleep(700)
+    page = await current()
+    data = await page.data()
+    const toggled = (data.report.slowDishes || []).find(
+      item => item.id === slowTarget.id
+    )
+    check(
+      'mock 月报滞销菜一键切换状态',
+      Boolean(toggled) && toggled.status !== beforeStatus,
+      toggled ? `${beforeStatus} → ${toggled.status}` : '没找到菜'
+    )
+    await invoke(
+      mp,
+      `page.onSlowToggle({ currentTarget: { dataset: { id: '${slowTarget.id}' } } })`
+    )
+    await sleep(700)
+  }
   await invoke(mp, 'page.onExport()')
   await sleep(900)
   page = await current()

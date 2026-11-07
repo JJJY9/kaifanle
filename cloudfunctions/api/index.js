@@ -1072,7 +1072,9 @@ async function getKitchenReport(openid) {
     .map(dish => {
       const stat = dishMap[dish.name] || { qty: 0, revenue: 0 }
       return {
+        id: dish.id || dish._id,
         name: dish.name,
+        status: dish.status || 'on',
         qty: Number(stat.qty || 0),
         revenue: Number(Number(stat.revenue || 0).toFixed(2))
       }
