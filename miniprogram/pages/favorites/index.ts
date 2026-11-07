@@ -2,6 +2,12 @@ import type { Dish } from '../../services/types'
 import { getCategories, getDishes } from '../../services/api'
 import { favorites } from '../../store/favorites'
 
+const POSTER_THEMES = [
+  { header: '#FF5C8A', row: '#FFF7DA', accent: '#FF6B35' },
+  { header: '#2D9CFF', row: '#EAF4FF', accent: '#FF6B35' },
+  { header: '#2FBF71', row: '#E8F8EE', accent: '#FF6B35' }
+]
+
 Page({
   data: {
     loading: true,
@@ -16,7 +22,8 @@ Page({
     emptyTitle: '没搜到',
     emptyDesc: '换个菜名试试',
     posterMaking: false,
-    posterPath: ''
+    posterPath: '',
+    posterThemeIndex: 0
   },
 
   _unsub: null as null | (() => void),
@@ -150,6 +157,20 @@ Page({
     this.loadDishes()
   },
 
+  onCyclePosterTheme() {
+    this.setData(
+      {
+        posterThemeIndex:
+          (Number(this.data.posterThemeIndex || 0) + 1) %
+          POSTER_THEMES.length,
+        posterPath: ''
+      },
+      () => {
+        wx.showToast({ title: '配色已切换', icon: 'none' })
+      }
+    )
+  },
+
   async onMakePoster() {
     if (this.data.posterMaking || !this.data.allFavorites.length) {
       return
@@ -177,6 +198,9 @@ Page({
       canvas.height = height * dpr
       const ctx = canvas.getContext('2d')
       ctx.scale(dpr, dpr)
+      const theme =
+        POSTER_THEMES[this.data.posterThemeIndex % POSTER_THEMES.length] ||
+        POSTER_THEMES[0]
 
       ctx.fillStyle = '#FFFDF6'
       ctx.fillRect(0, 0, width, height)
@@ -184,7 +208,7 @@ Page({
       ctx.lineWidth = 8
       ctx.strokeRect(24, 24, width - 48, height - 48)
 
-      ctx.fillStyle = '#FF5C8A'
+      ctx.fillStyle = theme.header
       ctx.fillRect(24, 24, width - 48, 132)
       ctx.fillStyle = '#FFFFFF'
       ctx.textAlign = 'left'
@@ -205,7 +229,7 @@ Page({
       items.forEach((dish, index) => {
         const y = 188 + index * 92
         if (index % 2 === 0) {
-          ctx.fillStyle = '#FFF7DA'
+          ctx.fillStyle = theme.row
           ctx.fillRect(40, y, width - 80, 84)
         }
         ctx.fillStyle = dish.color || '#FFD23F'
@@ -230,7 +254,7 @@ Page({
         ctx.fillText(fit(subText, 18), 130, y + 64)
 
         ctx.textAlign = 'right'
-        ctx.fillStyle = '#FF6B35'
+        ctx.fillStyle = theme.accent
         ctx.font = 'bold 28px "PingFang SC", sans-serif'
         ctx.fillText(`¥${dish.price}`, width - 48, y + 42)
       })

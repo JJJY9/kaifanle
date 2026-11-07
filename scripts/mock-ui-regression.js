@@ -2026,6 +2026,15 @@ function chinaDate(offset) {
     data.posterPath !== '' && data.posterMaking === false,
     data.posterPath ? '已生成' : '未生成'
   )
+  await invoke(mp, 'page.onCyclePosterTheme()')
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 收藏海报换配色',
+    Number(data.posterThemeIndex) === 1 && data.posterPath === '',
+    `配色 ${data.posterThemeIndex}`
+  )
   await mp.navigateBack()
   await sleep(700)
   await invoke(mp, 'page.onToggleFavorite()')
