@@ -201,7 +201,10 @@
         data-id="{{item.id}}"
         bindtap="onCategoryTap"
       >
-        <text class="category-name">{{item.name}}</text>
+        <view class="category-name-wrap">
+          <text class="category-name">{{item.name}}</text>
+          <text wx:if="{{item.profit !== null}}" class="category-profit">毛利 ¥{{item.profit}} · {{item.margin}}%</text>
+        </view>
         <text class="category-qty">{{item.qty}} 份</text>
         <text class="category-revenue">¥{{item.revenue}}</text>
       </view>

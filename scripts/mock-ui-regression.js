@@ -1249,7 +1249,7 @@ function chinaDate(offset) {
   await sleep(300)
   await mp.mockWxMethod('showActionSheet', { tapIndex: 1 })
   await invoke(mp, 'page.onBatchStatus()')
-  await sleep(1300)
+  await sleep(1900)
   page = await current()
   data = await page.data()
   let batchDish = (data.displayDishes || [])[0]
@@ -1260,7 +1260,7 @@ function chinaDate(offset) {
   )
   await mp.mockWxMethod('showActionSheet', { tapIndex: 0 })
   await invoke(mp, 'page.onBatchStatus()')
-  await sleep(1300)
+  await sleep(1900)
   page = await current()
   data = await page.data()
   batchDish = (data.displayDishes || [])[0]
@@ -2962,10 +2962,22 @@ function chinaDate(offset) {
     0
   )
   const reportRevenue = Number((data.report || {}).revenue || 0)
+  const categoryCostShape = (data.categoryStats || []).every(
+    item =>
+      Object.prototype.hasOwnProperty.call(item, 'profit') &&
+      (item.profit === null ||
+        (Number.isFinite(Number(item.cost)) &&
+          Number.isFinite(Number(item.margin))))
+  )
+  const categoryHasIncompleteCost = (data.categoryStats || []).some(
+    item => item.profit === null
+  )
   check(
     'mock 月报分类表现',
     (data.categoryStats || []).length >= 1 &&
-      Math.abs(categoryRevenue - reportRevenue) < 0.1,
+      Math.abs(categoryRevenue - reportRevenue) < 0.1 &&
+      categoryCostShape &&
+      categoryHasIncompleteCost,
     `${(data.categoryStats || []).length} 个分类 / ¥${categoryRevenue}`
   )
   const firstCategoryStat = (data.categoryStats || [])[0]

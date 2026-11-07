@@ -109,17 +109,47 @@ Page({
             id,
             name: categoryName[id],
             qty: 0,
-            revenue: 0
+            revenue: 0,
+            cost: 0,
+            profit: 0,
+            costQty: 0,
+            costComplete: true
           }
         }
-        categoryMap[id].qty += Number(row.qty || 0)
+        const qty = Number(row.qty || 0)
+        categoryMap[id].qty += qty
         categoryMap[id].revenue += Number(row.revenue || 0)
+        if (qty > 0) {
+          if (row.cost === null || row.cost === undefined) {
+            categoryMap[id].costComplete = false
+          } else {
+            categoryMap[id].cost += Number(row.cost || 0)
+            categoryMap[id].profit += Number(row.profit || 0)
+            categoryMap[id].costQty += qty
+          }
+        }
       })
       const categoryStats = Object.keys(categoryMap)
-        .map(id => ({
-          ...categoryMap[id],
-          revenue: Number(categoryMap[id].revenue.toFixed(2))
-        }))
+        .map(id => {
+          const item = categoryMap[id]
+          const revenue = Number(item.revenue.toFixed(2))
+          const hasCost =
+            item.costComplete && item.costQty > 0 && item.cost > 0
+          const cost = hasCost ? Number(item.cost.toFixed(2)) : null
+          const profit = hasCost ? Number(item.profit.toFixed(2)) : null
+          return {
+            id: item.id,
+            name: item.name,
+            qty: item.qty,
+            revenue,
+            cost,
+            profit,
+            margin:
+              hasCost && revenue > 0
+                ? Math.round((profit / revenue) * 100)
+                : null
+          }
+        })
         .filter(item => item.qty > 0)
         .sort((a, b) => b.revenue - a.revenue)
       const maxAmount = Math.max(
