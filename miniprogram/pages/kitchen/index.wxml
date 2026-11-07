@@ -225,6 +225,12 @@
           bindtap="onBatchAdvance"
         >{{batchAdvancing ? '处理中…' : '全部出锅'}}</view>
         <view
+          wx:if="{{readyCount}}"
+          class="copy-receipts advance {{batchAdvancing ? 'disabled' : ''}}"
+          data-status="completed"
+          bindtap="onBatchAdvance"
+        >{{batchAdvancing ? '处理中…' : '全部完成'}}</view>
+        <view
           wx:if="{{orders.length}}"
           class="copy-receipts {{copyingReceipts ? 'disabled' : ''}}"
           bindtap="onCopyActiveReceipts"

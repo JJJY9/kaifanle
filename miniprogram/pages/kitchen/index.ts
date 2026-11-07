@@ -67,6 +67,7 @@ Page({
     batchAdvancing: false,
     acceptedCount: 0,
     cookingCount: 0,
+    readyCount: 0,
     pendingCount: 0,
     replyingId: '',
     restockingId: '',
@@ -708,6 +709,9 @@ Page({
       const cookingCount = active.filter(
         order => order.status === 'cooking'
       ).length
+      const readyCount = active.filter(
+        order => order.status === 'ready'
+      ).length
       const revenue = stats ? Number(stats.revenue || 0) : 0
       const goalPercent =
         dailyGoal > 0
@@ -727,6 +731,7 @@ Page({
         pendingCount: active.filter(order => order.status === 'pending').length,
         acceptedCount,
         cookingCount,
+        readyCount,
         history,
         historyView: this.filterHistory(history),
         dishes,
@@ -877,24 +882,36 @@ Page({
       return
     }
     const status = String(e.currentTarget.dataset.status || '')
-    const expected = status === 'ready' ? 'cooking' : 'accepted'
-    const next = status === 'ready' ? 'ready' : 'cooking'
+    const expected =
+      status === 'ready' ? 'cooking' : status === 'completed' ? 'ready' : 'accepted'
+    const next =
+      status === 'ready' ? 'ready' : status === 'completed' ? 'completed' : 'cooking'
+    const action =
+      status === 'ready' ? '出锅' : status === 'completed' ? '完成' : '开火'
+    const nextText =
+      status === 'ready'
+        ? '已出锅'
+        : status === 'completed'
+        ? '已完成'
+        : '制作中'
     const targets = (this.data.orders || []).filter(
       order => order.status === expected
     )
     if (!targets.length) {
       wx.showToast({
-        title: status === 'ready' ? '没有制作中的订单' : '没有待开火的订单',
+        title:
+          status === 'ready'
+            ? '没有制作中的订单'
+            : status === 'completed'
+            ? '没有已出锅的订单'
+            : '没有待开火的订单',
         icon: 'none'
       })
       return
     }
-    const action = status === 'ready' ? '出锅' : '开火'
     const confirm: any = await wx.showModal({
       title: `全部${action}？`,
-      content: `今天的 ${targets.length} 单会一起变成「${
-        status === 'ready' ? '已出锅' : '制作中'
-      }」。`,
+      content: `今天的 ${targets.length} 单会一起变成「${nextText}」。`,
       confirmText: action,
       cancelText: '算了'
     })

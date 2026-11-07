@@ -2828,6 +2828,36 @@ function chinaDate(offset) {
     Boolean(cookingOrder) && cookingOrder.status === 'cooking',
     cookingOrder ? cookingOrder.status : '没找到订单'
   )
+  await invoke(
+    mp,
+    "page.onBatchAdvance({ currentTarget: { dataset: { status: 'ready' } } })"
+  )
+  await sleep(1800)
+  page = await current()
+  data = await page.data()
+  const readyOrder = (data.orders || []).find(order => order.id === 'seed-1')
+  check(
+    'mock 厨房批量出锅',
+    Boolean(readyOrder) &&
+      readyOrder.status === 'ready' &&
+      Number(data.readyCount) >= 1,
+    readyOrder ? readyOrder.status : '没找到订单'
+  )
+  await invoke(
+    mp,
+    "page.onBatchAdvance({ currentTarget: { dataset: { status: 'completed' } } })"
+  )
+  await sleep(1800)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 厨房批量完成',
+    !(data.orders || []).some(order => order.id === 'seed-1') &&
+      (data.history || []).some(
+        order => order.id === 'seed-1' && order.status === 'completed'
+      ),
+    'seed-1 已完成'
+  )
   check(
     'mock 全部接单不动预订单',
     (data.preorders || []).some(
