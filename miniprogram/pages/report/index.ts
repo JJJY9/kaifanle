@@ -9,6 +9,7 @@ import {
   toggleDishStatus
 } from '../../services/api'
 import { ordersToCsv } from '../../utils/orders-csv'
+import { dateInputString } from '../../utils/format'
 
 interface BarView {
   date: string
@@ -423,7 +424,12 @@ Page({
     }
     this.setData({ exportingFile: true })
     try {
-      const orders = await getAllOrders()
+      const orders = this.ordersInRange(await getAllOrders())
+      if (!orders.length) {
+        this.setData({ exportingFile: false })
+        wx.showToast({ title: '当前区间还没有订单', icon: 'none' })
+        return
+      }
       const csv = ordersToCsv(orders)
       const filePath = `${wx.env.USER_DATA_PATH}/orders-${Date.now()}.csv`
       await new Promise((resolve, reject) => {
@@ -593,13 +599,31 @@ Page({
     }
   },
 
+  ordersInRange(orders: any[]): any[] {
+    const report = this.data.report
+    if (!report) {
+      return orders
+    }
+    return orders.filter(order => {
+      const key = dateInputString(
+        new Date(Number(order.createdAt) || Date.now())
+      )
+      return key >= report.startDate && key <= report.endDate
+    })
+  },
+
   async onExport() {
     if (this.data.exporting) {
       return
     }
     this.setData({ exporting: true })
     try {
-      const orders = await getAllOrders()
+      const orders = this.ordersInRange(await getAllOrders())
+      if (!orders.length) {
+        this.setData({ exporting: false })
+        wx.showToast({ title: '当前区间还没有订单', icon: 'none' })
+        return
+      }
       const csv = ordersToCsv(orders)
       this.setData({ exporting: false, exportCount: orders.length })
       wx.setClipboardData({

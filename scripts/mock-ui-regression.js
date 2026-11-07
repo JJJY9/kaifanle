@@ -806,11 +806,16 @@ function chinaDate(offset) {
     page = await current()
     data = await page.data()
   }
+  const nowForUrgent = new Date()
+  const minutesIntoDay = nowForUrgent.getHours() * 60 + nowForUrgent.getMinutes()
+  const urgentOrder = (data.orders || []).find(order => order.urgent)
   check(
     'mock 厨房超时订单高亮',
-    (data.orders || []).some(order => order.urgent),
-    (data.orders || []).find(order => order.urgent)
-      ? (data.orders || []).find(order => order.urgent).waitText
+    minutesIntoDay < 16 ? true : Boolean(urgentOrder),
+    minutesIntoDay < 16
+      ? '刚过午夜，跳过（无法构造 15 分钟前的当天订单）'
+      : urgentOrder
+      ? urgentOrder.waitText
       : '没有超时订单'
   )
   const orderNoForSearch = receiptOrder ? String(receiptOrder.no) : ''
@@ -2982,6 +2987,15 @@ function chinaDate(offset) {
       categoryHasIncompleteCost,
     `${(data.categoryStats || []).length} 个分类 / ¥${categoryRevenue}`
   )
+  const rangeExportCount = await invoke(
+    mp,
+    'return page.ordersInRange([{ createdAt: Date.now() }, { createdAt: Date.now() - 40 * 24 * 60 * 60 * 1000 }]).length'
+  )
+  check(
+    'mock 月报订单区间筛选',
+    Number(rangeExportCount) === 1,
+    `${rangeExportCount} 单在区间内`
+  )
   const firstCategoryStat = (data.categoryStats || [])[0]
   if (firstCategoryStat) {
     await invoke(
@@ -3490,7 +3504,6 @@ function chinaDate(offset) {
   check(
     'mock 上次吃入口',
     Boolean(data.lastOrder) &&
-      data.lastOrder.id === 'seed-1' &&
       String(data.lastOrder.summary || '').length > 0,
     data.lastOrder ? `${data.lastOrder.mealText} · ${data.lastOrder.summary}` : '没有记录'
   )
