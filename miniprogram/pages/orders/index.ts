@@ -22,6 +22,7 @@ Page({
     emptyTitle: '这里还没有订单',
     emptyDesc: '去点一单吧',
     emptyAction: '',
+    collapsedDates: {} as Record<string, boolean>,
     counts: { all: 0, active: 0, done: 0, rate: 0 }
   },
 
@@ -192,6 +193,16 @@ Page({
     this.setData({ meal }, () => this.applyFilter())
   },
 
+  onToggleDate(e: any) {
+    const date = String((e.currentTarget && e.currentTarget.dataset.date) || '')
+    if (!date) {
+      return
+    }
+    const collapsedDates = Object.assign({}, this.data.collapsedDates)
+    collapsedDates[date] = !collapsedDates[date]
+    this.setData({ collapsedDates }, () => this.applyFilter())
+  },
+
   onSearch(e: any) {
     this.setData({ keyword: String(e.detail.value || '') }, () =>
       this.applyFilter()
@@ -239,6 +250,11 @@ Page({
       return true
     })
     let lastLabel = ''
+    const groupCounts: Record<string, number> = {}
+    list.forEach(order => {
+      groupCounts[order.groupKey] = (groupCounts[order.groupKey] || 0) + 1
+    })
+    const seenGroups: Record<string, boolean> = {}
     const displayOrders = list
       .slice()
       .sort((a, b) => {
@@ -251,8 +267,20 @@ Page({
         const label = order.groupKey
         const showHeader = label !== lastLabel
         lastLabel = label
-        return { ...order, showHeader }
+        const firstInGroup = !seenGroups[label]
+        seenGroups[label] = true
+        const collapsed = Boolean(this.data.collapsedDates[label])
+        if (collapsed && !firstInGroup) {
+          return null
+        }
+        return {
+          ...order,
+          showHeader,
+          collapsed: collapsed && firstInGroup,
+          groupCount: groupCounts[label] || 1
+        }
       })
+      .filter(Boolean)
     this.setData({
       displayOrders,
       emptyTitle: keyword

@@ -2431,6 +2431,39 @@ function chinaDate(offset) {
   page = await current()
   data = await page.data()
   check('mock 订单列表', (data.orders || []).length > 0, `${data.orders.length} 单`)
+  const firstOrderGroup = (data.displayOrders || [])[0]
+  if (firstOrderGroup) {
+    const groupBeforeCount = (data.displayOrders || []).length
+    await invoke(
+      mp,
+      `page.onToggleDate({ currentTarget: { dataset: { date: ${JSON.stringify(
+        firstOrderGroup.groupKey
+      )} } } })`
+    )
+    await sleep(400)
+    page = await current()
+    data = await page.data()
+    const collapsedGroupRows = (data.displayOrders || []).filter(
+      order => order.groupKey === firstOrderGroup.groupKey
+    )
+    check(
+      'mock 订单按日期折叠',
+      collapsedGroupRows.length === 1 &&
+        collapsedGroupRows[0].collapsed === true &&
+        (data.displayOrders || []).length ===
+          groupBeforeCount - (firstOrderGroup.groupCount || 1) + 1,
+      `${firstOrderGroup.dateText} · ${firstOrderGroup.groupCount} 单`
+    )
+    await invoke(
+      mp,
+      `page.onToggleDate({ currentTarget: { dataset: { date: ${JSON.stringify(
+        firstOrderGroup.groupKey
+      )} } } })`
+    )
+    await sleep(300)
+    page = await current()
+    data = await page.data()
+  }
   check(
     'mock 订单菜品缩略图',
     (data.orders || []).some(order => Boolean(order.thumb)),
