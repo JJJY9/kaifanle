@@ -308,6 +308,47 @@
   font-size: 19rpx;
 }
 
+.category-stats {
+  margin-top: 18rpx;
+  padding: 18rpx 22rpx;
+}
+
+.compare-sub {
+  color: #8C8C8C;
+  font-size: 20rpx;
+}
+
+.category-row {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  padding: 10rpx 0;
+  border-bottom: 2rpx dashed rgba(17, 17, 17, 0.1);
+}
+
+.category-row:last-child {
+  border-bottom: none;
+}
+
+.category-name {
+  flex: 1;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
+.category-qty {
+  color: #5C5C5C;
+  font-size: 21rpx;
+}
+
+.category-revenue {
+  min-width: 120rpx;
+  text-align: right;
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 26rpx;
+  font-weight: 800;
+}
+
 .report-tag {
   padding: 4rpx 14rpx;
   background: #E8F8EE;

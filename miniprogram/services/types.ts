@@ -266,6 +266,7 @@ export interface KitchenCostStats {
 export interface KitchenDishRow {
   id: string
   name: string
+  categoryId?: string
   status: string
   qty: number
   revenue: number

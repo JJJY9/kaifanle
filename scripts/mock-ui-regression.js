@@ -2923,6 +2923,17 @@ function chinaDate(offset) {
       ? `${data.report.totalOrders} 单 / ¥${data.report.revenue}`
       : '没有数据'
   )
+  const categoryRevenue = (data.categoryStats || []).reduce(
+    (sum, item) => sum + Number(item.revenue || 0),
+    0
+  )
+  const reportRevenue = Number((data.report || {}).revenue || 0)
+  check(
+    'mock 月报分类表现',
+    (data.categoryStats || []).length >= 1 &&
+      Math.abs(categoryRevenue - reportRevenue) < 0.1,
+    `${(data.categoryStats || []).length} 个分类 / ¥${categoryRevenue}`
+  )
   const topReportTag = ((data.report || {}).topTags || [])[0]
   if (topReportTag) {
     await invoke(

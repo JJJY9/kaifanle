@@ -2242,6 +2242,7 @@ export async function getKitchenReport(
       return {
         id: dish.id,
         name: dish.name,
+        categoryId: dish.categoryId || '',
         status: dish.status || 'on',
         qty,
         revenue,

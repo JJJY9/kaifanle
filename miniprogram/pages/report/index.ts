@@ -3,6 +3,7 @@ import {
   exportData,
   getAllOrders,
   getBusiness,
+  getCategories,
   getDishes,
   getKitchenReport,
   toggleDishStatus
@@ -25,6 +26,7 @@ Page({
     bars: [] as BarView[],
     maxAmount: 0,
     health: null as any,
+    categoryStats: [] as any[],
     compare: null as any,
     exporting: false,
     exportCount: 0,
@@ -57,10 +59,11 @@ Page({
     const seq = ++this._loadSeq
     this.setData({ loading: true, error: '' })
     try {
-      const [report, dishes, business] = await Promise.all([
+      const [report, dishes, business, categories] = await Promise.all([
         getKitchenReport(this.data.range),
         getDishes(),
-        getBusiness().catch(() => null)
+        getBusiness().catch(() => null),
+        getCategories().catch(() => [])
       ])
       if (seq !== this._loadSeq) {
         return
@@ -91,6 +94,34 @@ Page({
         ).length,
         noCost: dishes.filter(dish => !(Number(dish.cost) > 0)).length
       }
+      const categoryName: Record<string, string> = {}
+      ;(categories || []).forEach((category: any) => {
+        categoryName[category.id] = category.name
+      })
+      const categoryMap: Record<string, any> = {}
+      ;(report.dishRows || []).forEach((row: any) => {
+        const id = row.categoryId
+        if (!id || !categoryName[id]) {
+          return
+        }
+        if (!categoryMap[id]) {
+          categoryMap[id] = {
+            id,
+            name: categoryName[id],
+            qty: 0,
+            revenue: 0
+          }
+        }
+        categoryMap[id].qty += Number(row.qty || 0)
+        categoryMap[id].revenue += Number(row.revenue || 0)
+      })
+      const categoryStats = Object.keys(categoryMap)
+        .map(id => ({
+          ...categoryMap[id],
+          revenue: Number(categoryMap[id].revenue.toFixed(2))
+        }))
+        .filter(item => item.qty > 0)
+        .sort((a, b) => b.revenue - a.revenue)
       const maxAmount = Math.max(
         0,
         ...(report.daily || []).map(day => day.amount)
@@ -214,6 +245,7 @@ Page({
         bars,
         maxAmount,
         health,
+        categoryStats,
         compare,
         monthlyGoal,
         monthGoalPercent,

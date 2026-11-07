@@ -1284,6 +1284,7 @@ async function getKitchenReport(payload, openid) {
       return {
         id: dish.id || dish._id,
         name: dish.name,
+        categoryId: dish.categoryId || '',
         status: dish.status || 'on',
         qty,
         revenue,
