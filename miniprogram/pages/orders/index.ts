@@ -18,6 +18,7 @@ Page({
     error: '',
     keyword: '',
     filter: 'all' as 'all' | 'active' | 'done' | 'rate',
+    meal: 'all' as 'all' | 'breakfast' | 'lunch' | 'dinner',
     counts: { all: 0, active: 0, done: 0, rate: 0 }
   },
 
@@ -151,6 +152,18 @@ Page({
     this.setData({ filter }, () => this.applyFilter())
   },
 
+  onSelectMeal(e: any) {
+    const raw = String(e.currentTarget.dataset.meal || '')
+    const meal =
+      raw === 'breakfast' || raw === 'lunch' || raw === 'dinner'
+        ? raw
+        : 'all'
+    if (meal === this.data.meal) {
+      return
+    }
+    this.setData({ meal }, () => this.applyFilter())
+  },
+
   onSearch(e: any) {
     this.setData({ keyword: String(e.detail.value || '') }, () =>
       this.applyFilter()
@@ -164,7 +177,11 @@ Page({
   applyFilter() {
     const filter = this.data.filter
     const keyword = this.data.keyword.trim().toLowerCase()
+    const meal = this.data.meal
     const list = this.data.orders.filter(order => {
+      if (meal !== 'all' && order.meal !== meal) {
+        return false
+      }
       const finished =
         order.status === 'completed' || order.status === 'cancelled'
       if (filter === 'active' && finished) {

@@ -58,6 +58,27 @@
   color: #FFFFFF;
 }
 
+.meal-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  margin: -8rpx 0 20rpx;
+}
+
+.meal-chip {
+  padding: 6rpx 18rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
+.meal-chip.active {
+  background: #FFD23F;
+  box-shadow: 2rpx 2rpx 0 #111111;
+}
+
 .search-bar {
   display: flex;
   align-items: center;

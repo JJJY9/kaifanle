@@ -2172,6 +2172,25 @@ function chinaDate(offset) {
   page = await current()
   data = await page.data()
   check('mock 订单列表', (data.orders || []).length > 0, `${data.orders.length} 单`)
+  await invoke(
+    mp,
+    "page.onSelectMeal({ currentTarget: { dataset: { meal: 'lunch' } } })"
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 订单餐次筛选',
+    data.meal === 'lunch' &&
+      (data.displayOrders || []).length > 0 &&
+      data.displayOrders.every(order => order.meal === 'lunch'),
+    `${(data.displayOrders || []).length} 单午餐`
+  )
+  await invoke(
+    mp,
+    "page.onSelectMeal({ currentTarget: { dataset: { meal: 'all' } } })"
+  )
+  await sleep(300)
   check(
     'mock 订单本月汇总',
     String(data.monthText || '').indexOf('本月') === 0 &&
