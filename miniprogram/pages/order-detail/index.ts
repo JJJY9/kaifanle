@@ -49,6 +49,8 @@ Page({
     messageDraft: '',
     messages: [] as any[],
     messageAnchor: '',
+    posterMaking: false,
+    posterPath: '',
     messagePresets: ['少放辣', '多放饭', '快好了吗', '谢谢啦'],
     sendingMessage: false,
     submittingRating: false,
@@ -703,6 +705,174 @@ Page({
         wx.showToast({ title: '小票已复制', icon: 'none' })
       }
     })
+  },
+
+  async onMakeOrderPoster() {
+    if (this.data.posterMaking || !this.data.order) {
+      return
+    }
+    this.setData({ posterMaking: true })
+    try {
+      const canvas: any = await new Promise((resolve, reject) => {
+        wx.createSelectorQuery()
+          .in(this)
+          .select('#orderPoster')
+          .fields({ node: true, size: true })
+          .exec(res => {
+            const node = res && res[0] && res[0].node
+            if (node) {
+              resolve(node)
+            } else {
+              reject(new Error('画布还没准备好'))
+            }
+          })
+      })
+      const order = this.data.order
+      const items = (order.items || []).slice(0, 10)
+      const moreCount = Math.max(0, (order.items || []).length - items.length)
+      const rows = items.length + (moreCount ? 1 : 0)
+      const dpr = (wx.getWindowInfo && wx.getWindowInfo().pixelRatio) || 2
+      const width = 600
+      const height = Math.max(780, 220 + rows * 64 + 280)
+      canvas.width = width * dpr
+      canvas.height = height * dpr
+      const ctx = canvas.getContext('2d')
+      ctx.scale(dpr, dpr)
+
+      ctx.fillStyle = '#FFFDF6'
+      ctx.fillRect(0, 0, width, height)
+      ctx.strokeStyle = '#111111'
+      ctx.lineWidth = 8
+      ctx.strokeRect(24, 24, width - 48, height - 48)
+
+      ctx.fillStyle = '#FF6B35'
+      ctx.fillRect(24, 24, width - 48, 132)
+      ctx.fillStyle = '#FFFFFF'
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'middle'
+      ctx.font = 'bold 38px "PingFang SC", sans-serif'
+      ctx.fillText('张饱饭堂 · 小票', 48, 76)
+      ctx.font = '23px "PingFang SC", sans-serif'
+      ctx.fillText(
+        `#${order.no || ''} · ${order.scheduledText || ''} · ${
+          order.mealText || ''
+        }`,
+        48,
+        118
+      )
+
+      ctx.fillStyle = '#5C5C5C'
+      ctx.font = '20px "PingFang SC", sans-serif'
+      ctx.fillText(
+        `${order.mode || ''} · ${order.expectedTime || ''}`,
+        48,
+        188
+      )
+      ctx.strokeStyle = 'rgba(17,17,17,0.25)'
+      ctx.lineWidth = 2
+      ctx.setLineDash([6, 6])
+      ctx.beginPath()
+      ctx.moveTo(48, 212)
+      ctx.lineTo(width - 48, 212)
+      ctx.stroke()
+      ctx.setLineDash([])
+
+      const fit = (text: string, max: number) =>
+        text.length > max ? text.slice(0, max) + '…' : text
+      items.forEach((item: any, index: number) => {
+        const y = 244 + index * 64
+        ctx.textAlign = 'left'
+        ctx.fillStyle = '#111111'
+        ctx.font = 'bold 24px "PingFang SC", sans-serif'
+        ctx.fillText(fit(String(item.name || ''), 16), 48, y)
+        ctx.textAlign = 'right'
+        ctx.font = 'bold 24px "PingFang SC", sans-serif'
+        ctx.fillText(`¥${item.lineTotal}`, width - 48, y)
+        ctx.textAlign = 'left'
+        ctx.fillStyle = '#5C5C5C'
+        ctx.font = '18px "PingFang SC", sans-serif'
+        ctx.fillText(
+          [`×${item.qty}`, item.specText || ''].filter(Boolean).join(' · '),
+          48,
+          y + 24
+        )
+      })
+      if (moreCount) {
+        const y = 244 + items.length * 64
+        ctx.fillStyle = '#5C5C5C'
+        ctx.font = '20px "PingFang SC", sans-serif'
+        ctx.fillText(`还有 ${moreCount} 道菜…`, 48, y)
+      }
+
+      const totalY = 244 + rows * 64 + 22
+      ctx.strokeStyle = 'rgba(17,17,17,0.25)'
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.moveTo(48, totalY)
+      ctx.lineTo(width - 48, totalY)
+      ctx.stroke()
+      ctx.fillStyle = '#111111'
+      ctx.font = 'bold 28px "PingFang SC", sans-serif'
+      ctx.fillText('合计', 48, totalY + 40)
+      ctx.textAlign = 'right'
+      ctx.fillStyle = '#FF6B35'
+      ctx.font = 'bold 34px "PingFang SC", sans-serif'
+      ctx.fillText(`¥${order.amount}`, width - 48, totalY + 40)
+
+      let infoY = totalY + 90
+      ctx.textAlign = 'left'
+      ctx.fillStyle = '#5C5C5C'
+      ctx.font = '20px "PingFang SC", sans-serif'
+      if (order.address) {
+        ctx.fillText(fit(`送到：${order.address}`, 28), 48, infoY)
+        infoY += 32
+      }
+      if (order.note) {
+        ctx.fillText(fit(`备注：${order.note}`, 28), 48, infoY)
+        infoY += 32
+      }
+
+      ctx.fillStyle = '#8C8C8C'
+      ctx.font = '20px "PingFang SC", sans-serif'
+      ctx.fillText('她点单，你掌勺', 48, height - 52)
+      ctx.textAlign = 'right'
+      ctx.fillText('开饭咯', width - 48, height - 52)
+
+      const path: string = await new Promise((resolve, reject) => {
+        wx.canvasToTempFilePath({
+          canvas,
+          destWidth: canvas.width,
+          destHeight: canvas.height,
+          success: res => resolve(res.tempFilePath),
+          fail: reject
+        } as any)
+      })
+      this.setData({ posterMaking: false, posterPath: path })
+      wx.showToast({ title: '小票图片已生成', icon: 'none' })
+    } catch (e: any) {
+      this.setData({ posterMaking: false })
+      wx.showToast({
+        title: String((e && e.message) || '生成失败').slice(0, 40),
+        icon: 'none'
+      })
+    }
+  },
+
+  onPreviewOrderPoster() {
+    const path = this.data.posterPath
+    if (!path) {
+      return
+    }
+    if (typeof (wx as any).showShareImageMenu === 'function') {
+      ;(wx as any).showShareImageMenu({
+        path,
+        fail: () => {
+          wx.previewImage({ urls: [path] })
+        }
+      })
+      return
+    }
+    wx.previewImage({ urls: [path] })
   },
 
   async onCancelOrder() {

@@ -166,6 +166,25 @@
   transform: translate(3rpx, 3rpx);
 }
 
+.copy-order.poster {
+  background: #FFF7DA;
+  color: #8A6D3B;
+}
+
+.copy-order.poster-preview {
+  background: #E8F8EE;
+  color: #2F7D4F;
+}
+
+.order-poster-canvas {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  width: 600px;
+  height: 1200px;
+  pointer-events: none;
+}
+
 .reschedule {
   margin-top: 14rpx;
 }

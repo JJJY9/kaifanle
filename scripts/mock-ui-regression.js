@@ -2593,6 +2593,15 @@ function chinaDate(offset) {
   )
   await invoke(mp, "page.setData({ messageDraft: '' })")
   await sleep(200)
+  await invoke(mp, 'page.onMakeOrderPoster()')
+  await sleep(1400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 订单小票图片',
+    Boolean(data.posterPath) && data.posterMaking === false,
+    data.posterPath ? '已生成' : '未生成'
+  )
   await mp.mockWxMethod('showModal', {
     confirm: true,
     cancel: false,
