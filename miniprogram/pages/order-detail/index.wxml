@@ -96,7 +96,11 @@
         id="msg-{{index}}"
         class="message-row {{item.role}}"
       >
-        <view class="message-bubble">
+        <view
+          class="message-bubble"
+          data-content="{{item.content}}"
+          bindlongpress="onCopyMessage"
+        >
           <view class="message-meta">{{item.roleText}} · {{item.timeText}}</view>
           <view class="message-text">{{item.content}}</view>
         </view>

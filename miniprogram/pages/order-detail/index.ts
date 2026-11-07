@@ -268,6 +268,21 @@ Page({
     }
   },
 
+  onCopyMessage(e: any) {
+    const content = String(
+      (e.currentTarget && e.currentTarget.dataset.content) || ''
+    )
+    if (!content) {
+      return
+    }
+    wx.setClipboardData({
+      data: content,
+      success: () => {
+        wx.showToast({ title: '留言已复制', icon: 'none' })
+      }
+    })
+  },
+
   async onSendMessage() {
     if (this.data.sendingMessage) {
       return

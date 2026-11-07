@@ -2696,6 +2696,21 @@ function chinaDate(offset) {
   )
   await invoke(
     mp,
+    "page.onCopyMessage({ currentTarget: { dataset: { content: '记得少放辣' } } })"
+  )
+  await sleep(500)
+  const messageClip = await mp.evaluate(
+    new Function(
+      "return new Promise(resolve => wx.getClipboardData({ success: r => resolve(r.data || ''), fail: () => resolve('') }))"
+    )
+  )
+  check(
+    'mock 订单留言复制',
+    String(messageClip || '') === '记得少放辣',
+    String(messageClip || '')
+  )
+  await invoke(
+    mp,
     "page.onMessagePreset({ currentTarget: { dataset: { text: '多放饭' } } })"
   )
   await sleep(300)
