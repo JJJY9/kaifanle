@@ -2096,6 +2096,18 @@ function chinaDate(offset) {
       ),
     data.order ? '含花生' : '没找到订单'
   )
+  await invoke(mp, 'page.onCopyOrderReceipt()')
+  await sleep(400)
+  const allergyReceipt = await mp.evaluate(
+    new Function(
+      "return new Promise(resolve => wx.getClipboardData({ success: r => resolve(r.data || ''), fail: () => resolve('') }))"
+    )
+  )
+  check(
+    'mock 小票过敏原',
+    String(allergyReceipt || '').indexOf('含：花生') > -1,
+    `${String(allergyReceipt || '').length} 字`
+  )
   if (data.order && data.order.status === 'completed') {
     const feedbackText = `回归评价 ${Date.now()}`
     await invoke(

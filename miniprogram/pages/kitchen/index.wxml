@@ -477,6 +477,7 @@
           <text class="receipt-price">¥{{item.lineTotal}}</text>
         </view>
         <view wx:if="{{item.specText}}" class="receipt-note">规格：{{item.specText}}</view>
+        <view wx:if="{{item.allergenText}}" class="receipt-note">含：{{item.allergenText}}</view>
         <view wx:if="{{item.note}}" class="receipt-note">备注：{{item.note}}</view>
       </view>
       <view class="receipt-dash"></view>

@@ -5,6 +5,9 @@ export function orderReceiptLines(order: any): any[] {
     qty: Number(item.qty || 0),
     lineTotal: Number(item.price || 0) * Number(item.qty || 0),
     specText: Array.isArray(item.specs) ? item.specs.join(' / ') : '',
+    allergenText: Array.isArray(item.allergens)
+      ? item.allergens.join('、')
+      : '',
     note: item.note || ''
   }))
 }
@@ -21,6 +24,9 @@ export function receiptText(order: any, lines: any[]): string {
     head.push(`${line.name} ×${line.qty}  ¥${line.lineTotal}`)
     if (line.specText) {
       head.push(`  规格：${line.specText}`)
+    }
+    if (line.allergenText) {
+      head.push(`  含：${line.allergenText}`)
     }
     if (line.note) {
       head.push(`  备注：${line.note}`)
