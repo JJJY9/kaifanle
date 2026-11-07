@@ -89,6 +89,7 @@
 
     <view class="poster-btn {{posterMaking ? 'disabled' : ''}}" bindtap="onSharePoster">{{posterMaking ? '生成中…' : '生成足迹海报'}}</view>
     <view wx:if="{{posterPath}}" class="poster-hint" bindtap="onPreviewPoster">足迹图已生成，点这里分享 ›</view>
+    <view wx:if="{{posterPath}}" class="poster-btn" bindtap="onSavePoster">保存足迹图到相册</view>
 
     <button class="foot-btn share" open-type="share">分享我的足迹</button>
     <view class="foot-btn" bindtap="onGoOrders">看全部订单 →</view>

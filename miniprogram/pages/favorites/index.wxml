@@ -114,6 +114,7 @@
       bindtap="onMakePoster"
     >{{posterMaking ? '生成中…' : '生成收藏海报'}}</view>
     <view wx:if="{{posterPath}}" class="foot-link" bindtap="onPreviewPoster">收藏海报已生成，点这里分享 ›</view>
+    <view wx:if="{{posterPath}}" class="foot-btn poster" bindtap="onSavePoster">保存收藏海报</view>
   </block>
   <canvas type="2d" id="favoritesPoster" class="poster-canvas"></canvas>
 </view>

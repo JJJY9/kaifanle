@@ -2,6 +2,7 @@ import type { Dish } from '../../services/types'
 import { getCategories, getDishes } from '../../services/api'
 import { favorites } from '../../store/favorites'
 import { formatDate } from '../../utils/format'
+import { saveImageToAlbum } from '../../utils/save-image'
 
 const POSTER_THEMES = [
   { header: '#FF5C8A', row: '#FFF7DA', accent: '#FF6B35' },
@@ -348,6 +349,13 @@ Page({
       return
     }
     wx.previewImage({ urls: [path] })
+  },
+
+  onSavePoster() {
+    const path = this.data.posterPath
+    if (path) {
+      saveImageToAlbum(path, '海报已保存')
+    }
   },
 
   onShareAppMessage() {

@@ -128,6 +128,7 @@
     <view class="summary-actions">
       <view class="summary-copy" bindtap="onCopyTodaySummary">📋 复制今日小结</view>
       <view class="summary-copy" bindtap="onDailyPosterTap">{{posterPath ? '🖼 预览小结图' : (posterMaking ? '生成中…' : '🖼 生成小结图')}}</view>
+      <view wx:if="{{posterPath}}" class="summary-copy" bindtap="onSaveDailyPoster">保存小结图</view>
     </view>
 
     <view wx:if="{{weekBarTotal > 0}}" class="chart card">
@@ -162,6 +163,7 @@
         <view wx:if="{{prepGroups.length}}" class="prep-copy" bindtap="onCopyPrepCsv">复制备菜 CSV</view>
         <view wx:if="{{prepGroups.length}}" class="prep-copy" bindtap="onSharePrepPoster">{{prepPosterMaking ? '生成中…' : '生成采购图'}}</view>
         <view wx:if="{{prepPosterPath}}" class="prep-copy" bindtap="onPreviewPrepPoster">预览采购图</view>
+        <view wx:if="{{prepPosterPath}}" class="prep-copy" bindtap="onSavePrepPoster">保存采购图</view>
         <view wx:for="{{prepGroups}}" wx:key="meal" wx:for-item="group" class="prep-group">
           <view class="prep-group-head">
             <view class="prep-group-title">{{group.mealText}} · {{group.total}} 份<text wx:if="{{group.allergyText}}" class="prep-allergy"> · 含 {{group.allergyText}}</text></view>

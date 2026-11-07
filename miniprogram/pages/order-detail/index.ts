@@ -3,6 +3,7 @@ import { getOrder, cancelOrder, getDishes, getKitchenStatus, urgeOrder, rateOrde
 import { addOrderToCart } from '../../utils/reorder'
 import { orderReceiptLines, receiptText } from '../../utils/receipt'
 import { prepareImageForUpload } from '../../utils/image'
+import { saveImageToAlbum } from '../../utils/save-image'
 import { USE_CLOUD } from '../../config'
 import { MEALS, STATUS_STEP_TEXT, STATUS_TEXT, mealName } from '../../utils/constants'
 import {
@@ -901,6 +902,13 @@ Page({
       return
     }
     wx.previewImage({ urls: [path] })
+  },
+
+  onSaveOrderPoster() {
+    const path = this.data.posterPath
+    if (path) {
+      saveImageToAlbum(path, '小票图片已保存')
+    }
   },
 
   async onCancelOrder() {

@@ -1,5 +1,6 @@
 import { getMyStats, getOrders } from '../../services/api'
 import { dateInputString } from '../../utils/format'
+import { saveImageToAlbum } from '../../utils/save-image'
 
 interface FootprintDish {
   name: string
@@ -321,6 +322,13 @@ Page({
       })
     } else {
       wx.previewImage({ urls: [path] })
+    }
+  },
+
+  onSavePoster() {
+    const path = this.data.posterPath
+    if (path) {
+      saveImageToAlbum(path, '足迹图已保存')
     }
   },
 

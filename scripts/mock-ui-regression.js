@@ -745,6 +745,24 @@ function chinaDate(offset) {
     Boolean(data.posterPath),
     data.posterPath ? '已生成' : '未生成'
   )
+  await invoke(
+    mp,
+    "wx.__saveDailyOriginal = wx.saveImageToPhotosAlbum; wx.saveImageToPhotosAlbum = (o) => { wx.__savedDailyPath = o && o.filePath; o && o.success && o.success() }; true"
+  )
+  await invoke(mp, 'page.onSaveDailyPoster()')
+  await sleep(400)
+  const savedDailyPoster = await mp.evaluate(
+    () => wx.__savedDailyPath || ''
+  )
+  await invoke(
+    mp,
+    "wx.saveImageToPhotosAlbum = wx.__saveDailyOriginal; delete wx.__saveDailyOriginal; true"
+  )
+  check(
+    'mock 小结图保存相册',
+    String(savedDailyPoster || '') === String(data.posterPath || ''),
+    String(savedDailyPoster || '')
+  )
   await invoke(mp, 'page.onSharePrepPoster()')
   await sleep(2200)
   page = await current()
@@ -753,6 +771,24 @@ function chinaDate(offset) {
     'mock 采购清单图',
     Boolean(data.prepPosterPath),
     data.prepPosterPath ? '已生成' : '未生成'
+  )
+  await invoke(
+    mp,
+    "wx.__savePrepOriginal = wx.saveImageToPhotosAlbum; wx.saveImageToPhotosAlbum = (o) => { wx.__savedPrepPath = o && o.filePath; o && o.success && o.success() }; true"
+  )
+  await invoke(mp, 'page.onSavePrepPoster()')
+  await sleep(400)
+  const savedPrepPoster = await mp.evaluate(
+    () => wx.__savedPrepPath || ''
+  )
+  await invoke(
+    mp,
+    "wx.saveImageToPhotosAlbum = wx.__savePrepOriginal; delete wx.__savePrepOriginal; true"
+  )
+  check(
+    'mock 采购图保存相册',
+    String(savedPrepPoster || '') === String(data.prepPosterPath || ''),
+    String(savedPrepPoster || '')
   )
   await invoke(mp, 'page.load()')
   await sleep(1500)
@@ -2274,6 +2310,24 @@ function chinaDate(offset) {
     'mock 收藏分享海报',
     data.posterPath !== '' && data.posterMaking === false,
     data.posterPath ? '已生成' : '未生成'
+  )
+  await invoke(
+    mp,
+    "wx.__savePosterOriginal = wx.saveImageToPhotosAlbum; wx.saveImageToPhotosAlbum = (o) => { wx.__savedPosterPath = o && o.filePath; o && o.success && o.success() }; true"
+  )
+  await invoke(mp, 'page.onSavePoster()')
+  await sleep(400)
+  const savedFavoritePoster = await mp.evaluate(
+    () => wx.__savedPosterPath || ''
+  )
+  await invoke(
+    mp,
+    "wx.saveImageToPhotosAlbum = wx.__savePosterOriginal; delete wx.__savePosterOriginal; true"
+  )
+  check(
+    'mock 收藏海报保存相册',
+    String(savedFavoritePoster || '') === String(data.posterPath || ''),
+    String(savedFavoritePoster || '')
   )
   await invoke(mp, 'page.onCyclePosterTheme()')
   await sleep(400)

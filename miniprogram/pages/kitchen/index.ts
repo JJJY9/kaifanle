@@ -27,6 +27,7 @@ import {
 } from '../../utils/constants'
 import { formatTime, itemSummary, dateLabel, dateInputString, formatDate } from '../../utils/format'
 import { orderReceiptLines, receiptText } from '../../utils/receipt'
+import { saveImageToAlbum } from '../../utils/save-image'
 import { TEMPLATE_NEW_ORDER } from '../../config'
 
 const REPLY_PHRASES = [
@@ -2548,6 +2549,13 @@ Page({
     }
   },
 
+  onSaveDailyPoster() {
+    const path = this.data.posterPath
+    if (path) {
+      saveImageToAlbum(path, '小结图已保存')
+    }
+  },
+
   async onSharePrepPoster() {
     if (this.data.prepPosterMaking) {
       return
@@ -2666,6 +2674,13 @@ Page({
       })
     } else {
       wx.previewImage({ urls: [path] })
+    }
+  },
+
+  onSavePrepPoster() {
+    const path = this.data.prepPosterPath
+    if (path) {
+      saveImageToAlbum(path, '采购图已保存')
     }
   },
 

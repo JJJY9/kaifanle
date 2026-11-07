@@ -70,6 +70,7 @@
     {{posterMaking ? '生成中…' : '生成菜品海报'}}
   </view>
   <view wx:if="{{posterPath}}" class="poster-hint" bindtap="onPreviewPoster">海报已生成，点这里分享 ›</view>
+  <view wx:if="{{posterPath}}" class="poster-btn" bindtap="onSavePoster">保存海报到相册</view>
 
   <view wx:if="{{isAdmin}}" class="actions">
     <view class="btn btn-primary" bindtap="onEdit">编辑菜品与做法</view>

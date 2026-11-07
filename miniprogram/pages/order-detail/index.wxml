@@ -28,6 +28,7 @@
     <view class="copy-order" bindtap="onCopyOrderReceipt">复制小票</view>
     <view class="copy-order poster" bindtap="onMakeOrderPoster">{{posterMaking ? '生成中…' : '生成小票图片'}}</view>
     <view wx:if="{{posterPath}}" class="copy-order poster-preview" bindtap="onPreviewOrderPoster">预览小票图片</view>
+    <view wx:if="{{posterPath}}" class="copy-order poster-preview" bindtap="onSaveOrderPoster">保存小票图片</view>
     <view wx:if="{{order.status === 'pending'}}" class="reschedule">
       <view class="reschedule-toggle" bindtap="onToggleSlotEdit">{{slotEditVisible ? '收起改时间' : '改餐次 / 日期'}}</view>
       <view wx:if="{{slotEditVisible}}" class="reschedule-panel">

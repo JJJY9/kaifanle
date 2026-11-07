@@ -10,6 +10,7 @@ import {
 } from '../../services/api'
 import { ordersToCsv } from '../../utils/orders-csv'
 import { dateInputString } from '../../utils/format'
+import { saveImageToAlbum } from '../../utils/save-image'
 
 interface BarView {
   date: string
@@ -762,18 +763,9 @@ Page({
 
   onSaveCategoryPoster() {
     const path = this.data.categoryPosterPath
-    if (!path) {
-      return
+    if (path) {
+      saveImageToAlbum(path, '分类图已保存')
     }
-    wx.saveImageToPhotosAlbum({
-      filePath: path,
-      success: () => {
-        wx.showToast({ title: '已保存到相册', icon: 'none' })
-      },
-      fail: () => {
-        wx.showToast({ title: '保存失败，请允许相册权限', icon: 'none' })
-      }
-    })
   },
 
   onExportDishes() {

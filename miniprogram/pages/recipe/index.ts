@@ -1,5 +1,6 @@
 import { getDish, getDishStats, getMe } from '../../services/api'
 import { favorites } from '../../store/favorites'
+import { saveImageToAlbum } from '../../utils/save-image'
 
 Page({
   data: {
@@ -262,6 +263,13 @@ Page({
       })
     } else {
       wx.previewImage({ urls: [path] })
+    }
+  },
+
+  onSavePoster() {
+    const path = this.data.posterPath
+    if (path) {
+      saveImageToAlbum(path, '海报已保存')
     }
   }
 })
