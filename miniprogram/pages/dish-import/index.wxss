@@ -43,6 +43,17 @@
   line-height: 1.5;
 }
 
+.import-example {
+  display: inline-flex;
+  margin-top: 12rpx;
+  padding: 4rpx 16rpx;
+  background: #FFF7DA;
+  border: 2rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
 .preview {
   padding: 20rpx 24rpx;
   margin-bottom: 22rpx;

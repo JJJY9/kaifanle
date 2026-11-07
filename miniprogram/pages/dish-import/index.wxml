@@ -13,6 +13,7 @@
       bindinput="onText"
     ></textarea>
     <view class="import-tip">餐次可写：早 / 午 / 晚 / 午晚，留空默认午晚；库存留空表示不限量；最后一位可填每份成本</view>
+    <view class="import-example" bindtap="onFillExample">填入示例</view>
   </view>
 
   <view wx:if="{{parsed.length}}" class="preview card">

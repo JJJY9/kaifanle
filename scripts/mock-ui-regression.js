@@ -1365,6 +1365,16 @@ function chinaDate(offset) {
   // 批量导入菜品
   await mp.navigateTo('/pages/dish-import/index')
   await sleep(1500)
+  await invoke(mp, 'page.onFillExample()')
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 批量导入填入示例',
+    (data.parsed || []).length === 3 &&
+      data.parsed.every(row => !row.error),
+    `${(data.parsed || []).length} 行示例`
+  )
   await invoke(
     mp,
     "page.onText({ detail: { value: '批量测试菜,9.9,主食,午晚,2,3.5' } })"

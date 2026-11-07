@@ -2,6 +2,8 @@ import type { Category, MealId } from '../../services/types'
 import { getCategories, getDishes, saveDish } from '../../services/api'
 
 const COLORS = ['#FFD23F', '#2D9CFF', '#FF6B35', '#FF5C8A', '#2FBF71']
+const EXAMPLE_TEXT =
+  '番茄炒蛋,12,小炒,午晚,20,5\n紫菜蛋花汤,6,汤羹,午晚\n豆浆,3,饮品,早,50,1.5'
 
 interface ParsedRow {
   name: string
@@ -56,6 +58,10 @@ Page({
 
   onText(e: any) {
     this.setData({ text: String(e.detail.value || '') }, () => this.parse())
+  },
+
+  onFillExample() {
+    this.setData({ text: EXAMPLE_TEXT }, () => this.parse())
   },
 
   parse() {
