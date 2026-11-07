@@ -22,6 +22,7 @@ import type {
   MyStats,
   Order,
   OrderStatus,
+  SpecialDays,
   StockLog,
   StoreStats,
   UserProfile,
@@ -66,6 +67,7 @@ let expiringCouponsCache: { at: number; count: number } | null = null
 let pendingReviewCache: { at: number; count: number } | null = null
 let myStatsCache: { at: number; data: MyStats } | null = null
 let dishStatsCache: Record<string, { at: number; data: DishStats }> = {}
+let specialDaysCache: { at: number; data: SpecialDays } | null = null
 const BUSINESS_CACHE_TTL = 60 * 1000
 const MENU_CACHE_TTL = 60 * 1000
 const KITCHEN_STATUS_TTL = 30 * 1000
@@ -75,9 +77,16 @@ const EXPIRING_COUPONS_TTL = 2 * 60 * 1000
 const PENDING_REVIEW_TTL = 2 * 60 * 1000
 const MY_STATS_TTL = 5 * 60 * 1000
 const DISH_STATS_TTL = 2 * 60 * 1000
+const SPECIAL_DAYS_TTL = 5 * 60 * 1000
 
 function cloneData<T>(value: T): T {
   return JSON.parse(JSON.stringify(value))
+}
+
+function chinaTodayKey(): string {
+  return new Date(Date.now() + 8 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10)
 }
 
 function invalidateMenuCache() {
@@ -560,9 +569,29 @@ export async function saveMyProfile(
   payload: UserProfile
 ): Promise<UserProfile> {
   if (USE_CLOUD) {
-    return callApi<UserProfile>('saveMyProfile', payload)
+    const result = await callApi<UserProfile>('saveMyProfile', payload)
+    specialDaysCache = null
+    return result
   }
   return mock.saveMyProfile(payload)
+}
+
+export async function getSpecialDays(force = false): Promise<SpecialDays> {
+  if (USE_CLOUD) {
+    const today = chinaTodayKey()
+    if (
+      !force &&
+      specialDaysCache &&
+      specialDaysCache.data.today === today &&
+      Date.now() - specialDaysCache.at < SPECIAL_DAYS_TTL
+    ) {
+      return cloneData(specialDaysCache.data)
+    }
+    const data = await callApi<SpecialDays>('getSpecialDays')
+    specialDaysCache = { at: Date.now(), data }
+    return cloneData(data)
+  }
+  return mock.getSpecialDays()
 }
 
 export async function getStats(): Promise<StoreStats> {

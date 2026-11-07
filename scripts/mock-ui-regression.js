@@ -18,6 +18,14 @@ function invoke(mp, body) {
   )
 }
 
+function chinaDate(offset) {
+  const d = new Date(Date.now() + 8 * 60 * 60 * 1000)
+  d.setUTCDate(d.getUTCDate() + Number(offset || 0))
+  const month = String(d.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(d.getUTCDate()).padStart(2, '0')
+  return `${d.getUTCFullYear()}-${month}-${day}`
+}
+
 ;(async () => {
   const mp = await automator.connect({
     wsEndpoint: process.argv[2] || 'ws://127.0.0.1:9420'
@@ -1419,6 +1427,61 @@ function invoke(mp, body) {
   await invoke(mp, 'page.onToggleFavorite()')
   await sleep(400)
 
+  // 口味档案：生日 / 纪念日选择、清除与保存
+  const specialBirthday = `1998-${chinaDate(5).slice(5)}`
+  const specialAnniversary = `2020-${chinaDate(8).slice(5)}`
+  await mp.navigateTo('/pages/preferences/index')
+  await sleep(1500)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 档案页加载',
+    Boolean(page.path === 'pages/preferences/index') &&
+      !data.loading &&
+      !data.loadFailed,
+    page.path
+  )
+  await invoke(
+    mp,
+    `page.onBirthday({ detail: { value: '${specialBirthday}' } })`
+  )
+  await invoke(
+    mp,
+    `page.onAnniversary({ detail: { value: '${specialAnniversary}' } })`
+  )
+  await sleep(200)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 生日纪念日选择',
+    data.birthday === specialBirthday &&
+      data.anniversary === specialAnniversary,
+    `${data.birthday} / ${data.anniversary}`
+  )
+  await invoke(mp, 'page.onClearBirthday()')
+  await sleep(200)
+  page = await current()
+  data = await page.data()
+  check('mock 生日可清除', data.birthday === '', data.birthday)
+  await invoke(
+    mp,
+    `page.onBirthday({ detail: { value: '${specialBirthday}' } })`
+  )
+  await invoke(mp, 'page.onSave()')
+  await sleep(1500)
+  await mp.navigateTo('/pages/preferences/index')
+  await sleep(1400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 生日纪念日保存',
+    data.birthday === specialBirthday &&
+      data.anniversary === specialAnniversary,
+    `${data.birthday} / ${data.anniversary}`
+  )
+  await mp.navigateBack()
+  await sleep(800)
+
   // 菜谱大全
   await mp.navigateTo('/pages/recipe-list/index')
   await sleep(1600)
@@ -2439,6 +2502,18 @@ function invoke(mp, body) {
       order => order.id === 'seed-3' && order.slotUpdated
     ),
     'seed-3'
+  )
+  check(
+    'mock 厨房重要日子提醒',
+    (data.specialDays || []).some(
+      day => day.kind === 'birthday' && Number(day.days) === 5
+    ) &&
+      (data.specialDays || []).some(
+        day => day.kind === 'anniversary' && Number(day.days) === 8
+      ),
+    (data.specialDays || [])
+      .map(day => `${day.label}${day.daysText}`)
+      .join(' / ')
   )
 
   const failed = results.filter(r => !r.ok)

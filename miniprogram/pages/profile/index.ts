@@ -83,8 +83,8 @@ Page({
       },
       {
         key: 'prefs',
-        label: '口味与地址',
-        desc: '忌口、口味、常用地址',
+        label: '口味与档案',
+        desc: '忌口、口味、地址与重要日子',
         icon: '味',
         color: '#FF6B35'
       }

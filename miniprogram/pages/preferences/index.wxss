@@ -53,6 +53,48 @@
   font-size: 26rpx;
 }
 
+.date-row {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.date-picker {
+  flex: 1;
+}
+
+.date-value {
+  height: 76rpx;
+  padding: 0 18rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 18rpx;
+  font-size: 26rpx;
+  font-weight: 700;
+  line-height: 70rpx;
+}
+
+.date-value.placeholder {
+  color: #9A9A9A;
+  font-weight: 400;
+}
+
+.date-clear {
+  flex: 0 0 auto;
+  padding: 12rpx 8rpx;
+  color: #FF5C8A;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
+.date-hint {
+  margin-top: 14rpx;
+  color: #5C5C5C;
+  font-size: 22rpx;
+  line-height: 1.5;
+}
+
 .save-btn {
   display: flex;
   align-items: center;
@@ -77,5 +119,5 @@
 }
 
 .sk {
-  height: 400rpx;
+  height: 520rpx;
 }

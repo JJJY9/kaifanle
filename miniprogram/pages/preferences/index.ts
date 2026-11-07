@@ -1,4 +1,5 @@
 import { getMyProfile, saveMyProfile } from '../../services/api'
+import { dateInputString } from '../../utils/format'
 import { backAfter } from '../../utils/nav'
 
 function splitList(text: string): string[] {
@@ -14,6 +15,9 @@ Page({
     dislikesText: '',
     tastesText: '',
     address: '',
+    birthday: '',
+    anniversary: '',
+    today: dateInputString(),
     loading: true,
     loadFailed: false,
     saving: false
@@ -34,6 +38,8 @@ Page({
         dislikesText: profile.dislikes.join('，'),
         tastesText: profile.tastes.join('，'),
         address: profile.address,
+        birthday: profile.birthday || '',
+        anniversary: profile.anniversary || '',
         loading: false,
         loadFailed: false
       })
@@ -63,6 +69,22 @@ Page({
     this.setData({ address: e.detail.value })
   },
 
+  onBirthday(e: any) {
+    this.setData({ birthday: String(e.detail.value || '') })
+  },
+
+  onAnniversary(e: any) {
+    this.setData({ anniversary: String(e.detail.value || '') })
+  },
+
+  onClearBirthday() {
+    this.setData({ birthday: '' })
+  },
+
+  onClearAnniversary() {
+    this.setData({ anniversary: '' })
+  },
+
   async onSave() {
     if (this.data.saving) {
       return
@@ -76,7 +98,9 @@ Page({
       await saveMyProfile({
         dislikes: splitList(this.data.dislikesText),
         tastes: splitList(this.data.tastesText),
-        address: this.data.address.trim().slice(0, 60)
+        address: this.data.address.trim().slice(0, 60),
+        birthday: this.data.birthday,
+        anniversary: this.data.anniversary
       })
       wx.showToast({ title: '已保存', icon: 'none' })
       backAfter(500)

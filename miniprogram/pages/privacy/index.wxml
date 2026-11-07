@@ -6,12 +6,12 @@
 
   <view class="card block">
     <view class="block-title">会收集什么</view>
-    <view class="p">微信 openid（用来区分是谁在下单）、口味与忌口、常用地址、订单备注、订单评价与掌勺人回复、许愿内容、菜品偏好。</view>
+    <view class="p">微信 openid（用来区分是谁在下单）、口味与忌口、常用地址、生日与纪念日（只用于重要日子提醒）、订单备注、订单评价与掌勺人回复、许愿内容、菜品偏好。</view>
   </view>
 
   <view class="card block">
     <view class="block-title">用来做什么</view>
-    <view class="p">完成点单和备餐、把忌口和地址带进订单、在出锅时给你发提醒。不会用于广告，也不会卖给任何第三方。</view>
+    <view class="p">完成点单和备餐、把忌口和地址带进订单、在出锅和重要日子前给你提醒。不会用于广告，也不会卖给任何第三方。</view>
   </view>
 
   <view class="card block">
@@ -21,7 +21,7 @@
 
   <view class="card block">
     <view class="block-title">你的权利</view>
-    <view class="p">可以随时在「口味与地址」里修改资料，在许愿池撤回自己还没被安排的愿望；需要清空账号数据时，联系掌勺人处理。</view>
+    <view class="p">可以随时在「口味与档案」里修改资料，在许愿池撤回自己还没被安排的愿望；需要清空账号数据时，联系掌勺人处理。</view>
   </view>
 
   <view class="card block">
@@ -29,5 +29,5 @@
     <view class="p">只有在管理员点击「我的 openid」时才会写入剪贴板，用于添加管理员，不会读取剪贴板内容。</view>
   </view>
 
-  <view class="footer">更新于 2026-11-06</view>
+  <view class="footer">更新于 2026-11-07</view>
 </view>

@@ -151,6 +151,8 @@ async function route(action, payload, openid) {
       return getMyProfile(openid)
     case 'saveMyProfile':
       return saveMyProfile(payload, openid)
+    case 'getSpecialDays':
+      return getSpecialDays(openid)
     case 'getStats':
       return getStats(openid)
     case 'getKitchenStatus':
@@ -468,6 +470,43 @@ async function updateBusiness(payload, openid) {
   return business
 }
 
+const SPECIAL_DAY_WINDOW = 30
+
+function normalizeDateKey(value) {
+  const text = String(value || '').trim()
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    return ''
+  }
+  const parts = text.split('-').map(Number)
+  const year = parts[0]
+  const month = parts[1]
+  const day = parts[2]
+  if (year < 1900 || year > 2100 || month < 1 || month > 12 || day < 1) {
+    return ''
+  }
+  const date = new Date(Date.UTC(year, month - 1, day))
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return ''
+  }
+  return text
+}
+
+function parseSpecialDateInput(value, label) {
+  const text = String(value || '').trim()
+  if (!text) {
+    return ''
+  }
+  const normalized = normalizeDateKey(text)
+  if (!normalized) {
+    throw new Error(`${label}日期格式不正确`)
+  }
+  return normalized
+}
+
 function normalizeProfile(value) {
   const source = value && typeof value === 'object' ? value : {}
   const clean = list =>
@@ -481,7 +520,9 @@ function normalizeProfile(value) {
   return {
     dislikes: clean(source.dislikes),
     tastes: clean(source.tastes),
-    address: String(source.address || '').slice(0, 60)
+    address: String(source.address || '').slice(0, 60),
+    birthday: normalizeDateKey(source.birthday),
+    anniversary: normalizeDateKey(source.anniversary)
   }
 }
 
@@ -502,7 +543,26 @@ async function getMyProfile(openid) {
 
 async function saveMyProfile(payload, openid) {
   await ensureCollection('users')
-  const profile = normalizeProfile(payload)
+  const existing = await getMyProfile(openid)
+  const input = payload && typeof payload === 'object' ? payload : {}
+  const source = Object.assign({}, existing)
+  ;['dislikes', 'tastes', 'address'].forEach(key => {
+    if (Object.prototype.hasOwnProperty.call(input, key)) {
+      source[key] = input[key]
+    }
+  })
+  ;['birthday', 'anniversary'].forEach(key => {
+    if (
+      Object.prototype.hasOwnProperty.call(input, key) &&
+      input[key] !== undefined
+    ) {
+      source[key] = parseSpecialDateInput(
+        input[key],
+        key === 'birthday' ? '生日' : '纪念日'
+      )
+    }
+  })
+  const profile = normalizeProfile(source)
   await db
     .collection('users')
     .doc(openid)
@@ -510,6 +570,77 @@ async function saveMyProfile(payload, openid) {
       data: Object.assign({ updatedAt: Date.now() }, profile)
     })
   return profile
+}
+
+function annualOccurrence(dateKey, todayKey) {
+  const todayParts = todayKey.split('-').map(Number)
+  const dateParts = dateKey.split('-').map(Number)
+  const todayUtc = Date.UTC(
+    todayParts[0],
+    todayParts[1] - 1,
+    todayParts[2]
+  )
+  const occurrence = year => {
+    const month = dateParts[1]
+    const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate()
+    return Date.UTC(
+      year,
+      month - 1,
+      Math.min(dateParts[2], lastDay)
+    )
+  }
+  let year = todayParts[0]
+  let next = occurrence(year)
+  if (next < todayUtc) {
+    year += 1
+    next = occurrence(year)
+  }
+  const date = new Date(next)
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(date.getUTCDate()).padStart(2, '0')
+  return {
+    days: Math.round((next - todayUtc) / (24 * 60 * 60 * 1000)),
+    date: `${month}-${day}`
+  }
+}
+
+async function getSpecialDays(openid) {
+  await requireAdmin(openid)
+  await ensureCollection('users')
+  const res = await db.collection('users').limit(1000).get()
+  const today = chinaDateString()
+  const days = []
+  ;(res.data || []).forEach(user => {
+    ;[
+      ['birthday', 'birthday'],
+      ['anniversary', 'anniversary']
+    ].forEach(([key, kind]) => {
+      const dateKey = normalizeDateKey(user[key])
+      if (!dateKey) {
+        return
+      }
+      const occurrence = annualOccurrence(dateKey, today)
+      if (occurrence.days < 0 || occurrence.days >= SPECIAL_DAY_WINDOW) {
+        return
+      }
+      days.push({
+        kind,
+        date: occurrence.date,
+        days: occurrence.days
+      })
+    })
+  })
+  days.sort(
+    (a, b) =>
+      a.days - b.days ||
+      (a.kind === b.kind ? 0 : a.kind === 'birthday' ? -1 : 1)
+  )
+  return {
+    today,
+    windowDays: SPECIAL_DAY_WINDOW,
+    total: days.length,
+    days: days.slice(0, 10)
+  }
 }
 
 function chinaStartOfDay() {

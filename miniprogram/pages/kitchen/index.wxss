@@ -120,6 +120,67 @@
   font-size: 21rpx;
 }
 
+.special-card {
+  margin-top: 20rpx;
+  padding: 20rpx;
+  background: #FFF1F6;
+}
+
+.special-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10rpx;
+}
+
+.special-title {
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+.special-sub {
+  color: #8A5A68;
+  font-size: 21rpx;
+}
+
+.special-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 12rpx 0;
+  border-top: 2rpx dashed rgba(17, 17, 17, 0.12);
+  font-size: 24rpx;
+}
+
+.special-row.urgent .special-days {
+  color: #FF5C8A;
+}
+
+.special-emoji {
+  font-size: 28rpx;
+}
+
+.special-label {
+  font-weight: 800;
+}
+
+.special-date {
+  color: #5C5C5C;
+  font-size: 22rpx;
+}
+
+.special-days {
+  margin-left: auto;
+  font-weight: 800;
+}
+
+.special-more {
+  margin-top: 8rpx;
+  color: #8A5A68;
+  font-size: 21rpx;
+}
+
 .todo-card {
   margin-top: 20rpx;
   padding: 20rpx;
