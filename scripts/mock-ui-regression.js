@@ -1135,15 +1135,19 @@ function chinaDate(offset) {
   await sleep(1500)
   await invoke(
     mp,
-    "page.onText({ detail: { value: '批量测试菜,9.9,主食,午晚,2' } })"
+    "page.onText({ detail: { value: '批量测试菜,9.9,主食,午晚,2,3.5' } })"
   )
   await sleep(400)
   page = await current()
   data = await page.data()
   check(
     'mock 批量导入预览',
-    (data.parsed || []).length === 1 && !data.parsed[0].error,
-    data.parsed[0] ? data.parsed[0].name : '没有解析结果'
+    (data.parsed || []).length === 1 &&
+      !data.parsed[0].error &&
+      Number(data.parsed[0].cost) === 3.5,
+    data.parsed[0]
+      ? `${data.parsed[0].name} · 成本 ${data.parsed[0].costText}`
+      : '没有解析结果'
   )
   await invoke(mp, 'page.onImport()')
   await sleep(1400)
@@ -1179,11 +1183,12 @@ function chinaDate(offset) {
     'mock 批量导入菜品数据',
     Boolean(importedDish) &&
       Number(importedDish.price) === 9.9 &&
+      Number(importedDish.cost) === 3.5 &&
       Number(importedDish.stock) === 2 &&
       importedDish.meals.indexOf('lunch') > -1 &&
       importedDish.meals.indexOf('dinner') > -1,
     importedDish
-      ? `¥${importedDish.price} · 库存 ${importedDish.stock}`
+      ? `¥${importedDish.price} · 成本 ¥${importedDish.cost} · 库存 ${importedDish.stock}`
       : '没找到导入的菜'
   )
   // 批量改价：筛选到导入的菜，按 +10% 调整并确认预览

@@ -12,6 +12,8 @@ interface ParsedRow {
   mealsText: string
   stock: number
   stockText: string
+  cost: number
+  costText: string
   error: string
 }
 
@@ -82,6 +84,9 @@ Page({
             stockValue <= 9999
           ? Math.floor(stockValue)
           : -1
+        const costRaw = String(parts[5] || '').trim()
+        const costValue = Number(costRaw)
+        const cost = costRaw ? Math.round(costValue * 100) / 100 : 0
         let error = ''
         if (!name) {
           error = '缺少菜名'
@@ -96,6 +101,11 @@ Page({
           (!isFinite(stockValue) || stockValue < 0 || stockValue > 9999)
         ) {
           error = '库存不对'
+        } else if (
+          costRaw &&
+          (!isFinite(costValue) || costValue < 0 || costValue > 999)
+        ) {
+          error = '成本不对'
         }
         return {
           name,
@@ -110,6 +120,8 @@ Page({
             .join('/'),
           stock,
           stockText: stock < 0 ? '不限量' : `${stock} 份`,
+          cost,
+          costText: cost > 0 ? `¥${cost}` : '成本未填',
           error
         }
       })
@@ -145,6 +157,7 @@ Page({
             name: row.name,
             desc: '',
             price: row.price,
+            cost: row.cost,
             categoryId: row.categoryId,
             tags: [],
             spicyLevels: [],
