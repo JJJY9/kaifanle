@@ -1082,6 +1082,38 @@ async function getKitchenReport(openid) {
     .sort((a, b) => a.qty - b.qty || a.name.localeCompare(b.name))
     .slice(0, 5)
 
+  const costByName = {}
+  ;(dishRes.data || []).forEach(dish => {
+    const value = Number(dish.cost)
+    if (isFinite(value) && value > 0) {
+      costByName[dish.name] = value
+    }
+  })
+  let costQty = 0
+  let costRevenue = 0
+  let costTotal = 0
+  active.forEach(order => {
+    ;(order.items || []).forEach(item => {
+      const unitCost = costByName[item.name]
+      if (unitCost === undefined) {
+        return
+      }
+      const qty = Number(item.qty || 0)
+      costQty += qty
+      costRevenue += Number(item.price || 0) * qty
+      costTotal += unitCost * qty
+    })
+  })
+  const costStats = {
+    qty: costQty,
+    revenue: Number(costRevenue.toFixed(2)),
+    cost: Number(costTotal.toFixed(2)),
+    profit: Number((costRevenue - costTotal).toFixed(2)),
+    margin: costRevenue > 0
+      ? Math.round(((costRevenue - costTotal) / costRevenue) * 100)
+      : 0
+  }
+
   const rated = active.filter(
     order => typeof order.rating === 'number' && order.rating > 0
   )
@@ -1146,6 +1178,7 @@ async function getKitchenReport(openid) {
     daily,
     topDishes,
     slowDishes,
+    costStats,
     ratedCount: rated.length,
     avgRating,
     goodRate,

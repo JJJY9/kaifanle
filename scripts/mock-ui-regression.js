@@ -2238,6 +2238,14 @@ function chinaDate(offset) {
     `${data.report.repliedRatings}/${data.report.ratedCount} · ${data.report.replyRate}%`
   )
   check(
+    'mock 月报成本毛利',
+    Number(data.report.costStats.qty) >= 1 &&
+      Number(data.report.costStats.revenue) > 0 &&
+      Number(data.report.costStats.cost) > 0 &&
+      Number(data.report.costStats.margin) > 0,
+    `¥${data.report.costStats.revenue} - ¥${data.report.costStats.cost} = ¥${data.report.costStats.profit} · ${data.report.costStats.margin}%`
+  )
+  check(
     'mock 月报滞销菜品',
     slowDishes.length >= 1 &&
       Number(slowDishes[0].qty) === 0 &&

@@ -88,6 +88,52 @@
   font-weight: 700;
 }
 
+.cost-card {
+  margin-top: 20rpx;
+  padding: 22rpx;
+}
+
+.cost-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14rpx;
+}
+
+.cost-title {
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+.cost-sub {
+  color: #5C5C5C;
+  font-size: 21rpx;
+}
+
+.cost-grid {
+  display: flex;
+}
+
+.cost-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.cost-num {
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 30rpx;
+  font-weight: 800;
+}
+
+.cost-label {
+  margin-top: 2rpx;
+  color: #5C5C5C;
+  font-size: 20rpx;
+}
+
 .compare {
   margin-top: 18rpx;
   padding: 20rpx;
