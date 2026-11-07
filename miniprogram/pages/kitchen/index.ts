@@ -1620,6 +1620,15 @@ Page({
     if (['low', 'soldout', 'off', 'missing', 'cost'].indexOf(filter) > -1) {
       this.setData({ dishFilter: filter })
     }
+    let tag = String((options && options.tag) || '').trim().slice(0, 24)
+    try {
+      tag = decodeURIComponent(tag).trim().slice(0, 8)
+    } catch (e) {
+      tag = tag.slice(0, 8)
+    }
+    if (tag) {
+      this.setData({ showHistory: true, historyKeyword: tag })
+    }
   },
 
   applyDishFilter() {
@@ -1920,6 +1929,7 @@ Page({
             order.address,
             order.feedback,
             order.ownerReply,
+            ...(order.ratingTags || []),
             ...(order.items || []).map((item: any) => item.name)
           ]
             .filter(Boolean)

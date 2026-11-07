@@ -2757,6 +2757,30 @@ function chinaDate(offset) {
       ? `${data.report.totalOrders} 单 / ¥${data.report.revenue}`
       : '没有数据'
   )
+  const topReportTag = ((data.report || {}).topTags || [])[0]
+  if (topReportTag) {
+    await invoke(
+      mp,
+      `page.onTagTap({ currentTarget: { dataset: { name: ${JSON.stringify(
+        topReportTag.name
+      )} } } })`
+    )
+    await sleep(1900)
+    page = await current()
+    data = await page.data()
+    check(
+      'mock 月报标签查看订单',
+      page.path === 'pages/kitchen/index' &&
+        data.showHistory === true &&
+        data.historyKeyword === topReportTag.name &&
+        (data.historyView || []).length > 0,
+      `${topReportTag.name} → ${(data.historyView || []).length} 单`
+    )
+    await mp.navigateBack()
+    await sleep(1000)
+    page = await current()
+    data = await page.data()
+  }
   const topDishId = ((data.report || {}).topDishes || [])[0]
     ? data.report.topDishes[0].id
     : ''

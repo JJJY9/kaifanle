@@ -252,6 +252,18 @@ Page({
     wx.navigateTo({ url: '/pages/recipe/index?id=' + id })
   },
 
+  onTagTap(e: any) {
+    const tag = String((e.currentTarget && e.currentTarget.dataset.name) || '')
+      .trim()
+      .slice(0, 8)
+    if (!tag) {
+      return
+    }
+    wx.navigateTo({
+      url: `/pages/kitchen/index?tag=${encodeURIComponent(tag)}`
+    })
+  },
+
   onHealthJump(e: any) {
     const filter = String(e.currentTarget.dataset.filter || '')
     if (!filter) {

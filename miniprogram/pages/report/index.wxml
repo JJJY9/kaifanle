@@ -157,11 +157,13 @@
 
     <view wx:if="{{report.topTags && report.topTags.length}}" class="tags-line card">
       <text class="tags-title">她被夸</text>
-      <text
+      <view
         wx:for="{{report.topTags}}"
         wx:key="name"
         class="report-tag"
-      >{{item.name}} ×{{item.count}}</text>
+        data-name="{{item.name}}"
+        bindtap="onTagTap"
+      >{{item.name}} ×{{item.count}}</view>
     </view>
 
     <view wx:if="{{compare}}" class="compare card">
