@@ -2139,6 +2139,19 @@ async function run() {
   )
   assert.strictEqual(res.ok, true)
   assert.strictEqual(res.data.cost, 6)
+  const costOrder = await call(
+    'createOrder',
+    {
+      items: [{ dishId: 'd01', qty: 1, specs: [], note: '' }],
+      meal: 'lunch',
+      expectedTime: '12:00',
+      mode: '在家吃',
+      note: ''
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(costOrder.ok, true)
+  assert.strictEqual(costOrder.data.items[0].cost, 6)
   res = await call('getKitchenReport', {}, 'girl-openid')
   assert.strictEqual(res.ok, false)
   res = await call('getKitchenReport', {}, 'admin-openid')
@@ -2166,6 +2179,7 @@ async function run() {
     )
   )
   assert.ok(res.data.costStats.margin > 0)
+  await call('cancelOrder', { id: costOrder.data.id }, 'girl-openid')
   const slowDishPayload = {
     name: '!慢销测试菜',
     desc: '滞销榜测试',

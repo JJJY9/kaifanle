@@ -86,6 +86,7 @@ export interface OrderItem {
   dishId: string
   name: string
   price: number
+  cost?: number
   qty: number
   specs: string[]
   note: string

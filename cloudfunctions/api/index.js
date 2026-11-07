@@ -1094,8 +1094,12 @@ async function getKitchenReport(openid) {
   let costTotal = 0
   active.forEach(order => {
     ;(order.items || []).forEach(item => {
-      const unitCost = costByName[item.name]
-      if (unitCost === undefined) {
+      const rawCost =
+        item.cost !== undefined
+          ? Number(item.cost)
+          : costByName[item.name]
+      const unitCost = isFinite(rawCost) ? rawCost : 0
+      if (unitCost <= 0) {
         return
       }
       const qty = Number(item.qty || 0)
@@ -2337,6 +2341,7 @@ async function createOrder(payload, openid) {
         dishId: dish._id,
         name: dish.name,
         price: unitPrice,
+        cost: Math.max(0, Math.min(999, Number(dish.cost) || 0)),
         qty,
         specs,
         note,

@@ -1143,7 +1143,11 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
     if (limited) {
       stockChanges.push({ dish, qty: item.qty })
     }
-    return { ...item, stockDeducted: limited }
+    return {
+      ...item,
+      cost: Math.max(0, Math.min(999, Number(dish.cost) || 0)),
+      stockDeducted: limited
+    }
   })
   stockChanges.forEach(({ dish, qty }) => {
     dish.stock = Number(dish.stock) - qty
@@ -2016,8 +2020,10 @@ export async function getKitchenReport(): Promise<KitchenReport> {
   let costTotal = 0
   active.forEach(order => {
     order.items.forEach(item => {
-      const unitCost = costByName[item.name]
-      if (unitCost === undefined) {
+      const rawCost =
+        item.cost !== undefined ? Number(item.cost) : costByName[item.name]
+      const unitCost = isFinite(rawCost) ? rawCost : 0
+      if (unitCost <= 0) {
         return
       }
       const qty = Number(item.qty || 0)
