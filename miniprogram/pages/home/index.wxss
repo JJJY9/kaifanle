@@ -81,6 +81,9 @@
 }
 
 .week-summary {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
   align-self: flex-start;
   margin-top: 12rpx;
   padding: 6rpx 16rpx;
@@ -90,6 +93,15 @@
   color: #5C5C5C;
   font-size: 20rpx;
   font-weight: 700;
+}
+
+.week-copy {
+  padding: 1rpx 10rpx;
+  background: #FFFFFF;
+  border: 2rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 18rpx;
+  font-weight: 800;
 }
 
 .week-summary:active {

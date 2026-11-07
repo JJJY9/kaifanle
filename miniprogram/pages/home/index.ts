@@ -741,6 +741,19 @@ Page({
     wx.navigateTo({ url: '/pages/my-report/index' })
   },
 
+  onCopyWeek() {
+    const text = String(this.data.weekText || '')
+    if (!text) {
+      return
+    }
+    wx.setClipboardData({
+      data: text,
+      success: () => {
+        wx.showToast({ title: '本周小结已复制', icon: 'none' })
+      }
+    })
+  },
+
   async loadCouponReminder() {
     try {
       const result = await getMyExpiringCoupons()

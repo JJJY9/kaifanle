@@ -99,6 +99,18 @@ function chinaDate(offset) {
       String(data.weekText || '').includes('番茄牛腩饭 ×2'),
     data.weekText
   )
+  await invoke(mp, 'page.onCopyWeek()')
+  await sleep(500)
+  const weekClip = await mp.evaluate(
+    new Function(
+      "return new Promise(resolve => wx.getClipboardData({ success: r => resolve(r.data || ''), fail: () => resolve('') }))"
+    )
+  )
+  check(
+    'mock 本周小结复制',
+    String(weekClip || '') === String(data.weekText || ''),
+    String(weekClip || '')
+  )
   await invoke(mp, 'page.onWeekReport()')
   await sleep(1800)
   page = await current()
