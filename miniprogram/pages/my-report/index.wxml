@@ -43,6 +43,24 @@
       <text>连续干饭选手</text>
     </view>
 
+    <view class="ach-card card">
+      <view class="ach-head">
+        <text class="ach-title">干饭成就</text>
+        <text class="ach-count">{{achievementDone}} / {{achievements.length}}</text>
+      </view>
+      <view class="ach-grid">
+        <view
+          wx:for="{{achievements}}"
+          wx:key="key"
+          class="ach-item {{item.earned ? 'earned' : 'locked'}}"
+        >
+          <text class="ach-icon">{{item.icon}}</text>
+          <text class="ach-label">{{item.label}}</text>
+          <text class="ach-desc">{{item.desc}}</text>
+        </view>
+      </view>
+    </view>
+
     <view wx:if="{{favorite}}" class="favorite-card card">
       <text class="favorite-label">最常点</text>
       <text class="favorite-name">{{favorite}}</text>

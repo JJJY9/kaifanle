@@ -2506,6 +2506,21 @@ function chinaDate(offset) {
       Number(data.streakDays) === 1,
     `${data.monthText} · ${data.monthOrders} 单 · 连吃 ${data.streakDays} 天`
   )
+  const earnedAchievements = (data.achievements || []).filter(
+    item => item.earned
+  )
+  const lockedAchievements = (data.achievements || []).filter(
+    item => !item.earned
+  )
+  check(
+    'mock 干饭成就',
+    (data.achievements || []).length === 7 &&
+      Number(data.achievementDone) === earnedAchievements.length &&
+      earnedAchievements.length >= 3 &&
+      lockedAchievements.length >= 1 &&
+      earnedAchievements.some(item => item.key === 'month'),
+    `${data.achievementDone} / ${(data.achievements || []).length} 已解锁`
+  )
   await invoke(mp, 'page.onSharePoster()')
   await sleep(2200)
   page = await current()

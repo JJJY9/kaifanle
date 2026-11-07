@@ -20,6 +20,14 @@ Page({
     ratedCount: 0,
     avgRating: 0,
     streakDays: 0,
+    achievements: [] as Array<{
+      key: string
+      icon: string
+      label: string
+      desc: string
+      earned: boolean
+    }>,
+    achievementDone: 0,
     posterMaking: false,
     posterPath: ''
   },
@@ -109,6 +117,59 @@ Page({
         previous = day
         streakDays = Math.max(streakDays, run)
       })
+      const totalOrders = Number(stats.total || 0)
+      const achievements = [
+        {
+          key: 'first',
+          icon: '🍚',
+          label: '第一顿干饭',
+          desc: '累计 1 单',
+          earned: totalOrders >= 1
+        },
+        {
+          key: 'regular',
+          icon: '🥢',
+          label: '干饭常客',
+          desc: '累计 10 单',
+          earned: totalOrders >= 10
+        },
+        {
+          key: 'month',
+          icon: '📅',
+          label: '本月常客',
+          desc: '本月 3 单',
+          earned: active.length >= 3
+        },
+        {
+          key: 'streak',
+          icon: '🔥',
+          label: '连吃三天',
+          desc: '连吃 3 天',
+          earned: streakDays >= 3
+        },
+        {
+          key: 'rater',
+          icon: '⭐',
+          label: '爱夸厨子',
+          desc: '评价 1 次',
+          earned: rated.length >= 1
+        },
+        {
+          key: 'king',
+          icon: '👑',
+          label: '本月干饭王',
+          desc: '本月 10 单',
+          earned: active.length >= 10
+        },
+        {
+          key: 'favorite',
+          icon: '💗',
+          label: '有偏爱',
+          desc: '点出最常吃',
+          earned: Boolean(stats.favorite && stats.favorite !== '还没点过')
+        }
+      ]
+      const achievementDone = achievements.filter(item => item.earned).length
       this.setData({
         loading: false,
         posterPath: '',
@@ -120,7 +181,9 @@ Page({
         topDishes,
         ratedCount: rated.length,
         avgRating,
-        streakDays
+        streakDays,
+        achievements,
+        achievementDone
       })
     } catch (e: any) {
       if (seq !== this._loadSeq) {
