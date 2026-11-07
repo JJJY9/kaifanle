@@ -3449,6 +3449,24 @@ function chinaDate(offset) {
   )
   await invoke(
     mp,
+    "wx.__saveOriginal = wx.saveImageToPhotosAlbum; wx.saveImageToPhotosAlbum = (o) => { wx.__savedPoster = o && o.filePath; o && o.success && o.success() }; true"
+  )
+  await invoke(mp, 'page.onSaveCategoryPoster()')
+  await sleep(400)
+  const savedCategoryPoster = await mp.evaluate(
+    () => wx.__savedPoster || ''
+  )
+  await invoke(
+    mp,
+    "wx.saveImageToPhotosAlbum = wx.__saveOriginal; delete wx.__saveOriginal; true"
+  )
+  check(
+    'mock 分类图保存相册',
+    String(savedCategoryPoster || '') === String(data.categoryPosterPath || ''),
+    String(savedCategoryPoster || '')
+  )
+  await invoke(
+    mp,
     "page.onCategorySort({ currentTarget: { dataset: { sort: 'qty' } } })"
   )
   await sleep(400)

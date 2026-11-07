@@ -760,6 +760,22 @@ Page({
     wx.previewImage({ urls: [path] })
   },
 
+  onSaveCategoryPoster() {
+    const path = this.data.categoryPosterPath
+    if (!path) {
+      return
+    }
+    wx.saveImageToPhotosAlbum({
+      filePath: path,
+      success: () => {
+        wx.showToast({ title: '已保存到相册', icon: 'none' })
+      },
+      fail: () => {
+        wx.showToast({ title: '保存失败，请允许相册权限', icon: 'none' })
+      }
+    })
+  },
+
   onExportDishes() {
     const csv = this.buildDishCsv()
     if (!csv) {
