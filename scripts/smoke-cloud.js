@@ -2127,6 +2127,18 @@ async function run() {
   assert.strictEqual(res.ok, false)
 
   // 经营月报：管理员专属，30 天明细与菜品排行
+  const d01ForCost = await call('getDish', { id: 'd01' }, 'admin-openid')
+  res = await call(
+    'saveDish',
+    {
+      ...d01ForCost.data,
+      cost: 6,
+      priceBase: Number(d01ForCost.data.price)
+    },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(res.data.cost, 6)
   res = await call('getKitchenReport', {}, 'girl-openid')
   assert.strictEqual(res.ok, false)
   res = await call('getKitchenReport', {}, 'admin-openid')
@@ -2142,6 +2154,18 @@ async function run() {
   assert.deepStrictEqual(res.data.topRatedDishes, [])
   assert.strictEqual(typeof res.data.repliedRatings, 'number')
   assert.ok(res.data.replyRate >= 0 && res.data.replyRate <= 100)
+  assert.ok(res.data.costStats.qty >= 1)
+  assert.ok(res.data.costStats.revenue > 0)
+  assert.ok(res.data.costStats.cost > 0)
+  assert.strictEqual(
+    res.data.costStats.profit,
+    Number(
+      (
+        res.data.costStats.revenue - res.data.costStats.cost
+      ).toFixed(2)
+    )
+  )
+  assert.ok(res.data.costStats.margin > 0)
   const slowDishPayload = {
     name: '!慢销测试菜',
     desc: '滞销榜测试',

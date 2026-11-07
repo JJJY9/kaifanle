@@ -38,6 +38,31 @@
       </view>
     </view>
 
+    <view wx:if="{{report.costStats && report.costStats.qty}}" class="cost-card card">
+      <view class="cost-head">
+        <text class="cost-title">成本与毛利</text>
+        <text class="cost-sub">只算已填成本的菜 · {{report.costStats.qty}} 份</text>
+      </view>
+      <view class="cost-grid">
+        <view class="cost-item">
+          <text class="cost-num">¥{{report.costStats.revenue}}</text>
+          <text class="cost-label">营收</text>
+        </view>
+        <view class="cost-item">
+          <text class="cost-num">¥{{report.costStats.cost}}</text>
+          <text class="cost-label">成本</text>
+        </view>
+        <view class="cost-item">
+          <text class="cost-num">¥{{report.costStats.profit}}</text>
+          <text class="cost-label">毛利</text>
+        </view>
+        <view class="cost-item">
+          <text class="cost-num">{{report.costStats.margin}}%</text>
+          <text class="cost-label">毛利率</text>
+        </view>
+      </view>
+    </view>
+
     <view wx:if="{{health}}" class="health-card card">
       <view class="health-head">
         <text class="health-title">数据体检</text>

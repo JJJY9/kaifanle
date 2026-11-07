@@ -69,6 +69,7 @@ const DISHES: Dish[] = [
     char: '番',
     desc: '牛腩炖足 3 小时，汤汁拌饭一绝',
     price: 18,
+    cost: 6,
     categoryId: 'staple',
     tags: ['招牌', '热卖'],
     spicyLevels: ['不辣', '微辣', '中辣'],
@@ -2003,6 +2004,38 @@ export async function getKitchenReport(): Promise<KitchenReport> {
     })
     .sort((a, b) => a.qty - b.qty || a.name.localeCompare(b.name))
     .slice(0, 5)
+  const costByName: Record<string, number> = {}
+  dishes.forEach(dish => {
+    const value = Number(dish.cost)
+    if (isFinite(value) && value > 0) {
+      costByName[dish.name] = value
+    }
+  })
+  let costQty = 0
+  let costRevenue = 0
+  let costTotal = 0
+  active.forEach(order => {
+    order.items.forEach(item => {
+      const unitCost = costByName[item.name]
+      if (unitCost === undefined) {
+        return
+      }
+      const qty = Number(item.qty || 0)
+      costQty += qty
+      costRevenue += Number(item.price || 0) * qty
+      costTotal += unitCost * qty
+    })
+  })
+  const costStats = {
+    qty: costQty,
+    revenue: Number(costRevenue.toFixed(2)),
+    cost: Number(costTotal.toFixed(2)),
+    profit: Number((costRevenue - costTotal).toFixed(2)),
+    margin:
+      costRevenue > 0
+        ? Math.round(((costRevenue - costTotal) / costRevenue) * 100)
+        : 0
+  }
   const rated = active.filter(order => Number(order.rating) > 0)
   const avgRating = rated.length
     ? Number(
@@ -2067,6 +2100,7 @@ export async function getKitchenReport(): Promise<KitchenReport> {
     daily,
     topDishes,
     slowDishes,
+    costStats,
     ratedCount: rated.length,
     avgRating,
     goodRate,
