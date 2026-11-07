@@ -456,6 +456,18 @@ Page({
             )
           })(),
           totalQty,
+          lastMessageText: (() => {
+            const messages = order.messages || []
+            const last = messages[messages.length - 1]
+            if (!last) {
+              return ''
+            }
+            const prefix = last.role === 'admin' ? '掌勺人' : '她'
+            const content = String(last.content || '')
+            return `${prefix}：${
+              content.length > 30 ? content.slice(0, 30) + '…' : content
+            }`
+          })(),
           allergyText: (() => {
             const seen: Record<string, boolean> = {}
             const list: string[] = []

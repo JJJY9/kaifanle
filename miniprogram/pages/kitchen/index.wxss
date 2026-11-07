@@ -812,6 +812,17 @@
   font-weight: 700;
 }
 
+.order-last-message {
+  margin-top: 10rpx;
+  padding: 8rpx 14rpx;
+  background: #F4EFE3;
+  border: 2rpx dashed #111111;
+  border-radius: 14rpx;
+  color: #4A4A4A;
+  font-size: 21rpx;
+  word-break: break-all;
+}
+
 .order-actions {
   display: flex;
   justify-content: flex-end;

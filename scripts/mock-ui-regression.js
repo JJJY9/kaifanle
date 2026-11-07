@@ -757,6 +757,13 @@ function chinaDate(offset) {
     Boolean(receiptOrder),
     receiptOrder ? `#${receiptOrder.no}` : '没有待处理订单'
   )
+  const messageOrder = (data.orders || []).find(order => order.id === 'seed-1')
+  check(
+    'mock 厨房订单最新留言',
+    Boolean(messageOrder) &&
+      String(messageOrder.lastMessageText || '').indexOf('辛苦啦') > -1,
+    messageOrder ? messageOrder.lastMessageText : '没找到订单'
+  )
   check(
     'mock 厨房超时订单高亮',
     (data.orders || []).some(order => order.urgent),
@@ -2457,8 +2464,11 @@ function chinaDate(offset) {
   await sleep(1200)
   page = await current()
   data = await page.data()
-  const messageEl = await page.$('.message-text')
-  const messageText = messageEl ? await messageEl.text() : ''
+  const messageEls = await page.$$('.message-text')
+  const messageText =
+    messageEls.length > 0
+      ? await messageEls[messageEls.length - 1].text()
+      : ''
   check(
     'mock 订单留言',
     (data.messages || []).some(message => message.content === '记得少放辣') &&

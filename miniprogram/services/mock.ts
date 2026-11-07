@@ -589,6 +589,14 @@ function seedOrders(): Order[] {
       note: '',
       status: 'pending',
       timeline: [{ status: 'pending', title: '已下单', time: t1 }],
+      messages: [
+        {
+          id: 'msg-seed-1',
+          role: 'customer',
+          content: '辛苦啦',
+          at: t1 + 60000
+        }
+      ],
       createdAt: t1
     },
     {
@@ -693,7 +701,12 @@ function loadOrders(): Order[] {
         // 依赖“今天”的界面在旧数据上表现异常
         const today = dateInputString()
         const seed1 = stored.find((order: Order) => order.id === 'seed-1')
-        const seedBroken = Boolean(seed1 && seed1.status !== 'pending')
+        const seedBroken = Boolean(
+          seed1 &&
+            (seed1.status !== 'pending' ||
+              !Array.isArray(seed1.messages) ||
+              !seed1.messages.length)
+        )
         const staleSeed =
           seedBroken ||
           !stored.some((order: Order) => order.id === 'seed-3') ||
