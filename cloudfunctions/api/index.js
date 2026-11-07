@@ -38,6 +38,7 @@ const DEFAULT_BUSINESS = {
   dinner: { open: true, deadline: '20:00' },
   closedNote: '今天休息，明天见',
   notice: '',
+  noticeFrom: '',
   noticeUntil: '',
   recommendText: '今日推荐',
   lowStockThreshold: 3,
@@ -354,6 +355,12 @@ function normalizeBusiness(value) {
     ),
     // 今日公告：显示在首页，让她一眼看到
     notice: String(source.notice || '').slice(0, 60),
+    // 公告开始展示日期，空表示立即展示
+    noticeFrom: /^\d{4}-\d{2}-\d{2}$/.test(
+      String(source.noticeFrom || '')
+    )
+      ? String(source.noticeFrom)
+      : '',
     // 公告展示截止日期，空表示长期
     noticeUntil: /^\d{4}-\d{2}-\d{2}$/.test(
       String(source.noticeUntil || '')
@@ -475,6 +482,10 @@ async function updateBusiness(payload, openid) {
   if (source.noticeUntil === undefined) {
     source.noticeUntil =
       config.business && config.business.noticeUntil
+  }
+  if (source.noticeFrom === undefined) {
+    source.noticeFrom =
+      config.business && config.business.noticeFrom
   }
   const business = normalizeBusiness(source)
   await db

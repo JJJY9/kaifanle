@@ -355,6 +355,7 @@ Page({
           notice:
             business &&
             business.notice &&
+            (!business.noticeFrom || business.noticeFrom <= today) &&
             (!business.noticeUntil ||
               business.noticeUntil >= today)
               ? business.notice

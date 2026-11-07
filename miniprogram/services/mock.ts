@@ -45,6 +45,7 @@ const DEFAULT_BUSINESS: Business = {
   dinner: { open: true, deadline: '20:00' },
   closedNote: '今天休息，明天见',
   notice: '',
+  noticeFrom: '',
   noticeUntil: '',
   recommendText: '今日推荐',
   lowStockThreshold: 3,
@@ -395,6 +396,11 @@ function loadBusiness(): Business {
         String(businessCache.noticeUntil || '')
       )
         ? String(businessCache.noticeUntil)
+        : ''
+      businessCache.noticeFrom = /^\d{4}-\d{2}-\d{2}$/.test(
+        String(businessCache.noticeFrom || '')
+      )
+        ? String(businessCache.noticeFrom)
         : ''
       saveBusiness()
       return businessCache as Business
@@ -1586,6 +1592,11 @@ export async function getBusiness(): Promise<Business> {
   )
     ? String(data.noticeUntil)
     : ''
+  data.noticeFrom = /^\d{4}-\d{2}-\d{2}$/.test(
+    String(data.noticeFrom || '')
+  )
+    ? String(data.noticeFrom)
+    : ''
   return data
 }
 
@@ -1599,6 +1610,9 @@ export async function updateBusiness(payload: Business): Promise<Business> {
   if (next.noticeUntil === undefined) {
     next.noticeUntil = existing.noticeUntil
   }
+  if (next.noticeFrom === undefined) {
+    next.noticeFrom = existing.noticeFrom
+  }
   if (next.dailyGoal === undefined) {
     next.dailyGoal = existing.dailyGoal
   }
@@ -1610,6 +1624,11 @@ export async function updateBusiness(payload: Business): Promise<Business> {
     String(next.noticeUntil || '')
   )
     ? String(next.noticeUntil)
+    : ''
+  next.noticeFrom = /^\d{4}-\d{2}-\d{2}$/.test(
+    String(next.noticeFrom || '')
+  )
+    ? String(next.noticeFrom)
     : ''
   businessCache = next
   saveBusiness()

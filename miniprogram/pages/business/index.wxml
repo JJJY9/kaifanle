@@ -64,6 +64,10 @@
         maxlength="60"
         bindinput="onNotice"
       />
+      <picker mode="date" value="{{noticeFrom}}" bindchange="onNoticeFrom">
+        <view class="note date-line">公告开始显示：{{noticeFrom || '立即显示'}}</view>
+      </picker>
+      <view wx:if="{{noticeFrom}}" class="note-hint" bindtap="onClearNoticeFrom">点此改回立即显示</view>
       <picker mode="date" value="{{noticeUntil}}" bindchange="onNoticeUntil">
         <view class="note date-line">公告显示到：{{noticeUntil || '长期显示'}}</view>
       </picker>

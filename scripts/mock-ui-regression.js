@@ -1525,7 +1525,7 @@ function chinaDate(offset) {
   )
   await invoke(
     mp,
-    "page.setData({ notice: '今天只有一锅炖菜', recommendText: '雨天暖胃', noticeUntil: '2099-01-01', dailyGoal: '200' })"
+    "page.setData({ notice: '今天只有一锅炖菜', noticeFrom: '2000-01-01', recommendText: '雨天暖胃', noticeUntil: '2099-01-01', dailyGoal: '200' })"
   )
   await invoke(mp, 'page.onSave()')
   await sleep(1000)
