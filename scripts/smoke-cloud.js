@@ -2265,6 +2265,12 @@ async function run() {
   assert.strictEqual(res.data.costStats.cost, 6)
   assert.strictEqual(res.data.costStats.profit, 12)
   assert.strictEqual(res.data.costStats.margin, 67)
+  const d01Row = res.data.dishRows.find(
+    item => item.name === '番茄牛腩饭'
+  )
+  assert.ok(d01Row && d01Row.qty >= 2)
+  // 旧订单没有成本快照且部分菜品缺成本时，单菜成本留空，不给出误导毛利
+  assert.strictEqual(d01Row.cost, null)
   await call('cancelOrder', { id: costOrder.data.id }, 'girl-openid')
   await call(
     'saveDish',

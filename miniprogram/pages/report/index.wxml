@@ -231,6 +231,8 @@
       >{{slowBusyId === item.id ? '处理中…' : (item.status === 'soldout' ? '恢复供应' : '设售罄')}}</view>
     </view>
 
+    <view class="dish-export-btn" bindtap="onExportDishes">复制全部菜品销量 CSV</view>
+
     <view class="section-title display">好评菜品</view>
     <view wx:if="{{!report.topRatedDishes.length}}" class="empty-line">还没有满 {{report.minRatedOrders}} 次评价的菜</view>
     <view wx:for="{{report.topRatedDishes}}" wx:key="name" class="dish-row card">

@@ -470,6 +470,19 @@
   white-space: nowrap;
 }
 
+.dish-export-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 64rpx;
+  margin: 4rpx 0 24rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
 .section-title {
   margin: 28rpx 4rpx 14rpx;
   font-size: 32rpx;

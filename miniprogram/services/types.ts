@@ -252,6 +252,17 @@ export interface KitchenCostStats {
   margin: number
 }
 
+export interface KitchenDishRow {
+  id: string
+  name: string
+  status: string
+  qty: number
+  revenue: number
+  cost: number | null
+  profit: number | null
+  margin: number | null
+}
+
 export interface KitchenReport {
   days: number
   startDate: string
@@ -266,6 +277,7 @@ export interface KitchenReport {
   topDishes: KitchenReportDish[]
   slowDishes: KitchenReportDish[]
   costStats: KitchenCostStats
+  dishRows: KitchenDishRow[]
   ratedCount: number
   avgRating: number
   goodRate: number

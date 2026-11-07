@@ -378,6 +378,42 @@ Page({
     }
   },
 
+  onExportDishes() {
+    const rows = (this.data.report && this.data.report.dishRows) || []
+    if (!rows.length) {
+      wx.showToast({ title: '还没有菜品数据', icon: 'none' })
+      return
+    }
+    const statusText = (status: string) =>
+      status === 'off' ? '已下架' : status === 'soldout' ? '售罄' : '供应中'
+    const quote = (value: any) =>
+      `"${String(value === null || value === undefined ? '' : value).replace(
+        /"/g,
+        '""'
+      )}"`
+    const header = ['菜品', '状态', '销量', '营收', '成本', '毛利', '毛利率']
+    const lines = rows.map(row =>
+      [
+        row.name,
+        statusText(row.status),
+        row.qty,
+        row.revenue,
+        row.cost === null ? '' : row.cost,
+        row.profit === null ? '' : row.profit,
+        row.margin === null ? '' : `${row.margin}%`
+      ]
+        .map(quote)
+        .join(',')
+    )
+    const csv = '﻿' + [header.join(','), ...lines].join('\n')
+    wx.setClipboardData({
+      data: csv,
+      fail: () => {
+        wx.showToast({ title: '复制失败，再试一次', icon: 'none' })
+      }
+    })
+  },
+
   async onExport() {
     if (this.data.exporting) {
       return

@@ -1193,6 +1193,60 @@ async function getKitchenReport(payload, openid) {
       ? Math.round(((costRevenue - costTotal) / costRevenue) * 100)
       : 0
   }
+  const rowQty = {}
+  const rowCostQty = {}
+  const rowCost = {}
+  active.forEach(order => {
+    ;(order.items || []).forEach(item => {
+      const name = item.name || '未命名'
+      const qty = Number(item.qty || 0)
+      rowQty[name] = (rowQty[name] || 0) + qty
+      const rawCost =
+        item.cost !== undefined
+          ? Number(item.cost)
+          : costByName[name]
+      const unitCost = isFinite(rawCost) ? rawCost : 0
+      if (unitCost > 0) {
+        rowCostQty[name] = (rowCostQty[name] || 0) + qty
+        rowCost[name] = (rowCost[name] || 0) + unitCost * qty
+      }
+    })
+  })
+  const dishRows = (dishRes.data || [])
+    .map(dish => {
+      const stat = dishMap[dish.name] || { qty: 0, revenue: 0 }
+      const qty = Number(stat.qty || 0)
+      const revenue = Number(Number(stat.revenue || 0).toFixed(2))
+      const hasCost =
+        qty > 0 &&
+        Number(rowCostQty[dish.name] || 0) === qty &&
+        Number(rowCost[dish.name] || 0) > 0
+      const cost = hasCost
+        ? Number(Number(rowCost[dish.name]).toFixed(2))
+        : null
+      const profit = hasCost
+        ? Number((revenue - cost).toFixed(2))
+        : null
+      return {
+        id: dish.id || dish._id,
+        name: dish.name,
+        status: dish.status || 'on',
+        qty,
+        revenue,
+        cost,
+        profit,
+        margin:
+          hasCost && revenue > 0
+            ? Math.round((profit / revenue) * 100)
+            : null
+      }
+    })
+    .sort(
+      (a, b) =>
+        b.qty - a.qty ||
+        b.revenue - a.revenue ||
+        a.name.localeCompare(b.name)
+    )
 
   const rated = active.filter(
     order => typeof order.rating === 'number' && order.rating > 0
@@ -1260,6 +1314,7 @@ async function getKitchenReport(payload, openid) {
     topDishes,
     slowDishes,
     costStats,
+    dishRows,
     ratedCount: rated.length,
     avgRating,
     goodRate,

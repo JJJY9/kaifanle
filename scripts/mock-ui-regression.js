@@ -2349,6 +2349,34 @@ function chinaDate(offset) {
       data.monthGoalText === expectedMonthText,
     `¥${monthRevenue} / ¥5000 · ${data.monthGoalPercent}% · ${data.monthGoalText}`
   )
+  const d01ReportRow = (data.report.dishRows || []).find(
+    item => item.name === '番茄牛腩饭'
+  )
+  check(
+    'mock 月报全部菜品数据',
+    Boolean(d01ReportRow) &&
+      Number(d01ReportRow.qty) === 2 &&
+      Number(d01ReportRow.revenue) === 36 &&
+      Number(d01ReportRow.cost) === 12 &&
+      Number(d01ReportRow.profit) === 24 &&
+      Number(d01ReportRow.margin) === 67,
+    d01ReportRow
+      ? `¥${d01ReportRow.revenue} - ¥${d01ReportRow.cost} = ¥${d01ReportRow.profit}`
+      : '没找到番茄牛腩饭'
+  )
+  await invoke(mp, 'page.onExportDishes()')
+  await sleep(500)
+  const dishCsv = await mp.evaluate(
+    new Function(
+      "return new Promise(resolve => wx.getClipboardData({ success: r => resolve(r.data || ''), fail: () => resolve('') }))"
+    )
+  )
+  check(
+    'mock 菜品销量 CSV',
+    dishCsv.indexOf('菜品,状态,销量,营收,成本,毛利,毛利率') > -1 &&
+      dishCsv.indexOf('番茄牛腩饭') > -1,
+    `${String(dishCsv || '').length} 字`
+  )
   check(
     'mock 月报滞销菜品',
     slowDishes.length >= 1 &&
