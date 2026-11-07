@@ -198,6 +198,37 @@ Page({
       if (updated) {
         const report = this.data.report
         if (report) {
+          const previous = report.slowDishes.find(item => item.id === dishId)
+          const health = this.data.health
+          let nextHealth = health
+          if (previous && health) {
+            const threshold = Number(health.lowStockThreshold) || 0
+            const stock = previous.stock
+            const wasSoldout =
+              previous.status === 'soldout' || stock === 0
+            const isSoldout = updated.status === 'soldout' || stock === 0
+            const wasLow =
+              previous.status === 'on' &&
+              typeof stock === 'number' &&
+              stock >= 0 &&
+              stock <= threshold
+            const isLow =
+              updated.status === 'on' &&
+              typeof stock === 'number' &&
+              stock >= 0 &&
+              stock <= threshold
+            nextHealth = {
+              ...health,
+              soldout: Math.max(
+                0,
+                health.soldout + (isSoldout ? 1 : 0) - (wasSoldout ? 1 : 0)
+              ),
+              lowStock: Math.max(
+                0,
+                health.lowStock + (isLow ? 1 : 0) - (wasLow ? 1 : 0)
+              )
+            }
+          }
           this.setData({
             report: {
               ...report,
@@ -206,7 +237,8 @@ Page({
                   ? { ...item, status: updated.status }
                   : item
               )
-            }
+            },
+            health: nextHealth
           })
         }
         wx.showToast({

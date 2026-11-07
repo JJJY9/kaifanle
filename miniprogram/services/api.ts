@@ -242,6 +242,21 @@ export async function toggleDishStatus(id: string): Promise<Dish | null> {
   return mock.toggleDishStatus(id)
 }
 
+export async function batchUpdateDishCategory(
+  ids: string[],
+  categoryId: string
+): Promise<{ categoryId: string; updated: number }> {
+  if (USE_CLOUD) {
+    const result = await callApi<{ categoryId: string; updated: number }>(
+      'batchUpdateDishCategory',
+      { ids, categoryId }
+    )
+    invalidateDishCache()
+    return result
+  }
+  return mock.batchUpdateDishCategory(ids, categoryId)
+}
+
 export async function saveDish(payload: DishInput): Promise<Dish> {
   if (USE_CLOUD) {
     const result = await callApi<Dish>('saveDish', payload)

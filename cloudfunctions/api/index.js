@@ -92,9 +92,9 @@ async function route(action, payload, openid) {
     case 'deleteCategory':
       return deleteCategory(payload, openid)
     case 'getDishes':
-      return getDishes()
+      return getDishes(openid)
     case 'getDish':
-      return getDish(payload.id)
+      return getDish(payload.id, openid)
     case 'getOrders':
       return getOrders(openid)
     case 'getOrdersPage':
@@ -135,6 +135,8 @@ async function route(action, payload, openid) {
       return updateOrderStatus(payload, openid)
     case 'toggleDishStatus':
       return toggleDishStatus(payload, openid)
+    case 'batchUpdateDishCategory':
+      return batchUpdateDishCategory(payload, openid)
     case 'saveDish':
       return saveDish(payload, openid)
     case 'deleteDish':
@@ -215,7 +217,26 @@ function withId(doc) {
   const result = Object.assign({}, doc, { id: doc._id })
   // _openid 只在服务端做归属校验用，不需要发给客户端
   delete result._openid
+  // 成本是掌勺人的经营数据，不下发给任何订单读取方
+  if (Array.isArray(result.items)) {
+    result.items = result.items.map(item => {
+      if (!item || item.cost === undefined) {
+        return item
+      }
+      const copy = Object.assign({}, item)
+      delete copy.cost
+      return copy
+    })
+  }
   return result
+}
+
+function dishView(dish, admin) {
+  const view = withId(dish)
+  if (!admin && view) {
+    delete view.cost
+  }
+  return view
 }
 
 // 只有「文档/集合不存在」才算未初始化；额度、网络等错误要往上抛，
@@ -1075,6 +1096,7 @@ async function getKitchenReport(openid) {
         id: dish.id || dish._id,
         name: dish.name,
         status: dish.status || 'on',
+        stock: typeof dish.stock === 'number' ? dish.stock : null,
         qty: Number(stat.qty || 0),
         revenue: Number(Number(stat.revenue || 0).toFixed(2))
       }
@@ -1870,22 +1892,24 @@ async function deleteCategory(payload, openid) {
   return { id }
 }
 
-async function getDishes() {
+async function getDishes(openid) {
   const res = await db
     .collection('dishes')
     .orderBy('sort', 'asc')
     .limit(1000)
     .get()
-  return res.data.map(withId)
+  const admin = await isAdminOpenid(openid).catch(() => false)
+  return res.data.map(dish => dishView(dish, admin))
 }
 
-async function getDish(id) {
+async function getDish(id, openid) {
   if (!id) {
     return null
   }
   try {
     const res = await db.collection('dishes').doc(id).get()
-    return withId(res.data)
+    const admin = await isAdminOpenid(openid).catch(() => false)
+    return dishView(res.data, admin)
   } catch (e) {
     return null
   }
@@ -2962,6 +2986,37 @@ async function toggleDishStatus(payload, openid) {
     .doc(payload.id)
     .update({ data: { status } })
   return withId(Object.assign({}, dish, { status }))
+}
+
+async function batchUpdateDishCategory(payload, openid) {
+  await requireAdmin(openid)
+  const categoryId = String((payload && payload.categoryId) || '')
+  if (!categoryId) {
+    throw new Error('缺少分类')
+  }
+  try {
+    await db.collection('categories').doc(categoryId).get()
+  } catch (e) {
+    throw new Error('分类不存在')
+  }
+  const ids = Array.from(
+    new Set(
+      (Array.isArray(payload && payload.ids) ? payload.ids : [])
+        .map(id => String(id || ''))
+        .filter(Boolean)
+    )
+  ).slice(0, 50)
+  if (!ids.length) {
+    throw new Error('没有要移动的菜品')
+  }
+  const res = await db
+    .collection('dishes')
+    .where({ _id: _.in(ids) })
+    .update({ data: { categoryId } })
+  return {
+    categoryId,
+    updated: (res.stats && res.stats.updated) || 0
+  }
 }
 
 const MEAL_KEYS = ['breakfast', 'lunch', 'dinner']

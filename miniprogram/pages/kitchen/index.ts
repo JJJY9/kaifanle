@@ -1,6 +1,7 @@
 import type { OrderStatus } from '../../services/types'
 import {
   acceptPendingOrders,
+  batchUpdateDishCategory,
   getAllOrders,
   getActiveOrders,
   getBusiness,
@@ -1070,7 +1071,8 @@ Page({
           `下架当前 ${list.length} 道`,
           list.length > MAX_BATCH_PRICE_DISHES
             ? `按百分比改价（需先筛选到 ${MAX_BATCH_PRICE_DISHES} 道内）`
-            : `按百分比改价（${list.length} 道）`
+            : `按百分比改价（${list.length} 道）`,
+          `改分类（${list.length} 道）`
         ]
       })
       tapIndex = Number(sheet.tapIndex)
@@ -1079,6 +1081,10 @@ Page({
     }
     if (tapIndex === 2) {
       await this.onBatchPrice()
+      return
+    }
+    if (tapIndex === 3) {
+      await this.onBatchCategory()
       return
     }
     const status: 'on' | 'off' = tapIndex === 0 ? 'on' : 'off'
@@ -1330,6 +1336,85 @@ Page({
       title: done ? `已改 ${done} 道` : '价格没有变化',
       icon: 'none'
     })
+  },
+
+  async onBatchCategory() {
+    if (this.data.batchBusy) {
+      return
+    }
+    const list = this.data.displayDishes || []
+    if (!list.length) {
+      wx.showToast({ title: '当前筛选没有菜品', icon: 'none' })
+      return
+    }
+    if (list.length > MAX_BATCH_PRICE_DISHES) {
+      wx.showToast({
+        title: `一次最多移动 ${MAX_BATCH_PRICE_DISHES} 道，先缩小范围`,
+        icon: 'none'
+      })
+      return
+    }
+    const categories = this._categories || []
+    if (!categories.length) {
+      wx.showToast({ title: '分类还没加载好', icon: 'none' })
+      return
+    }
+    let index = -1
+    try {
+      const sheet: any = await wx.showActionSheet({
+        itemList: categories.map(category => category.name)
+      })
+      index = Number(sheet.tapIndex)
+    } catch (e) {
+      return
+    }
+    const category = categories[index]
+    if (!category) {
+      return
+    }
+    const targets = list.filter(dish => dish.categoryId !== category.id)
+    if (!targets.length) {
+      wx.showToast({ title: '这些菜已经在这个分类', icon: 'none' })
+      return
+    }
+    const confirm: any = await wx.showModal({
+      title: `移到「${category.name}」？`,
+      content: `当前筛选的 ${targets.length} 道菜会移到「${category.name}」。`,
+      confirmText: '移动',
+      cancelText: '算了'
+    })
+    if (!confirm.confirm) {
+      return
+    }
+    this.setData({ batchBusy: true })
+    try {
+      const result = await batchUpdateDishCategory(
+        targets.map(dish => dish.id),
+        category.id
+      )
+      const moved: Record<string, boolean> = {}
+      targets.forEach(dish => {
+        moved[dish.id] = true
+      })
+      const dishes = this.data.dishes.map(dish =>
+        moved[dish.id] ? { ...dish, categoryId: category.id } : dish
+      )
+      this.setData({ dishes, batchBusy: false }, () =>
+        this.applyDishFilter()
+      )
+      wx.showToast({
+        title: result.updated
+          ? `已移动 ${result.updated} 道`
+          : '没有需要移动的菜',
+        icon: 'none'
+      })
+    } catch (e: any) {
+      this.setData({ batchBusy: false })
+      wx.showToast({
+        title: String((e && e.message) || '移动失败').slice(0, 40),
+        icon: 'none'
+      })
+    }
   },
 
   onLoad(options: any) {

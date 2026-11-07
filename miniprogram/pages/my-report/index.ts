@@ -1,4 +1,5 @@
 import { getMyStats, getOrders } from '../../services/api'
+import { dateInputString } from '../../utils/format'
 
 interface FootprintDish {
   name: string
@@ -42,12 +43,22 @@ Page({
         return
       }
       const now = new Date()
-      const monthly = orders.filter(order => {
+      const todayKey = dateInputString()
+      const monthPrefix = `${now.getFullYear()}-${String(
+        now.getMonth() + 1
+      ).padStart(2, '0')}`
+      const effectiveDate = (order: any) => {
+        if (order.scheduledDate) {
+          return order.scheduledDate
+        }
         const date = new Date(order.createdAt)
-        return (
-          date.getFullYear() === now.getFullYear() &&
-          date.getMonth() === now.getMonth()
-        )
+        return `${date.getFullYear()}-${String(
+          date.getMonth() + 1
+        ).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+      }
+      const monthly = orders.filter(order => {
+        const date = effectiveDate(order)
+        return date.indexOf(monthPrefix + '-') === 0 && date <= todayKey
       })
       const active = monthly.filter(order => order.status !== 'cancelled')
       const spend = active.reduce(
@@ -82,23 +93,8 @@ Page({
             ).toFixed(1)
           )
         : 0
-      const monthPrefix = `${now.getFullYear()}-${String(
-        now.getMonth() + 1
-      ).padStart(2, '0')}`
       const dayNumbers = Array.from(
-        new Set(
-          active
-            .map(order => {
-              if (order.scheduledDate) {
-                return order.scheduledDate
-              }
-              const date = new Date(order.createdAt)
-              return `${date.getFullYear()}-${String(
-                date.getMonth() + 1
-              ).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-            })
-            .filter(date => date.indexOf(monthPrefix + '-') === 0)
-        )
+        new Set(active.map(order => effectiveDate(order)))
       )
         .map(date => {
           const parts = date.split('-').map(Number)
