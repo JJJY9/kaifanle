@@ -75,6 +75,7 @@ Page({
     batchBusy: false,
     historyOnlyPending: false,
     historyRange: 'all' as 'all' | 'today' | 'week',
+    historyRating: 'all' as 'all' | 'good' | 'neutral' | 'bad',
     historyView: [] as any[],
     historyAll: false,
     receiptVisible: false,
@@ -1878,7 +1879,16 @@ Page({
           : date >= weekStart && date <= today
       })
     }
-    return ranged.slice(0, this.data.historyAll ? 100 : 10)
+    const rating = this.data.historyRating
+    const rated =
+      rating === 'all'
+        ? ranged
+        : ranged.filter(
+            order =>
+              Number(order.rating) ===
+              (rating === 'good' ? 3 : rating === 'neutral' ? 2 : 1)
+          )
+    return rated.slice(0, this.data.historyAll ? 100 : 10)
   },
 
   applyHistoryFilter() {
@@ -1907,11 +1917,26 @@ Page({
     this.setData({ historyRange: range }, () => this.applyHistoryFilter())
   },
 
+  onHistoryRating(e: any) {
+    const raw = String(e.currentTarget.dataset.rating || '')
+    const rating =
+      raw === 'good' || raw === 'neutral' || raw === 'bad' ? raw : 'all'
+    if (rating === this.data.historyRating) {
+      return
+    }
+    this.setData({ historyRating: rating }, () => this.applyHistoryFilter())
+  },
+
   onTodoTap(e: any) {
     const target = e.currentTarget.dataset.target
     if (target === 'replies') {
       this.setData(
-        { showHistory: true, historyOnlyPending: true, historyRange: 'all' },
+        {
+          showHistory: true,
+          historyOnlyPending: true,
+          historyRange: 'all',
+          historyRating: 'all'
+        },
         () => {
           this.applyHistoryFilter()
           wx.pageScrollTo({ selector: '#history-section', duration: 300 })

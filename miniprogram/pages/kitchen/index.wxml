@@ -342,6 +342,12 @@
         <view class="history-chip {{historyRange === 'week' ? 'active' : ''}}" data-range="week" bindtap="onHistoryRange">近 7 天</view>
         <view class="history-chip {{historyRange === 'all' ? 'active' : ''}}" data-range="all" bindtap="onHistoryRange">不限日期</view>
       </view>
+      <view class="history-filter range">
+        <view class="history-chip {{historyRating === 'all' ? 'active' : ''}}" data-rating="all" bindtap="onHistoryRating">全部评分</view>
+        <view class="history-chip {{historyRating === 'good' ? 'active' : ''}}" data-rating="good" bindtap="onHistoryRating">好评</view>
+        <view class="history-chip {{historyRating === 'neutral' ? 'active' : ''}}" data-rating="neutral" bindtap="onHistoryRating">一般</view>
+        <view class="history-chip {{historyRating === 'bad' ? 'active' : ''}}" data-rating="bad" bindtap="onHistoryRating">翻车</view>
+      </view>
       <view wx:if="{{!historyView.length}}" class="empty-line">{{historyOnlyPending ? '没有待回复的评价' : '还没有历史订单'}}</view>
       <view
         wx:for="{{historyView}}"
