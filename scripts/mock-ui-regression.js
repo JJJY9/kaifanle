@@ -1210,6 +1210,40 @@ function chinaDate(offset) {
     )
   }
 
+  // 许愿池状态筛选
+  await mp.navigateTo('/pages/wishes/index')
+  await sleep(1600)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 许愿池加载',
+    page.path === 'pages/wishes/index' &&
+      (data.wishes || []).length >= 1 &&
+      (data.filters || []).length === 4,
+    `${(data.wishes || []).length} 个愿望`
+  )
+  await invoke(
+    mp,
+    "page.onFilter({ currentTarget: { dataset: { filter: 'pending' } } })"
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 许愿池状态筛选',
+    data.filter === 'pending' &&
+      (data.display || []).length >= 1 &&
+      data.display.every(wish => wish.status === 'pending'),
+    `${(data.display || []).length} 个待安排`
+  )
+  await invoke(
+    mp,
+    "page.onFilter({ currentTarget: { dataset: { filter: 'all' } } })"
+  )
+  await sleep(300)
+  await mp.navigateBack()
+  await sleep(900)
+
   // 许愿池「做成菜」预填菜名
   await mp.navigateTo(
     '/pages/dish-edit/index?name=' + encodeURIComponent('许愿菜')

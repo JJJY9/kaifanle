@@ -32,7 +32,21 @@
   <view wx:if="{{loading}}" class="skeleton sk"></view>
 
   <block wx:elif="{{wishes.length}}">
-    <view wx:for="{{wishes}}" wx:key="id" class="wish card">
+    <view class="filter-row">
+      <view
+        wx:for="{{filters}}"
+        wx:key="key"
+        class="filter-chip {{filter === item.key ? 'active' : ''}}"
+        data-filter="{{item.key}}"
+        bindtap="onFilter"
+      >{{item.label}} {{item.count}}</view>
+    </view>
+    <empty-state
+      wx:if="{{!display.length}}"
+      title="这一档还没有"
+      desc="换个状态看看，或者再许一个愿"
+    />
+    <view wx:for="{{display}}" wx:key="id" class="wish card">
       <view class="wish-top">
         <view class="wish-status {{item.status}}">{{item.statusText}}</view>
         <text class="wish-date">{{item.dateText}}</text>

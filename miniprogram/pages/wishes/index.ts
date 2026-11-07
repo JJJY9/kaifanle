@@ -19,6 +19,9 @@ const REPLY_PHRASES = ['收到，安排上', '周末给你做', '再等等我']
 Page({
   data: {
     wishes: [] as any[],
+    display: [] as any[],
+    filter: 'all' as 'all' | WishStatus,
+    filters: [] as any[],
     content: '',
     presets: ['想吃火锅', '想喝奶茶', '想吃甜品'],
     isAdmin: false,
@@ -39,11 +42,33 @@ Page({
         statusText: STATUS_TEXT[wish.status] || wish.status,
         dateText: formatDate(wish.createdAt)
       }))
-      this.setData({
-        wishes: view,
-        isAdmin: me.isAdmin,
-        loading: false
-      })
+      const filters = [
+        { key: 'all', label: '全部', count: view.length },
+        {
+          key: 'pending',
+          label: '待安排',
+          count: view.filter(wish => wish.status === 'pending').length
+        },
+        {
+          key: 'planned',
+          label: '已安排',
+          count: view.filter(wish => wish.status === 'planned').length
+        },
+        {
+          key: 'done',
+          label: '已吃上',
+          count: view.filter(wish => wish.status === 'done').length
+        }
+      ]
+      this.setData(
+        {
+          wishes: view,
+          filters,
+          isAdmin: me.isAdmin,
+          loading: false
+        },
+        () => this.applyFilter()
+      )
     } catch (e: any) {
       this.setData({ loading: false })
       wx.showToast({
@@ -51,6 +76,28 @@ Page({
         icon: 'none'
       })
     }
+  },
+
+  applyFilter() {
+    const filter = this.data.filter
+    this.setData({
+      display:
+        filter === 'all'
+          ? this.data.wishes.slice()
+          : this.data.wishes.filter(wish => wish.status === filter)
+    })
+  },
+
+  onFilter(e: any) {
+    const raw = String(e.currentTarget.dataset.filter || '')
+    const filter =
+      raw === 'pending' || raw === 'planned' || raw === 'done'
+        ? raw
+        : 'all'
+    if (filter === this.data.filter) {
+      return
+    }
+    this.setData({ filter }, () => this.applyFilter())
   },
 
   onContent(e: any) {

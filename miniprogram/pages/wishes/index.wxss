@@ -182,3 +182,24 @@
   height: 240rpx;
   margin-top: 20rpx;
 }
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  margin: 18rpx 0;
+}
+
+.filter-chip {
+  padding: 6rpx 18rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
+.filter-chip.active {
+  background: #FFD23F;
+  box-shadow: 2rpx 2rpx 0 #111111;
+}
