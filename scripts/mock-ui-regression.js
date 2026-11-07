@@ -2545,6 +2545,16 @@ function chinaDate(offset) {
       .join(' / ')
   )
   check(
+    'mock 订单列表备注预览',
+    (data.orders || []).some(order =>
+      String(order.noteText || '').includes('明天的午饭')
+    ),
+    (data.orders || [])
+      .map(order => order.noteText)
+      .filter(Boolean)
+      .join(' / ')
+  )
+  check(
     'mock 订单列表新留言标记',
     (data.orders || []).some(order => Number(order.messageBadge) >= 1),
     `${(data.orders || []).filter(order => order.messageBadge).length} 单有未读`

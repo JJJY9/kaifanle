@@ -257,6 +257,16 @@
   word-break: break-all;
 }
 
+.order-note-preview {
+  margin-top: 8rpx;
+  padding: 6rpx 14rpx;
+  background: #FFF7DA;
+  border-radius: 12rpx;
+  color: #6B5A2B;
+  font-size: 21rpx;
+  word-break: break-all;
+}
+
 .order-meta {
   margin-top: 6rpx;
   color: #5C5C5C;

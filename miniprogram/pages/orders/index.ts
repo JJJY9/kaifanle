@@ -102,6 +102,10 @@ Page({
         }`
       })(),
       messageBadge: Math.max(0, Number(order.customerUnread) || 0),
+      noteText: (() => {
+        const note = String(order.note || '').trim()
+        return note.length > 40 ? note.slice(0, 40) + '…' : note
+      })(),
       groupKey:
         order.scheduledDate ||
         dateInputString(new Date(order.createdAt)),
