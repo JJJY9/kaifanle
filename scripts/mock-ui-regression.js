@@ -744,6 +744,21 @@ function chinaDate(offset) {
       prepGroups.some(group => String(group.allergyText || '').includes('花生')),
     `${prepGroups.map(group => group.mealText).join('、')} · ${data.prepTotal} 份`
   )
+  await invoke(mp, 'page.onCopyPrepCsv()')
+  await sleep(500)
+  const prepCsv = await mp.evaluate(
+    new Function(
+      "return new Promise(resolve => wx.getClipboardData({ success: r => resolve(r.data || ''), fail: () => resolve('') }))"
+    )
+  )
+  check(
+    'mock 备菜 CSV',
+    String(prepCsv || '').indexOf('餐次,菜品,份数,过敏原') > -1 &&
+      String(prepCsv || '').indexOf(prepGroups[0].mealText) > -1 &&
+      String(prepCsv || '').indexOf(prepGroups[0].items[0].name) > -1 &&
+      String(prepCsv || '').indexOf('花生') > -1,
+    `${String(prepCsv || '').length} 字`
+  )
   const prepMealGroup = prepGroups[0] || {
     meal: 'lunch',
     mealText: '午餐',

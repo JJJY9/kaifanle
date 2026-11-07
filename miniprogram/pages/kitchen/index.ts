@@ -2469,6 +2469,33 @@ Page({
     }
   },
 
+  onCopyPrepCsv() {
+    const rows: string[][] = []
+    ;(this.data.prepGroups || []).forEach((group: any) => {
+      ;(group.items || []).forEach((item: any) => {
+        rows.push([
+          group.mealText,
+          item.name,
+          String(item.qty),
+          group.allergyText || ''
+        ])
+      })
+    })
+    if (!rows.length) {
+      wx.showToast({ title: '今天还没有要备的菜', icon: 'none' })
+      return
+    }
+    const quote = (value: string) => `"${String(value).replace(/"/g, '""')}"`
+    wx.setClipboardData({
+      data:
+        '﻿' +
+        [
+          ['餐次', '菜品', '份数', '过敏原'].join(','),
+          ...rows.map(row => row.map(quote).join(','))
+        ].join('\n')
+    })
+  },
+
   onCopyPrep() {
     const items = this.data.prepItems || []
     if (!items.length) {
