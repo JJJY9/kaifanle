@@ -67,6 +67,10 @@
         data-sort="rating"
         bindtap="onSort"
       >评分优先</view>
+      <view
+        class="sort-chip {{onlyImages ? 'active' : ''}}"
+        bindtap="onToggleImages"
+      >有图 {{imageCount}}</view>
     </view>
 
     <empty-state

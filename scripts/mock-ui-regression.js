@@ -2313,6 +2313,20 @@ function chinaDate(offset) {
         ),
       `${(data.display || []).length} 条`
     )
+    await invoke(mp, 'page.onToggleImages()')
+    await sleep(400)
+    page = await current()
+    data = await page.data()
+    check(
+      'mock 我的评价只看有图',
+      data.onlyImages === true &&
+        Number(data.imageCount) >= 1 &&
+        (data.display || []).length === Number(data.imageCount) &&
+        data.display.every(review => (review.images || []).length > 0),
+      `${(data.display || []).length} 条带图`
+    )
+    await invoke(mp, 'page.onToggleImages()')
+    await sleep(300)
     await mp.navigateBack()
     await sleep(900)
 

@@ -42,6 +42,8 @@ Page({
     filter: 'all' as 'all' | '3' | '2' | '1',
     filters: [] as any[],
     sort: 'new' as 'new' | 'rating',
+    onlyImages: false,
+    imageCount: 0,
     stats: { count: 0, goodRate: 0, replies: 0 },
     emptyText: ''
   },
@@ -136,8 +138,15 @@ Page({
           count: reviews.filter(review => review.rating === 1).length
         }
       ]
-      this.setData({ reviews, stats, filters, loading: false }, () =>
-        this.applyFilter()
+      this.setData(
+        {
+          reviews,
+          stats,
+          filters,
+          imageCount: reviews.filter(review => review.images.length).length,
+          loading: false
+        },
+        () => this.applyFilter()
       )
     } catch (e: any) {
       if (seq !== this._loadSeq) {
@@ -168,12 +177,13 @@ Page({
 
   applyFilter() {
     const filter = this.data.filter
+    const base = this.data.onlyImages
+      ? this.data.reviews.filter(review => review.images.length > 0)
+      : this.data.reviews
     const matched =
       filter === 'all'
-        ? this.data.reviews.slice()
-        : this.data.reviews.filter(
-            review => String(review.rating) === filter
-          )
+        ? base.slice()
+        : base.filter(review => String(review.rating) === filter)
     const display =
       this.data.sort === 'rating'
         ? matched.sort((a, b) => b.rating - a.rating)
@@ -182,10 +192,22 @@ Page({
       filter === 'all'
         ? ''
         : (RATINGS.find(item => String(item.value) === filter) || {}).label
+    const imageSuffix = this.data.onlyImages ? '带图的' : ''
     this.setData({
       display,
-      emptyText: filter === 'all' ? '还没有评价' : `还没有「${label}」的评价`
+      emptyText:
+        filter === 'all'
+          ? this.data.onlyImages
+            ? '还没有带图的评价'
+            : '还没有评价'
+          : `还没有${imageSuffix}「${label}」的评价`
     })
+  },
+
+  onToggleImages() {
+    this.setData({ onlyImages: !this.data.onlyImages }, () =>
+      this.applyFilter()
+    )
   },
 
   onPreviewImage(e: any) {
