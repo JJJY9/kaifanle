@@ -1613,6 +1613,13 @@ export async function updateBusiness(payload: Business): Promise<Business> {
   if (next.noticeFrom === undefined) {
     next.noticeFrom = existing.noticeFrom
   }
+  if (
+    next.noticeFrom &&
+    next.noticeUntil &&
+    String(next.noticeFrom) > String(next.noticeUntil)
+  ) {
+    throw new Error('公告开始日期不能晚于截止日期')
+  }
   if (next.dailyGoal === undefined) {
     next.dailyGoal = existing.dailyGoal
   }

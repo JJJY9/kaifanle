@@ -340,6 +340,14 @@ async function run() {
   assert.strictEqual(res.data.noticeFrom, '2000-01-01')
   assert.strictEqual(res.data.noticeUntil, '2099-01-01')
 
+  // 公告开始日期不能晚于截止日期
+  res = await call(
+    'updateBusiness',
+    { noticeFrom: '2099-01-02', noticeUntil: '2099-01-01' },
+    'admin-openid'
+  )
+  assert.strictEqual(res.ok, false)
+
   res = await call('getCategories', {}, 'girl-openid')
   assert.strictEqual(res.ok, true)
   assert.strictEqual(res.data.length, 5)

@@ -487,6 +487,13 @@ async function updateBusiness(payload, openid) {
     source.noticeFrom =
       config.business && config.business.noticeFrom
   }
+  if (
+    source.noticeFrom &&
+    source.noticeUntil &&
+    String(source.noticeFrom) > String(source.noticeUntil)
+  ) {
+    throw new Error('公告开始日期不能晚于截止日期')
+  }
   const business = normalizeBusiness(source)
   await db
     .collection('config')
