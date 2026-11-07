@@ -197,8 +197,13 @@ Page({
         return false
       }
       if (keyword) {
-        const haystack = `${order.no} ${order.summary} ${order.dateText}`
-          .toLowerCase()
+        const haystack = `${order.no} ${order.summary} ${
+          order.dateText
+        } ${order.note || ''} ${order.address || ''} ${
+          order.feedback || ''
+        } ${(order.ratingTags || []).join(' ')} ${(order.items || [])
+          .map(item => item.note || '')
+          .join(' ')}`.toLowerCase()
         if (haystack.indexOf(keyword) === -1) {
           return false
         }

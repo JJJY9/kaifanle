@@ -2373,6 +2373,19 @@ function chinaDate(offset) {
     `关键词 ${orderNo} → ${data.displayOrders.length} 单`
   )
 
+  await invoke(mp, "page.onSearch({ detail: { value: '多酱汁' } })")
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 订单备注搜索',
+    data.displayOrders.length >= 1 &&
+      data.displayOrders.every(order =>
+        (order.items || []).some(item => String(item.note || '').indexOf('多酱汁') > -1)
+      ),
+    `关键词 多酱汁 → ${data.displayOrders.length} 单`
+  )
+
   await invoke(mp, "page.onSearch({ detail: { value: 'zzz查无此单' } })")
   await sleep(400)
   page = await current()
