@@ -374,6 +374,16 @@
   opacity: 0.8;
 }
 
+.health-note {
+  margin-top: 12rpx;
+  padding: 10rpx 14rpx;
+  background: #FFF7DA;
+  border-radius: 12rpx;
+  color: #5C5C5C;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
 .export-btn {
   display: flex;
   align-items: center;

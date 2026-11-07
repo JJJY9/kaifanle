@@ -96,7 +96,7 @@ Page({
     weekBarTotal: 0,
     todo: { pending: 0, replies: 0, lowStock: 0, preorders: 0 },
     dishKeyword: '',
-    dishFilter: 'all' as 'all' | 'low' | 'soldout' | 'off' | 'missing',
+    dishFilter: 'all' as 'all' | 'low' | 'soldout' | 'off' | 'missing' | 'cost',
     dishCategory: 'all',
     dishFilters: [] as any[],
     dishCategoryOptions: [] as any[],
@@ -1574,7 +1574,7 @@ Page({
 
   onLoad(options: any) {
     const filter = String((options && options.filter) || '')
-    if (['low', 'soldout', 'off', 'missing'].indexOf(filter) > -1) {
+    if (['low', 'soldout', 'off', 'missing', 'cost'].indexOf(filter) > -1) {
       this.setData({ dishFilter: filter })
     }
   },
@@ -1593,6 +1593,7 @@ Page({
       dish.stock <= this.lowStockLimit()
     const soldout = (dish: any) =>
       dish.status === 'soldout' || dish.stock === 0
+    const noCost = (dish: any) => !(Number(dish.cost) > 0)
     const displayDishes = dishes.filter(dish => {
       if (category !== 'all' && dish.categoryId !== category) {
         return false
@@ -1616,6 +1617,9 @@ Page({
       }
       if (filter === 'missing') {
         return !dish.recipe
+      }
+      if (filter === 'cost') {
+        return noCost(dish)
       }
       return true
     })
@@ -1650,6 +1654,11 @@ Page({
           key: 'missing',
           label: '缺做法',
           count: dishes.filter(dish => !dish.recipe).length
+        },
+        {
+          key: 'cost',
+          label: '缺成本',
+          count: dishes.filter(noCost).length
         }
       ]
     })

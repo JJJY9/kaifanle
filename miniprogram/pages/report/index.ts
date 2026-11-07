@@ -87,7 +87,8 @@ Page({
             typeof dish.stock === 'number' &&
             dish.stock >= 0 &&
             dish.stock <= lowStockThreshold
-        ).length
+        ).length,
+        noCost: dishes.filter(dish => !(Number(dish.cost) > 0)).length
       }
       const maxAmount = Math.max(
         0,

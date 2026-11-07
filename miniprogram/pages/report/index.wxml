@@ -125,6 +125,12 @@
           <text class="health-label">已下架 ›</text>
         </view>
       </view>
+      <view
+        wx:if="{{health.noCost}}"
+        class="health-note"
+        data-filter="cost"
+        bindtap="onHealthJump"
+      >还有 {{health.noCost}} 道菜没填成本，毛利会漏算 ›</view>
     </view>
 
     <view wx:if="{{report.ratedCount}}" class="rating-line card">

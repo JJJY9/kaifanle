@@ -857,7 +857,7 @@ function chinaDate(offset) {
   )
   check(
     'mock 厨房菜品筛选',
-    (data.dishFilters || []).length === 5 &&
+    (data.dishFilters || []).length === 6 &&
       (data.displayDishes || []).length === (data.dishes || []).length,
     `${(data.displayDishes || []).length} 道`
   )
@@ -873,6 +873,20 @@ function chinaDate(offset) {
     data.dishFilter === 'missing' &&
       (data.displayDishes || []).length > 0 &&
       data.displayDishes.every(dish => !dish.recipe),
+    `${(data.displayDishes || []).length} 道`
+  )
+  await invoke(
+    mp,
+    "page.onDishFilter({ currentTarget: { dataset: { filter: 'cost' } } })"
+  )
+  await sleep(500)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 厨房缺成本筛选',
+    data.dishFilter === 'cost' &&
+      (data.displayDishes || []).length > 0 &&
+      data.displayDishes.every(dish => !(Number(dish.cost) > 0)),
     `${(data.displayDishes || []).length} 道`
   )
   await invoke(
@@ -2290,7 +2304,8 @@ function chinaDate(offset) {
       (data.report.topDishes || []).length >= 1 &&
       Boolean(data.health) &&
       data.health.total >= 1 &&
-      data.health.lowStock >= 1,
+      data.health.lowStock >= 1 &&
+      data.health.noCost >= 1,
     data.report
       ? `${data.report.totalOrders} 单 / ¥${data.report.revenue}`
       : '没有数据'
@@ -2537,7 +2552,23 @@ function chinaDate(offset) {
   )
   await mp.navigateBack()
   await sleep(900)
-  await sleep(600)
+  await invoke(
+    mp,
+    "page.onHealthJump({ currentTarget: { dataset: { filter: 'cost' } } })"
+  )
+  await sleep(2200)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 体检查看缺成本',
+    page.path === 'pages/kitchen/index' &&
+      data.dishFilter === 'cost' &&
+      (data.displayDishes || []).length > 0 &&
+      data.displayDishes.every(dish => !(Number(dish.cost) > 0)),
+    `${(data.displayDishes || []).length} 道`
+  )
+  await mp.navigateBack()
+  await sleep(900)
 
   // 干饭足迹
   await mp.navigateTo('/pages/my-report/index')
