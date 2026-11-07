@@ -68,7 +68,7 @@
             mode="date"
             value="{{anniversary}}"
             start="1900-01-01"
-            end="2100-12-31"
+            end="{{today}}"
             bindchange="onAnniversary"
           >
             <view class="date-value {{anniversary ? '' : 'placeholder'}}">{{anniversary || '选择纪念日'}}</view>

@@ -1428,8 +1428,8 @@ function chinaDate(offset) {
   await sleep(400)
 
   // 口味档案：生日 / 纪念日选择、清除与保存
-  const specialBirthday = `1998-${chinaDate(5).slice(5)}`
-  const specialAnniversary = `2020-${chinaDate(8).slice(5)}`
+  const specialBirthday = `2000-${chinaDate(5).slice(5)}`
+  const specialAnniversary = `2000-${chinaDate(0).slice(5)}`
   await mp.navigateTo('/pages/preferences/index')
   await sleep(1500)
   page = await current()
@@ -2217,6 +2217,17 @@ function chinaDate(offset) {
       .map(item => `${item.name}:${item.avgRating}/${item.ratedCount}`)
       .join(' ')
   )
+  const slowDishes = data.report.slowDishes || []
+  check(
+    'mock 月报滞销菜品',
+    slowDishes.length >= 1 &&
+      Number(slowDishes[0].qty) === 0 &&
+      slowDishes.every(
+        (item, index) =>
+          index === 0 || Number(slowDishes[index - 1].qty) <= Number(item.qty)
+      ),
+    slowDishes.map(item => `${item.name}:${item.qty}`).join('、')
+  )
   await invoke(mp, 'page.onExport()')
   await sleep(900)
   page = await current()
@@ -2503,17 +2514,23 @@ function chinaDate(offset) {
     ),
     'seed-3'
   )
+  const specialRows = data.specialDays || []
+  const birthdayRow = specialRows.find(day => day.kind === 'birthday')
+  const anniversaryRow = specialRows.find(
+    day => day.kind === 'anniversary'
+  )
   check(
     'mock 厨房重要日子提醒',
-    (data.specialDays || []).some(
-      day => day.kind === 'birthday' && Number(day.days) === 5
-    ) &&
-      (data.specialDays || []).some(
-        day => day.kind === 'anniversary' && Number(day.days) === 8
-      ),
-    (data.specialDays || [])
-      .map(day => `${day.label}${day.daysText}`)
-      .join(' / ')
+    Boolean(birthdayRow) &&
+      Number(birthdayRow.days) === 5 &&
+      birthdayRow.daysText === '还有 5 天' &&
+      birthdayRow.label === '生日' &&
+      Boolean(anniversaryRow) &&
+      Number(anniversaryRow.days) === 0 &&
+      anniversaryRow.daysText === '今天' &&
+      anniversaryRow.urgent === true &&
+      specialRows.every(day => Boolean(day.key)),
+    specialRows.map(day => `${day.label}${day.daysText}`).join(' / ')
   )
 
   const failed = results.filter(r => !r.ok)

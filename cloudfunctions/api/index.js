@@ -569,10 +569,12 @@ async function saveMyProfile(payload, openid) {
       Object.prototype.hasOwnProperty.call(input, key) &&
       input[key] !== undefined
     ) {
-      source[key] = parseSpecialDateInput(
-        input[key],
-        key === 'birthday' ? '生日' : '纪念日'
-      )
+      const label = key === 'birthday' ? '生日' : '纪念日'
+      const parsed = parseSpecialDateInput(input[key], label)
+      if (parsed && parsed > chinaDateString()) {
+        throw new Error(`${label}不能晚于今天`)
+      }
+      source[key] = parsed
     }
   })
   const profile = normalizeProfile(source)
@@ -1032,6 +1034,20 @@ async function getKitchenReport(openid) {
     .sort((a, b) => b.qty - a.qty || b.revenue - a.revenue)
     .slice(0, 8)
 
+  const dishRes = await db.collection('dishes').limit(1000).get()
+  const slowDishes = (dishRes.data || [])
+    .filter(dish => dish.status !== 'off')
+    .map(dish => {
+      const stat = dishMap[dish.name] || { qty: 0, revenue: 0 }
+      return {
+        name: dish.name,
+        qty: Number(stat.qty || 0),
+        revenue: Number(Number(stat.revenue || 0).toFixed(2))
+      }
+    })
+    .sort((a, b) => a.qty - b.qty || a.name.localeCompare(b.name))
+    .slice(0, 5)
+
   const rated = active.filter(
     order => typeof order.rating === 'number' && order.rating > 0
   )
@@ -1089,6 +1105,7 @@ async function getKitchenReport(openid) {
       : 0,
     daily,
     topDishes,
+    slowDishes,
     ratedCount: rated.length,
     avgRating,
     goodRate,

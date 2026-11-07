@@ -246,6 +246,7 @@ export interface KitchenReport {
   avgOrder: number
   daily: KitchenReportDay[]
   topDishes: KitchenReportDish[]
+  slowDishes: KitchenReportDish[]
   ratedCount: number
   avgRating: number
   goodRate: number

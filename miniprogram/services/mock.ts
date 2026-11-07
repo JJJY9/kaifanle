@@ -1611,7 +1611,10 @@ export async function saveMyProfile(
   const existing = loadProfile()
   const input: any = payload || {}
   const nextDate = (key: 'birthday' | 'anniversary', label: string) => {
-    if (!Object.prototype.hasOwnProperty.call(input, key) || input[key] === undefined) {
+    if (
+      !Object.prototype.hasOwnProperty.call(input, key) ||
+      input[key] === undefined
+    ) {
       return existing[key] || ''
     }
     const text = String(input[key] || '').trim()
@@ -1621,6 +1624,9 @@ export async function saveMyProfile(
     const normalized = normalizeSpecialDate(text)
     if (!normalized) {
       throw new Error(`${label}日期格式不正确`)
+    }
+    if (normalized > chinaDateKey(Date.now())) {
+      throw new Error(`${label}不能晚于今天`)
     }
     return normalized
   }
@@ -1928,6 +1934,18 @@ export async function getKitchenReport(): Promise<KitchenReport> {
     }))
     .sort((a, b) => b.qty - a.qty || b.revenue - a.revenue)
     .slice(0, 8)
+  const slowDishes = dishes
+    .filter(dish => dish.status !== 'off')
+    .map(dish => {
+      const stat = dishMap[dish.name] || { qty: 0, revenue: 0 }
+      return {
+        name: dish.name,
+        qty: Number(stat.qty || 0),
+        revenue: Number(Number(stat.revenue || 0).toFixed(2))
+      }
+    })
+    .sort((a, b) => a.qty - b.qty || a.name.localeCompare(b.name))
+    .slice(0, 5)
   const rated = active.filter(order => Number(order.rating) > 0)
   const avgRating = rated.length
     ? Number(
@@ -1985,6 +2003,7 @@ export async function getKitchenReport(): Promise<KitchenReport> {
       : 0,
     daily,
     topDishes,
+    slowDishes,
     ratedCount: rated.length,
     avgRating,
     goodRate,
