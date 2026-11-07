@@ -10,7 +10,8 @@ import {
   getMyExpiringCoupons,
   getMyPendingReviewCount,
   getMyProfile,
-  getMySpecialDays
+  getMySpecialDays,
+  getMyStats
 } from '../../services/api'
 import { cart } from '../../store/cart'
 import { favorites } from '../../store/favorites'
@@ -100,6 +101,7 @@ Page({
     activeOrder: null as any,
     couponExpiring: 0,
     pendingReviews: 0,
+    weekText: '',
     showCatBar: false,
     spiceFilter: 'all',
     spiceFilters: [] as { key: string; label: string }[],
@@ -280,7 +282,8 @@ Page({
         menu,
         kitchenStatus,
         specialDays,
-        profile
+        profile,
+        stats
       ] = await Promise.all([
         getCategories(),
         getDishes(),
@@ -288,7 +291,8 @@ Page({
         getMenuForDate(date, meal),
         getKitchenStatus().catch(() => null),
         getMySpecialDays().catch(() => null),
-        getMyProfile().catch(() => null)
+        getMyProfile().catch(() => null),
+        getMyStats().catch(() => null)
       ])
       if (seq !== this._loadSeq) {
         return
@@ -383,6 +387,15 @@ Page({
             : `${icon} ${when}是你的${label}，掌勺人会提前准备`
       }
 
+      const weekCount = stats ? Number(stats.week || 0) : 0
+      const weekSpend = stats ? Number(stats.weekSpend || 0) : 0
+      const weekFavorite = stats ? String(stats.weekFavorite || '') : ''
+      const weekText =
+        weekCount > 0
+          ? `本周已吃 ${weekCount} 顿 · ¥${weekSpend}${
+              weekFavorite ? ` · 最常点 ${weekFavorite}` : ''
+            }`
+          : ''
       this.setData(
         {
           loading: false,
@@ -395,6 +408,7 @@ Page({
           specialBanner,
           dislikes,
           avoidDislikes,
+          weekText,
           notice:
             business &&
             business.notice &&

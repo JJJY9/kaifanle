@@ -875,6 +875,14 @@ function chinaStartOfMonth() {
   )
 }
 
+// 本周一 0 点（北京时间），用于首页「本周干饭」小结
+function chinaStartOfWeek() {
+  const todayStart = chinaStartOfDay()
+  const weekday = chinaWeekday(chinaDateString(todayStart))
+  const offset = (weekday + 6) % 7
+  return todayStart - offset * 24 * 60 * 60 * 1000
+}
+
 // 厨房近 30 天经营概览：营收、订单、客单价、菜品排行与评分
 // 菜品库存变动记录（管理员）
 async function getStockLogs(payload, openid) {
@@ -1387,7 +1395,8 @@ async function getKitchenReport(payload, openid) {
 // 「我的」页统计：总数用 count，月度明细最多取 200 单算最常点
 async function getMyStats(openid) {
   const start = chinaStartOfMonth()
-  const [allRes, cancelledRes, monthRes] = await Promise.all([
+  const weekStart = chinaStartOfWeek()
+  const [allRes, cancelledRes, monthRes, weekRes] = await Promise.all([
     db.collection('orders').where({ _openid: openid }).count(),
     db
       .collection('orders')
@@ -1397,10 +1406,18 @@ async function getMyStats(openid) {
       .collection('orders')
       .where({ _openid: openid, createdAt: _.gte(start) })
       .limit(200)
+      .get(),
+    db
+      .collection('orders')
+      .where({ _openid: openid, createdAt: _.gte(weekStart) })
+      .limit(100)
       .get()
   ])
   const monthOrders = monthRes.data.filter(
     order => order.status !== 'cancelled'
+  )
+  const weekOrders = (weekRes.data || []).filter(
+    order => order.status === 'completed'
   )
   const dishCount = {}
   monthOrders.forEach(order => {
@@ -1411,6 +1428,17 @@ async function getMyStats(openid) {
   const favorite =
     Object.keys(dishCount).sort((a, b) => dishCount[b] - dishCount[a])[0] ||
     '还没点过'
+  const weekDishCount = {}
+  weekOrders.forEach(order => {
+    ;(order.items || []).forEach(item => {
+      weekDishCount[item.name] =
+        (weekDishCount[item.name] || 0) + Number(item.qty || 0)
+    })
+  })
+  const weekFavorite =
+    Object.keys(weekDishCount).sort(
+      (a, b) => weekDishCount[b] - weekDishCount[a]
+    )[0] || ''
   return {
     total: (allRes.total || 0) - (cancelledRes.total || 0),
     month: monthOrders.length,
@@ -1419,7 +1447,14 @@ async function getMyStats(openid) {
         .reduce((sum, order) => sum + Number(order.amount || 0), 0)
         .toFixed(2)
     ),
-    favorite
+    favorite,
+    week: weekOrders.length,
+    weekSpend: Number(
+      weekOrders
+        .reduce((sum, order) => sum + Number(order.amount || 0), 0)
+        .toFixed(2)
+    ),
+    weekFavorite
   }
 }
 

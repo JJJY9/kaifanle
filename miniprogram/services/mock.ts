@@ -565,8 +565,8 @@ function seedOrders(): Order[] {
   dayStart.setHours(0, 0, 0, 0)
   // 凌晨打开时 20 分钟前可能还是昨天，示例进行中订单要落在今天
   const t1 = Math.max(now - 20 * 60 * 1000, dayStart.getTime() + 60 * 1000)
-  const t2 = now - 3 * 60 * 60 * 1000
-  const t4 = now - 4 * 60 * 60 * 1000
+  const t2 = Math.max(now - 3 * 60 * 60 * 1000, dayStart.getTime() + 60 * 1000)
+  const t4 = Math.max(now - 4 * 60 * 60 * 1000, dayStart.getTime() + 60 * 1000)
   return [
     {
       id: 'seed-1',
@@ -2366,6 +2366,28 @@ export async function getMyStats(): Promise<MyStats> {
   const favorite =
     Object.keys(dishCount).sort((a, b) => dishCount[b] - dishCount[a])[0] ||
     '还没点过'
+  const weekStart = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  )
+  weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7))
+  const weekly = valid.filter(
+    order =>
+      order.status === 'completed' &&
+      Number(order.createdAt) >= weekStart.getTime()
+  )
+  const weekDishCount: Record<string, number> = {}
+  weekly.forEach(order => {
+    order.items.forEach(item => {
+      weekDishCount[item.name] =
+        (weekDishCount[item.name] || 0) + item.qty
+    })
+  })
+  const weekFavorite =
+    Object.keys(weekDishCount).sort(
+      (a, b) => weekDishCount[b] - weekDishCount[a]
+    )[0] || ''
   return {
     total: valid.length,
     month: monthly.length,
@@ -2374,7 +2396,14 @@ export async function getMyStats(): Promise<MyStats> {
         .reduce((sum, order) => sum + Number(order.amount || 0), 0)
         .toFixed(2)
     ),
-    favorite
+    favorite,
+    week: weekly.length,
+    weekSpend: Number(
+      weekly
+        .reduce((sum, order) => sum + Number(order.amount || 0), 0)
+        .toFixed(2)
+    ),
+    weekFavorite
   }
 }
 

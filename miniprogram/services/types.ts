@@ -237,6 +237,9 @@ export interface MyStats {
   month: number
   monthSpend: number
   favorite: string
+  week?: number
+  weekSpend?: number
+  weekFavorite?: string
 }
 
 export interface KitchenReportDay {

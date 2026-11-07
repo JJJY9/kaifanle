@@ -1343,6 +1343,9 @@ async function run() {
   assert.strictEqual(typeof res.data.favorite, 'string')
   assert.strictEqual(typeof res.data.monthSpend, 'number')
   assert.ok(res.data.monthSpend > 0)
+  assert.strictEqual(typeof res.data.week, 'number')
+  assert.strictEqual(typeof res.data.weekSpend, 'number')
+  assert.strictEqual(typeof res.data.weekFavorite, 'string')
 
   // 许愿池
   res = await call('createWish', { content: '想吃火锅' }, 'girl-openid')

@@ -89,6 +89,13 @@ function chinaDate(offset) {
       : '没有进行中订单'
   )
   check(
+    'mock 首页本周干饭',
+    String(data.weekText || '').includes('本周已吃 2 顿') &&
+      String(data.weekText || '').includes('¥36') &&
+      String(data.weekText || '').includes('番茄牛腩饭'),
+    data.weekText
+  )
+  check(
     'mock 首页券到期提醒',
     Number(data.couponExpiring) >= 1,
     `${data.couponExpiring} 张`
