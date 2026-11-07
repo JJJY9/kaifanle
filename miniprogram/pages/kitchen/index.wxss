@@ -774,6 +774,17 @@
   font-size: 22rpx;
 }
 
+.order-allergy {
+  margin-top: 10rpx;
+  padding: 8rpx 14rpx;
+  background: #FFF1F6;
+  border: 3rpx solid #FF5C8A;
+  border-radius: 14rpx;
+  color: #8A2D4A;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
 .order-note {
   margin-top: 12rpx;
   padding: 10rpx 16rpx;

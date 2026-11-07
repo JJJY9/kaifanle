@@ -818,6 +818,15 @@ function chinaDate(offset) {
     (data.historyView || []).length ===
       Math.min((data.history || []).length, 10)
   )
+  const allergyHistoryOrder = (data.history || []).find(
+    order => order.id === 'seed-2'
+  )
+  check(
+    'mock 厨房过敏原提醒',
+    Boolean(allergyHistoryOrder) &&
+      String(allergyHistoryOrder.allergyText || '').indexOf('花生') > -1,
+    allergyHistoryOrder ? allergyHistoryOrder.allergyText : '没找到订单'
+  )
   await invoke(mp, 'page.onToggleHistoryAll()')
   await sleep(300)
   page = await current()

@@ -300,6 +300,7 @@
         </view>
       </view>
       <view wx:if="{{item.profileText}}" class="order-taste">{{item.profileText}}</view>
+      <view wx:if="{{item.allergyText}}" class="order-allergy">⚠️ 含过敏原：{{item.allergyText}}</view>
       <view wx:if="{{item.address}}" class="order-address">送到：{{item.address}}</view>
       <view wx:if="{{item.note}}" class="order-note">整单备注：{{item.note}}<text wx:if="{{item.noteUpdated}}" class="note-updated"> · 刚改过</text></view>
       <view class="order-actions">

@@ -451,6 +451,20 @@ Page({
             )
           })(),
           totalQty,
+          allergyText: (() => {
+            const seen: Record<string, boolean> = {}
+            const list: string[] = []
+            order.items.forEach((item: any) => {
+              const dish = dishById[item.dishId]
+              ;((dish && dish.allergens) || []).forEach((name: string) => {
+                if (name && !seen[name]) {
+                  seen[name] = true
+                  list.push(name)
+                }
+              })
+            })
+            return list.join('、')
+          })(),
           itemLines: order.items.map((item: any, index: number) => ({
             key: `${order.id}-${index}`,
             dishId: item.dishId,
