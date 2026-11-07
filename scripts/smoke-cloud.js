@@ -441,6 +441,7 @@ async function run() {
     name: '测试菜',
     desc: '测试用',
     price: 12,
+    cost: 3.5,
     categoryId: 'staple',
     tags: ['测试'],
     spicyLevels: [],
@@ -462,6 +463,7 @@ async function run() {
   assert.strictEqual(res.ok, true)
   const createdDishId = res.data.id
   assert.strictEqual(res.data.char, '测')
+  assert.strictEqual(res.data.cost, 3.5)
   assert.strictEqual(res.data.image, 'cloud://test.env/dishes/test.jpg')
   assert.strictEqual(res.data.recipe, '第一步切菜\n第二步开火')
   assert.deepStrictEqual(res.data.ingredients, ['番茄 2个', '盐 适量'])
@@ -492,6 +494,7 @@ async function run() {
   )
   assert.strictEqual(res.ok, true)
   assert.strictEqual(res.data.price, 15)
+  assert.strictEqual(res.data.cost, 3.5)
   assert.strictEqual(res.data.status, 'off')
   // 编辑时不传 recipe 表示保持原做法
   assert.strictEqual(res.data.recipe, '第一步切菜\n第二步开火')
@@ -525,6 +528,7 @@ async function run() {
   assert.strictEqual(res.ok, true)
   res = await call('getDish', { id: createdDishId }, 'admin-openid')
   assert.strictEqual(res.data.price, 15)
+  assert.strictEqual(res.data.cost, 3.5)
   assert.strictEqual(res.data.stock, 5)
   assert.strictEqual(res.data.priceHistory.length, 1)
 
@@ -567,6 +571,7 @@ async function run() {
   )
   assert.strictEqual(res.ok, true)
   assert.strictEqual(res.data.price, 18)
+  assert.strictEqual(res.data.cost, 3.5)
   assert.strictEqual(res.data.name, '测试菜改')
   assert.strictEqual(res.data.status, 'off')
   assert.strictEqual(res.data.image, 'cloud://test.env/dishes/test.jpg')
@@ -586,6 +591,7 @@ async function run() {
   assert.strictEqual(res.data.price, 18)
   res = await call('getDish', { id: createdDishId }, 'admin-openid')
   assert.strictEqual(res.data.price, 18)
+  assert.strictEqual(res.data.cost, 3.5)
   assert.strictEqual(res.data.priceHistory.length, 2)
 
   res = await call('getDishes', {}, 'admin-openid')

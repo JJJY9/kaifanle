@@ -26,6 +26,13 @@
   font-weight: 700;
 }
 
+.margin-hint {
+  margin: 2rpx 0 10rpx;
+  color: #2F7A57;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
 .price-history {
   margin: 4rpx 0 14rpx;
   padding: 10rpx 16rpx;

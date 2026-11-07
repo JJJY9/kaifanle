@@ -3008,6 +3008,15 @@ async function saveDish(payload, openid) {
   if (!isFinite(price) || price < 0 || price > 999) {
     throw new Error('价格需要是 0-999 之间的数字')
   }
+  const hasCost =
+    payload.cost !== undefined &&
+    payload.cost !== null &&
+    String(payload.cost).trim() !== ''
+  const costValue = Number(payload.cost)
+  if (hasCost && (!isFinite(costValue) || costValue < 0 || costValue > 999)) {
+    throw new Error('成本需要是 0-999 之间的数字')
+  }
+  const cost = hasCost ? Math.round(costValue * 100) / 100 : 0
   const priceBaseValue = Number(payload.priceBase)
   const priceBase =
     isFinite(priceBaseValue) && priceBaseValue >= 0 && priceBaseValue <= 999
@@ -3088,6 +3097,7 @@ async function saveDish(payload, openid) {
     char: name.slice(0, 1),
     desc,
     price,
+    cost,
     categoryId,
     tags,
     spicyLevels,
@@ -3132,6 +3142,9 @@ async function saveDish(payload, openid) {
       priceBase !== null && priceBase === Number(dish.price)
     if (!priceApplied) {
       delete fields.price
+    }
+    if (!hasCost) {
+      delete fields.cost
     }
     await db.collection('dishes').doc(id).update({ data: fields })
     if (priceApplied && Number(dish.price) !== price) {

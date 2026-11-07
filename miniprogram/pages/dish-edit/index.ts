@@ -52,6 +52,8 @@ Page({
     desc: '',
     price: '',
     priceBase: 0,
+    cost: '',
+    marginText: '',
     stock: '-1',
     stockBase: -1,
     ingredientsText: '',
@@ -174,6 +176,8 @@ Page({
         desc: dish.desc,
         price: String(dish.price),
         priceBase: Number(dish.price) || 0,
+        cost:
+          typeof dish.cost === 'number' ? String(dish.cost) : '',
         stock: String(typeof dish.stock === 'number' ? dish.stock : -1),
         stockBase:
           typeof dish.stock === 'number' ? Number(dish.stock) : -1,
@@ -203,7 +207,7 @@ Page({
         status: dish.status,
         isRecommended: Boolean(dish.isRecommended),
         loading: false
-      })
+      }, () => this.updateMargin())
     } catch (e: any) {
       this.setData({ loading: false, loadFailed: true })
       wx.showToast({
@@ -227,7 +231,32 @@ Page({
   },
 
   onPrice(e: any) {
-    this.setData({ price: e.detail.value })
+    this.setData({ price: e.detail.value }, () => this.updateMargin())
+  },
+
+  onCost(e: any) {
+    this.setData({ cost: e.detail.value }, () => this.updateMargin())
+  },
+
+  updateMargin() {
+    const price = Number(this.data.price)
+    const costText = String(this.data.cost || '').trim()
+    const cost = Number(costText)
+    if (
+      !costText ||
+      !isFinite(price) ||
+      price <= 0 ||
+      !isFinite(cost) ||
+      cost < 0
+    ) {
+      this.setData({ marginText: '' })
+      return
+    }
+    const profit = price - cost
+    const rate = Math.round((profit / price) * 100)
+    this.setData({
+      marginText: `¥${profit.toFixed(2)} · ${rate}%`
+    })
   },
 
   onStock(e: any) {
@@ -442,6 +471,12 @@ Page({
       wx.showToast({ title: '价格需要是 0-999 的数字', icon: 'none' })
       return
     }
+    const costText = String(this.data.cost || '').trim()
+    const cost = costText ? Number(costText) : 0
+    if (!isFinite(cost) || cost < 0 || cost > 999) {
+      wx.showToast({ title: '成本需要是 0-999 的数字', icon: 'none' })
+      return
+    }
     if (!this.data.categoryId) {
       wx.showToast({ title: '先选一个分类', icon: 'none' })
       return
@@ -470,6 +505,7 @@ Page({
       name,
       desc: this.data.desc.trim(),
       price,
+      cost,
       priceBase: this.data.priceBase,
       categoryId: this.data.categoryId,
       tags: splitList(this.data.tagsText),

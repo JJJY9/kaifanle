@@ -1079,6 +1079,17 @@ function chinaDate(offset) {
     String(data.allergensText || '').indexOf('花生') > -1,
     data.allergensText
   )
+  await invoke(mp, "page.onCost({ detail: { value: '5' } })")
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 菜品成本毛利',
+    data.cost === '5' &&
+      String(data.marginText || '').indexOf('¥13.00') > -1 &&
+      String(data.marginText || '').indexOf('72%') > -1,
+    data.marginText
+  )
   await invoke(mp, 'page.onCopyDish()')
   await sleep(1600)
   page = await current()
