@@ -1,5 +1,5 @@
 import type { Dish } from '../../services/types'
-import { getDishes } from '../../services/api'
+import { getCategories, getDishes } from '../../services/api'
 import { favorites } from '../../store/favorites'
 
 Page({
@@ -11,6 +11,8 @@ Page({
     keyword: '',
     count: 0,
     sort: 'recent' as 'recent' | 'price',
+    categories: [] as any[],
+    category: 'all',
     posterMaking: false,
     posterPath: ''
   },
@@ -36,7 +38,10 @@ Page({
 
   async loadDishes() {
     try {
-      const dishes = await getDishes()
+      const [dishes, categories] = await Promise.all([
+        getDishes(),
+        getCategories().catch(() => [])
+      ])
       const dishMap: Record<string, any> = {}
       dishes.forEach(dish => {
         dishMap[dish.id] = dish
@@ -52,6 +57,12 @@ Page({
         {
           allFavorites,
           count: allFavorites.length,
+          categories: categories || [],
+          category: (categories || []).some(
+            category => category.id === this.data.category
+          )
+            ? this.data.category
+            : 'all',
           loading: false,
           error: '',
           posterPath: ''
@@ -80,18 +91,32 @@ Page({
     const keyword = String(this.data.keyword || '')
       .trim()
       .toLowerCase()
+    const source =
+      this.data.category === 'all'
+        ? this.data.allFavorites
+        : this.data.allFavorites.filter(
+            dish => dish.categoryId === this.data.category
+          )
     const matched = keyword
-      ? this.data.allFavorites.filter(dish =>
+      ? source.filter(dish =>
           `${dish.name} ${dish.desc || ''}`
             .toLowerCase()
             .indexOf(keyword) > -1
         )
-      : this.data.allFavorites.slice()
+      : source.slice()
     const display =
       this.data.sort === 'price'
         ? matched.sort((a, b) => Number(a.price) - Number(b.price))
         : matched
     this.setData({ display })
+  },
+
+  onCategory(e: any) {
+    const category = String(e.currentTarget.dataset.id || 'all')
+    if (category === this.data.category) {
+      return
+    }
+    this.setData({ category }, () => this.applyFilter())
   },
 
   onSort(e: any) {

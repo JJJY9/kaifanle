@@ -65,6 +65,28 @@
   margin-bottom: 20rpx;
 }
 
+.cat-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  margin-bottom: 14rpx;
+}
+
+.cat-chip {
+  padding: 6rpx 16rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
+.cat-chip.active {
+  background: #2D9CFF;
+  color: #FFFFFF;
+  box-shadow: 2rpx 2rpx 0 #111111;
+}
+
 .sort-chip {
   padding: 6rpx 18rpx;
   background: #FFFFFF;

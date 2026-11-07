@@ -1580,6 +1580,44 @@ function chinaDate(offset) {
     `${(data.allFavorites || []).length} 道`
   )
   check('mock 收藏默认最近排序', data.sort === 'recent')
+  const favoriteCategory = (data.allFavorites[0] || {}).categoryId
+  await invoke(
+    mp,
+    `page.onCategory({ currentTarget: { dataset: { id: ${JSON.stringify(
+      favoriteCategory
+    )} } } })`
+  )
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  const categoryFiltered =
+    (data.categories || []).length > 0 &&
+    data.category === favoriteCategory &&
+    (data.display || []).length > 0 &&
+    data.display.every(dish => dish.categoryId === favoriteCategory)
+  await invoke(
+    mp,
+    "page.onCategory({ currentTarget: { dataset: { id: 'no-such-category' } } })"
+  )
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  const categoryEmpty = (data.display || []).length === 0
+  await invoke(
+    mp,
+    "page.onCategory({ currentTarget: { dataset: { id: 'all' } } })"
+  )
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 收藏按分类筛选',
+    categoryFiltered &&
+      categoryEmpty &&
+      data.category === 'all' &&
+      (data.display || []).length === (data.allFavorites || []).length,
+    `${(data.categories || []).length} 个分类`
+  )
   await invoke(
     mp,
     "page.onSort({ currentTarget: { dataset: { sort: 'price' } } })"

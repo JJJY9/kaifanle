@@ -40,6 +40,21 @@
       <view wx:if="{{keyword}}" class="search-clear" bindtap="onClearSearch">×</view>
     </view>
 
+    <view wx:if="{{categories.length}}" class="cat-row">
+      <view
+        class="cat-chip {{category === 'all' ? 'active' : ''}}"
+        data-id="all"
+        bindtap="onCategory"
+      >全部</view>
+      <view
+        wx:for="{{categories}}"
+        wx:key="id"
+        class="cat-chip {{category === item.id ? 'active' : ''}}"
+        data-id="{{item.id}}"
+        bindtap="onCategory"
+      >{{item.name}}</view>
+    </view>
+
     <view class="sort-row">
       <view
         class="sort-chip {{sort === 'recent' ? 'active' : ''}}"
