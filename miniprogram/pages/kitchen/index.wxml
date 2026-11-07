@@ -337,6 +337,11 @@
         <view class="history-chip {{!historyOnlyPending ? 'active' : ''}}" data-only="all" bindtap="onHistoryFilter">全部</view>
         <view class="history-chip {{historyOnlyPending ? 'active' : ''}}" data-only="pending" bindtap="onHistoryFilter">待回复 {{todo.replies}}</view>
       </view>
+      <view class="history-filter range">
+        <view class="history-chip {{historyRange === 'today' ? 'active' : ''}}" data-range="today" bindtap="onHistoryRange">今天</view>
+        <view class="history-chip {{historyRange === 'week' ? 'active' : ''}}" data-range="week" bindtap="onHistoryRange">近 7 天</view>
+        <view class="history-chip {{historyRange === 'all' ? 'active' : ''}}" data-range="all" bindtap="onHistoryRange">不限日期</view>
+      </view>
       <view wx:if="{{!historyView.length}}" class="empty-line">{{historyOnlyPending ? '没有待回复的评价' : '还没有历史订单'}}</view>
       <view
         wx:for="{{historyView}}"

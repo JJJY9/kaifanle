@@ -874,6 +874,11 @@
   margin-bottom: 14rpx;
 }
 
+.history-filter.range {
+  margin-top: -4rpx;
+  flex-wrap: wrap;
+}
+
 .history-chip {
   padding: 6rpx 18rpx;
   background: #FFFFFF;

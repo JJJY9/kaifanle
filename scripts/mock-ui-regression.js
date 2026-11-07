@@ -836,6 +836,37 @@ function chinaDate(offset) {
     data.historyAll === true &&
       (data.historyView || []).length === (data.history || []).length
   )
+  await invoke(
+    mp,
+    "page.onHistoryRange({ currentTarget: { dataset: { range: 'today' } } })"
+  )
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  const todayHistoryCount = (data.historyView || []).length
+  await invoke(
+    mp,
+    "page.onHistoryRange({ currentTarget: { dataset: { range: 'week' } } })"
+  )
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  const weekHistoryCount = (data.historyView || []).length
+  await invoke(
+    mp,
+    "page.onHistoryRange({ currentTarget: { dataset: { range: 'all' } } })"
+  )
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 厨房历史日期筛选',
+    data.historyRange === 'all' &&
+      todayHistoryCount > 0 &&
+      weekHistoryCount >= todayHistoryCount &&
+      (data.historyView || []).length >= weekHistoryCount,
+    `今天 ${todayHistoryCount} / 近7天 ${weekHistoryCount} / 全部 ${(data.historyView || []).length}`
+  )
   await invoke(mp, 'page.onToggleHistoryAll()')
   await sleep(200)
   await invoke(mp, 'page.onTogglePreorders()')

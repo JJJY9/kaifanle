@@ -74,6 +74,7 @@ Page({
     restockingAll: false,
     batchBusy: false,
     historyOnlyPending: false,
+    historyRange: 'all' as 'all' | 'today' | 'week',
     historyView: [] as any[],
     historyAll: false,
     receiptVisible: false,
@@ -1858,10 +1859,26 @@ Page({
   },
 
   filterHistory(list: any[]): any[] {
-    const filtered = this.data.historyOnlyPending
+    const pendingOnly = this.data.historyOnlyPending
       ? list.filter(order => order.canReply && !order.ownerReply)
       : list
-    return filtered.slice(0, this.data.historyAll ? 100 : 10)
+    const range = this.data.historyRange
+    let ranged = pendingOnly
+    if (range !== 'all') {
+      const today = dateInputString()
+      const weekStart = dateInputString(
+        new Date(Date.now() - 6 * 24 * 60 * 60 * 1000)
+      )
+      ranged = pendingOnly.filter(order => {
+        const date =
+          order.scheduledDate ||
+          dateInputString(new Date(Number(order.createdAt) || Date.now()))
+        return range === 'today'
+          ? date === today
+          : date >= weekStart && date <= today
+      })
+    }
+    return ranged.slice(0, this.data.historyAll ? 100 : 10)
   },
 
   applyHistoryFilter() {
@@ -1880,11 +1897,21 @@ Page({
     )
   },
 
+  onHistoryRange(e: any) {
+    const raw = String(e.currentTarget.dataset.range || '')
+    const range =
+      raw === 'today' ? 'today' : raw === 'week' ? 'week' : 'all'
+    if (range === this.data.historyRange) {
+      return
+    }
+    this.setData({ historyRange: range }, () => this.applyHistoryFilter())
+  },
+
   onTodoTap(e: any) {
     const target = e.currentTarget.dataset.target
     if (target === 'replies') {
       this.setData(
-        { showHistory: true, historyOnlyPending: true },
+        { showHistory: true, historyOnlyPending: true, historyRange: 'all' },
         () => {
           this.applyHistoryFilter()
           wx.pageScrollTo({ selector: '#history-section', duration: 300 })
