@@ -78,6 +78,12 @@
         <text class="special-days">{{item.daysText}}</text>
       </view>
       <view wx:if="{{specialDaysMore}}" class="special-more">还有 {{specialDaysMore}} 个重要日子未展示</view>
+      <view wx:if="{{specialDaysError}}" class="special-more">刷新失败，显示的是上次结果</view>
+    </view>
+
+    <view wx:if="{{specialDaysError && !specialDays.length}}" class="special-error card">
+      <text class="special-error-text">{{specialDaysError}}</text>
+      <view class="special-retry" bindtap="onRetrySpecialDays">重试</view>
     </view>
 
     <view wx:if="{{todo.pending || todo.replies || todo.lowStock || todo.preorders}}" class="todo-card card">

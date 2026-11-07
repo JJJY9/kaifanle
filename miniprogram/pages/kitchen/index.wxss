@@ -225,6 +225,28 @@
   font-size: 21rpx;
 }
 
+.special-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 20rpx;
+  padding: 20rpx;
+}
+
+.special-error-text {
+  color: #5C5C5C;
+  font-size: 23rpx;
+}
+
+.special-retry {
+  padding: 8rpx 18rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
 .todo-card {
   margin-top: 20rpx;
   padding: 20rpx;

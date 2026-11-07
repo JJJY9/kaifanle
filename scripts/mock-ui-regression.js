@@ -2537,7 +2537,8 @@ function chinaDate(offset) {
       Number(anniversaryRow.days) === 0 &&
       anniversaryRow.daysText === '今天' &&
       anniversaryRow.urgent === true &&
-      specialRows.every(day => Boolean(day.key)),
+      specialRows.every(day => Boolean(day.key)) &&
+      data.specialDaysError === '',
     specialRows.map(day => `${day.label}${day.daysText}`).join(' / ')
   )
 

@@ -50,6 +50,7 @@ Page({
     dishes: [] as any[],
     specialDays: [] as any[],
     specialDaysMore: 0,
+    specialDaysError: '',
     stats: null as any,
     loading: true,
     todayClosed: false,
@@ -171,7 +172,8 @@ Page({
           orders: [],
           dishes: [],
           specialDays: [],
-          specialDaysMore: 0
+          specialDaysMore: 0,
+          specialDaysError: ''
         })
         return
       }
@@ -207,6 +209,11 @@ Page({
     this._forceSpecialDays = true
     this.setData({ error: '', loading: true })
     this.guard()
+  },
+
+  onRetrySpecialDays() {
+    this._forceSpecialDays = true
+    this.load()
   },
 
   // 每天第一次打开厨房时补跑一次菜单滚动/售罄重置，
@@ -261,6 +268,7 @@ Page({
       let dailyGoal = this.data.dailyGoal || 0
       let specialDays = this.data.specialDays
       let specialDaysMore = this.data.specialDaysMore
+      let specialDaysError = this.data.specialDaysError
       if (!silent) {
         const business = await getBusiness().catch(() => null)
         if (business) {
@@ -288,8 +296,14 @@ Page({
           this._categories = categories
         }
       }
-      const special = await getSpecialDays(forceSpecialDays).catch(() => null)
+      let special: any = null
+      try {
+        special = await getSpecialDays(forceSpecialDays)
+      } catch (e) {
+        specialDaysError = '重要日子没加载出来'
+      }
       if (special) {
+        specialDaysError = ''
         specialDays = this.decorateSpecialDays(special.days)
         specialDaysMore = Math.max(
           0,
@@ -706,6 +720,7 @@ Page({
         dishes,
         specialDays,
         specialDaysMore,
+        specialDaysError,
         stats,
         dailyGoal,
         goalPercent,
