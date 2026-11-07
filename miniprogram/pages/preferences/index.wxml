@@ -76,6 +76,7 @@
           <view wx:if="{{anniversary}}" class="date-clear" catchtap="onClearAnniversary">清除</view>
         </view>
       </view>
+      <view wx:if="{{specialHint}}" class="date-hint">下次提醒：{{specialHint}}</view>
       <view class="date-hint">保存后，未来 30 天内会在厨房端提醒掌勺人。</view>
     </view>
 

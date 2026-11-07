@@ -10,6 +10,53 @@ function splitList(text: string): string[] {
     .slice(0, 8)
 }
 
+function occurrencesUntil(dateKey: string): number | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
+    return null
+  }
+  const today = new Date(Date.now() + 8 * 60 * 60 * 1000)
+  const todayUtc = Date.UTC(
+    today.getUTCFullYear(),
+    today.getUTCMonth(),
+    today.getUTCDate()
+  )
+  const parts = dateKey.split('-').map(Number)
+  const occurrence = (year: number) => {
+    const lastDay = new Date(Date.UTC(year, parts[1], 0)).getUTCDate()
+    return Date.UTC(year, parts[1] - 1, Math.min(parts[2], lastDay))
+  }
+  let next = occurrence(today.getUTCFullYear())
+  if (next < todayUtc) {
+    next = occurrence(today.getUTCFullYear() + 1)
+  }
+  return Math.round((next - todayUtc) / (24 * 60 * 60 * 1000))
+}
+
+function relativeText(dateKey: string): string {
+  const days = occurrencesUntil(dateKey)
+  if (days === null) {
+    return ''
+  }
+  return days === 0 ? '今天' : days === 1 ? '明天' : `还有 ${days} 天`
+}
+
+function buildSpecialHint(birthday: string, anniversary: string): string {
+  const parts: string[] = []
+  if (birthday) {
+    const text = relativeText(birthday)
+    if (text) {
+      parts.push(`生日${text}`)
+    }
+  }
+  if (anniversary) {
+    const text = relativeText(anniversary)
+    if (text) {
+      parts.push(`纪念日${text}`)
+    }
+  }
+  return parts.join('，')
+}
+
 Page({
   data: {
     dislikesText: '',
@@ -18,6 +65,7 @@ Page({
     birthday: '',
     anniversary: '',
     today: dateInputString(),
+    specialHint: '',
     loading: true,
     loadFailed: false,
     saving: false
@@ -40,6 +88,10 @@ Page({
         address: profile.address,
         birthday: profile.birthday || '',
         anniversary: profile.anniversary || '',
+        specialHint: buildSpecialHint(
+          profile.birthday || '',
+          profile.anniversary || ''
+        ),
         loading: false,
         loadFailed: false
       })
@@ -70,19 +122,33 @@ Page({
   },
 
   onBirthday(e: any) {
-    this.setData({ birthday: String(e.detail.value || '') })
+    const birthday = String(e.detail.value || '')
+    this.setData({
+      birthday,
+      specialHint: buildSpecialHint(birthday, this.data.anniversary)
+    })
   },
 
   onAnniversary(e: any) {
-    this.setData({ anniversary: String(e.detail.value || '') })
+    const anniversary = String(e.detail.value || '')
+    this.setData({
+      anniversary,
+      specialHint: buildSpecialHint(this.data.birthday, anniversary)
+    })
   },
 
   onClearBirthday() {
-    this.setData({ birthday: '' })
+    this.setData({
+      birthday: '',
+      specialHint: buildSpecialHint('', this.data.anniversary)
+    })
   },
 
   onClearAnniversary() {
-    this.setData({ anniversary: '' })
+    this.setData({
+      anniversary: '',
+      specialHint: buildSpecialHint(this.data.birthday, '')
+    })
   },
 
   async onSave() {

@@ -1455,8 +1455,9 @@ function chinaDate(offset) {
   check(
     'mock 生日纪念日选择',
     data.birthday === specialBirthday &&
-      data.anniversary === specialAnniversary,
-    `${data.birthday} / ${data.anniversary}`
+      data.anniversary === specialAnniversary &&
+      data.specialHint === '生日还有 5 天，纪念日今天',
+    `${data.birthday} / ${data.anniversary} · ${data.specialHint}`
   )
   await invoke(mp, 'page.onClearBirthday()')
   await sleep(200)
