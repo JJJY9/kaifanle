@@ -1072,7 +1072,8 @@ Page({
           list.length > MAX_BATCH_PRICE_DISHES
             ? `按百分比改价（需先筛选到 ${MAX_BATCH_PRICE_DISHES} 道内）`
             : `按百分比改价（${list.length} 道）`,
-          `改分类（${list.length} 道）`
+          `改分类（${list.length} 道）`,
+          `每道补 5 份（${list.length} 道）`
         ]
       })
       tapIndex = Number(sheet.tapIndex)
@@ -1085,6 +1086,10 @@ Page({
     }
     if (tapIndex === 3) {
       await this.onBatchCategory()
+      return
+    }
+    if (tapIndex === 4) {
+      await this.onBatchRestock()
       return
     }
     const status: 'on' | 'off' = tapIndex === 0 ? 'on' : 'off'
@@ -1415,6 +1420,95 @@ Page({
         icon: 'none'
       })
     }
+  },
+
+  async onBatchRestock() {
+    if (this.data.batchBusy) {
+      return
+    }
+    const list = this.data.displayDishes || []
+    if (!list.length) {
+      wx.showToast({ title: '当前筛选没有菜品', icon: 'none' })
+      return
+    }
+    if (list.length > MAX_BATCH_PRICE_DISHES) {
+      wx.showToast({
+        title: `一次最多补 ${MAX_BATCH_PRICE_DISHES} 道，先缩小范围`,
+        icon: 'none'
+      })
+      return
+    }
+    const targets = list.filter(
+      dish =>
+        typeof dish.stock === 'number' &&
+        dish.stock >= 0 &&
+        dish.stock <= 9994
+    )
+    if (!targets.length) {
+      wx.showToast({ title: '没有可补库存的菜', icon: 'none' })
+      return
+    }
+    const confirm: any = await wx.showModal({
+      title: `每道补 5 份？`,
+      content: `当前筛选的 ${targets.length} 道菜会各加 5 份库存。`,
+      confirmText: '补库存',
+      cancelText: '算了'
+    })
+    if (!confirm.confirm) {
+      return
+    }
+    this.setData({ batchBusy: true })
+    wx.showLoading({ title: '正在补库存', mask: true })
+    const stockMap: Record<string, number> = {}
+    let done = 0
+    let failed = 0
+    try {
+      for (const dish of targets) {
+        try {
+          const nextStock = Number(dish.stock) + 5
+          const saved = await saveDish({
+            ...dish,
+            stock: nextStock,
+            stockBase: dish.stock
+          } as any)
+          stockMap[dish.id] =
+            saved && typeof saved.stock === 'number'
+              ? saved.stock
+              : nextStock
+          done++
+        } catch (e) {
+          failed++
+        }
+      }
+    } finally {
+      wx.hideLoading()
+    }
+    const dishes = this.data.dishes.map(dish =>
+      stockMap[dish.id] !== undefined
+        ? { ...dish, stock: stockMap[dish.id] }
+        : dish
+    )
+    const lowStock = dishes.filter(
+      dish =>
+        dish.status === 'on' &&
+        typeof dish.stock === 'number' &&
+        dish.stock >= 0 &&
+        dish.stock <= this.lowStockLimit()
+    ).length
+    this.setData(
+      {
+        dishes,
+        todo: { ...this.data.todo, lowStock },
+        batchBusy: false
+      },
+      () => this.applyDishFilter()
+    )
+    wx.showToast({
+      title: failed
+        ? `补好 ${done} 道，${failed} 道失败`
+        : `补好 ${done} 道，每道 +5`,
+      icon: 'none'
+    })
   },
 
   onLoad(options: any) {

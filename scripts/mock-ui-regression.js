@@ -1415,6 +1415,25 @@ function chinaDate(offset) {
       ? `${data.displayDishes[0]?.name} → ${categoryTarget.name}`
       : '没有分类'
   )
+  await mp.mockWxMethod('showModal', { confirm: true })
+  await invoke(mp, 'page.onBatchRestock()')
+  await sleep(1800)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 厨房批量补库存',
+    data.displayDishes.length === 1 &&
+      Number(data.displayDishes[0].stock) === 7,
+    data.displayDishes[0] ? `库存 ${data.displayDishes[0].stock}` : '没找到菜'
+  )
+  const restockDishId = data.displayDishes[0] && data.displayDishes[0].id
+  if (restockDishId) {
+    await mp.navigateTo('/pages/dish-edit/index?id=' + restockDishId)
+    await sleep(1600)
+    await invoke(mp, "page.onStock({ detail: { value: '2' } })")
+    await invoke(mp, 'page.onSave()')
+    await sleep(1800)
+  }
   await invoke(mp, 'page.onClearDishSearch()')
   await sleep(300)
   await mp.navigateBack()
