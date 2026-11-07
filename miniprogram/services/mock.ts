@@ -2005,6 +2005,12 @@ export async function getKitchenReport(): Promise<KitchenReport> {
           100
       )
     : 0
+  const repliedRatings = rated.filter(
+    order => String(order.ownerReply || '').trim()
+  ).length
+  const replyRate = rated.length
+    ? Math.round((repliedRatings / rated.length) * 100)
+    : 0
   const tagMap: Record<string, number> = {}
   active.forEach(order => {
     ;(order.ratingTags || []).forEach(tag => {
@@ -2050,6 +2056,8 @@ export async function getKitchenReport(): Promise<KitchenReport> {
     ratedCount: rated.length,
     avgRating,
     goodRate,
+    repliedRatings,
+    replyRate,
     topTags,
     mealStats,
     topRatedDishes,

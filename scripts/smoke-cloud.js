@@ -2131,6 +2131,8 @@ async function run() {
   assert.ok(res.data.topDishes[0].qty >= 1)
   assert.strictEqual(res.data.minRatedOrders, 2)
   assert.deepStrictEqual(res.data.topRatedDishes, [])
+  assert.strictEqual(typeof res.data.repliedRatings, 'number')
+  assert.ok(res.data.replyRate >= 0 && res.data.replyRate <= 100)
   const slowDishPayload = {
     name: '!慢销测试菜',
     desc: '滞销榜测试',

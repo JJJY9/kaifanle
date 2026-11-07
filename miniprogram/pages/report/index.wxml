@@ -83,6 +83,7 @@
       <text>评价 {{report.ratedCount}} 条</text>
       <text>平均 {{report.avgRating}} 分</text>
       <text>好评率 {{report.goodRate}}%</text>
+      <text>已回复 {{report.repliedRatings}} 条 · {{report.replyRate}}%</text>
     </view>
 
     <view wx:if="{{report.topTags && report.topTags.length}}" class="tags-line card">

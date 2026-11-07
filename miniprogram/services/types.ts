@@ -252,6 +252,8 @@ export interface KitchenReport {
   ratedCount: number
   avgRating: number
   goodRate: number
+  repliedRatings: number
+  replyRate: number
   topTags: { name: string; count: number }[]
   mealStats: { meal: MealId; count: number; revenue: number }[]
   topRatedDishes: { name: string; avgRating: number; ratedCount: number }[]

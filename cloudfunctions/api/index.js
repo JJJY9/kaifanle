@@ -1097,6 +1097,12 @@ async function getKitchenReport(openid) {
           100
       )
     : 0
+  const repliedRatings = rated.filter(
+    order => String(order.ownerReply || '').trim()
+  ).length
+  const replyRate = rated.length
+    ? Math.round((repliedRatings / rated.length) * 100)
+    : 0
   const tagMap = {}
   active.forEach(order => {
     ;(order.ratingTags || []).forEach(tag => {
@@ -1141,6 +1147,8 @@ async function getKitchenReport(openid) {
     ratedCount: rated.length,
     avgRating,
     goodRate,
+    repliedRatings,
+    replyRate,
     topTags,
     mealStats,
     topRatedDishes,

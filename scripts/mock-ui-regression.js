@@ -1304,6 +1304,7 @@ function chinaDate(offset) {
     mp,
     `page.setData({ dishes: page.data.dishes.map(dish => dish.name === '批量测试菜' ? { ...dish, price: 9.9 } : dish) }, () => page.applyDishFilter())`
   )
+  await sleep(300)
   await mp.mockWxMethod('showModal', { confirm: true, content: '10' })
   await invoke(mp, 'page.onBatchStatus()')
   await sleep(1800)
@@ -2219,6 +2220,12 @@ function chinaDate(offset) {
       .join(' ')
   )
   const slowDishes = data.report.slowDishes || []
+  check(
+    'mock 月报回复率',
+    Number(data.report.repliedRatings) >= 1 &&
+      Number(data.report.replyRate) > 0,
+    `${data.report.repliedRatings}/${data.report.ratedCount} · ${data.report.replyRate}%`
+  )
   check(
     'mock 月报滞销菜品',
     slowDishes.length >= 1 &&
