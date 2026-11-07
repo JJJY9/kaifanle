@@ -1622,6 +1622,16 @@ function chinaDate(offset) {
       String(data.specialBanner || '').indexOf('今天') > -1,
     data.specialBanner || '没有提醒'
   )
+  await invoke(mp, 'page.onWeekMenus()')
+  await sleep(1500)
+  page = await current()
+  check(
+    'mock 重要日子去饭表',
+    page.path === 'pages/week-menus/index',
+    page.path
+  )
+  await mp.navigateBack()
+  await sleep(800)
 
   // 菜谱大全
   await mp.navigateTo('/pages/recipe-list/index')

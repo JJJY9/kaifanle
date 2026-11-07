@@ -63,7 +63,10 @@
     <view wx:if="{{pendingReviews}}" class="review-reminder" bindtap="onPendingReviews">
       ⭐ 有 {{pendingReviews}} 单吃完还没评价，去夸夸 ›
     </view>
-    <view wx:if="{{specialBanner}}" class="special-reminder">{{specialBanner}}</view>
+    <view wx:if="{{specialBanner}}" class="special-reminder" bindtap="onWeekMenus">
+      <text>{{specialBanner}}</text>
+      <text class="special-arrow">去饭表 ›</text>
+    </view>
     <view wx:if="{{busyText}}" class="busy-line">{{busyText}}</view>
     <view wx:if="{{mealNotice}}" class="meal-notice">{{mealNotice}}</view>
     <view wx:if="{{notice}}" class="notice-box">

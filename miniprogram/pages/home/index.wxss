@@ -218,6 +218,10 @@
 }
 
 .special-reminder {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
   margin-top: 10rpx;
   padding: 10rpx 18rpx;
   background: #FFF1F6;
@@ -227,6 +231,17 @@
   color: #8A2D4A;
   font-size: 22rpx;
   font-weight: 800;
+}
+
+.special-reminder:active {
+  transform: translate(3rpx, 3rpx);
+  box-shadow: none;
+}
+
+.special-arrow {
+  flex: 0 0 auto;
+  color: #5C5C5C;
+  font-size: 20rpx;
 }
 
 .busy-line {
