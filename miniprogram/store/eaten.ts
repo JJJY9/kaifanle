@@ -22,11 +22,38 @@ function read(): Record<string, number> {
 
 export function recordEaten(dishIds: string[], at: number = Date.now()) {
   const map = read()
+  const now = Date.now()
   let changed = false
   ;(dishIds || []).forEach(id => {
     const key = String(id || '').trim()
-    if (key) {
-      map[key] = at
+    if (!key) {
+      return
+    }
+    const existing = Number(map[key] || 0)
+    // 未来餐期不覆盖今天或更早的真实记录
+    if (at > now && existing && existing <= now) {
+      return
+    }
+    map[key] = at
+    changed = true
+  })
+  if (!changed) {
+    return
+  }
+  try {
+    wx.setStorageSync(EATEN_KEY, JSON.stringify(map))
+  } catch (e) {
+    // 忽略存储失败
+  }
+}
+
+export function removeEaten(dishIds: string[], at: number) {
+  const map = read()
+  let changed = false
+  ;(dishIds || []).forEach(id => {
+    const key = String(id || '').trim()
+    if (key && Number(map[key] || 0) === Number(at)) {
+      delete map[key]
       changed = true
     }
   })

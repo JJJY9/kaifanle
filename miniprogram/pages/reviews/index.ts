@@ -208,14 +208,17 @@ Page({
         ? ''
         : (RATINGS.find(item => String(item.value) === filter) || {}).label
     const imageSuffix = this.data.onlyImages ? '带图的' : ''
+    const mealPrefix =
+      this.data.meal === 'all' ? '' : mealName(this.data.meal)
+    const scoped = this.data.meal !== 'all' || this.data.onlyImages
     this.setData({
       display,
       emptyText:
         filter === 'all'
-          ? this.data.onlyImages
-            ? '还没有带图的评价'
+          ? scoped
+            ? `还没有${mealPrefix}${imageSuffix}评价`
             : '还没有评价'
-          : `还没有${imageSuffix}「${label}」的评价`
+          : `还没有${mealPrefix}${imageSuffix}「${label}」的评价`
     })
   },
 

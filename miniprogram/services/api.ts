@@ -64,12 +64,22 @@ let menuCache: Record<string, { at: number; data: DailyMenu }> = {}
 let kitchenStatusCache: { at: number; data: KitchenStatus } | null = null
 let lastOrderCache: { at: number; data: Order | null } | null = null
 let activeOrderCache: { at: number; data: Order | null } | null = null
+let activeOrderCacheVersion = 0
+
+function invalidateActiveOrderCache() {
+  activeOrderCache = null
+  activeOrderCacheVersion += 1
+}
 let expiringCouponsCache: { at: number; count: number } | null = null
 let pendingReviewCache: { at: number; count: number } | null = null
 let myStatsCache: { at: number; data: MyStats } | null = null
 let dishStatsCache: Record<string, { at: number; data: DishStats }> = {}
 let specialDaysCache: { at: number; data: SpecialDays } | null = null
 let mySpecialDaysCache: { at: number; data: SpecialDays } | null = null
+let mySpecialDaysWindowCache: Record<
+  string,
+  { at: number; data: SpecialDays }
+> = {}
 let myProfileCache: { at: number; data: UserProfile } | null = null
 const BUSINESS_CACHE_TTL = 60 * 1000
 const MENU_CACHE_TTL = 60 * 1000
@@ -337,8 +347,11 @@ export async function getMyActiveOrder(): Promise<Order | null> {
     ) {
       return cloneData(activeOrderCache.data)
     }
+    const version = activeOrderCacheVersion
     const data = await callApi<Order | null>('getMyActiveOrder')
-    activeOrderCache = { at: Date.now(), data }
+    if (version === activeOrderCacheVersion) {
+      activeOrderCache = { at: Date.now(), data }
+    }
     return cloneData(data)
   }
   return mock.getMyActiveOrder()
@@ -373,7 +386,7 @@ export async function acceptPendingOrders(): Promise<{
   const result = USE_CLOUD
     ? await callApi<{ done: number; total: number }>('acceptPendingOrders')
     : await mock.acceptPendingOrders()
-  activeOrderCache = null
+  invalidateActiveOrderCache()
   lastOrderCache = null
   return result
 }
@@ -394,10 +407,11 @@ export async function exportData(): Promise<BackupData> {
 
 export async function getOrder(id: string): Promise<Order | null> {
   if (USE_CLOUD) {
+    // 打开订单会清未读；先失效，避免在途的首页请求把旧未读写回缓存
+    invalidateActiveOrderCache()
     const order = await callApi<Order | null>('getOrder', { id })
-    // 顾客打开订单会清掉未读，首页「新回复」角标缓存要同步失效
     if (order && order.viewerRole === 'customer') {
-      activeOrderCache = null
+      invalidateActiveOrderCache()
     }
     return order
   }
@@ -409,7 +423,7 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
     ? await callApi<Order>('createOrder', payload)
     : await mock.createOrder(payload)
   lastOrderCache = null
-  activeOrderCache = null
+  invalidateActiveOrderCache()
   myStatsCache = null
   dishStatsCache = {}
   return order
@@ -423,7 +437,7 @@ export async function cancelOrder(
     ? await callApi<Order | null>('cancelOrder', { id, reason })
     : await mock.cancelOrder(id, reason)
   lastOrderCache = null
-  activeOrderCache = null
+  invalidateActiveOrderCache()
   myStatsCache = null
   dishStatsCache = {}
   return order
@@ -470,7 +484,9 @@ export async function updateOrderSlot(
 
 export async function urgeOrder(id: string): Promise<Order | null> {
   if (USE_CLOUD) {
-    return callApi<Order | null>('urgeOrder', { id })
+    const order = await callApi<Order | null>('urgeOrder', { id })
+    invalidateActiveOrderCache()
+    return order
   }
   return mock.urgeOrder(id)
 }
@@ -519,7 +535,7 @@ export async function updateOrderStatus(
         reason
       })
     : await mock.updateOrderStatus(id, status, reason)
-  activeOrderCache = null
+  invalidateActiveOrderCache()
   dishStatsCache = {}
   return order
 }
@@ -662,14 +678,20 @@ export async function getMySpecialDays(
     ) {
       return cloneData(mySpecialDaysCache.data)
     }
-    const payload: any = {}
     if (customWindow) {
-      payload.windowDays = customWindow
+      const key = `${today}_${customWindow}`
+      const hit = mySpecialDaysWindowCache[key]
+      if (!force && hit && Date.now() - hit.at < SPECIAL_DAYS_TTL) {
+        return cloneData(hit.data)
+      }
+      const data = await callApi<SpecialDays>('getMySpecialDays', {
+        windowDays: customWindow
+      })
+      mySpecialDaysWindowCache = { [key]: { at: Date.now(), data } }
+      return cloneData(data)
     }
-    const data = await callApi<SpecialDays>('getMySpecialDays', payload)
-    if (!customWindow) {
-      mySpecialDaysCache = { at: Date.now(), data }
-    }
+    const data = await callApi<SpecialDays>('getMySpecialDays', {})
+    mySpecialDaysCache = { at: Date.now(), data }
     return cloneData(data)
   }
   return mock.getMySpecialDays(windowDays)

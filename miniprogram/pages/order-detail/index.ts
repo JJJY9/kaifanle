@@ -1,6 +1,7 @@
 import type { Dish, Order, OrderStatus } from '../../services/types'
 import { getOrder, cancelOrder, getDishes, getKitchenStatus, urgeOrder, rateOrder, sendOrderMessage, updateOrderNote, updateOrderSlot } from '../../services/api'
 import { addOrderToCart } from '../../utils/reorder'
+import { removeEaten } from '../../store/eaten'
 import { orderReceiptLines, receiptText } from '../../utils/receipt'
 import { prepareImageForUpload } from '../../utils/image'
 import { saveImageToAlbum } from '../../utils/save-image'
@@ -970,6 +971,14 @@ Page({
         .trim()
         .slice(0, 50)
       await cancelOrder(order.id, reason)
+      const dateKey =
+        order.scheduledDate ||
+        dateInputString(new Date(order.createdAt))
+      const eatenAt = new Date(dateKey + 'T00:00:00').getTime()
+      removeEaten(
+        (order.items || []).map((item: any) => item.dishId),
+        Number.isFinite(eatenAt) ? eatenAt : 0
+      )
       wx.showToast({ title: '已取消', icon: 'none' })
       this.load()
     } catch (e: any) {

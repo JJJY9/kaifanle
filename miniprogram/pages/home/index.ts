@@ -126,6 +126,7 @@ Page({
   _lastOrderRaw: null as any,
   _repeating: false,
   _urging: false,
+  _urgeTimer: null as any,
 
   onLoad() {
     const app = getApp()
@@ -221,7 +222,15 @@ Page({
     this.loadPendingReviews()
   },
 
+  onHide() {
+    if (this._urgeTimer) {
+      clearTimeout(this._urgeTimer)
+      this._urgeTimer = null
+    }
+  },
+
   onUnload() {
+    this.onHide()
     if (this._unsub) {
       this._unsub()
       this._unsub = null
@@ -817,28 +826,58 @@ Page({
             : expectedRaw
               ? `预计 ${expectedRaw} 出锅`
               : ''
-      this.setData({
-        activeOrder: {
-          id: order.id,
-          status: order.status,
-          statusText: STATUS_TEXT[order.status],
-          mealText: mealName(order.meal),
-          lastMessageText,
-          expectedText: eta,
-          messageBadge: Math.max(0, Number(order.customerUnread) || 0),
-          urgeCooling: Boolean(
-            order.urgedAt &&
-              Date.now() - Number(order.urgedAt) < 5 * 60 * 1000
-          ),
-          canUrge: ['pending', 'accepted', 'cooking'].indexOf(order.status) > -1,
-          summary:
-            itemSummary((order.items || []).map(item => item.name)) +
-            ` · 共 ${totalQty} 份`
-        }
-      })
+      const urgeUntil = order.urgedAt
+        ? Number(order.urgedAt) + 5 * 60 * 1000
+        : 0
+      this.setData(
+        {
+          activeOrder: {
+            id: order.id,
+            status: order.status,
+            statusText: STATUS_TEXT[order.status],
+            mealText: mealName(order.meal),
+            lastMessageText,
+            expectedText: eta,
+            messageBadge: Math.max(0, Number(order.customerUnread) || 0),
+            urgeUntil,
+            urgeCooling: urgeUntil > Date.now(),
+            canUrge:
+              ['pending', 'accepted', 'cooking'].indexOf(order.status) > -1,
+            summary:
+              itemSummary((order.items || []).map(item => item.name)) +
+              ` · 共 ${totalQty} 份`
+          }
+        },
+        () => this.scheduleUrgeRefresh()
+      )
     } catch (e) {
       // 没有进行中订单时保持隐藏
     }
+  },
+
+  scheduleUrgeRefresh() {
+    if (this._urgeTimer) {
+      clearTimeout(this._urgeTimer)
+      this._urgeTimer = null
+    }
+    const order = this.data.activeOrder
+    if (!order || !order.urgeCooling) {
+      return
+    }
+    const remain = Number(order.urgeUntil || 0) - Date.now()
+    if (remain <= 0) {
+      this.setData({ 'activeOrder.urgeCooling': false })
+      return
+    }
+    this._urgeTimer = setTimeout(() => {
+      this._urgeTimer = null
+      const current = this.data.activeOrder
+      if (current && Number(current.urgeUntil || 0) <= Date.now()) {
+        this.setData({ 'activeOrder.urgeCooling': false })
+      } else {
+        this.scheduleUrgeRefresh()
+      }
+    }, Math.min(remain + 50, 5 * 60 * 1000))
   },
 
   onActiveOrderTap() {
@@ -858,14 +897,22 @@ Page({
       wx.showToast({ title: '这一单不用催啦', icon: 'none' })
       return
     }
-    if (order.urgeCooling) {
+    if (Number(order.urgeUntil || 0) > Date.now()) {
+      this.setData({ 'activeOrder.urgeCooling': true })
       wx.showToast({ title: '刚催过啦，掌勺人正在忙', icon: 'none' })
       return
     }
     this._urging = true
     try {
-      await urgeOrder(order.id)
+      const updated = await urgeOrder(order.id)
       wx.showToast({ title: '帮你催啦，掌勺人马上看', icon: 'none' })
+      const until =
+        Number(updated && updated.urgedAt ? updated.urgedAt : 0) + 5 * 60 * 1000
+      this.setData({
+        'activeOrder.urgeCooling': true,
+        'activeOrder.urgeUntil': until > Date.now() ? until : Date.now() + 5 * 60 * 1000
+      })
+      this.scheduleUrgeRefresh()
       this.loadActiveOrder()
     } catch (e: any) {
       wx.showToast({
@@ -1363,6 +1410,7 @@ Page({
       dateText: formatDate(),
       greetText: greeting()
     })
+    this.loadActiveOrder()
     this.loadMenu().then(() => wx.stopPullDownRefresh())
   },
 

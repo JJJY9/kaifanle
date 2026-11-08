@@ -3366,11 +3366,19 @@ function chinaDate(offset) {
     backTopShown && data.showBackTop === false,
     backTopShown ? '滚动后显示、回滚后隐藏' : '未显示'
   )
-  await invoke(
-    mp,
-    "page.onCopyOrderNo({ currentTarget: { dataset: { no: '000123' } } })"
+  const visibleOrder = (data.displayOrders || []).find(
+    order => !order.collapsed && order.no
   )
-  await sleep(500)
+  const firstOrderCard = await page.$('.order.card')
+  if (firstOrderCard && visibleOrder) {
+    await firstOrderCard.longpress()
+    await sleep(700)
+    page = await current()
+    if (String(page.path).indexOf('order-detail') > -1) {
+      await mp.navigateBack()
+      await sleep(800)
+    }
+  }
   const ordersCopyClip = await mp.evaluate(
     new Function(
       "return new Promise(resolve => wx.getClipboardData({ success: r => resolve(r.data || ''), fail: () => resolve('') }))"
@@ -3378,7 +3386,8 @@ function chinaDate(offset) {
   )
   check(
     'mock 订单列表长按复制单号',
-    String(ordersCopyClip || '') === '000123',
+    Boolean(visibleOrder) &&
+      String(ordersCopyClip || '') === String(visibleOrder.no),
     String(ordersCopyClip || '')
   )
   await invoke(
@@ -4742,6 +4751,9 @@ function chinaDate(offset) {
 
   // 真实提交一笔明天午餐：验证下单写入的「吃过」标记与结算记忆
   const submitDate = chinaDate(1)
+  const todayMidnight = new Date()
+  todayMidnight.setHours(0, 0, 0, 0)
+  const todayStamp = todayMidnight.getTime()
   await mp.switchTab('/pages/home/index')
   await sleep(1600)
   await invoke(
@@ -4756,9 +4768,9 @@ function chinaDate(offset) {
   await sleep(1400)
   await invoke(
     mp,
-    "page.onSkuAdd({ detail: { line: { key: '', dishId: 'd02', name: '照烧鸡腿饭', price: 16, qty: 1, specs: [], note: '', color: '#2D9CFF' } } })"
+    `wx.setStorageSync('kfl_eaten_v1', JSON.stringify({ d01: ${todayStamp} })); page.onSkuAdd({ detail: { line: { key: '', dishId: 'd02', name: '照烧鸡腿饭', price: 16, qty: 1, specs: [], note: '', color: '#2D9CFF' } } }); page.onSkuAdd({ detail: { line: { key: '', dishId: 'd01', name: '番茄牛腩饭', price: 18, qty: 1, specs: [], note: '', color: '#FFD23F' } } }); return true`
   )
-  await sleep(400)
+  await sleep(500)
   await mp.navigateTo(
     `/pages/checkout/index?meal=lunch&date=${submitDate}`
   )
@@ -4799,26 +4811,52 @@ function chinaDate(offset) {
     page.path === 'pages/order-detail/index' &&
       Boolean(submittedOrderId) &&
       eatenDay === submitDate &&
+      Number((eatenStore || {}).d01 || 0) === todayStamp &&
       (checkoutPrefsStore.times || {}).lunch === '尽快' &&
       checkoutPrefsStore.mode === '在家吃',
-    `${page.path} · 吃过 ${eatenDay} · ${
-      (checkoutPrefsStore.times || {}).lunch || '无时间'
+    `${page.path} · 新单 ${eatenDay} · 今天记录 ${
+      Number((eatenStore || {}).d01 || 0) === todayStamp ? '保留' : '被覆盖'
     }`
   )
-  await mp.mockWxMethod('showModal', { confirm: true, content: '回归清理' })
-  if (String(page.path).indexOf('order-detail') > -1) {
+  await mp.switchTab('/pages/home/index')
+  await sleep(1800)
+  page = await current()
+  const homeEaten = await invoke(
+    mp,
+    "const find = id => ((page._available || []).find(d => d.id === id) || {}); return { d01: find('d01').lastEatenText || '', d02: find('d02').lastEatenText || '' }"
+  )
+  check(
+    'mock 预订单不提前算今天吃过',
+    homeEaten && homeEaten.d01 === '今天吃过' && !homeEaten.d02,
+    `今天菜「${(homeEaten && homeEaten.d01) || '无'}」· 明天菜「${
+      (homeEaten && homeEaten.d02) || '无'
+    }」`
+  )
+  let eatenAfterCancel = eatenStore
+  if (submittedOrderId) {
+    await mp.navigateTo(`/pages/order-detail/index?id=${submittedOrderId}`)
+    await sleep(1600)
+    await mp.mockWxMethod('showModal', { confirm: true, content: '回归清理' })
     await invoke(mp, 'page.onCancelOrder()')
     await sleep(1500)
+    eatenAfterCancel = await mp.evaluate(() => {
+      try {
+        return JSON.parse(wx.getStorageSync('kfl_eaten_v1') || '{}')
+      } catch (e) {
+        return {}
+      }
+    })
   }
-  if (submittedOrderId) {
-    await mp.evaluate(
-      new Function(
-        `const list = JSON.parse(wx.getStorageSync('kfl_orders_v1') || '[]'); wx.setStorageSync('kfl_orders_v1', JSON.stringify(list.filter(order => order.id !== ${JSON.stringify(
-          submittedOrderId
-        )}))); return true;`
-      )
-    )
-  }
+  check(
+    'mock 取消订单清理吃过标记',
+    !(eatenAfterCancel || {}).d02 &&
+      Number((eatenAfterCancel || {}).d01 || 0) === todayStamp,
+    `d01 ${
+      Number((eatenAfterCancel || {}).d01 || 0) === todayStamp
+        ? '保留'
+        : '丢失'
+    } · d02 ${(eatenAfterCancel || {}).d02 ? '残留' : '已清'}`
+  )
 
   // 首页「上次吃」快捷再来一份
   await mp.switchTab('/pages/home/index')
@@ -5045,6 +5083,20 @@ function chinaDate(offset) {
     'mock 收藏一键清空',
     Number(data.count) === 0 && (data.allFavorites || []).length === 0,
     String(data.count)
+  )
+
+  // 清理本轮回测创建的订单与本地标记，避免污染下一次运行
+  if (submittedOrderId) {
+    await mp.evaluate(
+      new Function(
+        `const list = JSON.parse(wx.getStorageSync('kfl_orders_v1') || '[]'); wx.setStorageSync('kfl_orders_v1', JSON.stringify(list.filter(order => order.id !== ${JSON.stringify(
+          submittedOrderId
+        )}))); return true;`
+      )
+    )
+  }
+  await mp.evaluate(
+    new Function("wx.removeStorageSync('kfl_eaten_v1'); return true;")
   )
 
   const failed = results.filter(r => !r.ok)

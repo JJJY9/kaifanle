@@ -717,6 +717,9 @@ function loadOrders(): Order[] {
           seed1 &&
             (seed1.status !== 'pending' ||
               Number(seed1.adminUnread) !== 1 ||
+              Number(seed1.customerUnread) !== 2 ||
+              Number(seed1.urgedAt || 0) > 0 ||
+              Number(seed1.urgeCount || 0) > 0 ||
               !Array.isArray(seed1.messages) ||
               seed1.messages.length !== 1 ||
               String((seed1.messages[0] && seed1.messages[0].content) || '') !==
@@ -1159,6 +1162,9 @@ export async function getOrder(id: string): Promise<Order | null> {
   }
   if (Number(order.adminUnread)) {
     order.adminUnread = 0
+  }
+  if (Number(order.customerUnread)) {
+    order.customerUnread = 0
   }
   // mock 单机同时扮演双方，打开即视为双方已读，方便演示已读回执
   const now = Date.now()

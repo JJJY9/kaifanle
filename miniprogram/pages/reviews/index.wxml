@@ -82,7 +82,7 @@
 
     <empty-state
       wx:if="{{!display.length}}"
-      title="这一档还没有"
+      title="{{meal === 'all' ? '这一档还没有' : '这个餐次还没有'}}"
       desc="{{emptyText}}"
     />
 
