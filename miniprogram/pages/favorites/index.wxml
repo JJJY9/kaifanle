@@ -82,40 +82,48 @@
       desc="{{emptyDesc}}"
     />
 
-    <view
-      wx:for="{{display}}"
-      wx:key="id"
-      class="fav-card card"
-      data-id="{{item.id}}"
-      bindtap="onTapDish"
-      bindlongpress="onLongPressDish"
-    >
-      <view class="fav-media" style="background: {{item.color}};">
-        <image
-          wx:if="{{item.image || item.cartoon}}"
-          class="fav-img"
-          src="{{item.image || item.cartoon}}"
-          mode="aspectFill"
-          lazy-load
-        />
-        <text wx:else class="fav-char">{{item.emoji || item.char}}</text>
+    <block wx:for="{{displayGroups}}" wx:key="id" wx:for-item="group">
+      <view wx:if="{{displayGroups.length > 1}}" class="fav-group-head">
+        <view class="fav-group-dot" style="background: {{group.color}};"></view>
+        <text class="fav-group-name">{{group.name}}</text>
+        <view class="fav-group-line"></view>
+        <text class="fav-group-count">{{group.dishes.length}} 道</text>
       </view>
-      <view class="fav-info">
-        <view class="fav-name">{{item.name}}</view>
-        <view class="fav-desc">{{item.desc}}</view>
-        <view class="fav-tags">
-          <text wx:if="{{item.status === 'off'}}" class="fav-badge off">已下架</text>
-          <text wx:elif="{{item.status === 'soldout' || item.stock === 0}}" class="fav-badge sold">售罄</text>
-          <text wx:for="{{item.tags}}" wx:key="*this" class="fav-tag">{{item}}</text>
+      <view
+        wx:for="{{group.dishes}}"
+        wx:key="id"
+        class="fav-card card"
+        data-id="{{item.id}}"
+        bindtap="onTapDish"
+        bindlongpress="onLongPressDish"
+      >
+        <view class="fav-media" style="background: {{item.color}};">
+          <image
+            wx:if="{{item.image || item.cartoon}}"
+            class="fav-img"
+            src="{{item.image || item.cartoon}}"
+            mode="aspectFill"
+            lazy-load
+          />
+          <text wx:else class="fav-char">{{item.emoji || item.char}}</text>
         </view>
-        <view wx:if="{{item.lastEatenText}}" class="fav-eaten">🍚 {{item.lastEatenText}}</view>
-        <view wx:if="{{item.favoritedText}}" class="fav-time">收藏于 {{item.favoritedText}}</view>
+        <view class="fav-info">
+          <view class="fav-name">{{item.name}}</view>
+          <view class="fav-desc">{{item.desc}}</view>
+          <view class="fav-tags">
+            <text wx:if="{{item.status === 'off'}}" class="fav-badge off">已下架</text>
+            <text wx:elif="{{item.status === 'soldout' || item.stock === 0}}" class="fav-badge sold">售罄</text>
+            <text wx:for="{{item.tags}}" wx:key="*this" class="fav-tag">{{item}}</text>
+          </view>
+          <view wx:if="{{item.lastEatenText}}" class="fav-eaten">🍚 {{item.lastEatenText}}</view>
+          <view wx:if="{{item.favoritedText}}" class="fav-time">收藏于 {{item.favoritedText}}</view>
+        </view>
+        <view class="fav-right">
+          <text class="fav-price">¥{{item.price}}</text>
+          <text class="fav-arrow">→</text>
+        </view>
       </view>
-      <view class="fav-right">
-        <text class="fav-price">¥{{item.price}}</text>
-        <text class="fav-arrow">→</text>
-      </view>
-    </view>
+    </block>
 
     <view class="foot-btn" bindtap="onGoHome">去点餐</view>
     <button class="foot-btn share" open-type="share">分享我的收藏</button>

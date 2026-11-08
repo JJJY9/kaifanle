@@ -3391,9 +3391,17 @@ function chinaDate(offset) {
     const setBadgeState = state =>
       invoke(
         mp,
-        `page.setData({ display: (page.data.display || []).map(dish => dish.id === ${JSON.stringify(
+        `const update = dish => dish.id === ${JSON.stringify(
           badgeTargetDish.id
-        )} ? Object.assign({}, dish, ${JSON.stringify(state)}) : dish) })`
+        )} ? Object.assign({}, dish, ${JSON.stringify(state)}) : dish
+         page.setData({
+           display: (page.data.display || []).map(update),
+           displayGroups: (page.data.displayGroups || []).map(group =>
+             Object.assign({}, group, {
+               dishes: (group.dishes || []).map(update)
+             })
+           )
+         })`
       )
     const readBadgeText = async selector => {
       const el = await page.$('.fav-badge' + selector)
@@ -3776,6 +3784,59 @@ function chinaDate(offset) {
       ),
     `${expectedListLines.length} 道 · ${sortedListLines[0] || '没有内容'}`
   )
+  await mp.switchTab('/pages/home/index')
+  await sleep(1500)
+  const nonStapleFavId = await invoke(
+    mp,
+    "const sections = page.data.sections || []; for (const section of sections) { for (const dish of section.dishes || []) { if (dish.categoryId !== 'staple' && dish.status !== 'off' && dish.stock !== 0) { return dish.id } } } return ''"
+  )
+  await invoke(
+    mp,
+    `page.onDishFavorite({ detail: { dish: { id: ${JSON.stringify(
+      nonStapleFavId
+    )} } } })`
+  )
+  await sleep(500)
+  await mp.navigateTo('/pages/favorites/index')
+  await sleep(1600)
+  page = await current()
+  data = await page.data()
+  const groupFlattenIds = (data.displayGroups || []).reduce(
+    (list, group) => list.concat((group.dishes || []).map(dish => dish.id)),
+    []
+  )
+  const favGroupHeadEl = await page.$('.fav-group-head')
+  const favGroupHeadText = favGroupHeadEl
+    ? String(await favGroupHeadEl.text())
+    : ''
+  check(
+    'mock 收藏分类分组',
+    Boolean(nonStapleFavId) &&
+      (data.displayGroups || []).length >= 2 &&
+      groupFlattenIds.join('/') ===
+        (data.display || []).map(dish => dish.id).join('/') &&
+      (data.displayGroups || []).every(group =>
+        (group.dishes || []).every(
+          dish => String(dish.categoryId) === group.id
+        )
+      ) &&
+      favGroupHeadText.length > 0 &&
+      favGroupHeadText.indexOf('道') > -1,
+    `${(data.displayGroups || []).length} 组 · ${favGroupHeadText || '无表头'}`
+  )
+  await mp.switchTab('/pages/home/index')
+  await sleep(1500)
+  await invoke(
+    mp,
+    `page.onDishFavorite({ detail: { dish: { id: ${JSON.stringify(
+      nonStapleFavId
+    )} } } })`
+  )
+  await sleep(500)
+  await mp.navigateTo('/pages/favorites/index')
+  await sleep(1600)
+  page = await current()
+  data = await page.data()
   const favCard = await page.$('.fav-card')
   const favIdsBeforeLongPress = (data.allFavorites || []).map(dish => dish.id)
   if (favCard) {

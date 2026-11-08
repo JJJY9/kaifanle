@@ -65,6 +65,7 @@ Page({
     error: '',
     allFavorites: [] as Dish[],
     display: [] as Dish[],
+    displayGroups: [] as any[],
     keyword: '',
     count: 0,
     sort: 'recent' as 'recent' | 'price' | 'eaten',
@@ -218,8 +219,34 @@ Page({
               Number(b.favoritedAt || 0) - Number(a.favoritedAt || 0)
           )
     const hasKeyword = Boolean(keyword)
+    const categoryMeta: Record<string, { name: string; color: string }> = {}
+    ;(this.data.categories || []).forEach((category: any) => {
+      categoryMeta[category.id] = {
+        name: String(category.name || ''),
+        color: String(category.color || '#B8B8B8')
+      }
+    })
+    const displayGroups: any[] = []
+    const groupIndex: Record<string, number> = {}
+    display.forEach(dish => {
+      const categoryId = String((dish as any).categoryId || 'other')
+      let index = groupIndex[categoryId]
+      if (index === undefined) {
+        const meta = categoryMeta[categoryId]
+        index = displayGroups.length
+        groupIndex[categoryId] = index
+        displayGroups.push({
+          id: categoryId,
+          name: meta && meta.name ? meta.name : '其他',
+          color: meta && meta.color ? meta.color : '#B8B8B8',
+          dishes: []
+        })
+      }
+      displayGroups[index].dishes.push(dish)
+    })
     this.setData({
       display,
+      displayGroups,
       emptyTitle: hasKeyword ? '没搜到' : '这个分类还没有收藏',
       emptyDesc: hasKeyword ? '换个菜名试试' : '换个分类看看'
     })
@@ -316,6 +343,7 @@ Page({
     this.setData({
       allFavorites: [],
       display: [],
+      displayGroups: [],
       count: 0,
       posterPath: ''
     })

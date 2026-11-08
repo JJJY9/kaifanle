@@ -149,6 +149,38 @@
   margin-bottom: 18rpx;
 }
 
+.fav-group-head {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin: 22rpx 4rpx 12rpx;
+}
+
+.fav-group-dot {
+  width: 18rpx;
+  height: 18rpx;
+  border: 3rpx solid #111111;
+  border-radius: 6rpx;
+}
+
+.fav-group-name {
+  font-family: 'SmileySans', 'PingFang SC', sans-serif;
+  font-size: 26rpx;
+  font-weight: 800;
+}
+
+.fav-group-line {
+  flex: 1;
+  border-top: 3rpx dashed #111111;
+  opacity: 0.3;
+}
+
+.fav-group-count {
+  color: #8A8A8A;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
 .fav-media {
   display: flex;
   align-items: center;
