@@ -5065,8 +5065,38 @@ function chinaDate(offset) {
       data.selectedDate === savedDate,
     `${data.selectedDate} · ${data.selectedMeal}`
   )
+  await mp.navigateTo('/pages/week-menus/index')
+  await sleep(1600)
+  page = await current()
+  const dayCards = await page.$$('.day-card')
+  const dayHeads = await page.$$('.day-head')
+  let dayTapTarget = ''
+  if (dayCards && dayCards.length >= 2 && dayHeads && dayHeads.length >= 2) {
+    dayTapTarget = String((await dayCards[1].attribute('data-date')) || '')
+    await dayHeads[1].tap()
+    await sleep(1800)
+  }
+  page = await current()
+  data = await page.data()
+  const pendingDateCleared = await mp.evaluate(() => {
+    const app = getApp()
+    return app && app.globalData ? app.globalData.pendingDate || null : null
+  })
+  check(
+    'mock 饭表点卡片跳日期',
+    Boolean(dayTapTarget) &&
+      page.path === 'pages/home/index' &&
+      data.selectedDate === dayTapTarget &&
+      pendingDateCleared === null,
+    `${dayTapTarget || '无'} · ${data.selectedDate || ''}`
+  )
   await mp.switchTab('/pages/home/index')
   await sleep(900)
+  await invoke(
+    mp,
+    "page.onQuickDate({ currentTarget: { dataset: { date: page.data.todayDate } } })"
+  )
+  await sleep(1200)
   // 恢复默认，保持 mock 状态干净
   await mp.navigateTo('/pages/menu-edit/index')
   await sleep(1600)
@@ -5079,6 +5109,28 @@ function chinaDate(offset) {
   page = await current()
   data = await page.data()
   check('mock 订单列表', (data.orders || []).length > 0, `${data.orders.length} 单`)
+  const orderListMidnight = new Date()
+  orderListMidnight.setHours(0, 0, 0, 0)
+  const orderListMinsIntoDay = Math.floor(
+    (Date.now() - orderListMidnight.getTime()) / 60000
+  )
+  const seedOrderWait = (data.displayOrders || []).find(
+    order => order.id === 'seed-1'
+  )
+  const finishedOrderWaits = (data.displayOrders || []).filter(
+    order => ['completed', 'cancelled'].indexOf(order.status) > -1
+  )
+  check(
+    'mock 订单列表已等时长',
+    Boolean(seedOrderWait) &&
+      /^(已等 \d+ 分钟)?$/.test(
+        String((seedOrderWait && seedOrderWait.waitedText) || '')
+      ) &&
+      finishedOrderWaits.every(order => !order.waitedText) &&
+      (orderListMinsIntoDay <= 2 ||
+        String((seedOrderWait && seedOrderWait.waitedText) || '') !== ''),
+    (seedOrderWait && seedOrderWait.waitedText) || '空'
+  )
   check(
     'mock 订单评价表情',
     (data.displayOrders || []).some(

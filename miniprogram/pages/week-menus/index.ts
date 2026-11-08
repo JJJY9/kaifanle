@@ -413,6 +413,18 @@ Page({
     wx.navigateTo({ url: '/pages/menu-edit/index' })
   },
 
+  onDayTap(e: any) {
+    const date = String((e.currentTarget && e.currentTarget.dataset.date) || '')
+    if (!date) {
+      return
+    }
+    const app: any = getApp()
+    if (app && app.globalData) {
+      app.globalData.pendingDate = date
+    }
+    wx.switchTab({ url: '/pages/home/index' })
+  },
+
   onCopyWeekText() {
     const days = (this.data.days || []).slice(0, 7)
     if (!days.length) {

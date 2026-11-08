@@ -1,5 +1,6 @@
 import { getDishes, getMyStats, getOrdersPage } from '../../services/api'
 import { STATUS_TEXT, mealName } from '../../utils/constants'
+import { sameDayWaitText } from '../../utils/wait'
 import {
   formatTime,
   itemSummary,
@@ -112,6 +113,10 @@ Page({
     const view = orders.map(order => ({
       ...order,
       statusText: STATUS_TEXT[order.status],
+      waitedText:
+        ['pending', 'accepted', 'cooking', 'ready'].indexOf(order.status) > -1
+          ? sameDayWaitText(Number(order.createdAt || 0))
+          : '',
       mealText: mealName(order.meal),
       timeText: formatTime(order.createdAt),
       thumb: (() => {

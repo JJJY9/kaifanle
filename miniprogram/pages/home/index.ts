@@ -261,6 +261,26 @@ Page({
         return
       }
     }
+    const pendingDateRaw =
+      app && app.globalData ? app.globalData.pendingDate : ''
+    if (app && app.globalData) {
+      app.globalData.pendingDate = null
+    }
+    const pendingDate = String(pendingDateRaw || '')
+    if (pendingDate) {
+      const today = this.data.todayDate || dateInputString()
+      const maxDate = this.data.maxDate || today
+      if (
+        pendingDate >= today &&
+        pendingDate <= maxDate &&
+        pendingDate !== this.data.selectedDate
+      ) {
+        this.setData({
+          selectedDate: pendingDate,
+          menuDateLabel: menuDateText(pendingDate, today)
+        })
+      }
+    }
     // 每次回到首页都刷新菜单，保证厨房端的售罄/上架能同步过来
     this.loadMenu()
     this.loadLastOrder()

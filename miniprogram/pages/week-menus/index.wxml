@@ -37,6 +37,8 @@
       wx:for="{{days}}"
       wx:key="date"
       class="day-card card {{item.isToday ? 'today' : ''}} {{item.closed ? 'closed' : ''}}"
+      data-date="{{item.date}}"
+      bindtap="onDayTap"
     >
       <view class="day-head">
         <view class="day-date">
