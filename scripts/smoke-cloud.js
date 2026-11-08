@@ -2339,7 +2339,7 @@ async function run() {
   assert.deepStrictEqual(res.data.tastes, ['微辣'])
   assert.strictEqual(res.data.address, '家里')
 
-  // 收藏云同步：读写、清洗、用户隔离
+  // 收藏云同步：按条合并、墓碑删除、版本冲突、用户隔离
   res = await call('getFavorites', {}, 'girl-openid')
   assert.strictEqual(res.ok, true)
   assert.deepStrictEqual(res.data.ids, [])
@@ -2348,31 +2348,48 @@ async function run() {
     'saveFavorites',
     {
       ids: ['d01', 'd02', 'd01', 123, ''],
-      times: { d01: 111, d02: -5, d09: 999 },
-      updatedAt: 5000
+      times: { d01: 111, d02: -5 },
+      baseUpdatedAt: 0
     },
     'girl-openid'
   )
   assert.strictEqual(res.ok, true)
-  assert.deepStrictEqual(res.data.ids, ['d01', 'd02', '123'])
-  assert.deepStrictEqual(res.data.times, { d01: 111 })
-  assert.strictEqual(res.data.updatedAt, 5000)
+  assert.deepStrictEqual(res.data.ids.slice().sort(), ['123', 'd01', 'd02'])
+  assert.strictEqual(res.data.times.d01, 111)
+  assert.ok(Number(res.data.updatedAt) > 0)
+  const firstFavUpdated = Number(res.data.updatedAt)
   res = await call('getFavorites', {}, 'girl-openid')
-  assert.deepStrictEqual(res.data.ids, ['d01', 'd02', '123'])
+  assert.deepStrictEqual(res.data.ids.slice().sort(), ['123', 'd01', 'd02'])
   res = await call('getFavorites', {}, 'stranger-openid')
   assert.deepStrictEqual(res.data.ids, [])
+  const favRemovedAt = Date.now() + 1000
   res = await call(
     'saveFavorites',
-    { ids: ['d02'], times: { d02: 222 }, updatedAt: 6000 },
+    {
+      ids: ['d02'],
+      times: { d02: 222 },
+      removed: { d01: favRemovedAt, '123': favRemovedAt },
+      baseUpdatedAt: firstFavUpdated
+    },
     'girl-openid'
   )
+  assert.deepStrictEqual(res.data.ids, ['d02'])
+  assert.strictEqual(res.data.times.d02, 222)
+  const secondFavUpdated = Number(res.data.updatedAt)
+  // 旧版本客户端用过期版本号推送：返回冲突与云端现状，不覆盖
+  res = await call(
+    'saveFavorites',
+    { ids: ['d03'], times: { d03: 5 }, baseUpdatedAt: firstFavUpdated },
+    'girl-openid'
+  )
+  assert.strictEqual(res.data.conflict, true)
   assert.deepStrictEqual(res.data.ids, ['d02'])
   res = await call('getFavorites', {}, 'girl-openid')
   assert.deepStrictEqual(res.data.ids, ['d02'])
   assert.strictEqual(res.data.times.d02, 222)
-  assert.strictEqual(res.data.updatedAt, 6000)
+  assert.strictEqual(Number(res.data.updatedAt), secondFavUpdated)
 
-  // 吃过记录云同步：读写、清洗、用户隔离
+  // 吃过记录云同步：清洗、墓碑删除、版本冲突、用户隔离
   res = await call('getEaten', {}, 'girl-openid')
   assert.strictEqual(res.ok, true)
   assert.deepStrictEqual(res.data.map, {})
@@ -2382,15 +2399,64 @@ async function run() {
     'saveEaten',
     {
       map: { d01: 111, d02: -1, '': 5, d03: futureEatenAt, d04: 'abc' },
-      updatedAt: 7000
+      baseUpdatedAt: 0
     },
     'girl-openid'
   )
   assert.strictEqual(res.ok, true)
   assert.deepStrictEqual(res.data.map, { d01: 111, d03: futureEatenAt })
-  assert.strictEqual(res.data.updatedAt, 7000)
+  assert.ok(Number(res.data.updatedAt) > 0)
+  const firstEatenUpdated = Number(res.data.updatedAt)
+  res = await call(
+    'saveEaten',
+    {
+      map: { d01: 111, d03: futureEatenAt },
+      removed: { d01: Date.now() + 1000 },
+      baseUpdatedAt: firstEatenUpdated
+    },
+    'girl-openid'
+  )
+  assert.deepStrictEqual(res.data.map, { d03: futureEatenAt })
+  res = await call(
+    'saveEaten',
+    { map: { d05: 5 }, baseUpdatedAt: firstEatenUpdated },
+    'girl-openid'
+  )
+  assert.strictEqual(res.data.conflict, true)
+  assert.deepStrictEqual(res.data.map, { d03: futureEatenAt })
+  // 未来餐期的记录：取消操作晚于记录操作时也能删掉
   res = await call('getEaten', {}, 'girl-openid')
-  assert.deepStrictEqual(res.data.map, { d01: 111, d03: futureEatenAt })
+  const eatenBase = Number(res.data.updatedAt)
+  const futureDishAt = Date.now() + 3 * 24 * 60 * 60 * 1000
+  const futureDishOp = Date.now()
+  res = await call(
+    'saveEaten',
+    {
+      map: { d07: futureDishAt },
+      ops: { d07: futureDishOp },
+      removed: {},
+      baseUpdatedAt: eatenBase
+    },
+    'girl-openid'
+  )
+  assert.deepStrictEqual(res.data.map, {
+    d03: futureEatenAt,
+    d07: futureDishAt
+  })
+  const afterFuture = Number(res.data.updatedAt)
+  res = await call(
+    'saveEaten',
+    {
+      map: { d07: futureDishAt },
+      ops: { d07: futureDishOp },
+      removed: { d07: Date.now() + 5000 },
+      baseUpdatedAt: afterFuture
+    },
+    'girl-openid'
+  )
+  assert.deepStrictEqual(res.data.map, { d03: futureEatenAt })
+  res = await call('getEaten', {}, 'girl-openid')
+  assert.deepStrictEqual(res.data.map, { d03: futureEatenAt })
   res = await call('getEaten', {}, 'stranger-openid')
   assert.deepStrictEqual(res.data.map, {})
 

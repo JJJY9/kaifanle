@@ -5,15 +5,85 @@ type Listener = (ids: string[]) => void
 
 const FAVORITES_KEY = 'kfl_favorites_v1'
 const FAVORITES_TIMES_KEY = 'kfl_favorites_times_v1'
+const FAVORITES_REMOVED_KEY = 'kfl_favorites_removed_v1'
 const FAVORITES_SYNC_KEY = 'kfl_favorites_sync_v1'
 const SYNC_DEBOUNCE = 1200
+const SYNC_PULL_TTL = 60 * 1000
+const SYNC_TOMBSTONE_TTL = 90 * 24 * 60 * 60 * 1000
+
+interface FavoriteState {
+  ids: string[]
+  times: Record<string, number>
+  removed: Record<string, number>
+}
+
+function mergeFavoriteState(
+  a: Partial<FavoriteState> | null,
+  b: Partial<FavoriteState> | null
+): FavoriteState {
+  const favAt: Record<string, number> = {}
+  const removedAt: Record<string, number> = {}
+  ;[a, b].forEach(src => {
+    const item: any = src || {}
+    ;(item.ids || []).forEach((id: string) => {
+      const at = Number((item.times || {})[id] || 0) || 1
+      if (!favAt[id] || at > favAt[id]) {
+        favAt[id] = at
+      }
+    })
+    Object.keys(item.removed || {}).forEach(id => {
+      const at = Number(item.removed[id] || 0)
+      if (at > (removedAt[id] || 0)) {
+        removedAt[id] = at
+      }
+    })
+  })
+  const ids = Object.keys(favAt)
+    .filter(id => (favAt[id] || 0) > (removedAt[id] || 0))
+    .sort((x, y) => (favAt[x] || 0) - (favAt[y] || 0))
+  const times: Record<string, number> = {}
+  ids.forEach(id => {
+    times[id] = favAt[id]
+  })
+  const cutoff = Date.now() - SYNC_TOMBSTONE_TTL
+  const removed: Record<string, number> = {}
+  Object.keys(removedAt).forEach(id => {
+    if ((removedAt[id] || 0) > (favAt[id] || 0) && removedAt[id] > cutoff) {
+      removed[id] = removedAt[id]
+    }
+  })
+  return { ids, times, removed }
+}
+
+function sameFavoriteState(a: FavoriteState, b: FavoriteState): boolean {
+  if (a.ids.length !== b.ids.length) {
+    return false
+  }
+  for (let i = 0; i < a.ids.length; i++) {
+    if (a.ids[i] !== b.ids[i]) {
+      return false
+    }
+    if (Number(a.times[a.ids[i]] || 0) !== Number(b.times[b.ids[i]] || 0)) {
+      return false
+    }
+  }
+  const aKeys = Object.keys(a.removed)
+  const bKeys = Object.keys(b.removed)
+  if (aKeys.length !== bKeys.length) {
+    return false
+  }
+  return aKeys.every(key => Number(a.removed[key]) === Number(b.removed[key]))
+}
 
 class FavoritesStore {
   private ids: string[] = []
   private times: Record<string, number> = {}
+  private removed: Record<string, number> = {}
   private listeners: Listener[] = []
-  private updatedAt = 0
+  private syncedAt = 0
+  private lastPullAt = 0
   private syncTimer: any = null
+  private pushing = false
 
   constructor() {
     try {
@@ -36,12 +106,24 @@ class FavoritesStore {
           })
         }
       }
+      const rawRemoved = wx.getStorageSync(FAVORITES_REMOVED_KEY)
+      if (rawRemoved) {
+        const removed = JSON.parse(rawRemoved)
+        if (removed && typeof removed === 'object') {
+          Object.keys(removed).forEach(id => {
+            const value = Number(removed[id])
+            if (isFinite(value) && value > 0) {
+              this.removed[id] = value
+            }
+          })
+        }
+      }
       const rawSync = wx.getStorageSync(FAVORITES_SYNC_KEY)
       if (rawSync) {
         const meta = JSON.parse(rawSync)
         const at = Number(meta && meta.updatedAt)
         if (isFinite(at) && at > 0) {
-          this.updatedAt = at
+          this.syncedAt = at
         }
       }
     } catch (e) {
@@ -61,11 +143,12 @@ class FavoritesStore {
     if (index > -1) {
       this.ids.splice(index, 1)
       delete this.times[id]
+      this.removed[id] = Date.now()
     } else {
       this.ids.push(id)
       this.times[id] = Date.now()
+      delete this.removed[id]
     }
-    this.updatedAt = Date.now()
     this.persist()
     this.emit()
     this.scheduleSync()
@@ -85,9 +168,12 @@ class FavoritesStore {
   }
 
   clear(): void {
+    const at = Date.now()
+    this.ids.forEach(id => {
+      this.removed[id] = at
+    })
     this.ids = []
     this.times = {}
-    this.updatedAt = Date.now()
     this.persist()
     this.emit()
     this.scheduleSync()
@@ -97,43 +183,55 @@ class FavoritesStore {
     return {
       ids: this.getIds(),
       times: Object.assign({}, this.times),
-      updatedAt: this.updatedAt
+      removed: Object.assign({}, this.removed),
+      updatedAt: this.syncedAt,
+      baseUpdatedAt: this.syncedAt
     }
   }
 
-  // 拉取云端收藏；本地更新更晚时改为推送本地。返回本地是否被云端覆盖
-  async syncFromCloud(): Promise<boolean> {
+  private state(): FavoriteState {
+    return {
+      ids: this.getIds(),
+      times: Object.assign({}, this.times),
+      removed: Object.assign({}, this.removed)
+    }
+  }
+
+  private applyState(state: FavoriteState) {
+    this.ids = state.ids.slice()
+    this.times = Object.assign({}, state.times)
+    this.removed = Object.assign({}, state.removed)
+  }
+
+  // 拉取云端并与本地按条合并；本地有未上云改动时回推。返回本地是否变化
+  async syncFromCloud(force = false): Promise<boolean> {
+    if (!force && Date.now() - this.lastPullAt < SYNC_PULL_TTL) {
+      return false
+    }
     try {
       const remote = await getFavoritesCloud()
+      this.lastPullAt = Date.now()
       if (!remote) {
         return false
       }
-      const remoteAt = Number(remote.updatedAt || 0)
-      if (remoteAt > this.updatedAt) {
-        this.ids = (remote.ids || []).filter(id => typeof id === 'string')
-        this.times = {}
-        this.ids.forEach(id => {
-          const at = Number((remote.times || {})[id])
-          if (isFinite(at) && at > 0) {
-            this.times[id] = at
-          }
-        })
-        this.updatedAt = remoteAt
-        this.persist()
+      const remoteState: FavoriteState = {
+        ids: (remote.ids || []).filter(id => typeof id === 'string'),
+        times: Object.assign({}, remote.times || {}),
+        removed: Object.assign({}, remote.removed || {})
+      }
+      const local = this.state()
+      const merged = mergeFavoriteState(local, remoteState)
+      const changed = !sameFavoriteState(merged, local)
+      this.applyState(merged)
+      this.syncedAt = Number(remote.updatedAt || 0)
+      this.persist()
+      if (changed) {
         this.emit()
-        return true
       }
-      if (!remoteAt && !this.updatedAt && this.ids.length) {
-        // 老版本本地收藏没有同步时间，首次同步时推上去
-        this.updatedAt = Date.now()
-        this.persist()
-        await this.pushToCloud()
-        return false
-      }
-      if (this.updatedAt > remoteAt && this.ids.length) {
+      if (!sameFavoriteState(merged, remoteState)) {
         await this.pushToCloud()
       }
-      return false
+      return changed
     } catch (e) {
       // 云端同步失败不影响本地收藏
       return false
@@ -151,10 +249,43 @@ class FavoritesStore {
   }
 
   private async pushToCloud(): Promise<void> {
+    if (this.pushing) {
+      return
+    }
+    this.pushing = true
     try {
-      await saveFavoritesCloud(this.snapshot())
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const res: any = await saveFavoritesCloud(this.snapshot())
+        if (!res) {
+          return
+        }
+        const remoteState: FavoriteState = {
+          ids: (res.ids || []).filter((id: any) => typeof id === 'string'),
+          times: Object.assign({}, res.times || {}),
+          removed: Object.assign({}, res.removed || {})
+        }
+        if (res.conflict) {
+          const merged = mergeFavoriteState(this.state(), remoteState)
+          this.applyState(merged)
+          this.syncedAt = Number(res.updatedAt || 0)
+          this.persist()
+          this.emit()
+          continue
+        }
+        const merged = mergeFavoriteState(this.state(), remoteState)
+        this.applyState(merged)
+        this.syncedAt = Number(res.updatedAt || 0)
+        this.persist()
+        this.emit()
+        if (sameFavoriteState(merged, remoteState)) {
+          return
+        }
+        // 推送期间本地又有改动，继续把新改动推上去
+      }
     } catch (e) {
       // 推送失败时保留本地，下次改动再试
+    } finally {
+      this.pushing = false
     }
   }
 
@@ -174,9 +305,10 @@ class FavoritesStore {
     try {
       wx.setStorageSync(FAVORITES_KEY, JSON.stringify(this.ids))
       wx.setStorageSync(FAVORITES_TIMES_KEY, JSON.stringify(this.times))
+      wx.setStorageSync(FAVORITES_REMOVED_KEY, JSON.stringify(this.removed))
       wx.setStorageSync(
         FAVORITES_SYNC_KEY,
-        JSON.stringify({ updatedAt: this.updatedAt })
+        JSON.stringify({ updatedAt: this.syncedAt })
       )
     } catch (e) {
       // 忽略存储失败

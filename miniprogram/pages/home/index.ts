@@ -169,12 +169,10 @@ Page({
         })
       }
     })
-
-    this.syncEatenCloud()
   },
 
-  async syncEatenCloud() {
-    const changed = await syncEatenFromCloud().catch(() => false)
+  async syncEatenCloud(force = false) {
+    const changed = await syncEatenFromCloud(force).catch(() => false)
     if (changed) {
       this.loadMenu()
     }
@@ -187,6 +185,8 @@ Page({
     if (tabBar) {
       tabBar.setData({ selected: 0 })
     }
+    this.syncEatenCloud()
+    favorites.syncFromCloud().catch(() => false)
     // 跨天后修正「今天」和可选日期范围，热启动也能正确显示
     this.syncToday()
     const app: any = getApp()

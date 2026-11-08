@@ -46,8 +46,11 @@ function chinaDate(offset) {
     wx.removeStorageSync('kfl_note_presets_v1')
     wx.removeStorageSync('kfl_favorites_cloud_v1')
     wx.removeStorageSync('kfl_favorites_sync_v1')
+    wx.removeStorageSync('kfl_favorites_removed_v1')
     wx.removeStorageSync('kfl_eaten_cloud_v1')
     wx.removeStorageSync('kfl_eaten_sync_v1')
+    wx.removeStorageSync('kfl_eaten_removed_v1')
+    wx.removeStorageSync('kfl_eaten_ops_v1')
     return true
   })
   const current = () => mp.currentPage()
@@ -2854,7 +2857,11 @@ function chinaDate(offset) {
           name: '新菜',
           favoritedAt: 1000
         })}
-      ], sort: 'eaten' }, () => page.applyFilter()); return true`
+      ] }, () => page.applyFilter()); return true`
+    )
+    await invoke(
+      mp,
+      "page.onSort({ currentTarget: { dataset: { sort: 'eaten' } } })"
     )
     await sleep(400)
     page = await current()
@@ -2938,9 +2945,10 @@ function chinaDate(offset) {
   page = await current()
   data = await page.data()
   check(
-    'mock 收藏云端拉取覆盖',
-    (data.allFavorites || []).length === 1 &&
-      data.allFavorites[0].id === 'd02',
+    'mock 收藏云端拉取合并',
+    (data.allFavorites || []).length === 2 &&
+      (data.allFavorites || []).some(dish => dish.id === 'd01') &&
+      (data.allFavorites || []).some(dish => dish.id === 'd02'),
     (data.allFavorites || []).map(dish => dish.id).join('/') || '没有收藏'
   )
   await mp.mockWxMethod('showModal', {
@@ -4743,16 +4751,20 @@ function chinaDate(offset) {
   await sleep(1600)
   page = await current()
   data = await page.data()
+  const prevMonthRef = new Date()
   const prevMonthLabel = (() => {
-    const d = new Date()
-    d.setMonth(d.getMonth() - 1)
+    const d = new Date(
+      prevMonthRef.getFullYear(),
+      prevMonthRef.getMonth() - 1,
+      1
+    )
     return `${d.getFullYear()} 年 ${d.getMonth() + 1} 月`
   })()
   check(
     'mock 足迹查看上月',
     Number(data.monthOffset) === 1 &&
       data.monthText === prevMonthLabel &&
-      Number(data.monthOrders) >= 0,
+      Number(data.monthOrders) === 0,
     `${data.monthText} · ${data.monthOrders} 单`
   )
   await invoke(
@@ -5005,7 +5017,7 @@ function chinaDate(offset) {
       `wx.setStorageSync('kfl_eaten_cloud_v1', JSON.stringify({ map: { d10: ${yesterdayMidnight.getTime()} }, updatedAt: Date.now() + 60000 })); return true`
     )
   )
-  await invoke(mp, 'page.syncEatenCloud()')
+  await invoke(mp, 'page.syncEatenCloud(true)')
   await sleep(1600)
   page = await current()
   const pulledEaten = await invoke(
@@ -5255,7 +5267,7 @@ function chinaDate(offset) {
   }
   await mp.evaluate(
     new Function(
-      "wx.removeStorageSync('kfl_eaten_v1'); wx.removeStorageSync('kfl_eaten_cloud_v1'); wx.removeStorageSync('kfl_eaten_sync_v1'); return true;"
+      "wx.removeStorageSync('kfl_eaten_v1'); wx.removeStorageSync('kfl_eaten_ops_v1'); wx.removeStorageSync('kfl_eaten_cloud_v1'); wx.removeStorageSync('kfl_eaten_sync_v1'); wx.removeStorageSync('kfl_eaten_removed_v1'); return true;"
     )
   )
 

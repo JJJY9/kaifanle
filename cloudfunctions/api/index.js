@@ -611,26 +611,87 @@ function normalizeProfile(value) {
   }
 }
 
+function clampSyncTimestamp(value) {
+  const at = Number(value)
+  if (!isFinite(at) || at <= 0) {
+    return 0
+  }
+  return at
+}
+
 function normalizeFavorites(data) {
+  const input = data && typeof data === 'object' ? data : {}
   const ids = []
-  ;(Array.isArray(data && data.ids) ? data.ids : []).forEach(id => {
-    const value = String(id || '').trim()
+  ;(Array.isArray(input.ids) ? input.ids : []).forEach(id => {
+    const value = String(id || '').trim().slice(0, 100)
     if (value && ids.indexOf(value) === -1 && ids.length < 300) {
-      ids.push(value.slice(0, 100))
+      ids.push(value)
     }
   })
   const times = {}
   ids.forEach(id => {
-    const at = Number((data && data.times && data.times[id]) || 0)
-    if (isFinite(at) && at > 0) {
+    const at = clampSyncTimestamp(input.times && input.times[id])
+    if (at) {
       times[id] = at
     }
   })
+  const removed = {}
+  const removedInput =
+    input.removed &&
+    typeof input.removed === 'object' &&
+    !Array.isArray(input.removed)
+      ? input.removed
+      : {}
+  Object.keys(removedInput)
+    .slice(0, 300)
+    .forEach(key => {
+      const id = String(key || '').trim().slice(0, 100)
+      const at = clampSyncTimestamp(removedInput[key])
+      if (id && at && !Object.prototype.hasOwnProperty.call(removed, id)) {
+        removed[id] = at
+      }
+    })
   return {
     ids,
     times,
-    updatedAt: Number((data && data.updatedAt) || 0)
+    removed,
+    updatedAt: clampSyncTimestamp(input.updatedAt)
   }
+}
+
+function mergeFavorites(a, b) {
+  const favAt = {}
+  const removedAt = {}
+  ;[a, b].forEach(src => {
+    const item = src || {}
+    ;(item.ids || []).forEach(id => {
+      const at = Number((item.times || {})[id] || 0) || 1
+      if (!favAt[id] || at > favAt[id]) {
+        favAt[id] = at
+      }
+    })
+    Object.keys(item.removed || {}).forEach(id => {
+      const at = Number(item.removed[id] || 0)
+      if (at > (removedAt[id] || 0)) {
+        removedAt[id] = at
+      }
+    })
+  })
+  const ids = Object.keys(favAt)
+    .filter(id => (favAt[id] || 0) > (removedAt[id] || 0))
+    .sort((x, y) => (favAt[x] || 0) - (favAt[y] || 0))
+  const times = {}
+  ids.forEach(id => {
+    times[id] = favAt[id]
+  })
+  const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000
+  const removed = {}
+  Object.keys(removedAt).forEach(id => {
+    if ((removedAt[id] || 0) > (favAt[id] || 0) && removedAt[id] > cutoff) {
+      removed[id] = removedAt[id]
+    }
+  })
+  return { ids, times, removed }
 }
 
 async function getFavorites(openid) {
@@ -648,35 +709,63 @@ async function getFavorites(openid) {
 }
 
 async function saveFavorites(payload, openid) {
-  const normalized = normalizeFavorites(payload || {})
-  const updatedAt = Number((payload && payload.updatedAt) || 0) || Date.now()
+  const incoming = normalizeFavorites(payload || {})
+  const base = clampSyncTimestamp(payload && payload.baseUpdatedAt)
   await ensureCollection('favorites')
+  let existing = null
+  try {
+    const res = await db.collection('favorites').doc(openid).get()
+    existing = normalizeFavorites(res.data)
+  } catch (e) {
+    if (!isMissingDocError(e)) {
+      throw e
+    }
+  }
+  const storedAt = existing ? existing.updatedAt : 0
+  if (existing && base !== storedAt) {
+    // 客户端基于旧版本推送：返回云端现状，客户端合并后重推
+    return {
+      conflict: true,
+      ids: existing.ids,
+      times: existing.times,
+      removed: existing.removed,
+      updatedAt: storedAt
+    }
+  }
+  const merged = mergeFavorites(
+    existing || { ids: [], times: {}, removed: {} },
+    incoming
+  )
+  const updatedAt = Math.max(Date.now(), storedAt + 1)
   await db.collection('favorites').doc(openid).set({
     data: {
-      ids: normalized.ids,
-      times: normalized.times,
+      ids: merged.ids,
+      times: merged.times,
+      removed: merged.removed,
       updatedAt
     }
   })
   return {
-    ids: normalized.ids,
-    times: normalized.times,
+    ids: merged.ids,
+    times: merged.times,
+    removed: merged.removed,
     updatedAt
   }
 }
 
 function normalizeEaten(data) {
+  const input = data && typeof data === 'object' ? data : {}
   const map = {}
-  const input =
-    data && data.map && typeof data.map === 'object' && !Array.isArray(data.map)
-      ? data.map
+  const source =
+    input.map && typeof input.map === 'object' && !Array.isArray(input.map)
+      ? input.map
       : {}
   const maxFuture = Date.now() + 31 * 24 * 60 * 60 * 1000
-  Object.keys(input)
+  Object.keys(source)
     .slice(0, 300)
     .forEach(key => {
       const id = String(key || '').trim().slice(0, 64)
-      const at = Number(input[key])
+      const at = Number(source[key])
       if (
         id &&
         isFinite(at) &&
@@ -687,10 +776,86 @@ function normalizeEaten(data) {
         map[id] = at
       }
     })
+  const ops = {}
+  const opsInput =
+    input.ops && typeof input.ops === 'object' && !Array.isArray(input.ops)
+      ? input.ops
+      : {}
+  Object.keys(map).forEach(id => {
+    const op = clampSyncTimestamp(opsInput[id]) || Number(map[id])
+    if (op) {
+      ops[id] = op
+    }
+  })
+  const removed = {}
+  const removedInput =
+    input.removed &&
+    typeof input.removed === 'object' &&
+    !Array.isArray(input.removed)
+      ? input.removed
+      : {}
+  Object.keys(removedInput)
+    .slice(0, 300)
+    .forEach(key => {
+      const id = String(key || '').trim().slice(0, 64)
+      const at = clampSyncTimestamp(removedInput[key])
+      if (id && at && !Object.prototype.hasOwnProperty.call(removed, id)) {
+        removed[id] = at
+      }
+    })
   return {
     map,
-    updatedAt: Number((data && data.updatedAt) || 0)
+    ops,
+    removed,
+    updatedAt: clampSyncTimestamp(input.updatedAt)
   }
+}
+
+function mergeEaten(a, b) {
+  const eatAt = {}
+  const eatOp = {}
+  const cancelOp = {}
+  ;[a, b].forEach(src => {
+    const item = src || {}
+    Object.keys(item.map || {}).forEach(id => {
+      const at = Number(item.map[id] || 0)
+      const op = Number((item.ops || {})[id] || 0) || at
+      if (
+        op > (eatOp[id] || 0) ||
+        (op === (eatOp[id] || 0) && at > (eatAt[id] || 0))
+      ) {
+        eatAt[id] = at
+        eatOp[id] = op
+      }
+    })
+    Object.keys(item.removed || {}).forEach(id => {
+      const at = Number(item.removed[id] || 0)
+      if (at > (cancelOp[id] || 0)) {
+        cancelOp[id] = at
+      }
+    })
+  })
+  const map = {}
+  const ops = {}
+  Object.keys(eatAt).forEach(id => {
+    const op = eatOp[id] || 0
+    const cancel = cancelOp[id] || 0
+    if (cancel && cancel >= op) {
+      return
+    }
+    map[id] = eatAt[id]
+    ops[id] = op
+  })
+  const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000
+  const removed = {}
+  Object.keys(cancelOp).forEach(id => {
+    const cancel = cancelOp[id] || 0
+    const op = eatOp[id] || 0
+    if (cancel >= op && cancel > cutoff) {
+      removed[id] = cancel
+    }
+  })
+  return { map, ops, removed }
 }
 
 async function getEaten(openid) {
@@ -707,17 +872,42 @@ async function getEaten(openid) {
 }
 
 async function saveEaten(payload, openid) {
-  const normalized = normalizeEaten(payload || {})
-  const updatedAt = Number((payload && payload.updatedAt) || 0) || Date.now()
+  const incoming = normalizeEaten(payload || {})
+  const base = clampSyncTimestamp(payload && payload.baseUpdatedAt)
   await ensureCollection('eaten')
+  let existing = null
+  try {
+    const res = await db.collection('eaten').doc(openid).get()
+    existing = normalizeEaten(res.data)
+  } catch (e) {
+    if (!isMissingDocError(e)) {
+      throw e
+    }
+  }
+  const storedAt = existing ? existing.updatedAt : 0
+  if (existing && base !== storedAt) {
+    return {
+      conflict: true,
+      map: existing.map,
+      ops: existing.ops,
+      removed: existing.removed,
+      updatedAt: storedAt
+    }
+  }
+  const merged = mergeEaten(existing || { map: {}, removed: {} }, incoming)
+  const updatedAt = Math.max(Date.now(), storedAt + 1)
   await db.collection('eaten').doc(openid).set({
     data: {
-      map: normalized.map,
+      map: merged.map,
+      ops: merged.ops,
+      removed: merged.removed,
       updatedAt
     }
   })
   return {
-    map: normalized.map,
+    map: merged.map,
+    ops: merged.ops,
+    removed: merged.removed,
     updatedAt
   }
 }
@@ -1046,6 +1236,7 @@ async function getDishStats(payload) {
   const res = await db
     .collection('orders')
     .where({ createdAt: _.gte(start) })
+    .orderBy('createdAt', 'desc')
     .limit(1000)
     .get()
   let orders = 0

@@ -1790,22 +1790,92 @@ export async function getMyProfile(): Promise<UserProfile> {
 
 const FAVORITES_CLOUD_KEY = 'kfl_favorites_cloud_v1'
 
+const EATEN_CLOUD_KEY = 'kfl_eaten_cloud_v1'
+
+function clampSyncTimestamp(value: any): number {
+  const at = Number(value)
+  if (!isFinite(at) || at <= 0) {
+    return 0
+  }
+  return at
+}
+
 function normalizeFavoritesCloud(data: any): FavoritesCloudData {
+  const input = data && typeof data === 'object' ? data : {}
   const ids: string[] = []
-  ;(Array.isArray(data && data.ids) ? data.ids : []).forEach((id: any) => {
-    const value = String(id || '').trim()
+  ;(Array.isArray(input.ids) ? input.ids : []).forEach((id: any) => {
+    const value = String(id || '').trim().slice(0, 100)
     if (value && ids.indexOf(value) === -1 && ids.length < 300) {
-      ids.push(value.slice(0, 100))
+      ids.push(value)
     }
   })
   const times: Record<string, number> = {}
   ids.forEach(id => {
-    const at = Number((data && data.times && data.times[id]) || 0)
-    if (isFinite(at) && at > 0) {
+    const at = clampSyncTimestamp(input.times && input.times[id])
+    if (at) {
       times[id] = at
     }
   })
-  return { ids, times, updatedAt: Number((data && data.updatedAt) || 0) }
+  const removed: Record<string, number> = {}
+  const removedInput =
+    input.removed &&
+    typeof input.removed === 'object' &&
+    !Array.isArray(input.removed)
+      ? input.removed
+      : {}
+  Object.keys(removedInput)
+    .slice(0, 300)
+    .forEach(key => {
+      const id = String(key || '').trim().slice(0, 100)
+      const at = clampSyncTimestamp(removedInput[key])
+      if (id && at && !Object.prototype.hasOwnProperty.call(removed, id)) {
+        removed[id] = at
+      }
+    })
+  return {
+    ids,
+    times,
+    removed,
+    updatedAt: clampSyncTimestamp(input.updatedAt)
+  }
+}
+
+function mergeFavoritesCloud(
+  a: Partial<FavoritesCloudData> | null,
+  b: Partial<FavoritesCloudData> | null
+): FavoritesCloudData {
+  const favAt: Record<string, number> = {}
+  const removedAt: Record<string, number> = {}
+  ;[a, b].forEach(src => {
+    const item: any = src || {}
+    ;(item.ids || []).forEach((id: any) => {
+      const at = Number((item.times || {})[id] || 0) || 1
+      if (!favAt[id] || at > favAt[id]) {
+        favAt[id] = at
+      }
+    })
+    Object.keys(item.removed || {}).forEach(id => {
+      const at = Number(item.removed[id] || 0)
+      if (at > (removedAt[id] || 0)) {
+        removedAt[id] = at
+      }
+    })
+  })
+  const ids = Object.keys(favAt)
+    .filter(id => (favAt[id] || 0) > (removedAt[id] || 0))
+    .sort((x, y) => (favAt[x] || 0) - (favAt[y] || 0))
+  const times: Record<string, number> = {}
+  ids.forEach(id => {
+    times[id] = favAt[id]
+  })
+  const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000
+  const removed: Record<string, number> = {}
+  Object.keys(removedAt).forEach(id => {
+    if ((removedAt[id] || 0) > (favAt[id] || 0) && removedAt[id] > cutoff) {
+      removed[id] = removedAt[id]
+    }
+  })
+  return { ids, times, removed, updatedAt: 0 }
 }
 
 export async function getFavorites(): Promise<FavoritesCloudData> {
@@ -1822,12 +1892,33 @@ export async function saveFavorites(
   payload: FavoritesCloudData
 ): Promise<FavoritesCloudData> {
   await delay(60)
-  const normalized = normalizeFavoritesCloud(payload || ({} as any))
-  const updatedAt = Number(payload && payload.updatedAt) || Date.now()
+  let existing: FavoritesCloudData | null = null
+  try {
+    const raw = wx.getStorageSync(FAVORITES_CLOUD_KEY)
+    existing = raw ? normalizeFavoritesCloud(JSON.parse(raw)) : null
+  } catch (e) {
+    existing = null
+  }
+  const base = clampSyncTimestamp(payload && payload.baseUpdatedAt)
+  const storedAt = existing ? existing.updatedAt : 0
+  if (existing && base !== storedAt) {
+    return {
+      conflict: true,
+      ids: existing.ids,
+      times: existing.times,
+      removed: existing.removed,
+      updatedAt: storedAt
+    }
+  }
+  const merged = mergeFavoritesCloud(
+    existing || { ids: [], times: {}, removed: {} },
+    normalizeFavoritesCloud(payload || ({} as any))
+  )
   const data = {
-    ids: normalized.ids,
-    times: normalized.times,
-    updatedAt
+    ids: merged.ids,
+    times: merged.times,
+    removed: merged.removed,
+    updatedAt: Math.max(Date.now(), storedAt + 1)
   }
   try {
     wx.setStorageSync(FAVORITES_CLOUD_KEY, JSON.stringify(data))
@@ -1837,20 +1928,19 @@ export async function saveFavorites(
   return JSON.parse(JSON.stringify(data))
 }
 
-const EATEN_CLOUD_KEY = 'kfl_eaten_cloud_v1'
-
 function normalizeEatenCloud(data: any): EatenCloudData {
+  const input = data && typeof data === 'object' ? data : {}
   const map: Record<string, number> = {}
-  const input =
-    data && data.map && typeof data.map === 'object' && !Array.isArray(data.map)
-      ? data.map
+  const source =
+    input.map && typeof input.map === 'object' && !Array.isArray(input.map)
+      ? input.map
       : {}
   const maxFuture = Date.now() + 31 * 24 * 60 * 60 * 1000
-  Object.keys(input)
+  Object.keys(source)
     .slice(0, 300)
     .forEach(key => {
       const id = String(key || '').trim().slice(0, 64)
-      const at = Number(input[key])
+      const at = Number(source[key])
       if (
         id &&
         isFinite(at) &&
@@ -1861,10 +1951,89 @@ function normalizeEatenCloud(data: any): EatenCloudData {
         map[id] = at
       }
     })
+  const ops: Record<string, number> = {}
+  const opsInput =
+    input.ops && typeof input.ops === 'object' && !Array.isArray(input.ops)
+      ? input.ops
+      : {}
+  Object.keys(map).forEach(id => {
+    const op = clampSyncTimestamp(opsInput[id]) || Number(map[id])
+    if (op) {
+      ops[id] = op
+    }
+  })
+  const removed: Record<string, number> = {}
+  const removedInput =
+    input.removed &&
+    typeof input.removed === 'object' &&
+    !Array.isArray(input.removed)
+      ? input.removed
+      : {}
+  Object.keys(removedInput)
+    .slice(0, 300)
+    .forEach(key => {
+      const id = String(key || '').trim().slice(0, 64)
+      const at = clampSyncTimestamp(removedInput[key])
+      if (id && at && !Object.prototype.hasOwnProperty.call(removed, id)) {
+        removed[id] = at
+      }
+    })
   return {
     map,
-    updatedAt: Number((data && data.updatedAt) || 0)
+    ops,
+    removed,
+    updatedAt: clampSyncTimestamp(input.updatedAt)
   }
+}
+
+function mergeEatenCloud(
+  a: Partial<EatenCloudData> | null,
+  b: Partial<EatenCloudData> | null
+): EatenCloudData {
+  const eatAt: Record<string, number> = {}
+  const eatOp: Record<string, number> = {}
+  const cancelOp: Record<string, number> = {}
+  ;[a, b].forEach(src => {
+    const item: any = src || {}
+    Object.keys(item.map || {}).forEach(id => {
+      const at = Number(item.map[id] || 0)
+      const op = Number((item.ops || {})[id] || 0) || at
+      if (
+        op > (eatOp[id] || 0) ||
+        (op === (eatOp[id] || 0) && at > (eatAt[id] || 0))
+      ) {
+        eatAt[id] = at
+        eatOp[id] = op
+      }
+    })
+    Object.keys(item.removed || {}).forEach(id => {
+      const at = Number(item.removed[id] || 0)
+      if (at > (cancelOp[id] || 0)) {
+        cancelOp[id] = at
+      }
+    })
+  })
+  const map: Record<string, number> = {}
+  const ops: Record<string, number> = {}
+  Object.keys(eatAt).forEach(id => {
+    const op = eatOp[id] || 0
+    const cancel = cancelOp[id] || 0
+    if (cancel && cancel >= op) {
+      return
+    }
+    map[id] = eatAt[id]
+    ops[id] = op
+  })
+  const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000
+  const removed: Record<string, number> = {}
+  Object.keys(cancelOp).forEach(id => {
+    const cancel = cancelOp[id] || 0
+    const op = eatOp[id] || 0
+    if (cancel >= op && cancel > cutoff) {
+      removed[id] = cancel
+    }
+  })
+  return { map, ops, removed, updatedAt: 0 }
 }
 
 export async function getEaten(): Promise<EatenCloudData> {
@@ -1881,9 +2050,34 @@ export async function saveEaten(
   payload: EatenCloudData
 ): Promise<EatenCloudData> {
   await delay(60)
-  const normalized = normalizeEatenCloud(payload || ({} as any))
-  const updatedAt = Number(payload && payload.updatedAt) || Date.now()
-  const data = { map: normalized.map, updatedAt }
+  let existing: EatenCloudData | null = null
+  try {
+    const raw = wx.getStorageSync(EATEN_CLOUD_KEY)
+    existing = raw ? normalizeEatenCloud(JSON.parse(raw)) : null
+  } catch (e) {
+    existing = null
+  }
+  const base = clampSyncTimestamp(payload && payload.baseUpdatedAt)
+  const storedAt = existing ? existing.updatedAt : 0
+  if (existing && base !== storedAt) {
+    return {
+      conflict: true,
+      map: existing.map,
+      ops: existing.ops,
+      removed: existing.removed,
+      updatedAt: storedAt
+    }
+  }
+  const merged = mergeEatenCloud(
+    existing || { map: {}, removed: {} },
+    normalizeEatenCloud(payload || ({} as any))
+  )
+  const data = {
+    map: merged.map,
+    ops: merged.ops,
+    removed: merged.removed,
+    updatedAt: Math.max(Date.now(), storedAt + 1)
+  }
   try {
     wx.setStorageSync(EATEN_CLOUD_KEY, JSON.stringify(data))
   } catch (e) {

@@ -213,12 +213,19 @@ export interface UserProfile {
 export interface FavoritesCloudData {
   ids: string[]
   times: Record<string, number>
+  removed?: Record<string, number>
   updatedAt: number
+  baseUpdatedAt?: number
+  conflict?: boolean
 }
 
 export interface EatenCloudData {
   map: Record<string, number>
+  ops?: Record<string, number>
+  removed?: Record<string, number>
   updatedAt: number
+  baseUpdatedAt?: number
+  conflict?: boolean
 }
 
 export interface SpecialDay {

@@ -1,4 +1,4 @@
-import { getMyStats, getOrders } from '../../services/api'
+import { getMyStats, getOrdersPage } from '../../services/api'
 import { dateInputString } from '../../utils/format'
 import { saveImageToAlbum } from '../../utils/save-image'
 
@@ -51,7 +51,21 @@ Page({
       this.data.monthText ? { error: '' } : { loading: true, error: '' }
     )
     try {
-      const [orders, stats] = await Promise.all([getOrders(), getMyStats()])
+      const statsPromise = getMyStats()
+      const orders: any[] = []
+      let before: number | undefined
+      for (let page = 0; page < 10; page++) {
+        const res = await getOrdersPage(before, 50)
+        if (seq !== this._loadSeq) {
+          return
+        }
+        orders.push(...(res.orders || []))
+        if (!res.hasMore || !res.nextBefore) {
+          break
+        }
+        before = res.nextBefore
+      }
+      const stats = await statsPromise
       if (seq !== this._loadSeq) {
         return
       }
