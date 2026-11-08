@@ -46,7 +46,9 @@ Page({
     filters: [] as any[],
     sort: 'new' as 'new' | 'rating',
     onlyImages: false,
+    onlyReplied: false,
     imageCount: 0,
+    replyCount: 0,
     stats: { count: 0, goodRate: 0, replies: 0 },
     emptyText: ''
   },
@@ -160,6 +162,7 @@ Page({
           stats,
           filters,
           imageCount: reviews.filter(review => review.images.length).length,
+          replyCount: reviews.filter(review => review.reply).length,
           loading: false
         },
         () => this.applyFilter()
@@ -201,9 +204,9 @@ Page({
 
   applyFilter() {
     const filter = this.data.filter
-    const base = this.data.onlyImages
-      ? this.data.reviews.filter(review => review.images.length > 0)
-      : this.data.reviews
+    const base = this.data.reviews
+      .filter(review => !this.data.onlyImages || review.images.length > 0)
+      .filter(review => !this.data.onlyReplied || Boolean(review.reply))
     const withMeal =
       this.data.meal === 'all'
         ? base
@@ -221,18 +224,28 @@ Page({
         ? ''
         : (RATINGS.find(item => String(item.value) === filter) || {}).label
     const imageSuffix = this.data.onlyImages ? '带图的' : ''
+    const replySuffix = this.data.onlyReplied ? '有回复的' : ''
     const mealPrefix =
       this.data.meal === 'all' ? '' : mealName(this.data.meal)
-    const scoped = this.data.meal !== 'all' || this.data.onlyImages
+    const scoped =
+      this.data.meal !== 'all' ||
+      this.data.onlyImages ||
+      this.data.onlyReplied
     this.setData({
       display,
       emptyText:
         filter === 'all'
           ? scoped
-            ? `还没有${mealPrefix}${imageSuffix}评价`
+            ? `还没有${mealPrefix}${replySuffix}${imageSuffix}评价`
             : '还没有评价'
-          : `还没有${mealPrefix}${imageSuffix}「${label}」的评价`
+          : `还没有${mealPrefix}${replySuffix}${imageSuffix}「${label}」的评价`
     })
+  },
+
+  onToggleReplied() {
+    this.setData({ onlyReplied: !this.data.onlyReplied }, () =>
+      this.applyFilter()
+    )
   },
 
   onToggleImages() {

@@ -76,7 +76,8 @@ Page({
     cookMode: false,
     cookIndex: 0,
     cookElapsedText: '00:00',
-    relatedDishes: [] as any[]
+    relatedDishes: [] as any[],
+    posterAllergenText: ''
   },
 
   dishId: '',
@@ -621,6 +622,25 @@ Page({
           const text = step.length > 24 ? step.slice(0, 24) + '…' : step
           ctx.fillText(`${index + 1}. ${text}`, 48, 620 + index * 40)
         })
+      }
+
+      const allergens = Array.isArray(dish.allergens)
+        ? dish.allergens.filter(Boolean)
+        : []
+      const posterAllergenText = allergens.length
+        ? `含：${allergens.join('、')}`
+        : ''
+      this.setData({ posterAllergenText })
+      if (posterAllergenText) {
+        ctx.fillStyle = '#C0392B'
+        ctx.font = '24px "PingFang SC", sans-serif'
+        ctx.fillText(
+          posterAllergenText.length > 22
+            ? posterAllergenText.slice(0, 22) + '…'
+            : posterAllergenText,
+          48,
+          748
+        )
       }
 
       ctx.fillStyle = '#FF6B35'

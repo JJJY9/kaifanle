@@ -2883,6 +2883,16 @@ function chinaDate(offset) {
     Boolean(data.dish) && (data.steps || []).length >= 3,
     data.dish && `${data.dish.name} · ${data.steps.length} 步`
   )
+  const stepsCountEl = await page.$('.steps-count')
+  const stepsCountText = stepsCountEl
+    ? String(await stepsCountEl.text())
+    : ''
+  check(
+    'mock 菜谱步骤数标签',
+    (data.steps || []).length >= 3 &&
+      stepsCountText === `共 ${data.steps.length} 步`,
+    stepsCountText || '未显示'
+  )
   const recipeShare = await invoke(mp, 'return page.onShareAppMessage()')
   const recipeTimeline = await invoke(mp, 'return page.onShareTimeline()')
   check(
@@ -3292,8 +3302,12 @@ function chinaDate(offset) {
   data = await page.data()
   check(
     'mock 菜品海报',
-    Boolean(data.posterPath),
-    data.posterPath ? '已生成' : '未生成'
+    Boolean(data.posterPath) &&
+      String(data.posterAllergenText || '').indexOf('含：') === 0 &&
+      String(data.posterAllergenText || '').indexOf('花生') > -1,
+    data.posterPath
+      ? data.posterAllergenText || '无过敏原行'
+      : '未生成'
   )
 
   // 收藏页：先收藏当前菜，再取消
@@ -5764,6 +5778,32 @@ function chinaDate(offset) {
       Boolean(data.order) && data.order.ownerReply === secondReply,
       data.order && data.order.ownerReply
     )
+    await mp.navigateTo('/pages/reviews/index')
+    await sleep(1600)
+    page = await current()
+    data = await page.data()
+    const repliedReviewCount = Number(data.replyCount || 0)
+    check(
+      'mock 我的评价有回复数',
+      repliedReviewCount >= 1 && data.onlyReplied === false,
+      `${repliedReviewCount} 条有回复`
+    )
+    await invoke(mp, 'page.onToggleReplied()')
+    await sleep(400)
+    page = await current()
+    data = await page.data()
+    check(
+      'mock 我的评价只看有回复',
+      data.onlyReplied === true &&
+        repliedReviewCount >= 1 &&
+        (data.display || []).length === repliedReviewCount &&
+        (data.display || []).every(review => Boolean(review.reply)),
+      `${(data.display || []).length} 条`
+    )
+    await invoke(mp, 'page.onToggleReplied()')
+    await sleep(300)
+    await mp.navigateBack()
+    await sleep(900)
   }
 
   // 经营月报
