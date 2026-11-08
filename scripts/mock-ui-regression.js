@@ -2529,6 +2529,31 @@ function chinaDate(offset) {
       String(wishBtnClip || '') === '__wish_btn_sentinel__',
     String(wishBtnClip || '').slice(0, 14)
   )
+  await invoke(mp, 'page.setData({ wishes: [], display: [] })')
+  await sleep(400)
+  page = await current()
+  const wishesEmptyEl = await page.$('.wishes-empty')
+  let wishesEmptyActionEl = null
+  if (wishesEmptyEl) {
+    wishesEmptyActionEl = await wishesEmptyEl.$('.action')
+  }
+  const wishesEmptyActionText = wishesEmptyActionEl
+    ? String(await wishesEmptyActionEl.text())
+    : ''
+  if (wishesEmptyActionEl) {
+    await wishesEmptyActionEl.tap()
+    await sleep(1500)
+  }
+  page = await current()
+  check(
+    'mock 许愿池空态去点餐',
+    wishesEmptyActionText === '去点餐' &&
+      page.path === 'pages/home/index',
+    `${wishesEmptyActionText || '无按钮'} · ${page.path}`
+  )
+  await mp.navigateTo('/pages/wishes/index')
+  await sleep(1600)
+  page = await current()
   await invoke(mp, "page.setData({ wishes: [], display: [] }); return true")
   await invoke(mp, 'page.onPullDownRefresh()')
   await sleep(1200)
@@ -2631,6 +2656,7 @@ function chinaDate(offset) {
   )
   await mp.navigateBack()
   await sleep(900)
+  page = await current()
 
   // 菜品编辑显示近 30 天销量
   await mp.navigateTo('/pages/dish-edit/index?id=d01')

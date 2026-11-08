@@ -95,7 +95,10 @@
 
   <empty-state
     wx:else
+    class="wishes-empty"
     title="许愿池还是空的"
     desc="想吃什么，写下来告诉掌勺的"
+    actionText="去点餐"
+    bind:action="onGoHome"
   />
 </view>

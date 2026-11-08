@@ -216,6 +216,10 @@ Page({
     // 按钮区的长按不冒泡到卡片，避免误触发按卡复制
   },
 
+  onGoHome() {
+    wx.switchTab({ url: '/pages/home/index' })
+  },
+
   onCopyWish(e: any) {
     const id = String((e.currentTarget && e.currentTarget.dataset.id) || '')
     const wish = (this.data.display || []).find((item: any) => item.id === id)
