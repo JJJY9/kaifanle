@@ -225,6 +225,22 @@
   line-height: 1.5;
 }
 
+.active-order-urge {
+  margin-left: auto;
+  padding: 0 12rpx;
+  background: #FFD23F;
+  border: 2rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 18rpx;
+  font-weight: 800;
+  line-height: 1.6;
+}
+
+.active-order-urge.cooling {
+  background: #E5E5E5;
+  color: #7A7A7A;
+}
+
 .active-order-eta {
   margin-top: 2rpx;
   color: #FF6B35;

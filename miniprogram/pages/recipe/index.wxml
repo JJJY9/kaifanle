@@ -66,7 +66,10 @@
   <view class="steps-card card">
     <view class="steps-title-row">
       <view class="steps-title display">怎么做</view>
-      <view wx:if="{{doneCount}}" class="steps-reset" bindtap="onResetSteps">重置 {{doneCount}}/{{stepViews.length}}</view>
+      <view class="steps-actions">
+        <view wx:if="{{stepViews.length}}" class="cook-start" bindtap="onStartCook">开始做菜 🔥</view>
+        <view wx:if="{{doneCount}}" class="steps-reset" bindtap="onResetSteps">重置 {{doneCount}}/{{stepViews.length}}</view>
+      </view>
     </view>
     <block wx:if="{{stepViews.length}}">
       <view
@@ -94,6 +97,21 @@
   </view>
 
   <canvas type="2d" id="poster" class="poster-canvas"></canvas>
+</view>
+
+<view wx:if="{{cookMode}}" class="cook-mode">
+  <view class="cook-head">
+    <text class="cook-progress">第 {{cookIndex + 1}} / {{stepViews.length}} 步</text>
+    <view class="cook-exit" bindtap="onCookExit">退出</view>
+  </view>
+  <view class="cook-body">
+    <view class="cook-step-no">{{cookIndex + 1}}</view>
+    <view class="cook-text">{{stepViews[cookIndex].text}}</view>
+  </view>
+  <view class="cook-actions">
+    <view class="cook-btn ghost {{cookIndex === 0 ? 'disabled' : ''}}" bindtap="onCookPrev">上一步</view>
+    <view class="cook-btn primary" bindtap="onCookNext">{{cookIndex === stepViews.length - 1 ? '做完开饭 🍚' : '做完这步 ›'}}</view>
+  </view>
 </view>
 
 <sku-sheet

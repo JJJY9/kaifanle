@@ -161,7 +161,7 @@ async function route(action, payload, openid) {
     case 'getSpecialDays':
       return getSpecialDays(openid)
     case 'getMySpecialDays':
-      return getMySpecialDays(openid)
+      return getMySpecialDays(payload, openid)
     case 'getStats':
       return getStats(openid)
     case 'getKitchenStatus':
@@ -745,12 +745,21 @@ async function getSpecialDays(openid) {
   )
 }
 
-async function getMySpecialDays(openid) {
+async function getMySpecialDays(payload, openid) {
   const profile = await getMyProfile(openid)
+  const windowDays = Math.min(
+    30,
+    Math.max(
+      1,
+      Math.round(
+        Number(payload && payload.windowDays) || MY_SPECIAL_DAY_WINDOW
+      )
+    )
+  )
   return collectSpecialDays(
     [profile],
     chinaDateString(),
-    MY_SPECIAL_DAY_WINDOW,
+    windowDays,
     10
   )
 }

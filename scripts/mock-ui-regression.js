@@ -114,6 +114,30 @@ function chinaDate(offset) {
       homeBadgeText.indexOf('新回复 2') > -1,
     homeBadgeText || '未渲染角标'
   )
+  await invoke(mp, 'page.onQuickUrge()')
+  await sleep(900)
+  page = await current()
+  data = await page.data()
+  const urgeStore = await mp.evaluate(() => {
+    try {
+      const orders = JSON.parse(wx.getStorageSync('kfl_orders_v1') || '[]')
+      const seed = (orders || []).find(order => order.id === 'seed-1')
+      return {
+        at: Number(seed && seed.urgedAt) || 0,
+        count: Number(seed && seed.urgeCount) || 0
+      }
+    } catch (e) {
+      return { at: 0, count: 0 }
+    }
+  })
+  check(
+    'mock 首页今天这单催单',
+    Boolean(data.activeOrder) &&
+      data.activeOrder.urgeCooling === true &&
+      urgeStore.at > 0 &&
+      urgeStore.count >= 1,
+    `催了 ${urgeStore.count} 次`
+  )
   check(
     'mock 首页本周干饭',
     String(data.weekText || '').includes('本周已吃 2 顿') &&
@@ -2589,6 +2613,30 @@ function chinaDate(offset) {
     Number(data.doneCount) === 0 &&
       !Array.isArray(stepProgressAfterReset.d01)
   )
+  await invoke(mp, 'page.onStartCook()')
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  const cookStarted = data.cookMode === true && Number(data.cookIndex) === 0
+  await invoke(mp, 'page.onCookNext()')
+  await sleep(500)
+  page = await current()
+  data = await page.data()
+  const cookAdvanced =
+    Number(data.cookIndex) === 1 &&
+    Boolean((data.stepViews || [])[0] && data.stepViews[0].done) &&
+    Number(data.doneCount) === 1
+  await invoke(mp, 'page.onCookExit()')
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 开做模式逐步推进',
+    cookStarted && cookAdvanced && data.cookMode === false,
+    `第 ${Number(data.cookIndex) + 1} 步 · 完成 ${data.doneCount} 步`
+  )
+  await invoke(mp, 'page.onResetSteps()')
+  await sleep(300)
   await invoke(mp, 'page.onSharePoster()')
   await sleep(2500)
   page = await current()
@@ -3116,6 +3164,21 @@ function chinaDate(offset) {
     'mock 本周饭表加载',
     page.path === 'pages/week-menus/index' && (data.days || []).length === 7,
     `${(data.days || []).length} 天`
+  )
+  check(
+    'mock 饭表标注特别日子',
+    (data.days || []).some(
+      day =>
+        String(day.specialText || '').indexOf('生日') > -1 &&
+        day.date === chinaDate(5)
+    ) &&
+      (data.days || []).some(
+        day => String(day.specialText || '').indexOf('纪念日') > -1
+      ),
+    (data.days || [])
+      .filter(day => day.specialText)
+      .map(day => `${day.date} ${day.specialText}`)
+      .join(' / ') || '没有标注'
   )
   check(
     'mock 饭表已订标记',

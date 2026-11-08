@@ -643,22 +643,36 @@ export async function getSpecialDays(force = false): Promise<SpecialDays> {
   return mock.getSpecialDays()
 }
 
-export async function getMySpecialDays(force = false): Promise<SpecialDays> {
+export async function getMySpecialDays(
+  force = false,
+  windowDays?: number
+): Promise<SpecialDays> {
   if (USE_CLOUD) {
     const today = chinaTodayKey()
+    const customWindow =
+      Number(windowDays) > 0
+        ? Math.min(30, Math.round(Number(windowDays)))
+        : 0
     if (
       !force &&
+      !customWindow &&
       mySpecialDaysCache &&
       mySpecialDaysCache.data.today === today &&
       Date.now() - mySpecialDaysCache.at < SPECIAL_DAYS_TTL
     ) {
       return cloneData(mySpecialDaysCache.data)
     }
-    const data = await callApi<SpecialDays>('getMySpecialDays')
-    mySpecialDaysCache = { at: Date.now(), data }
+    const payload: any = {}
+    if (customWindow) {
+      payload.windowDays = customWindow
+    }
+    const data = await callApi<SpecialDays>('getMySpecialDays', payload)
+    if (!customWindow) {
+      mySpecialDaysCache = { at: Date.now(), data }
+    }
     return cloneData(data)
   }
-  return mock.getMySpecialDays()
+  return mock.getMySpecialDays(windowDays)
 }
 
 export async function getStats(): Promise<StoreStats> {

@@ -2786,9 +2786,12 @@ export async function getSpecialDays(): Promise<SpecialDays> {
   return collectMockSpecialDays(30)
 }
 
-export async function getMySpecialDays(): Promise<SpecialDays> {
+export async function getMySpecialDays(
+  windowDays?: number
+): Promise<SpecialDays> {
   await delay(60)
-  return collectMockSpecialDays(4)
+  const days = Number(windowDays) > 0 ? Math.min(30, Math.round(windowDays)) : 4
+  return collectMockSpecialDays(days)
 }
 
 export async function getWeekMenus(): Promise<WeekMenus> {

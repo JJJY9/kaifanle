@@ -11,7 +11,8 @@ import {
   getMyPendingReviewCount,
   getMyProfile,
   getMySpecialDays,
-  getMyStats
+  getMyStats,
+  urgeOrder
 } from '../../services/api'
 import { cart } from '../../store/cart'
 import { eatenText, getLastEatenMap } from '../../store/eaten'
@@ -124,6 +125,7 @@ Page({
   _loadSeq: 0,
   _lastOrderRaw: null as any,
   _repeating: false,
+  _urging: false,
 
   onLoad() {
     const app = getApp()
@@ -824,6 +826,11 @@ Page({
           lastMessageText,
           expectedText: eta,
           messageBadge: Math.max(0, Number(order.customerUnread) || 0),
+          urgeCooling: Boolean(
+            order.urgedAt &&
+              Date.now() - Number(order.urgedAt) < 5 * 60 * 1000
+          ),
+          canUrge: ['pending', 'accepted', 'cooking'].indexOf(order.status) > -1,
           summary:
             itemSummary((order.items || []).map(item => item.name)) +
             ` · 共 ${totalQty} 份`
@@ -840,6 +847,34 @@ Page({
       return
     }
     wx.navigateTo({ url: `/pages/order-detail/index?id=${order.id}` })
+  },
+
+  async onQuickUrge() {
+    const order = this.data.activeOrder
+    if (!order || this._urging) {
+      return
+    }
+    if (!order.canUrge) {
+      wx.showToast({ title: '这一单不用催啦', icon: 'none' })
+      return
+    }
+    if (order.urgeCooling) {
+      wx.showToast({ title: '刚催过啦，掌勺人正在忙', icon: 'none' })
+      return
+    }
+    this._urging = true
+    try {
+      await urgeOrder(order.id)
+      wx.showToast({ title: '帮你催啦，掌勺人马上看', icon: 'none' })
+      this.loadActiveOrder()
+    } catch (e: any) {
+      wx.showToast({
+        title: String((e && e.message) || '催单失败').slice(0, 40),
+        icon: 'none'
+      })
+    } finally {
+      this._urging = false
+    }
   },
 
   async loadLastOrder() {

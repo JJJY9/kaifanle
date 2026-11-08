@@ -72,7 +72,9 @@ Page({
     orderMealText: '午餐',
     orderTargetText: '午餐',
     canOrder: false,
-    orderBlockedText: ''
+    orderBlockedText: '',
+    cookMode: false,
+    cookIndex: 0
   },
 
   dishId: '',
@@ -235,6 +237,56 @@ Page({
       })),
       doneCount: 0
     })
+  },
+
+  onStartCook() {
+    const steps = this.data.stepViews || []
+    if (!steps.length) {
+      wx.showToast({ title: '这道菜还没写做法', icon: 'none' })
+      return
+    }
+    const firstUndone = steps.findIndex(step => !step.done)
+    this.setData({
+      cookMode: true,
+      cookIndex: firstUndone > -1 ? firstUndone : 0
+    })
+  },
+
+  onCookPrev() {
+    this.setData({ cookIndex: Math.max(0, Number(this.data.cookIndex) - 1) })
+  },
+
+  onCookNext() {
+    const steps = this.data.stepViews || []
+    const index = Number(this.data.cookIndex) || 0
+    const step = steps[index]
+    if (!step) {
+      return
+    }
+    if (!step.done) {
+      const nextViews = steps.map((item, i) =>
+        i === index ? { ...item, done: true } : item
+      )
+      writeDishProgress(
+        STEP_PROGRESS_KEY,
+        this.dishId,
+        nextViews.map((item, i) => (item.done ? i : -1)).filter(i => i > -1)
+      )
+      this.setData({
+        [`stepViews[${index}].done`]: true,
+        doneCount: nextViews.filter(item => item.done).length
+      })
+    }
+    if (index >= steps.length - 1) {
+      this.setData({ cookMode: false })
+      wx.showToast({ title: '开饭啦 🍚', icon: 'none' })
+      return
+    }
+    this.setData({ cookIndex: index + 1 })
+  },
+
+  onCookExit() {
+    this.setData({ cookMode: false })
   },
 
   onToggleIngredient(e: any) {

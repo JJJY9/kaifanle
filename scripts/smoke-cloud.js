@@ -2276,6 +2276,35 @@ async function run() {
   assert.strictEqual(res.ok, true)
   assert.strictEqual(res.data.days.length, 0)
 
+  // 自定义窗口：周饭表需要看满 7 天
+  const weekBirthday = `2000-${chinaDate(6).slice(5)}`
+  res = await call(
+    'saveMyProfile',
+    { birthday: weekBirthday, anniversary: specialAnniversary },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  res = await call('getMySpecialDays', {}, 'girl-openid')
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(
+    res.data.days.some(day => day.days === 6),
+    false,
+    '默认窗口不含第 6 天'
+  )
+  res = await call('getMySpecialDays', { windowDays: 7 }, 'girl-openid')
+  assert.strictEqual(res.ok, true)
+  assert.strictEqual(
+    res.data.days.some(day => day.days === 6),
+    true,
+    '7 天窗口应含第 6 天'
+  )
+  res = await call(
+    'saveMyProfile',
+    { birthday: specialBirthday, anniversary: specialAnniversary },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, true)
+
   // 未来日期不能作为生日/纪念日，也不能清掉已有值
   res = await call(
     'saveMyProfile',

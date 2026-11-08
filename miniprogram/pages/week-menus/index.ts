@@ -5,7 +5,7 @@ import type {
   MealId,
   WeekMenus
 } from '../../services/types'
-import { getBusiness, getDishes, getMe, getOrders, getWeekMenus } from '../../services/api'
+import { getBusiness, getDishes, getMe, getMySpecialDays, getOrders, getWeekMenus } from '../../services/api'
 import { MEALS } from '../../utils/constants'
 import { dateInputString, dateLabel } from '../../utils/format'
 
@@ -44,6 +44,8 @@ interface DayRow {
   monthText: string
   dayNum: string
   relativeTag: string
+  specialText: string
+  specialIcon: string
   isToday: boolean
   closed: boolean
   closedNote: string
@@ -176,7 +178,8 @@ function buildDays(
   business: Business | null,
   nowMeal: MealId,
   isAdmin: boolean,
-  bookedKeys: Record<string, boolean>
+  bookedKeys: Record<string, boolean>,
+  specialMap: Record<string, { text: string; icon: string }>
 ): DayRow[] {
   const dishMap: Record<string, Dish> = {}
   dishes.forEach(dish => {
@@ -208,6 +211,7 @@ function buildDays(
             bookedKeys
           )
         )
+    const special = specialMap[String(day.date).slice(-5)]
     return {
       date: day.date,
       weekText:
@@ -215,6 +219,8 @@ function buildDays(
       monthText: `${Number(day.date.slice(5, 7))}月`,
       dayNum: String(Number(day.date.slice(8, 10))),
       relativeTag: relative === '明天' || relative === '后天' ? relative : '',
+      specialText: special ? special.text : '',
+      specialIcon: special ? special.icon : '',
       isToday,
       closed,
       closedNote: (business && business.closedNote) || '今天休息，明天见',
@@ -256,17 +262,28 @@ Page({
     }
     this.setData({ error: '' })
     try {
-      const [week, dishes, business, me, orders] = await Promise.all([
+      const [week, dishes, business, me, orders, special] = await Promise.all([
         getWeekMenus(),
         getDishes(),
         getBusiness().catch(() => null),
         getMe().catch(() => null),
-        getOrders().catch(() => [])
+        getOrders().catch(() => []),
+        getMySpecialDays(false, 7).catch(() => null)
       ])
       if (seq !== this._loadSeq) {
         return
       }
       const isAdmin = Boolean(me && me.isAdmin)
+      const specialMap: Record<string, { text: string; icon: string }> = {}
+      ;((special && special.days) || []).forEach(day => {
+        if (!day || !day.date) {
+          return
+        }
+        specialMap[String(day.date).slice(-5)] = {
+          text: day.kind === 'birthday' ? '生日' : '纪念日',
+          icon: day.kind === 'birthday' ? '🎂' : '💗'
+        }
+      })
       const bookedKeys: Record<string, boolean> = {}
       ;(orders || []).forEach(order => {
         if (order.status === 'cancelled') {
@@ -283,7 +300,8 @@ Page({
         business,
         beijingMeal(),
         isAdmin,
-        bookedKeys
+        bookedKeys,
+        specialMap
       )
       const allClosed = days.length > 0 && days.every(day => day.closed)
       const allRest =

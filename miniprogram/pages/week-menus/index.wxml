@@ -49,6 +49,7 @@
         <view class="day-tags">
           <text wx:if="{{item.isToday}}" class="tag today-tag">今天</text>
           <text wx:elif="{{item.relativeTag}}" class="tag soon-tag">{{item.relativeTag}}</text>
+          <text wx:if="{{item.specialText}}" class="tag special-tag">{{item.specialIcon}}{{item.specialText}}</text>
           <text wx:if="{{item.closed}}" class="tag rest-tag">休息</text>
         </view>
       </view>

@@ -397,3 +397,8 @@ button.foot-btn {
   font-size: 24rpx;
   font-weight: 800;
 }
+
+.special-tag {
+  background: #FFF1F6;
+  border-color: #111111;
+}
