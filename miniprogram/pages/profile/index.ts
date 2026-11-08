@@ -299,8 +299,8 @@ Page({
       wx.showLoading({ title: '同步中…' })
       try {
         const [favChanged, eatenChanged] = await Promise.all([
-          favorites.syncFromCloud(true),
-          syncEatenFromCloud(true)
+          favorites.syncFromCloud(true, true),
+          syncEatenFromCloud(true, true)
         ])
         wx.hideLoading()
         wx.showToast({

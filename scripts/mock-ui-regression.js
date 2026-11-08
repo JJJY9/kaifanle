@@ -3891,7 +3891,7 @@ function chinaDate(offset) {
     mp,
     "page.onToggleItemFavorite({ currentTarget: { dataset: { id: 'd02', index: 0 } } })"
   )
-  await sleep(400)
+  await sleep(1500)
   page = await current()
   data = await page.data()
   const itemFavOn = Boolean(
@@ -3904,11 +3904,18 @@ function chinaDate(offset) {
       return []
     }
   })
+  const itemFavCloud = await mp.evaluate(() => {
+    try {
+      return JSON.parse(wx.getStorageSync('kfl_favorites_cloud_v1') || '{}')
+    } catch (e) {
+      return {}
+    }
+  })
   await invoke(
     mp,
     "page.onToggleItemFavorite({ currentTarget: { dataset: { id: 'd02', index: 0 } } })"
   )
-  await sleep(400)
+  await sleep(1500)
   page = await current()
   data = await page.data()
   const itemFavStoredAfter = await mp.evaluate(() => {
@@ -3918,14 +3925,25 @@ function chinaDate(offset) {
       return []
     }
   })
+  const itemFavCloudAfter = await mp.evaluate(() => {
+    try {
+      return JSON.parse(wx.getStorageSync('kfl_favorites_cloud_v1') || '{}')
+    } catch (e) {
+      return {}
+    }
+  })
   check(
     'mock 订单菜品收藏',
     itemFavOn &&
       itemFavStored.indexOf('d02') > -1 &&
+      Array.isArray(itemFavCloud.ids) &&
+      itemFavCloud.ids.indexOf('d02') > -1 &&
       Boolean(data.order && data.order.items[0]) &&
       !data.order.items[0].favorite &&
-      itemFavStoredAfter.indexOf('d02') === -1,
-    itemFavOn ? '可收藏/取消' : '未收藏'
+      itemFavStoredAfter.indexOf('d02') === -1 &&
+      Array.isArray(itemFavCloudAfter.ids) &&
+      itemFavCloudAfter.ids.indexOf('d02') === -1,
+    itemFavOn ? '可收藏/取消并同步云端' : '未收藏'
   )
   await mp.navigateBack()
   await sleep(900)
@@ -5148,12 +5166,16 @@ function chinaDate(offset) {
   page = await current()
   const pulledEaten = await invoke(
     mp,
-    "const dish = (page._available || []).find(d => d.id === 'd10'); return dish ? (dish.lastEatenText || '') : 'missing'"
+    "const find = id => ((page._available || []).find(d => d.id === id) || {}); return { d10: find('d10').lastEatenText || '', d01: find('d01').lastEatenText || '' }"
   )
   check(
     'mock 吃过记录云端拉取',
-    pulledEaten === '昨天吃过',
-    pulledEaten || '没有标记'
+    Boolean(pulledEaten) &&
+      pulledEaten.d10 === '昨天吃过' &&
+      pulledEaten.d01 === '今天吃过',
+    pulledEaten
+      ? `d10 ${pulledEaten.d10 || '无'} · d01 ${pulledEaten.d01 || '无'}`
+      : '没有标记'
   )
   data = await page.data()
   check(
@@ -5212,6 +5234,11 @@ function chinaDate(offset) {
       Number(data.stats && data.stats.month) >= 1,
     `¥${data.stats && data.stats.monthSpend} · ${data.stats && data.stats.month} 单`
   )
+  await mp.evaluate(
+    new Function(
+      "wx.setStorageSync('kfl_favorites_cloud_v1', JSON.stringify({ ids: ['d03'], times: { d03: Date.now() }, removed: {}, updatedAt: Date.now() + 60000 })); return true"
+    )
+  )
   await invoke(
     mp,
     "wx.__syncToasts = []; wx.showToast = (o) => { wx.__syncToasts.push(o && o.title); o && o.success && o.success() }; return true"
@@ -5220,13 +5247,19 @@ function chinaDate(offset) {
     mp,
     "page.onEntryTap({ currentTarget: { dataset: { key: 'sync' } } })"
   )
-  await sleep(1400)
+  await sleep(1600)
   const syncToasts = await mp.evaluate(() => wx.__syncToasts || [])
+  const syncFavs = await mp.evaluate(() => {
+    try {
+      return JSON.parse(wx.getStorageSync('kfl_favorites_v1') || '[]')
+    } catch (e) {
+      return []
+    }
+  })
   check(
     'mock 我的手动云同步',
-    Array.isArray(syncToasts) &&
-      syncToasts.some(title => String(title || '').indexOf('已') > -1),
-    syncToasts.join(' / ') || '没有提示'
+    syncToasts[0] === '已同步云端更新' && syncFavs.indexOf('d03') > -1,
+    `${syncToasts.join('/') || '无提示'} · ${syncFavs.join('/') || '无收藏'}`
   )
   await mp.navigateTo('/pages/kitchen/index')
   await sleep(2200)

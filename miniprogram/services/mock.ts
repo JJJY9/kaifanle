@@ -1871,7 +1871,7 @@ function mergeFavoritesCloud(
   const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000
   const removed: Record<string, number> = {}
   Object.keys(removedAt).forEach(id => {
-    if ((removedAt[id] || 0) > (favAt[id] || 0) && removedAt[id] > cutoff) {
+    if ((removedAt[id] || 0) >= (favAt[id] || 0) && removedAt[id] > cutoff) {
       removed[id] = removedAt[id]
     }
   })
@@ -1957,10 +1957,7 @@ function normalizeEatenCloud(data: any): EatenCloudData {
       ? input.ops
       : {}
   Object.keys(map).forEach(id => {
-    const op = clampSyncTimestamp(opsInput[id]) || Number(map[id])
-    if (op) {
-      ops[id] = op
-    }
+    ops[id] = clampSyncTimestamp(opsInput[id])
   })
   const removed: Record<string, number> = {}
   const removedInput =
@@ -1971,11 +1968,34 @@ function normalizeEatenCloud(data: any): EatenCloudData {
       : {}
   Object.keys(removedInput)
     .slice(0, 300)
-    .forEach(key => {
-      const id = String(key || '').trim().slice(0, 64)
-      const at = clampSyncTimestamp(removedInput[key])
-      if (id && at && !Object.prototype.hasOwnProperty.call(removed, id)) {
-        removed[id] = at
+    .forEach(rawKey => {
+      const raw = String(rawKey || '')
+      const op = clampSyncTimestamp(removedInput[rawKey])
+      if (!raw || !op) {
+        return
+      }
+      let key = ''
+      const index = raw.lastIndexOf('@')
+      if (index === -1) {
+        key = `${raw.trim().slice(0, 64)}@*`
+      } else {
+        const id = raw.slice(0, index).trim().slice(0, 64)
+        const atPart = raw.slice(index + 1)
+        if (!id) {
+          return
+        }
+        if (atPart === '*') {
+          key = `${id}@*`
+        } else {
+          const mealAt = Number(atPart)
+          if (!isFinite(mealAt) || mealAt <= 0) {
+            return
+          }
+          key = `${id}@${mealAt}`
+        }
+      }
+      if (!Object.prototype.hasOwnProperty.call(removed, key)) {
+        removed[key] = op
       }
     })
   return {
@@ -1992,45 +2012,72 @@ function mergeEatenCloud(
 ): EatenCloudData {
   const eatAt: Record<string, number> = {}
   const eatOp: Record<string, number> = {}
-  const cancelOp: Record<string, number> = {}
+  const exact: Record<string, number> = {}
+  const wildcard: Record<string, number> = {}
   ;[a, b].forEach(src => {
     const item: any = src || {}
     Object.keys(item.map || {}).forEach(id => {
       const at = Number(item.map[id] || 0)
-      const op = Number((item.ops || {})[id] || 0) || at
+      const op = Number((item.ops || {})[id] || 0)
       if (
-        op > (eatOp[id] || 0) ||
-        (op === (eatOp[id] || 0) && at > (eatAt[id] || 0))
+        op > (eatOp[id] === undefined ? -1 : eatOp[id]) ||
+        (op === (eatOp[id] === undefined ? -1 : eatOp[id]) &&
+          at > (eatAt[id] || 0))
       ) {
         eatAt[id] = at
         eatOp[id] = op
       }
     })
-    Object.keys(item.removed || {}).forEach(id => {
-      const at = Number(item.removed[id] || 0)
-      if (at > (cancelOp[id] || 0)) {
-        cancelOp[id] = at
+    Object.keys(item.removed || {}).forEach(key => {
+      const index = String(key).lastIndexOf('@')
+      const id = index > -1 ? String(key).slice(0, index) : String(key)
+      const atPart = index > -1 ? String(key).slice(index + 1) : '*'
+      const op = Number(item.removed[key] || 0)
+      if (atPart === '*') {
+        if (op > (wildcard[id] || 0)) {
+          wildcard[id] = op
+        }
+      } else if (op > (exact[key] || 0)) {
+        exact[key] = op
       }
     })
   })
   const map: Record<string, number> = {}
   const ops: Record<string, number> = {}
   Object.keys(eatAt).forEach(id => {
+    const at = eatAt[id]
     const op = eatOp[id] || 0
-    const cancel = cancelOp[id] || 0
-    if (cancel && cancel >= op) {
+    const blockExact = exact[`${id}@${at}`] || 0
+    const blockAny = wildcard[id] || 0
+    if (
+      (blockExact > 0 && blockExact >= op) ||
+      (blockAny > 0 && blockAny >= op)
+    ) {
       return
     }
-    map[id] = eatAt[id]
+    map[id] = at
     ops[id] = op
   })
   const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000
   const removed: Record<string, number> = {}
-  Object.keys(cancelOp).forEach(id => {
-    const cancel = cancelOp[id] || 0
-    const op = eatOp[id] || 0
-    if (cancel >= op && cancel > cutoff) {
-      removed[id] = cancel
+  Object.keys(exact).forEach(key => {
+    const op = exact[key]
+    if (op <= cutoff) {
+      return
+    }
+    const index = key.lastIndexOf('@')
+    const id = key.slice(0, index)
+    const at = Number(key.slice(index + 1))
+    if (Object.prototype.hasOwnProperty.call(eatAt, id)) {
+      if (eatAt[id] === at && (eatOp[id] || 0) > op) {
+        return
+      }
+    }
+    removed[key] = op
+  })
+  Object.keys(wildcard).forEach(id => {
+    if (wildcard[id] > cutoff) {
+      removed[`${id}@*`] = wildcard[id]
     }
   })
   return { map, ops, removed, updatedAt: 0 }
@@ -2060,13 +2107,7 @@ export async function saveEaten(
   const base = clampSyncTimestamp(payload && payload.baseUpdatedAt)
   const storedAt = existing ? existing.updatedAt : 0
   if (existing && base !== storedAt) {
-    return {
-      conflict: true,
-      map: existing.map,
-      ops: existing.ops,
-      removed: existing.removed,
-      updatedAt: storedAt
-    }
+    return Object.assign({ conflict: true }, existing)
   }
   const merged = mergeEatenCloud(
     existing || { map: {}, removed: {} },
@@ -2666,12 +2707,14 @@ export async function getMyStats(): Promise<MyStats> {
   const orders = loadOrders()
   const valid = orders.filter(order => order.status !== 'cancelled')
   const now = new Date()
+  const todayKey = dateInputString()
+  const monthPrefix = todayKey.slice(0, 7)
+  // 与干饭足迹同口径：按用餐日期归月
+  const effectiveDate = (order: any) =>
+    order.scheduledDate || dateInputString(new Date(order.createdAt))
   const monthly = valid.filter(order => {
-    const date = new Date(order.createdAt)
-    return (
-      date.getFullYear() === now.getFullYear() &&
-      date.getMonth() === now.getMonth()
-    )
+    const date = effectiveDate(order)
+    return date.slice(0, 7) === monthPrefix && date <= todayKey
   })
   const dishCount: Record<string, number> = {}
   monthly.forEach(order => {

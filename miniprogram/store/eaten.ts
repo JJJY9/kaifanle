@@ -64,7 +64,7 @@ function state(): EatenState {
   const rawOps = readNumberMap(EATEN_OPS_KEY)
   const ops: Record<string, number> = {}
   Object.keys(map).forEach(id => {
-    ops[id] = Number(rawOps[id] || map[id])
+    ops[id] = Number(rawOps[id] || 0) || 0
   })
   return {
     map,
@@ -79,45 +79,72 @@ function mergeEatenState(
 ): EatenState {
   const eatAt: Record<string, number> = {}
   const eatOp: Record<string, number> = {}
-  const cancelOp: Record<string, number> = {}
+  const exact: Record<string, number> = {}
+  const wildcard: Record<string, number> = {}
   ;[a, b].forEach(src => {
     const item: any = src || {}
     Object.keys(item.map || {}).forEach(id => {
       const at = Number(item.map[id] || 0)
-      const op = Number((item.ops || {})[id] || 0) || at
+      const op = Number((item.ops || {})[id] || 0)
       if (
-        op > (eatOp[id] || 0) ||
-        (op === (eatOp[id] || 0) && at > (eatAt[id] || 0))
+        op > (eatOp[id] === undefined ? -1 : eatOp[id]) ||
+        (op === (eatOp[id] === undefined ? -1 : eatOp[id]) &&
+          at > (eatAt[id] || 0))
       ) {
         eatAt[id] = at
         eatOp[id] = op
       }
     })
-    Object.keys(item.removed || {}).forEach(id => {
-      const at = Number(item.removed[id] || 0)
-      if (at > (cancelOp[id] || 0)) {
-        cancelOp[id] = at
+    Object.keys(item.removed || {}).forEach(key => {
+      const index = String(key).lastIndexOf('@')
+      const id = index > -1 ? String(key).slice(0, index) : String(key)
+      const atPart = index > -1 ? String(key).slice(index + 1) : '*'
+      const op = Number(item.removed[key] || 0)
+      if (atPart === '*') {
+        if (op > (wildcard[id] || 0)) {
+          wildcard[id] = op
+        }
+      } else if (op > (exact[key] || 0)) {
+        exact[key] = op
       }
     })
   })
   const map: Record<string, number> = {}
   const ops: Record<string, number> = {}
   Object.keys(eatAt).forEach(id => {
+    const at = eatAt[id]
     const op = eatOp[id] || 0
-    const cancel = cancelOp[id] || 0
-    if (cancel && cancel >= op) {
+    const blockExact = exact[`${id}@${at}`] || 0
+    const blockAny = wildcard[id] || 0
+    if (
+      (blockExact > 0 && blockExact >= op) ||
+      (blockAny > 0 && blockAny >= op)
+    ) {
       return
     }
-    map[id] = eatAt[id]
+    map[id] = at
     ops[id] = op
   })
   const cutoff = Date.now() - SYNC_TOMBSTONE_TTL
   const removed: Record<string, number> = {}
-  Object.keys(cancelOp).forEach(id => {
-    const cancel = cancelOp[id] || 0
-    const op = eatOp[id] || 0
-    if (cancel >= op && cancel > cutoff) {
-      removed[id] = cancel
+  Object.keys(exact).forEach(key => {
+    const op = exact[key]
+    if (op <= cutoff) {
+      return
+    }
+    const index = key.lastIndexOf('@')
+    const id = key.slice(0, index)
+    const at = Number(key.slice(index + 1))
+    if (Object.prototype.hasOwnProperty.call(eatAt, id)) {
+      if (eatAt[id] === at && (eatOp[id] || 0) > op) {
+        return
+      }
+    }
+    removed[key] = op
+  })
+  Object.keys(wildcard).forEach(id => {
+    if (wildcard[id] > cutoff) {
+      removed[`${id}@*`] = wildcard[id]
     }
   })
   return { map, ops, removed }
@@ -161,9 +188,17 @@ function scheduleSync() {
   }, SYNC_DEBOUNCE)
 }
 
-async function pushEaten() {
+async function pushEaten(strict = false) {
   if (pushing) {
-    return
+    if (!strict) {
+      return
+    }
+    for (let i = 0; i < 40 && pushing; i++) {
+      await new Promise(resolve => setTimeout(resolve, 50))
+    }
+    if (pushing) {
+      throw new Error('正在同步，请稍后再试')
+    }
   }
   pushing = true
   readSyncMeta()
@@ -201,6 +236,9 @@ async function pushEaten() {
     }
   } catch (e) {
     // 推送失败时保留本地，下次改动再试
+    if (strict) {
+      throw e
+    }
   } finally {
     pushing = false
   }
@@ -222,7 +260,7 @@ export function recordEaten(dishIds: string[], at: number = Date.now()) {
     }
     current.map[key] = at
     current.ops[key] = now
-    delete current.removed[key]
+    delete current.removed[`${key}@${at}`]
     changed = true
   })
   if (!changed) {
@@ -234,15 +272,23 @@ export function recordEaten(dishIds: string[], at: number = Date.now()) {
 
 export function removeEaten(dishIds: string[], at: number) {
   const current = state()
+  const mealAt = Number(at)
+  if (!Number.isFinite(mealAt) || mealAt <= 0) {
+    return
+  }
   let changed = false
   ;(dishIds || []).forEach(id => {
     const key = String(id || '').trim()
-    if (key && Number(current.map[key] || 0) === Number(at)) {
+    if (!key) {
+      return
+    }
+    // 墓碑精确到「菜品 + 餐期」，不会误删同菜其他餐期的记录
+    current.removed[`${key}@${mealAt}`] = Date.now()
+    if (Number(current.map[key] || 0) === mealAt) {
       delete current.map[key]
       delete current.ops[key]
-      current.removed[key] = Date.now()
-      changed = true
     }
+    changed = true
   })
   if (!changed) {
     return
@@ -256,7 +302,10 @@ export function getLastEatenMap(): Record<string, number> {
 }
 
 // 拉取云端「吃过」记录并按条合并；本地有未上云改动时回推。返回本地是否变化
-export async function syncEatenFromCloud(force = false): Promise<boolean> {
+export async function syncEatenFromCloud(
+  force = false,
+  strict = false
+): Promise<boolean> {
   readSyncMeta()
   if (!force && Date.now() - lastPullAt < SYNC_PULL_TTL) {
     return false
@@ -278,10 +327,13 @@ export async function syncEatenFromCloud(force = false): Promise<boolean> {
     syncedAt = Number(remote.updatedAt || 0)
     persist(merged)
     if (!sameEatenState(merged, remoteState)) {
-      await pushEaten()
+      await pushEaten(strict)
     }
     return changed
   } catch (e) {
+    if (strict) {
+      throw e
+    }
     return false
   }
 }

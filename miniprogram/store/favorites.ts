@@ -48,7 +48,7 @@ function mergeFavoriteState(
   const cutoff = Date.now() - SYNC_TOMBSTONE_TTL
   const removed: Record<string, number> = {}
   Object.keys(removedAt).forEach(id => {
-    if ((removedAt[id] || 0) > (favAt[id] || 0) && removedAt[id] > cutoff) {
+    if ((removedAt[id] || 0) >= (favAt[id] || 0) && removedAt[id] > cutoff) {
       removed[id] = removedAt[id]
     }
   })
@@ -204,7 +204,7 @@ class FavoritesStore {
   }
 
   // 拉取云端并与本地按条合并；本地有未上云改动时回推。返回本地是否变化
-  async syncFromCloud(force = false): Promise<boolean> {
+  async syncFromCloud(force = false, strict = false): Promise<boolean> {
     if (!force && Date.now() - this.lastPullAt < SYNC_PULL_TTL) {
       return false
     }
@@ -229,11 +229,14 @@ class FavoritesStore {
         this.emit()
       }
       if (!sameFavoriteState(merged, remoteState)) {
-        await this.pushToCloud()
+        await this.pushToCloud(strict)
       }
       return changed
     } catch (e) {
-      // 云端同步失败不影响本地收藏
+      // 云端同步失败不影响本地收藏；手动同步时上抛让页面提示失败
+      if (strict) {
+        throw e
+      }
       return false
     }
   }
@@ -248,9 +251,17 @@ class FavoritesStore {
     }, SYNC_DEBOUNCE)
   }
 
-  private async pushToCloud(): Promise<void> {
+  private async pushToCloud(strict = false): Promise<void> {
     if (this.pushing) {
-      return
+      if (!strict) {
+        return
+      }
+      for (let i = 0; i < 40 && this.pushing; i++) {
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+      if (this.pushing) {
+        throw new Error('正在同步，请稍后再试')
+      }
     }
     this.pushing = true
     try {
@@ -283,7 +294,10 @@ class FavoritesStore {
         // 推送期间本地又有改动，继续把新改动推上去
       }
     } catch (e) {
-      // 推送失败时保留本地，下次改动再试
+      // 推送失败时保留本地，下次改动再试；手动同步时上抛
+      if (strict) {
+        throw e
+      }
     } finally {
       this.pushing = false
     }

@@ -687,7 +687,7 @@ function mergeFavorites(a, b) {
   const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000
   const removed = {}
   Object.keys(removedAt).forEach(id => {
-    if ((removedAt[id] || 0) > (favAt[id] || 0) && removedAt[id] > cutoff) {
+    if ((removedAt[id] || 0) >= (favAt[id] || 0) && removedAt[id] > cutoff) {
       removed[id] = removedAt[id]
     }
   })
@@ -708,49 +708,90 @@ async function getFavorites(openid) {
   }
 }
 
-async function saveFavorites(payload, openid) {
-  const incoming = normalizeFavorites(payload || {})
-  const base = clampSyncTimestamp(payload && payload.baseUpdatedAt)
-  await ensureCollection('favorites')
-  let existing = null
+async function readSyncedDoc(collection, openid, normalize, target) {
+  const client = target || db
   try {
-    const res = await db.collection('favorites').doc(openid).get()
-    existing = normalizeFavorites(res.data)
+    const res = await client.collection(collection).doc(openid).get()
+    return normalize(res.data)
   } catch (e) {
-    if (!isMissingDocError(e)) {
-      throw e
+    if (isMissingDocError(e)) {
+      return null
+    }
+    throw e
+  }
+}
+
+// 收藏/吃过的公共写入：事务内读-校验-写，避免并发推送互相覆盖
+async function saveSyncedDoc(
+  collection,
+  payload,
+  openid,
+  normalize,
+  merge,
+  emptyState
+) {
+  const incoming = normalize(payload || {})
+  const base = clampSyncTimestamp(payload && payload.baseUpdatedAt)
+  await ensureCollection(collection)
+  if (typeof db.startTransaction === 'function') {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      let transaction = null
+      try {
+        transaction = await db.startTransaction()
+        const existing = await readSyncedDoc(
+          collection,
+          openid,
+          normalize,
+          transaction
+        )
+        const storedAt = existing ? existing.updatedAt : 0
+        if (existing && base !== storedAt) {
+          await transaction.commit()
+          return Object.assign({ conflict: true }, existing)
+        }
+        const merged = merge(existing || emptyState, incoming)
+        const updatedAt = Math.max(Date.now(), storedAt + 1)
+        const data = Object.assign({}, merged, { updatedAt })
+        await transaction.collection(collection).doc(openid).set({ data })
+        await transaction.commit()
+        return data
+      } catch (err) {
+        if (transaction) {
+          try {
+            await transaction.rollback()
+          } catch (e) {
+            // 回滚失败时忽略，继续重试
+          }
+        }
+        if (attempt === 1) {
+          break
+        }
+        await new Promise(resolve => setTimeout(resolve, 20))
+      }
     }
   }
+  // 不支持事务时退化为读-校验-写（单实例下仍能挡住大部分冲突）
+  const existing = await readSyncedDoc(collection, openid, normalize)
   const storedAt = existing ? existing.updatedAt : 0
   if (existing && base !== storedAt) {
-    // 客户端基于旧版本推送：返回云端现状，客户端合并后重推
-    return {
-      conflict: true,
-      ids: existing.ids,
-      times: existing.times,
-      removed: existing.removed,
-      updatedAt: storedAt
-    }
+    return Object.assign({ conflict: true }, existing)
   }
-  const merged = mergeFavorites(
-    existing || { ids: [], times: {}, removed: {} },
-    incoming
-  )
+  const merged = merge(existing || emptyState, incoming)
   const updatedAt = Math.max(Date.now(), storedAt + 1)
-  await db.collection('favorites').doc(openid).set({
-    data: {
-      ids: merged.ids,
-      times: merged.times,
-      removed: merged.removed,
-      updatedAt
-    }
-  })
-  return {
-    ids: merged.ids,
-    times: merged.times,
-    removed: merged.removed,
-    updatedAt
-  }
+  const data = Object.assign({}, merged, { updatedAt })
+  await db.collection(collection).doc(openid).set({ data })
+  return data
+}
+
+async function saveFavorites(payload, openid) {
+  return saveSyncedDoc(
+    'favorites',
+    payload,
+    openid,
+    normalizeFavorites,
+    mergeFavorites,
+    { ids: [], times: {}, removed: {} }
+  )
 }
 
 function normalizeEaten(data) {
@@ -782,10 +823,7 @@ function normalizeEaten(data) {
       ? input.ops
       : {}
   Object.keys(map).forEach(id => {
-    const op = clampSyncTimestamp(opsInput[id]) || Number(map[id])
-    if (op) {
-      ops[id] = op
-    }
+    ops[id] = clampSyncTimestamp(opsInput[id])
   })
   const removed = {}
   const removedInput =
@@ -796,11 +834,35 @@ function normalizeEaten(data) {
       : {}
   Object.keys(removedInput)
     .slice(0, 300)
-    .forEach(key => {
-      const id = String(key || '').trim().slice(0, 64)
-      const at = clampSyncTimestamp(removedInput[key])
-      if (id && at && !Object.prototype.hasOwnProperty.call(removed, id)) {
-        removed[id] = at
+    .forEach(rawKey => {
+      const raw = String(rawKey || '')
+      const op = clampSyncTimestamp(removedInput[rawKey])
+      if (!raw || !op) {
+        return
+      }
+      let key = ''
+      const index = raw.lastIndexOf('@')
+      if (index === -1) {
+        // 旧版墓碑只存菜品 id，按通配处理
+        key = `${raw.trim().slice(0, 64)}@*`
+      } else {
+        const id = raw.slice(0, index).trim().slice(0, 64)
+        const atPart = raw.slice(index + 1)
+        if (!id) {
+          return
+        }
+        if (atPart === '*') {
+          key = `${id}@*`
+        } else {
+          const mealAt = Number(atPart)
+          if (!isFinite(mealAt) || mealAt <= 0) {
+            return
+          }
+          key = `${id}@${mealAt}`
+        }
+      }
+      if (!Object.prototype.hasOwnProperty.call(removed, key)) {
+        removed[key] = op
       }
     })
   return {
@@ -814,45 +876,71 @@ function normalizeEaten(data) {
 function mergeEaten(a, b) {
   const eatAt = {}
   const eatOp = {}
-  const cancelOp = {}
+  const exact = {}
+  const wildcard = {}
   ;[a, b].forEach(src => {
     const item = src || {}
     Object.keys(item.map || {}).forEach(id => {
       const at = Number(item.map[id] || 0)
-      const op = Number((item.ops || {})[id] || 0) || at
+      const op = Number((item.ops || {})[id] || 0)
       if (
-        op > (eatOp[id] || 0) ||
-        (op === (eatOp[id] || 0) && at > (eatAt[id] || 0))
+        op > (eatOp[id] || -1) ||
+        (op === (eatOp[id] || -1) && at > (eatAt[id] || 0))
       ) {
         eatAt[id] = at
         eatOp[id] = op
       }
     })
-    Object.keys(item.removed || {}).forEach(id => {
-      const at = Number(item.removed[id] || 0)
-      if (at > (cancelOp[id] || 0)) {
-        cancelOp[id] = at
+    Object.keys(item.removed || {}).forEach(key => {
+      const index = String(key).lastIndexOf('@')
+      const id = index > -1 ? String(key).slice(0, index) : String(key)
+      const atPart = index > -1 ? String(key).slice(index + 1) : '*'
+      const op = Number(item.removed[key] || 0)
+      if (atPart === '*') {
+        if (op > (wildcard[id] || 0)) {
+          wildcard[id] = op
+        }
+      } else if (op > (exact[key] || 0)) {
+        exact[key] = op
       }
     })
   })
   const map = {}
   const ops = {}
   Object.keys(eatAt).forEach(id => {
+    const at = eatAt[id]
     const op = eatOp[id] || 0
-    const cancel = cancelOp[id] || 0
-    if (cancel && cancel >= op) {
+    const blockExact = exact[`${id}@${at}`] || 0
+    const blockAny = wildcard[id] || 0
+    if (
+      (blockExact > 0 && blockExact >= op) ||
+      (blockAny > 0 && blockAny >= op)
+    ) {
       return
     }
-    map[id] = eatAt[id]
+    map[id] = at
     ops[id] = op
   })
   const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000
   const removed = {}
-  Object.keys(cancelOp).forEach(id => {
-    const cancel = cancelOp[id] || 0
-    const op = eatOp[id] || 0
-    if (cancel >= op && cancel > cutoff) {
-      removed[id] = cancel
+  Object.keys(exact).forEach(key => {
+    const op = exact[key]
+    if (op <= cutoff) {
+      return
+    }
+    const index = key.lastIndexOf('@')
+    const id = key.slice(0, index)
+    const at = Number(key.slice(index + 1))
+    if (Object.prototype.hasOwnProperty.call(eatAt, id)) {
+      if (eatAt[id] === at && (eatOp[id] || 0) > op) {
+        return
+      }
+    }
+    removed[key] = op
+  })
+  Object.keys(wildcard).forEach(id => {
+    if (wildcard[id] > cutoff) {
+      removed[`${id}@*`] = wildcard[id]
     }
   })
   return { map, ops, removed }
@@ -872,44 +960,14 @@ async function getEaten(openid) {
 }
 
 async function saveEaten(payload, openid) {
-  const incoming = normalizeEaten(payload || {})
-  const base = clampSyncTimestamp(payload && payload.baseUpdatedAt)
-  await ensureCollection('eaten')
-  let existing = null
-  try {
-    const res = await db.collection('eaten').doc(openid).get()
-    existing = normalizeEaten(res.data)
-  } catch (e) {
-    if (!isMissingDocError(e)) {
-      throw e
-    }
-  }
-  const storedAt = existing ? existing.updatedAt : 0
-  if (existing && base !== storedAt) {
-    return {
-      conflict: true,
-      map: existing.map,
-      ops: existing.ops,
-      removed: existing.removed,
-      updatedAt: storedAt
-    }
-  }
-  const merged = mergeEaten(existing || { map: {}, removed: {} }, incoming)
-  const updatedAt = Math.max(Date.now(), storedAt + 1)
-  await db.collection('eaten').doc(openid).set({
-    data: {
-      map: merged.map,
-      ops: merged.ops,
-      removed: merged.removed,
-      updatedAt
-    }
-  })
-  return {
-    map: merged.map,
-    ops: merged.ops,
-    removed: merged.removed,
-    updatedAt
-  }
+  return saveSyncedDoc(
+    'eaten',
+    payload,
+    openid,
+    normalizeEaten,
+    mergeEaten,
+    { map: {}, ops: {}, removed: {} }
+  )
 }
 
 async function getMyProfile(openid) {
@@ -1718,6 +1776,8 @@ async function getKitchenReport(payload, openid) {
 async function getMyStats(openid) {
   const start = chinaStartOfMonth()
   const weekStart = chinaStartOfWeek()
+  // 预订单最多提前 7 天，月窗口前移覆盖「上个月下单、这个月吃」的单
+  const monthWindowStart = start - 7 * 24 * 60 * 60 * 1000
   const [allRes, cancelledRes, monthRes, weekRes] = await Promise.all([
     db.collection('orders').where({ _openid: openid }).count(),
     db
@@ -1726,8 +1786,8 @@ async function getMyStats(openid) {
       .count(),
     db
       .collection('orders')
-      .where({ _openid: openid, createdAt: _.gte(start) })
-      .limit(200)
+      .where({ _openid: openid, createdAt: _.gte(monthWindowStart) })
+      .limit(300)
       .get(),
     db
       .collection('orders')
@@ -1735,9 +1795,18 @@ async function getMyStats(openid) {
       .limit(100)
       .get()
   ])
-  const monthOrders = monthRes.data.filter(
-    order => order.status !== 'cancelled'
-  )
+  const todayKey = chinaDateString()
+  const monthPrefix = todayKey.slice(0, 7)
+  const monthOrders = monthRes.data.filter(order => {
+    if (order.status === 'cancelled') {
+      return false
+    }
+    // 与干饭足迹同口径：按用餐日期归月
+    const date = String(
+      order.scheduledDate || chinaDateString(order.createdAt)
+    )
+    return date.slice(0, 7) === monthPrefix && date <= todayKey
+  })
   const weekOrders = (weekRes.data || []).filter(
     order => order.status === 'completed'
   )

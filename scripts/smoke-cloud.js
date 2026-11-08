@@ -2424,7 +2424,7 @@ async function run() {
   )
   assert.strictEqual(res.data.conflict, true)
   assert.deepStrictEqual(res.data.map, { d03: futureEatenAt })
-  // 未来餐期的记录：取消操作晚于记录操作时也能删掉
+  // 未来餐期的记录：取消墓碑精确到「菜品 + 餐期」
   res = await call('getEaten', {}, 'girl-openid')
   const eatenBase = Number(res.data.updatedAt)
   const futureDishAt = Date.now() + 3 * 24 * 60 * 60 * 1000
@@ -2449,8 +2449,61 @@ async function run() {
     {
       map: { d07: futureDishAt },
       ops: { d07: futureDishOp },
-      removed: { d07: Date.now() + 5000 },
+      removed: { [`d07@${futureDishAt}`]: Date.now() + 5000 },
       baseUpdatedAt: afterFuture
+    },
+    'girl-openid'
+  )
+  assert.deepStrictEqual(res.data.map, { d03: futureEatenAt })
+  // 取消未来餐期不能误删同菜其他餐期的真实记录
+  const todayDishAt = Date.now()
+  const todayDishOp = Date.now()
+  const afterCancel = Number(res.data.updatedAt)
+  res = await call(
+    'saveEaten',
+    {
+      map: { d07: todayDishAt },
+      ops: { d07: todayDishOp },
+      removed: { [`d07@${futureDishAt}`]: Date.now() + 5000 },
+      baseUpdatedAt: afterCancel
+    },
+    'girl-openid'
+  )
+  assert.deepStrictEqual(res.data.map, {
+    d03: futureEatenAt,
+    d07: todayDishAt
+  })
+  const afterToday = Number(res.data.updatedAt)
+  res = await call(
+    'saveEaten',
+    {
+      map: { d07: todayDishAt },
+      ops: { d07: todayDishOp },
+      removed: { [`d07@${todayDishAt}`]: Date.now() + 6000 },
+      baseUpdatedAt: afterToday
+    },
+    'girl-openid'
+  )
+  assert.deepStrictEqual(res.data.map, { d03: futureEatenAt })
+  // 旧数据没有 ops：未来餐期记录的操作时间视为最旧，取消同样生效
+  const legacyAt = Date.now() + 4 * 24 * 60 * 60 * 1000
+  const beforeLegacy = Number(res.data.updatedAt)
+  res = await call(
+    'saveEaten',
+    { map: { d09: legacyAt }, baseUpdatedAt: beforeLegacy },
+    'girl-openid'
+  )
+  assert.deepStrictEqual(res.data.map, {
+    d03: futureEatenAt,
+    d09: legacyAt
+  })
+  const afterLegacy = Number(res.data.updatedAt)
+  res = await call(
+    'saveEaten',
+    {
+      map: { d09: legacyAt },
+      removed: { [`d09@${legacyAt}`]: Date.now() + 1000 },
+      baseUpdatedAt: afterLegacy
     },
     'girl-openid'
   )

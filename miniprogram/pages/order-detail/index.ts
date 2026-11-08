@@ -757,18 +757,16 @@ Page({
 
   onToggleItemFavorite(e: any) {
     const id = String((e && e.currentTarget && e.currentTarget.dataset.id) || '')
-    const rawIndex = e && e.currentTarget && e.currentTarget.dataset.index
-    const index =
-      rawIndex === undefined || rawIndex === null || rawIndex === ''
-        ? -1
-        : Number(rawIndex)
     if (!id) {
       return
     }
     const favorite = favorites.toggle(id)
-    if (index >= 0) {
-      this.setData({ [`order.items[${index}].favorite`]: favorite })
-    }
+    const items = (this.data.order && this.data.order.items) || []
+    this.setData({
+      'order.items': items.map((item: any) =>
+        item.dishId === id ? { ...item, favorite } : item
+      )
+    })
     wx.showToast({
       title: favorite ? '已收藏' : '已取消收藏',
       icon: 'none'
