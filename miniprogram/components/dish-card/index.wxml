@@ -22,6 +22,7 @@
       >做法</view>
     </view>
     <view class="desc">{{dish.desc}}</view>
+    <view wx:if="{{dish.lastEatenText}}" class="last-eaten">🍚 {{dish.lastEatenText}}</view>
     <view wx:if="{{dish.stock >= 0 && dish.stock > 0 && dish.stock <= 5}}" class="stock-hint">仅剩 {{dish.stock}} 份</view>
     <view class="foot">
       <view class="price-wrap">

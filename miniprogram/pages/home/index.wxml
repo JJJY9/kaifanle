@@ -79,9 +79,10 @@
     </view>
     <view wx:if="{{busyText}}" class="busy-line">{{busyText}}</view>
     <view wx:if="{{mealNotice}}" class="meal-notice">{{mealNotice}}</view>
-    <view wx:if="{{notice}}" class="notice-box">
+    <view wx:if="{{notice}}" class="notice-box {{noticeLong ? 'tappable' : ''}}" bindtap="onToggleNotice">
       <text class="notice-tag">店长说</text>
-      <text class="notice-text">{{notice}}</text>
+      <text class="notice-text {{noticeLong && !noticeExpanded ? 'clamp' : ''}}">{{notice}}</text>
+      <text wx:if="{{noticeLong}}" class="notice-toggle">{{noticeExpanded ? '收起' : '展开'}}</text>
     </view>
 
     <view class="week-entry" bindtap="onWeekMenus">

@@ -40,6 +40,7 @@ function chinaDate(offset) {
     wx.removeStorageSync('kfl_order_collapsed_dates_v1')
     wx.removeStorageSync('kfl_recipe_steps_v1')
     wx.removeStorageSync('kfl_recipe_ingredients_v1')
+    wx.removeStorageSync('kfl_eaten_v1')
     return true
   })
   const current = () => mp.currentPage()
@@ -399,6 +400,58 @@ function chinaDate(offset) {
   page = await current()
   data = await page.data()
   check('mock 搜索', data.searchResults.length > 0, `${data.searchResults.length} 条`)
+  const eatenTargetId = (data.searchResults[0] || {}).id
+  await mp.evaluate(
+    new Function(
+      `const at = new Date(); at.setDate(at.getDate() - 1); at.setHours(12, 0, 0, 0); wx.setStorageSync('kfl_eaten_v1', JSON.stringify({ ${JSON.stringify(
+        eatenTargetId
+      )}: at.getTime() })); return true;`
+    )
+  )
+  await invoke(mp, 'page.loadMenu()')
+  await sleep(1500)
+  await invoke(mp, "page.onSearchInput({ detail: { value: '饭' } })")
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  const eatenDish = (data.searchResults || []).find(
+    dish => dish.id === eatenTargetId
+  )
+  check(
+    'mock 菜品上次吃过标记',
+    Boolean(eatenDish) && eatenDish.lastEatenText === '昨天吃过',
+    eatenDish ? eatenDish.lastEatenText : `未找到 ${eatenTargetId}`
+  )
+  await invoke(mp, 'page.onClearSearch()')
+  await sleep(300)
+  const longNotice =
+    '明天上午要出门买菜，午餐提前到 11 点截单；晚餐照常，想吃牛肉的早点说，我好多炖一会儿。'
+  await invoke(
+    mp,
+    `page.setData({ notice: ${JSON.stringify(
+      longNotice
+    )}, noticeLong: true, noticeExpanded: false })`
+  )
+  await sleep(300)
+  page = await current()
+  const noticeClampedEl = await page.$('.notice-text.clamp')
+  await invoke(mp, 'page.onToggleNotice()')
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  const noticeExpandedEl = await page.$('.notice-text.clamp')
+  check(
+    'mock 首页公告展开收起',
+    Boolean(noticeClampedEl) &&
+      data.noticeExpanded === true &&
+      !noticeExpandedEl,
+    data.noticeExpanded ? '已展开' : '未展开'
+  )
+  await invoke(
+    mp,
+    'page.setData({ notice: "", noticeLong: false, noticeExpanded: false })'
+  )
+  await sleep(200)
   await invoke(mp, "page.onSearchInput({ detail: { value: '番茄x' } })")
   await sleep(400)
   page = await current()
@@ -2244,6 +2297,51 @@ function chinaDate(offset) {
       copiedIngredients.indexOf(firstIngredient) > -1 &&
       copiedIngredients.split('\n').length >= 2,
     String(copiedIngredients || '').split('\n')[0]
+  )
+  const cartQtyBefore = await mp.evaluate(() => {
+    try {
+      const lines = JSON.parse(wx.getStorageSync('kfl_cart_v1') || '[]')
+      return Array.isArray(lines)
+        ? lines.reduce((sum, line) => sum + (Number(line.qty) || 0), 0)
+        : 0
+    } catch (e) {
+      return 0
+    }
+  })
+  await invoke(mp, 'page.onOrderDish()')
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 菜谱点这道打开规格',
+    Boolean(data.skuVisible) &&
+      Boolean(data.skuDish) &&
+      data.skuDish.id === 'd01' &&
+      data.canOrder === true &&
+      ['breakfast', 'lunch', 'dinner'].indexOf(data.orderMeal) > -1,
+    `${data.orderMealText} · ${data.skuDish ? data.skuDish.name : '无'}`
+  )
+  await invoke(
+    mp,
+    "page.onSkuAdd({ detail: { line: { key: '', dishId: 'd01', name: '番茄牛腩饭', price: 18, qty: 2, specs: [], note: '', color: '#FFD23F' } } })"
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  const cartQtyAfter = await mp.evaluate(() => {
+    try {
+      const lines = JSON.parse(wx.getStorageSync('kfl_cart_v1') || '[]')
+      return Array.isArray(lines)
+        ? lines.reduce((sum, line) => sum + (Number(line.qty) || 0), 0)
+        : 0
+    } catch (e) {
+      return 0
+    }
+  })
+  check(
+    'mock 菜谱点单加购',
+    cartQtyAfter === cartQtyBefore + 2 && data.skuVisible === false,
+    `购物车 ${cartQtyBefore} → ${cartQtyAfter} 份`
   )
   check(
     'mock 菜谱点单统计',

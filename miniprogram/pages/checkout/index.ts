@@ -8,6 +8,7 @@ import {
   getMyProfile
 } from '../../services/api'
 import { cart } from '../../store/cart'
+import { recordEaten } from '../../store/eaten'
 import { MEALS } from '../../utils/constants'
 import { currentMeal, dateInputString, dateLabel } from '../../utils/format'
 import { dishEmoji } from '../../utils/dish-emoji'
@@ -565,6 +566,7 @@ Page({
         requestId
       })
       cart.clearSlot(meal, scheduledDate)
+      recordEaten(lines.map((line: any) => line.dishId))
       wx.redirectTo({ url: `/pages/order-detail/index?id=${order.id}` })
     } catch (e: any) {
       const message =

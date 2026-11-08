@@ -1,9 +1,16 @@
 import { getDish, getDishStats, getMe } from '../../services/api'
 import { favorites } from '../../store/favorites'
+import { cart } from '../../store/cart'
+import { currentMeal, dateInputString } from '../../utils/format'
 import { saveImageToAlbum } from '../../utils/save-image'
 
 const STEP_PROGRESS_KEY = 'kfl_recipe_steps_v1'
 const INGREDIENT_PROGRESS_KEY = 'kfl_recipe_ingredients_v1'
+const MEAL_TEXT: Record<string, string> = {
+  breakfast: '早餐',
+  lunch: '午餐',
+  dinner: '晚餐'
+}
 
 function readDishProgress(key: string): Record<string, number[]> {
   try {
@@ -58,7 +65,13 @@ Page({
     loading: true,
     error: '',
     posterMaking: false,
-    posterPath: ''
+    posterPath: '',
+    skuVisible: false,
+    skuDish: null as any,
+    orderMeal: 'lunch' as string,
+    orderMealText: '午餐',
+    canOrder: false,
+    orderBlockedText: ''
   },
 
   dishId: '',
@@ -114,6 +127,18 @@ Page({
         text,
         done: ingredientDone.indexOf(index) > -1
       }))
+      const dishMeals =
+        Array.isArray((dish as any).meals) && (dish as any).meals.length
+          ? ((dish as any).meals as string[])
+          : ['breakfast', 'lunch', 'dinner']
+      const preferredMeal = currentMeal()
+      const orderMeal =
+        dishMeals.indexOf(preferredMeal) > -1
+          ? preferredMeal
+          : ['lunch', 'dinner', 'breakfast'].find(
+              meal => dishMeals.indexOf(meal) > -1
+            ) || 'lunch'
+      const soldOut = dish.status === 'soldout' || dish.stock === 0
       this.setData({
         dish,
         steps,
@@ -125,6 +150,11 @@ Page({
         favorite: favorites.has(dish.id),
         imageFailed: false,
         statsText,
+        orderMeal,
+        orderMealText: MEAL_TEXT[orderMeal] || '午餐',
+        canOrder: !soldOut && dish.status !== 'off',
+        orderBlockedText:
+          dish.status === 'off' ? '已下架' : soldOut ? '今天卖完了' : '',
         loading: false
       })
     } catch (e: any) {
@@ -232,6 +262,38 @@ Page({
       title: favorite ? '已收藏' : '已取消收藏',
       icon: 'none'
     })
+  },
+
+  onOrderDish() {
+    const dish = this.data.dish
+    if (!dish) {
+      return
+    }
+    if (!this.data.canOrder) {
+      wx.showToast({
+        title: this.data.orderBlockedText || '暂时不能点',
+        icon: 'none'
+      })
+      return
+    }
+    this.setData({ skuDish: dish, skuVisible: true })
+  },
+
+  onSkuClose() {
+    this.setData({ skuVisible: false })
+  },
+
+  onSkuAdd(e: any) {
+    if (!e || !e.detail || !e.detail.line) {
+      return
+    }
+    cart.add({
+      ...e.detail.line,
+      meal: this.data.orderMeal,
+      date: dateInputString()
+    })
+    this.setData({ skuVisible: false })
+    wx.showToast({ title: '已加购', icon: 'none' })
   },
 
   onShareAppMessage() {

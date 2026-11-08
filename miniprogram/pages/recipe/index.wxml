@@ -33,6 +33,10 @@
     </view>
   </view>
 
+  <view class="order-btn {{canOrder ? '' : 'disabled'}}" bindtap="onOrderDish">
+    {{canOrder ? '🍚 点这道 · 加入' + orderMealText : orderBlockedText}}
+  </view>
+
   <view wx:if="{{dish.ingredients && dish.ingredients.length}}" class="steps-card card">
     <view class="steps-title-row">
       <view class="steps-title display">食材</view>
@@ -90,3 +94,11 @@
 
   <canvas type="2d" id="poster" class="poster-canvas"></canvas>
 </view>
+
+<sku-sheet
+  id="skuSheet"
+  visible="{{skuVisible}}"
+  dish="{{skuDish}}"
+  bind:close="onSkuClose"
+  bind:add="onSkuAdd"
+/>

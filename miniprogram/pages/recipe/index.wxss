@@ -3,6 +3,31 @@
   padding: 24rpx 24rpx 80rpx;
 }
 
+.order-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 96rpx;
+  margin-top: 24rpx;
+  background: #FF6B35;
+  border: 4rpx solid #111111;
+  border-radius: 999rpx;
+  box-shadow: 6rpx 6rpx 0 #111111;
+  font-size: 30rpx;
+  font-weight: 800;
+}
+
+.order-btn:active {
+  transform: translate(6rpx, 6rpx);
+  box-shadow: none;
+}
+
+.order-btn.disabled {
+  background: #E5E5E5;
+  color: #9A9A9A;
+  box-shadow: 3rpx 3rpx 0 #111111;
+}
+
 .hero {
   display: flex;
   gap: 22rpx;

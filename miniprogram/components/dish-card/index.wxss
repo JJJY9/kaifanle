@@ -125,6 +125,13 @@
   font-weight: 700;
 }
 
+.last-eaten {
+  margin-top: 4rpx;
+  color: #2F7D4F;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
 .foot {
   display: flex;
   align-items: center;

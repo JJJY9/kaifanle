@@ -14,6 +14,7 @@ import {
   getMyStats
 } from '../../services/api'
 import { cart } from '../../store/cart'
+import { eatenText, getLastEatenMap } from '../../store/eaten'
 import { favorites } from '../../store/favorites'
 import { MEALS, STATUS_TEXT, mealName } from '../../utils/constants'
 import { USE_CLOUD } from '../../config'
@@ -85,6 +86,8 @@ Page({
     dislikes: [] as string[],
     avoidDislikes: false,
     notice: '',
+    noticeLong: false,
+    noticeExpanded: false,
     recommendText: '今日推荐',
     keyword: '',
     searchResults: [] as Dish[],
@@ -299,12 +302,18 @@ Page({
         return
       }
       const menuActive = Boolean(menu && menu.exists)
-      const available = dishes.filter(
-        dish =>
-          dish.status !== 'off' &&
-          dish.meals.indexOf(meal) > -1 &&
-          (!menuActive || menu!.dishIds.indexOf(dish.id) > -1)
-      )
+      const lastEaten = getLastEatenMap()
+      const available = dishes
+        .filter(
+          dish =>
+            dish.status !== 'off' &&
+            dish.meals.indexOf(meal) > -1 &&
+            (!menuActive || menu!.dishIds.indexOf(dish.id) > -1)
+        )
+        .map(dish => {
+          const text = eatenText(Number(lastEaten[dish.id] || 0))
+          return text ? { ...dish, lastEatenText: text } : dish
+        })
       this._available = available
       this._categories = categories
       this._baseEmptyDesc =
@@ -402,6 +411,13 @@ Page({
                 : ''
             }`
           : ''
+      const noticeText =
+        business &&
+        business.notice &&
+        (!business.noticeFrom || business.noticeFrom <= today) &&
+        (!business.noticeUntil || business.noticeUntil >= today)
+          ? business.notice
+          : ''
       this.setData(
         {
           loading: false,
@@ -415,14 +431,9 @@ Page({
           dislikes,
           avoidDislikes,
           weekText,
-          notice:
-            business &&
-            business.notice &&
-            (!business.noticeFrom || business.noticeFrom <= today) &&
-            (!business.noticeUntil ||
-              business.noticeUntil >= today)
-              ? business.notice
-              : '',
+          notice: noticeText,
+          noticeLong: String(noticeText).length > 40,
+          noticeExpanded: false,
           recommendText:
             (business && business.recommendText) || '今日推荐',
           searchResults: this.filterDishes(this.data.keyword)
@@ -753,6 +764,13 @@ Page({
         wx.showToast({ title: '本周小结已复制', icon: 'none' })
       }
     })
+  },
+
+  onToggleNotice() {
+    if (!this.data.noticeLong) {
+      return
+    }
+    this.setData({ noticeExpanded: !this.data.noticeExpanded })
   },
 
   async loadCouponReminder() {
