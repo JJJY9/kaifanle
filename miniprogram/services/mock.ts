@@ -339,18 +339,30 @@ function loadWishes(): Wish[] {
       const stored = JSON.parse(raw)
       if (Array.isArray(stored)) {
         wishCache = stored
-        if (!wishCache.some(wish => wish && wish.id === 'wish-seed-2')) {
+        const seed2 = wishCache.find(
+          wish => wish && wish.id === 'wish-seed-2'
+        )
+        const tomorrow = dateInputString(
+          new Date(Date.now() + 24 * 60 * 60 * 1000)
+        )
+        if (!seed2) {
           wishCache.push({
             id: 'wish-seed-2',
             content: '想喝奶茶',
             status: 'planned',
-            plannedDate: dateInputString(
-              new Date(Date.now() + 24 * 60 * 60 * 1000)
-            ),
+            plannedDate: tomorrow,
             reply: '安排上了',
             createdAt: Date.now() - 30 * 60 * 1000,
             updatedAt: Date.now() - 30 * 60 * 1000
           })
+          saveWishes()
+        } else if (
+          seed2.status === 'planned' &&
+          seed2.content === '想喝奶茶' &&
+          seed2.plannedDate !== tomorrow
+        ) {
+          // 演示种子按天刷新，倒计时不会因跨天而失效
+          seed2.plannedDate = tomorrow
           saveWishes()
         }
         return wishCache as Wish[]

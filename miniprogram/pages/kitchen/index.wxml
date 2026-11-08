@@ -289,7 +289,7 @@
       />
       <view wx:if="{{orderKeyword}}" class="order-search-clear" bindtap="onClearOrderSearch">×</view>
     </view>
-    <view wx:if="{{!orderKeyword && orderSearchHistory.length}}" class="order-search-history">
+    <view wx:if="{{orders.length && !orderKeyword && orderSearchHistory.length}}" class="order-search-history">
       <text class="order-search-history-label">最近搜</text>
       <view
         wx:for="{{orderSearchHistory}}"

@@ -192,6 +192,7 @@ function chinaDate(offset) {
     !data.isOpen || String(data.busyText || '').length > 0,
     data.busyText || (data.isOpen ? '没有提示' : '休息中')
   )
+  await invoke(mp, "page.setData({ sections: [] }); return true")
   await invoke(mp, 'page.onPullDownRefresh()')
   await sleep(1800)
   page = await current()
@@ -2043,6 +2044,7 @@ function chinaDate(offset) {
       .filter(Boolean)
       .join('/') || '没有倒计时'
   )
+  await invoke(mp, "page.setData({ wishes: [], display: [] }); return true")
   await invoke(mp, 'page.onPullDownRefresh()')
   await sleep(1200)
   page = await current()
@@ -2052,6 +2054,48 @@ function chinaDate(offset) {
     (data.wishes || []).length >= 1,
     `${(data.wishes || []).length} 个愿望`
   )
+  await invoke(mp, "page.onContent({ detail: { value: '回归测试愿望' } })")
+  await invoke(mp, 'page.onSubmit()')
+  await sleep(900)
+  page = await current()
+  data = await page.data()
+  const createdWish = (data.wishes || []).find(
+    wish => wish.content === '回归测试愿望' && wish.status === 'pending'
+  )
+  await mp.mockWxMethod('showModal', { confirm: true, content: '明天' })
+  if (createdWish) {
+    await invoke(
+      mp,
+      `page.onPlan({ currentTarget: { dataset: { id: ${JSON.stringify(
+        createdWish.id
+      )} } } })`
+    )
+    await sleep(900)
+  }
+  page = await current()
+  data = await page.data()
+  const plannedWish = (data.wishes || []).find(
+    wish => wish.content === '回归测试愿望'
+  )
+  check(
+    'mock 许愿安排日期归一化',
+    Boolean(plannedWish) &&
+      plannedWish.status === 'planned' &&
+      plannedWish.plannedDate === chinaDate(1) &&
+      plannedWish.planCountdown === '明天安排',
+    plannedWish
+      ? `${plannedWish.plannedDate} · ${plannedWish.planCountdown}`
+      : '没有愿望'
+  )
+  if (plannedWish) {
+    await invoke(
+      mp,
+      `page.onDeleteWish({ currentTarget: { dataset: { id: ${JSON.stringify(
+        plannedWish.id
+      )} } } })`
+    )
+    await sleep(900)
+  }
   await invoke(
     mp,
     "page.onFilter({ currentTarget: { dataset: { filter: 'pending' } } })"
@@ -2734,17 +2778,30 @@ function chinaDate(offset) {
   )
   await mp.navigateBack()
   await sleep(900)
+  page = await current()
+  data = await page.data()
   check(
     'mock 菜谱点单统计',
     String(data.statsText || '').indexOf('被点') > -1 &&
       String(data.statsText || '').indexOf('最近') > -1,
     data.statsText
   )
-  await invoke(
-    mp,
-    'page.onCopyStep({ currentTarget: { dataset: { index: 0 } } })'
+  await mp.evaluate(
+    new Function(
+      "return new Promise(resolve => wx.setClipboardData({ data: '__clip_sentinel__', success: () => resolve(true), fail: () => resolve(false) }))"
+    )
   )
-  await sleep(500)
+  await mp.evaluate(
+    new Function("wx.pageScrollTo({ selector: '.step-row', duration: 0 }); return true")
+  )
+  await sleep(600)
+  const stepRowEl = await page.$('.step-row')
+  if (stepRowEl) {
+    await stepRowEl.longpress()
+    await sleep(600)
+  }
+  page = await current()
+  data = await page.data()
   const stepClip = await mp.evaluate(
     new Function(
       "return new Promise(resolve => wx.getClipboardData({ success: r => resolve(r.data || ''), fail: () => resolve('') }))"
@@ -2752,7 +2809,9 @@ function chinaDate(offset) {
   )
   check(
     'mock 长按复制步骤',
-    String(stepClip || '') === String((data.steps || [])[0] || ''),
+    Boolean(stepRowEl) &&
+      String(stepClip || '') === String((data.steps || [])[0] || '') &&
+      !(data.stepViews && data.stepViews[0] && data.stepViews[0].done),
     String(stepClip || '')
   )
   await invoke(
@@ -2846,10 +2905,12 @@ function chinaDate(offset) {
   page = await current()
   data = await page.data()
   const cookTotalSteps = (data.stepViews || []).length
-  for (let i = 0; i < cookTotalSteps; i++) {
+  for (let i = 0; i < cookTotalSteps - 1; i++) {
     await invoke(mp, 'page.onCookNext()')
     await sleep(200)
   }
+  await invoke(mp, 'page._cookStepSeconds = 65; return true')
+  await invoke(mp, 'page.onCookNext()')
   await sleep(400)
   const cookToasts = await mp.evaluate(() => wx.__cookToasts || [])
   page = await current()
@@ -2857,7 +2918,7 @@ function chinaDate(offset) {
   check(
     'mock 开做完成显示总用时',
     data.cookMode === false &&
-      cookToasts.some(title => String(title).indexOf('共用时') > -1),
+      cookToasts.some(title => String(title).indexOf('共用时 1 分 5 秒') > -1),
     cookToasts.join(' / ') || '没有提示'
   )
   await invoke(mp, 'page.onResetSteps()')
@@ -2899,6 +2960,10 @@ function chinaDate(offset) {
       favCloud.ids.indexOf('d01') > -1 &&
       Number(favCloud.updatedAt) > 0,
     `${(favCloud.ids || []).length} 道`
+  )
+  await invoke(
+    mp,
+    "page.setData({ allFavorites: [], display: [] }); return true"
   )
   await invoke(mp, 'page.onPullDownRefresh()')
   await sleep(1400)
@@ -4258,22 +4323,29 @@ function chinaDate(offset) {
     )
     const firstReview = (data.reviews || [])[0]
     if (firstReview) {
-      await invoke(
-        mp,
-        `page.onCopyReview({ currentTarget: { dataset: { id: ${JSON.stringify(
-          firstReview.id
-        )} } } })`
+      await mp.evaluate(
+        new Function(
+          "return new Promise(resolve => wx.setClipboardData({ data: '__clip_sentinel__', success: () => resolve(true), fail: () => resolve(false) }))"
+        )
       )
-      await sleep(500)
+      const reviewCardEl = await page.$('.review.card')
+      if (reviewCardEl) {
+        await reviewCardEl.longpress()
+        await sleep(700)
+      }
+      page = await current()
+      data = await page.data()
       const reviewClip = await mp.evaluate(
         new Function(
           "return new Promise(resolve => wx.getClipboardData({ success: r => resolve(r.data || ''), fail: () => resolve('') }))"
         )
       )
+      const expectedReviewHead = `${firstReview.dateText} · ${firstReview.mealText} · ${firstReview.emoji}${firstReview.label}`
       check(
         'mock 长按复制评价',
-        String(reviewClip || '').indexOf(firstReview.label) > -1 &&
-          String(reviewClip || '').indexOf(firstReview.dateText) > -1,
+        page.path === 'pages/reviews/index' &&
+          Boolean(reviewCardEl) &&
+          String(reviewClip || '').indexOf(expectedReviewHead) > -1,
         `${String(reviewClip || '').length} 字`
       )
     }

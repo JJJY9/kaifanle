@@ -6,7 +6,7 @@ import {
   getWishes,
   updateWish
 } from '../../services/api'
-import { formatDate } from '../../utils/format'
+import { formatDate, dateInputString } from '../../utils/format'
 
 const STATUS_TEXT: Record<WishStatus, string> = {
   pending: '待安排',
@@ -15,6 +15,46 @@ const STATUS_TEXT: Record<WishStatus, string> = {
 }
 
 const REPLY_PHRASES = ['收到，安排上', '周末给你做', '再等等我']
+
+function normalizePlanDate(input: string): string {
+  const text = String(input || '').trim()
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    return text
+  }
+  const today = new Date()
+  const shift = (days: number) => {
+    const d = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate() + days
+    )
+    return dateInputString(d)
+  }
+  if (text.indexOf('今天') === 0) {
+    return shift(0)
+  }
+  if (text.indexOf('明天') === 0) {
+    return shift(1)
+  }
+  if (text.indexOf('后天') === 0) {
+    return shift(2)
+  }
+  const match = text.match(/^(\d{1,2})[月/-](\d{1,2})日?$/)
+  if (match) {
+    const month = Number(match[1])
+    const day = Number(match[2])
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      let year = today.getFullYear()
+      let value = dateInputString(new Date(year, month - 1, day))
+      if (value < dateInputString(today)) {
+        year += 1
+        value = dateInputString(new Date(year, month - 1, day))
+      }
+      return value
+    }
+  }
+  return ''
+}
 
 Page({
   data: {
@@ -30,6 +70,8 @@ Page({
     deletingId: ''
   },
 
+  _loadSeq: 0,
+
   onShow() {
     this.load()
   },
@@ -39,8 +81,12 @@ Page({
   },
 
   async load() {
+    const seq = ++this._loadSeq
     try {
       const [me, wishes] = await Promise.all([getMe(), getWishes()])
+      if (seq !== this._loadSeq) {
+        return
+      }
       const today = new Date()
       const todayUtc = Date.UTC(
         today.getFullYear(),
@@ -100,6 +146,9 @@ Page({
         () => this.applyFilter()
       )
     } catch (e: any) {
+      if (seq !== this._loadSeq) {
+        return
+      }
       this.setData({ loading: false })
       wx.showToast({
         title: String((e && e.message) || '加载失败').slice(0, 40),
@@ -175,7 +224,14 @@ Page({
     if (!res.confirm) {
       return
     }
-    const plannedDate = String(res.content || '').trim() || '最近'
+    const plannedDate = normalizePlanDate(String(res.content || ''))
+    if (!plannedDate) {
+      wx.showToast({
+        title: '请填日期，比如 2026-11-09 或「明天」',
+        icon: 'none'
+      })
+      return
+    }
     try {
       await updateWish({ id, status: 'planned', plannedDate })
       wx.showToast({ title: '已安排', icon: 'none' })
