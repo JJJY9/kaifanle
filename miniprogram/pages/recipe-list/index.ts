@@ -78,7 +78,9 @@ Page({
         ...group,
         dishes: kw
           ? group.dishes.filter(dish => {
-              const haystack = `${dish.name} ${dish.desc} ${dish.recipe}`.toLowerCase()
+              const haystack = `${dish.name} ${dish.desc} ${dish.recipe} ${(
+                dish.ingredients || []
+              ).join(' ')}`.toLowerCase()
               return haystack.indexOf(kw) > -1
             })
           : group.dishes

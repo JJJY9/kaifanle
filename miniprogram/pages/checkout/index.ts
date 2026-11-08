@@ -61,6 +61,33 @@ function preferredTimeIndex(meal: MealId): number {
   return index > -1 ? index : 0
 }
 
+const NOTE_PRESETS_KEY = 'kfl_note_presets_v1'
+const NOTE_PRESETS_MAX = 6
+
+function readCustomNotePresets(): string[] {
+  try {
+    const raw = wx.getStorageSync(NOTE_PRESETS_KEY)
+    const list = raw ? JSON.parse(raw) : []
+    return Array.isArray(list)
+      ? list
+          .filter(item => typeof item === 'string')
+          .map(item => item.trim())
+          .filter((item: string) => item && NOTE_PRESETS.indexOf(item) === -1)
+          .slice(0, NOTE_PRESETS_MAX)
+      : []
+  } catch (e) {
+    return []
+  }
+}
+
+function writeCustomNotePresets(list: string[]) {
+  try {
+    wx.setStorageSync(NOTE_PRESETS_KEY, JSON.stringify(list))
+  } catch (e) {
+    // 忽略存储失败
+  }
+}
+
 function buildLines(meal?: MealId, date?: string): any[] {
   return cart
     .getLines()
@@ -143,6 +170,7 @@ Page({
       timeOptions: TIME_OPTIONS[meal] || TIME_OPTIONS.lunch,
       timeIndex: preferredTimeIndex(meal),
       modeIndex: savedModeIndex > -1 ? savedModeIndex : 0,
+      notePresets: NOTE_PRESETS.concat(readCustomNotePresets()),
       scheduledDate,
       todayDate,
       maxDate,
@@ -464,6 +492,63 @@ Page({
     }
     const next = (note ? note + '，' + phrase : phrase).slice(0, 100)
     this.setData({ note: next })
+  },
+
+  async onAddNotePreset() {
+    const res: any = await wx.showModal({
+      title: '自定义快捷短语',
+      editable: true,
+      placeholderText: '例如：少油少盐',
+      confirmText: '保存',
+      cancelText: '算了'
+    })
+    if (!res.confirm) {
+      return
+    }
+    const phrase = String(res.content || '')
+      .trim()
+      .slice(0, 12)
+    if (!phrase) {
+      wx.showToast({ title: '写点什么吧', icon: 'none' })
+      return
+    }
+    const custom = readCustomNotePresets()
+    if (NOTE_PRESETS.indexOf(phrase) > -1 || custom.indexOf(phrase) > -1) {
+      wx.showToast({ title: '已有这条短语', icon: 'none' })
+      return
+    }
+    if (custom.length >= NOTE_PRESETS_MAX) {
+      wx.showToast({
+        title: `最多 ${NOTE_PRESETS_MAX} 条自定义`,
+        icon: 'none'
+      })
+      return
+    }
+    custom.push(phrase)
+    writeCustomNotePresets(custom)
+    this.setData({ notePresets: NOTE_PRESETS.concat(custom) })
+    wx.showToast({ title: '已添加', icon: 'none' })
+  },
+
+  async onRemoveNotePreset(e: any) {
+    const phrase = String(e.currentTarget.dataset.phrase || '')
+    const custom = readCustomNotePresets()
+    if (custom.indexOf(phrase) === -1) {
+      return
+    }
+    const res: any = await wx.showModal({
+      title: '删除这条短语？',
+      content: phrase,
+      confirmText: '删除',
+      cancelText: '算了'
+    })
+    if (!res.confirm) {
+      return
+    }
+    writeCustomNotePresets(custom.filter(item => item !== phrase))
+    this.setData({
+      notePresets: NOTE_PRESETS.concat(readCustomNotePresets())
+    })
   },
 
   onAddress(e: any) {

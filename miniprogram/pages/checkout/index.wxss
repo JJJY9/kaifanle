@@ -265,6 +265,11 @@
   background: #FFD23F;
 }
 
+.note-preset.add {
+  background: #FFD23F;
+  border-style: dashed;
+}
+
 .foot-space {
   height: 220rpx;
 }

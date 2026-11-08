@@ -2417,7 +2417,7 @@ async function getActiveOrders(openid) {
     .map(withId)
 }
 
-async function clearOrderUnread(id, field) {
+async function clearOrderUnread(id, field, readField) {
   if (typeof db.startTransaction === 'function') {
     for (let attempt = 0; attempt < 2; attempt++) {
       let transaction = null
@@ -2429,10 +2429,11 @@ async function clearOrderUnread(id, field) {
           return
         }
         if (Number(res.data[field]) > 0) {
-          await transaction
-            .collection('orders')
-            .doc(id)
-            .update({ data: { [field]: 0 } })
+          const data = { [field]: 0 }
+          if (readField) {
+            data[readField] = Date.now()
+          }
+          await transaction.collection('orders').doc(id).update({ data })
         }
         await transaction.commit()
         return
@@ -2451,7 +2452,11 @@ async function clearOrderUnread(id, field) {
       }
     }
   }
-  await db.collection('orders').doc(id).update({ data: { [field]: 0 } })
+  const data = { [field]: 0 }
+  if (readField) {
+    data[readField] = Date.now()
+  }
+  await db.collection('orders').doc(id).update({ data })
 }
 
 async function getOrder(id, openid) {
@@ -2465,15 +2470,19 @@ async function getOrder(id, openid) {
     throw new Error('没有权限查看这个订单')
   }
   const unreadField = admin ? 'adminUnread' : 'customerUnread'
+  const readField = admin ? 'adminReadAt' : 'customerReadAt'
   if (Number(order[unreadField]) > 0) {
     order[unreadField] = 0
+    order[readField] = Date.now()
     try {
-      await clearOrderUnread(id, unreadField)
+      await clearOrderUnread(id, unreadField, readField)
     } catch (e) {
       // 已读标记失败不影响查看订单
     }
   }
-  return withId(order)
+  return Object.assign(withId(order), {
+    viewerRole: admin ? 'admin' : 'customer'
+  })
 }
 
 async function createOrder(payload, openid) {

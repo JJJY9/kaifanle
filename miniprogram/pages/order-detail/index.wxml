@@ -102,7 +102,7 @@
           data-content="{{item.content}}"
           bindlongpress="onCopyMessage"
         >
-          <view class="message-meta">{{item.roleText}} · {{item.timeText}}</view>
+          <view class="message-meta">{{item.roleText}} · {{item.timeText}}<text wx:if="{{item.readText}}" class="message-read"> · {{item.readText}}</text></view>
           <view class="message-text">{{item.content}}</view>
         </view>
       </view>

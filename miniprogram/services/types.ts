@@ -128,6 +128,9 @@ export interface Order {
   messages?: OrderMessage[]
   customerUnread?: number
   adminUnread?: number
+  customerReadAt?: number
+  adminReadAt?: number
+  viewerRole?: 'customer' | 'admin'
   createdAt: number
   urgedAt?: number
   urgeCount?: number

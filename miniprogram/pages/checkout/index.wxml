@@ -101,7 +101,9 @@
         class="note-preset"
         data-phrase="{{item}}"
         bindtap="onNotePreset"
+        bindlongpress="onRemoveNotePreset"
       >{{item}}</view>
+      <view class="note-preset add" bindtap="onAddNotePreset">＋自定义</view>
     </view>
   </view>
 

@@ -773,3 +773,8 @@
   font-size: 18rpx;
   font-weight: 800;
 }
+
+.message-read {
+  color: #2F7D4F;
+  font-weight: 800;
+}

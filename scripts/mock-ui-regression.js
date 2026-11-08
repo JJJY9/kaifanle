@@ -43,6 +43,7 @@ function chinaDate(offset) {
     wx.removeStorageSync('kfl_eaten_v1')
     wx.removeStorageSync('kfl_prep_checked_v1')
     wx.removeStorageSync('kfl_checkout_prefs_v1')
+    wx.removeStorageSync('kfl_note_presets_v1')
     return true
   })
   const current = () => mp.currentPage()
@@ -365,6 +366,44 @@ function chinaDate(offset) {
   await mp.evaluate(
     new Function("wx.removeStorageSync('kfl_checkout_prefs_v1'); return true;")
   )
+  await mp.mockWxMethod('showModal', { confirm: true, content: '少油少盐' })
+  await invoke(mp, 'page.onAddNotePreset()')
+  await sleep(600)
+  page = await current()
+  data = await page.data()
+  const presetStored = await mp.evaluate(() => {
+    try {
+      return JSON.parse(wx.getStorageSync('kfl_note_presets_v1') || '[]')
+    } catch (e) {
+      return []
+    }
+  })
+  check(
+    'mock 自定义备注短语',
+    (data.notePresets || []).indexOf('少油少盐') > -1 &&
+      presetStored.indexOf('少油少盐') > -1,
+    (data.notePresets || []).join('、')
+  )
+  await invoke(
+    mp,
+    "page.onRemoveNotePreset({ currentTarget: { dataset: { phrase: '少油少盐' } } })"
+  )
+  await sleep(600)
+  page = await current()
+  data = await page.data()
+  const presetStoredAfter = await mp.evaluate(() => {
+    try {
+      return JSON.parse(wx.getStorageSync('kfl_note_presets_v1') || '[]')
+    } catch (e) {
+      return []
+    }
+  })
+  check(
+    'mock 删除自定义备注短语',
+    (data.notePresets || []).indexOf('少油少盐') === -1 &&
+      presetStoredAfter.length === 0,
+    (data.notePresets || []).join('、')
+  )
   const hintToday = data.todayDate
   await invoke(
     mp,
@@ -495,6 +534,24 @@ function chinaDate(offset) {
       data.searchResults.every(dish => dish.categoryId === 'staple'),
     `${(data.searchResults || []).length} 条`
   )
+  await invoke(
+    mp,
+    "page._available.push({ id: 'ing-test', name: '隐藏测试菜', desc: '', price: 9, categoryId: 'staple', tags: [], meals: ['lunch'], status: 'on', color: '#FFFFFF', ingredients: ['神秘食材x'], spicyLevels: [], addons: [] }); return true"
+  )
+  await invoke(mp, "page.onSearchInput({ detail: { value: '神秘食材' } })")
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 首页按食材搜索',
+    (data.searchResults || []).some(dish => dish.id === 'ing-test'),
+    `${(data.searchResults || []).length} 条`
+  )
+  await invoke(
+    mp,
+    "page._available = (page._available || []).filter(dish => dish.id !== 'ing-test'); page.onClearSearch(); return true"
+  )
+  await sleep(300)
 
   await invoke(mp, 'page.onClearSearch()')
   await sleep(300)
@@ -2791,6 +2848,21 @@ function chinaDate(offset) {
     (data.displayGroups || []).length > 0,
     `${data.displayGroups.length} 组`
   )
+  await invoke(mp, "page.onSearch({ detail: { value: '1碗' } })")
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 菜谱按食材搜索',
+    (data.displayGroups || []).length > 0 &&
+      data.displayGroups.every(group =>
+        group.dishes.every(dish => dish.id === 'd01')
+      ),
+    `${(data.displayGroups || []).reduce(
+      (sum, group) => sum + group.dishes.length,
+      0
+    )} 道`
+  )
   await invoke(mp, "page.onSearch({ detail: { value: '' } })")
   await sleep(300)
 
@@ -3358,6 +3430,22 @@ function chinaDate(offset) {
       data.messageAnchor === `msg-${(data.messages || []).length - 1}` &&
       messageText.indexOf('记得少放辣') > -1,
     messageText || '没有留言'
+  )
+  await invoke(mp, 'page.load(true)')
+  await sleep(900)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 留言已读回执',
+    Boolean(data.order) &&
+      data.order.viewerRole === 'customer' &&
+      (data.messages || []).some(
+        message => message.role === 'customer' && message.readText === '已读'
+      ),
+    (data.messages || [])
+      .filter(message => message.readText)
+      .map(message => message.readText)
+      .join('/') || '没有回执'
   )
   await invoke(
     mp,

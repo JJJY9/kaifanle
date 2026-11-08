@@ -711,11 +711,21 @@ async function run() {
   assert.strictEqual(res.data.messages.length, 2)
   assert.strictEqual(res.data.messages[0].content, '记得少放辣')
   assert.strictEqual(Number(res.data.customerUnread), 0)
+  assert.strictEqual(res.data.viewerRole, 'customer')
+  assert.ok(
+    Number(res.data.customerReadAt) >= Number(res.data.messages[1].at),
+    '顾客打开后应记录已读时间'
+  )
   res = await call('getAllOrders', {}, 'admin-openid')
   messageOrder = res.data.find(order => order.id === created.data.id)
   assert.strictEqual(Number(messageOrder.customerUnread), 0)
   res = await call('getOrder', { id: created.data.id }, 'admin-openid')
   assert.strictEqual(Number(res.data.adminUnread), 0)
+  assert.strictEqual(res.data.viewerRole, 'admin')
+  assert.ok(
+    Number(res.data.adminReadAt) >= Number(res.data.messages[0].at),
+    '掌勺人打开后应记录已读时间'
+  )
   res = await call(
     'sendOrderMessage',
     { id: created.data.id, content: '我也要说' },

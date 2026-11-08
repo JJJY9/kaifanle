@@ -1159,9 +1159,14 @@ export async function getOrder(id: string): Promise<Order | null> {
   }
   if (Number(order.adminUnread)) {
     order.adminUnread = 0
-    saveOrders()
   }
-  return { ...order }
+  // mock 单机同时扮演双方，打开即视为双方已读，方便演示已读回执
+  const now = Date.now()
+  order.adminReadAt = now
+  order.customerReadAt = now
+  saveOrders()
+  // mock 里留言统一以顾客身份发出，回执按顾客视角展示
+  return { ...order, viewerRole: 'customer' }
 }
 
 export async function createOrder(payload: CreateOrderPayload): Promise<Order> {

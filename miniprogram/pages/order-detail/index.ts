@@ -159,15 +159,33 @@ Page({
           }
         }
       }
-      const messages = (order.messages || [])
+      const viewerRole =
+        order.viewerRole === 'admin' ? 'admin' : 'customer'
+      const counterpartReadAt =
+        Number(
+          viewerRole === 'admin' ? order.customerReadAt : order.adminReadAt
+        ) || 0
+      const sortedMessages = (order.messages || [])
         .slice()
         .sort((a, b) => Number(a.at || 0) - Number(b.at || 0))
-        .map((message, index) => ({
-          ...message,
-          key: message.id || `${index}-${message.at}`,
-          roleText: message.role === 'admin' ? '掌勺人' : '她',
-          timeText: `${formatDate(message.at)} ${formatTime(message.at)}`
-        }))
+      let lastOwnIndex = -1
+      sortedMessages.forEach((message, index) => {
+        if (message.role === viewerRole) {
+          lastOwnIndex = index
+        }
+      })
+      const messages = sortedMessages.map((message, index) => ({
+        ...message,
+        key: message.id || `${index}-${message.at}`,
+        roleText: message.role === 'admin' ? '掌勺人' : '她',
+        timeText: `${formatDate(message.at)} ${formatTime(message.at)}`,
+        readText:
+          index === lastOwnIndex
+            ? counterpartReadAt >= Number(message.at || 0)
+              ? '已读'
+              : '未读'
+            : ''
+      }))
       const messageAnchor = messages.length
         ? `msg-${messages.length - 1}`
         : ''

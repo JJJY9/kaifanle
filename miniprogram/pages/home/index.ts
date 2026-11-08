@@ -1045,6 +1045,7 @@ Page({
         category ? category.name : ''
       ]
         .concat(dish.tags || [])
+        .concat(dish.ingredients || [])
         .join(' ')
         .toLowerCase()
       return haystack.indexOf(kw) > -1
@@ -1076,6 +1077,7 @@ Page({
           category ? category.name : ''
         ]
           .concat(dish.tags || [])
+          .concat(dish.ingredients || [])
           .join(' ')
           .toLowerCase()
         let score = dish.name.toLowerCase().indexOf(kw) > -1 ? 5 : 0
