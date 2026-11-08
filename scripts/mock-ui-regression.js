@@ -38,6 +38,7 @@ function chinaDate(offset) {
   await mp.mockWxMethod('showActionSheet', { tapIndex: 0 })
   await mp.evaluate(() => {
     wx.removeStorageSync('kfl_order_collapsed_dates_v1')
+    wx.removeStorageSync('kfl_recipe_steps_v1')
     return true
   })
   const current = () => mp.currentPage()
@@ -2168,11 +2169,34 @@ function chinaDate(offset) {
       Number(data.doneCount) === 1,
     `完成 ${data.doneCount} 步`
   )
+  const stepProgress = await mp.evaluate(() => {
+    try {
+      return JSON.parse(wx.getStorageSync('kfl_recipe_steps_v1') || '{}')
+    } catch (e) {
+      return {}
+    }
+  })
+  check(
+    'mock 做法步骤记忆',
+    Array.isArray(stepProgress.d01) && stepProgress.d01.indexOf(0) > -1,
+    JSON.stringify(stepProgress.d01 || [])
+  )
   await invoke(mp, 'page.onResetSteps()')
   await sleep(300)
   page = await current()
   data = await page.data()
-  check('mock 做法步骤重置', Number(data.doneCount) === 0)
+  const stepProgressAfterReset = await mp.evaluate(() => {
+    try {
+      return JSON.parse(wx.getStorageSync('kfl_recipe_steps_v1') || '{}')
+    } catch (e) {
+      return {}
+    }
+  })
+  check(
+    'mock 做法步骤重置',
+    Number(data.doneCount) === 0 &&
+      !Array.isArray(stepProgressAfterReset.d01)
+  )
   await invoke(mp, 'page.onSharePoster()')
   await sleep(2500)
   page = await current()

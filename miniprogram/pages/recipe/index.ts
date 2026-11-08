@@ -2,6 +2,46 @@ import { getDish, getDishStats, getMe } from '../../services/api'
 import { favorites } from '../../store/favorites'
 import { saveImageToAlbum } from '../../utils/save-image'
 
+const STEP_PROGRESS_KEY = 'kfl_recipe_steps_v1'
+
+function readStepProgress(): Record<string, number[]> {
+  try {
+    const raw = wx.getStorageSync(STEP_PROGRESS_KEY)
+    const data = raw ? JSON.parse(raw) : {}
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      return {}
+    }
+    const result: Record<string, number[]> = {}
+    Object.keys(data).forEach(id => {
+      if (Array.isArray(data[id])) {
+        result[id] = data[id]
+          .map((value: any) => Number(value))
+          .filter(value => Number.isInteger(value) && value >= 0)
+      }
+    })
+    return result
+  } catch (e) {
+    return {}
+  }
+}
+
+function writeStepProgress(dishId: string, indices: number[]) {
+  if (!dishId) {
+    return
+  }
+  try {
+    const data = readStepProgress()
+    if (indices.length) {
+      data[dishId] = indices
+    } else {
+      delete data[dishId]
+    }
+    wx.setStorageSync(STEP_PROGRESS_KEY, JSON.stringify(data))
+  } catch (e) {
+    // 忽略存储失败
+  }
+}
+
 Page({
   data: {
     dish: null as any,
@@ -57,11 +97,16 @@ Page({
             ? ` · 平均 ${stats.avgRating}/3 分 · 好评率 ${stats.goodRate}%`
             : ' · 暂无评分'
       }
+      const doneIndices = readStepProgress()[dish.id] || []
+      const stepViews = steps.map((text, index) => ({
+        text,
+        done: doneIndices.indexOf(index) > -1
+      }))
       this.setData({
         dish,
         steps,
-        stepViews: steps.map(text => ({ text, done: false })),
-        doneCount: 0,
+        stepViews,
+        doneCount: stepViews.filter(step => step.done).length,
         isAdmin: Boolean(me && me.isAdmin),
         favorite: favorites.has(dish.id),
         imageFailed: false,
@@ -92,9 +137,16 @@ Page({
       return
     }
     const done = !step.done
-    const doneCount = (this.data.stepViews || []).filter(
-      (item, i) => (i === index ? done : item.done)
-    ).length
+    const nextViews = (this.data.stepViews || []).map((item, i) =>
+      i === index ? { ...item, done } : item
+    )
+    const doneCount = nextViews.filter(item => item.done).length
+    writeStepProgress(
+      this.dishId,
+      nextViews
+        .map((item, i) => (item.done ? i : -1))
+        .filter(i => i > -1)
+    )
     this.setData({
       [`stepViews[${index}].done`]: done,
       doneCount
@@ -102,6 +154,7 @@ Page({
   },
 
   onResetSteps() {
+    writeStepProgress(this.dishId, [])
     this.setData({
       stepViews: (this.data.steps || []).map(text => ({
         text,
