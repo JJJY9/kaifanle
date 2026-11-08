@@ -88,6 +88,7 @@ Page({
     recommendText: '今日推荐',
     keyword: '',
     searchResults: [] as Dish[],
+    searchSuggestions: [] as Dish[],
     searchHistory: [] as string[],
     emptyDesc: '换个餐次看看，或者去许愿池点个菜',
     emptyAction: '',
@@ -1022,13 +1023,65 @@ Page({
     })
   },
 
+  suggestDishes(keyword: string): Dish[] {
+    const kw = String(keyword || '')
+      .trim()
+      .toLowerCase()
+    if (!kw) {
+      return []
+    }
+    const chars = Array.from(new Set(kw.split(''))).filter(char =>
+      char.trim()
+    )
+    if (!chars.length) {
+      return []
+    }
+    const ranked = (this._available || [])
+      .filter(dish => dish.status === 'on' && dish.stock !== 0)
+      .map(dish => {
+        const category = (this._categories || []).find(
+          item => item.id === dish.categoryId
+        )
+        const haystack = [
+          dish.name,
+          dish.desc,
+          category ? category.name : ''
+        ]
+          .concat(dish.tags || [])
+          .join(' ')
+          .toLowerCase()
+        let score = dish.name.toLowerCase().indexOf(kw) > -1 ? 5 : 0
+        chars.forEach(char => {
+          if (haystack.indexOf(char) > -1) {
+            score++
+          }
+        })
+        return { dish, score }
+      })
+      .filter(item => item.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3)
+    return ranked.map(item => item.dish)
+  },
+
   onSearchInput(e: any) {
     const keyword = String(e.detail.value || '').slice(0, 20)
-    this.setData({ keyword, searchResults: this.filterDishes(keyword) })
+    const searchResults = this.filterDishes(keyword)
+    this.setData({
+      keyword,
+      searchResults,
+      searchSuggestions: searchResults.length
+        ? []
+        : this.suggestDishes(keyword)
+    })
   },
 
   onClearSearch() {
-    this.setData({ keyword: '', searchResults: [] })
+    this.setData({
+      keyword: '',
+      searchResults: [],
+      searchSuggestions: []
+    })
   },
 
   onSearchConfirm(e: any) {
@@ -1044,9 +1097,13 @@ Page({
       .concat((this.data.searchHistory || []).filter(item => item !== value))
       .slice(0, SEARCH_HISTORY_MAX)
     writeSearchHistory(history)
+    const searchResults = this.filterDishes(value)
     this.setData({
       keyword: value,
-      searchResults: this.filterDishes(value),
+      searchResults,
+      searchSuggestions: searchResults.length
+        ? []
+        : this.suggestDishes(value),
       searchHistory: history
     })
   },
@@ -1056,10 +1113,22 @@ Page({
     if (!keyword) {
       return
     }
+    const searchResults = this.filterDishes(keyword)
     this.setData({
       keyword,
-      searchResults: this.filterDishes(keyword)
+      searchResults,
+      searchSuggestions: searchResults.length
+        ? []
+        : this.suggestDishes(keyword)
     })
+  },
+
+  onSuggestionTap(e: any) {
+    const id = String(e.currentTarget.dataset.id || '')
+    const dish = (this._available || []).find(item => item.id === id)
+    if (dish) {
+      this.openSku(dish)
+    }
   },
 
   onClearHistory() {

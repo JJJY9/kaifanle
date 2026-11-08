@@ -369,6 +369,17 @@ function chinaDate(offset) {
   page = await current()
   data = await page.data()
   check('mock 搜索', data.searchResults.length > 0, `${data.searchResults.length} 条`)
+  await invoke(mp, "page.onSearchInput({ detail: { value: '番茄x' } })")
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 搜索无结果推荐',
+    (data.searchResults || []).length === 0 &&
+      (data.searchSuggestions || []).length > 0 &&
+      data.searchSuggestions.some(dish => dish.name.indexOf('番茄') > -1),
+    `${(data.searchSuggestions || []).length} 个推荐`
+  )
 
   await invoke(mp, "page.onSearchInput({ detail: { value: '主食' } })")
   await sleep(400)

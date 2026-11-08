@@ -409,6 +409,36 @@
   margin-top: 10rpx;
 }
 
+.search-suggest {
+  margin-top: 20rpx;
+  padding: 18rpx 20rpx;
+  background: #FFF7DA;
+  border: 3rpx solid #111111;
+  border-radius: 24rpx;
+}
+
+.search-suggest-title {
+  color: #5C5C5C;
+  font-size: 21rpx;
+  font-weight: 800;
+}
+
+.search-suggest-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  margin-top: 10rpx;
+}
+
+.search-suggest-chip {
+  padding: 6rpx 18rpx;
+  background: #FFFFFF;
+  border: 2rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
 .search-history-label {
   color: #5C5C5C;
   font-size: 20rpx;
