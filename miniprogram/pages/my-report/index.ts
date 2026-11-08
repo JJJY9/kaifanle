@@ -27,6 +27,7 @@ Page({
       icon: string
       label: string
       desc: string
+      progress: string
       earned: boolean
     }>,
     achievementDone: 0,
@@ -137,6 +138,7 @@ Page({
           icon: '🍚',
           label: '第一顿干饭',
           desc: '累计 1 单',
+          progress: `${Math.min(totalOrders, 1)}/1`,
           earned: totalOrders >= 1
         },
         {
@@ -144,6 +146,7 @@ Page({
           icon: '🥢',
           label: '干饭常客',
           desc: '累计 10 单',
+          progress: `${Math.min(totalOrders, 10)}/10`,
           earned: totalOrders >= 10
         },
         {
@@ -151,6 +154,7 @@ Page({
           icon: '📅',
           label: '当月常客',
           desc: '当月 3 单',
+          progress: `${Math.min(active.length, 3)}/3`,
           earned: active.length >= 3
         },
         {
@@ -158,6 +162,7 @@ Page({
           icon: '🔥',
           label: '连吃三天',
           desc: '连吃 3 天',
+          progress: `${Math.min(streakDays, 3)}/3`,
           earned: streakDays >= 3
         },
         {
@@ -165,6 +170,7 @@ Page({
           icon: '⭐',
           label: '爱夸厨子',
           desc: '评价 1 次',
+          progress: `${Math.min(rated.length, 1)}/1`,
           earned: rated.length >= 1
         },
         {
@@ -172,6 +178,7 @@ Page({
           icon: '👑',
           label: '当月干饭王',
           desc: '当月 10 单',
+          progress: `${Math.min(active.length, 10)}/10`,
           earned: active.length >= 10
         },
         {
@@ -179,6 +186,8 @@ Page({
           icon: '💗',
           label: '有偏爱',
           desc: '点出最常吃',
+          progress:
+            stats.favorite && stats.favorite !== '还没点过' ? '1/1' : '0/1',
           earned: Boolean(stats.favorite && stats.favorite !== '还没点过')
         }
       ]

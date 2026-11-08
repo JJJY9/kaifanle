@@ -216,6 +216,11 @@ export interface FavoritesCloudData {
   updatedAt: number
 }
 
+export interface EatenCloudData {
+  map: Record<string, number>
+  updatedAt: number
+}
+
 export interface SpecialDay {
   kind: 'birthday' | 'anniversary'
   date: string

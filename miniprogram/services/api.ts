@@ -13,6 +13,7 @@ import type {
   DishSales,
   DishStats,
   DishInput,
+  EatenCloudData,
   FavoritesCloudData,
   InitResult,
   KitchenReport,
@@ -643,6 +644,22 @@ export async function saveFavoritesCloud(
     return callApi<FavoritesCloudData>('saveFavorites', payload)
   }
   return mock.saveFavorites(payload)
+}
+
+export async function getEatenCloud(): Promise<EatenCloudData> {
+  if (USE_CLOUD) {
+    return callApi<EatenCloudData>('getEaten')
+  }
+  return mock.getEaten()
+}
+
+export async function saveEatenCloud(
+  payload: EatenCloudData
+): Promise<EatenCloudData> {
+  if (USE_CLOUD) {
+    return callApi<EatenCloudData>('saveEaten', payload)
+  }
+  return mock.saveEaten(payload)
 }
 
 export async function saveMyProfile(

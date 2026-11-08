@@ -2372,6 +2372,28 @@ async function run() {
   assert.strictEqual(res.data.times.d02, 222)
   assert.strictEqual(res.data.updatedAt, 6000)
 
+  // 吃过记录云同步：读写、清洗、用户隔离
+  res = await call('getEaten', {}, 'girl-openid')
+  assert.strictEqual(res.ok, true)
+  assert.deepStrictEqual(res.data.map, {})
+  assert.strictEqual(Number(res.data.updatedAt), 0)
+  const futureEatenAt = Date.now() + 2 * 24 * 60 * 60 * 1000
+  res = await call(
+    'saveEaten',
+    {
+      map: { d01: 111, d02: -1, '': 5, d03: futureEatenAt, d04: 'abc' },
+      updatedAt: 7000
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.deepStrictEqual(res.data.map, { d01: 111, d03: futureEatenAt })
+  assert.strictEqual(res.data.updatedAt, 7000)
+  res = await call('getEaten', {}, 'girl-openid')
+  assert.deepStrictEqual(res.data.map, { d01: 111, d03: futureEatenAt })
+  res = await call('getEaten', {}, 'stranger-openid')
+  assert.deepStrictEqual(res.data.map, {})
+
   // 旧客户端不带日期字段：不能清空已保存的日期
   res = await call(
     'saveMyProfile',

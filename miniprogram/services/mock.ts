@@ -9,6 +9,7 @@ import type {
   DishSales,
   DishStats,
   DishInput,
+  EatenCloudData,
   FavoritesCloudData,
   InitResult,
   KitchenReport,
@@ -1830,6 +1831,61 @@ export async function saveFavorites(
   }
   try {
     wx.setStorageSync(FAVORITES_CLOUD_KEY, JSON.stringify(data))
+  } catch (e) {
+    // 忽略存储失败
+  }
+  return JSON.parse(JSON.stringify(data))
+}
+
+const EATEN_CLOUD_KEY = 'kfl_eaten_cloud_v1'
+
+function normalizeEatenCloud(data: any): EatenCloudData {
+  const map: Record<string, number> = {}
+  const input =
+    data && data.map && typeof data.map === 'object' && !Array.isArray(data.map)
+      ? data.map
+      : {}
+  const maxFuture = Date.now() + 31 * 24 * 60 * 60 * 1000
+  Object.keys(input)
+    .slice(0, 300)
+    .forEach(key => {
+      const id = String(key || '').trim().slice(0, 64)
+      const at = Number(input[key])
+      if (
+        id &&
+        isFinite(at) &&
+        at > 0 &&
+        at <= maxFuture &&
+        !Object.prototype.hasOwnProperty.call(map, id)
+      ) {
+        map[id] = at
+      }
+    })
+  return {
+    map,
+    updatedAt: Number((data && data.updatedAt) || 0)
+  }
+}
+
+export async function getEaten(): Promise<EatenCloudData> {
+  await delay(40)
+  try {
+    const raw = wx.getStorageSync(EATEN_CLOUD_KEY)
+    return normalizeEatenCloud(raw ? JSON.parse(raw) : null)
+  } catch (e) {
+    return normalizeEatenCloud(null)
+  }
+}
+
+export async function saveEaten(
+  payload: EatenCloudData
+): Promise<EatenCloudData> {
+  await delay(60)
+  const normalized = normalizeEatenCloud(payload || ({} as any))
+  const updatedAt = Number(payload && payload.updatedAt) || Date.now()
+  const data = { map: normalized.map, updatedAt }
+  try {
+    wx.setStorageSync(EATEN_CLOUD_KEY, JSON.stringify(data))
   } catch (e) {
     // 忽略存储失败
   }

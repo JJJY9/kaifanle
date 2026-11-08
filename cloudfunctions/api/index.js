@@ -162,6 +162,10 @@ async function route(action, payload, openid) {
       return getFavorites(openid)
     case 'saveFavorites':
       return saveFavorites(payload, openid)
+    case 'getEaten':
+      return getEaten(openid)
+    case 'saveEaten':
+      return saveEaten(payload, openid)
     case 'getSpecialDays':
       return getSpecialDays(openid)
     case 'getMySpecialDays':
@@ -657,6 +661,63 @@ async function saveFavorites(payload, openid) {
   return {
     ids: normalized.ids,
     times: normalized.times,
+    updatedAt
+  }
+}
+
+function normalizeEaten(data) {
+  const map = {}
+  const input =
+    data && data.map && typeof data.map === 'object' && !Array.isArray(data.map)
+      ? data.map
+      : {}
+  const maxFuture = Date.now() + 31 * 24 * 60 * 60 * 1000
+  Object.keys(input)
+    .slice(0, 300)
+    .forEach(key => {
+      const id = String(key || '').trim().slice(0, 64)
+      const at = Number(input[key])
+      if (
+        id &&
+        isFinite(at) &&
+        at > 0 &&
+        at <= maxFuture &&
+        !Object.prototype.hasOwnProperty.call(map, id)
+      ) {
+        map[id] = at
+      }
+    })
+  return {
+    map,
+    updatedAt: Number((data && data.updatedAt) || 0)
+  }
+}
+
+async function getEaten(openid) {
+  await ensureCollection('eaten')
+  try {
+    const res = await db.collection('eaten').doc(openid).get()
+    return normalizeEaten(res.data)
+  } catch (e) {
+    if (isMissingDocError(e)) {
+      return normalizeEaten(null)
+    }
+    throw e
+  }
+}
+
+async function saveEaten(payload, openid) {
+  const normalized = normalizeEaten(payload || {})
+  const updatedAt = Number((payload && payload.updatedAt) || 0) || Date.now()
+  await ensureCollection('eaten')
+  await db.collection('eaten').doc(openid).set({
+    data: {
+      map: normalized.map,
+      updatedAt
+    }
+  })
+  return {
+    map: normalized.map,
     updatedAt
   }
 }

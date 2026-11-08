@@ -67,6 +67,11 @@
         data-sort="price"
         bindtap="onSort"
       >价格从低到高</view>
+      <view
+        class="sort-chip {{sort === 'eaten' ? 'active' : ''}}"
+        data-sort="eaten"
+        bindtap="onSort"
+      >最近点过</view>
       <view class="sort-chip random" bindtap="onRandomFavorite">🎲 随机一道</view>
     </view>
 

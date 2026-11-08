@@ -61,6 +61,7 @@
           <text class="ach-icon">{{item.icon}}</text>
           <text class="ach-label">{{item.label}}</text>
           <text class="ach-desc">{{item.desc}}</text>
+          <text class="ach-progress">{{item.progress}}</text>
         </view>
       </view>
     </view>

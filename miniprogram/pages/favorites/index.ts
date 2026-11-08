@@ -1,6 +1,7 @@
 import type { Dish } from '../../services/types'
 import { getCategories, getDishes } from '../../services/api'
 import { favorites } from '../../store/favorites'
+import { getLastEatenMap } from '../../store/eaten'
 import { formatDate } from '../../utils/format'
 import { saveImageToAlbum } from '../../utils/save-image'
 
@@ -18,7 +19,7 @@ Page({
     display: [] as Dish[],
     keyword: '',
     count: 0,
-    sort: 'recent' as 'recent' | 'price',
+    sort: 'recent' as 'recent' | 'price' | 'eaten',
     categories: [] as any[],
     category: 'all',
     emptyTitle: '没搜到',
@@ -138,9 +139,16 @@ Page({
             .indexOf(keyword) > -1
         )
       : source.slice()
+    const eatenMap = getLastEatenMap()
     const display =
       this.data.sort === 'price'
         ? matched.sort((a, b) => Number(a.price) - Number(b.price))
+        : this.data.sort === 'eaten'
+        ? matched.sort(
+            (a: any, b: any) =>
+              Number(eatenMap[b.id] || 0) - Number(eatenMap[a.id] || 0) ||
+              Number(b.favoritedAt || 0) - Number(a.favoritedAt || 0)
+          )
         : matched.sort(
             (a: any, b: any) =>
               Number(b.favoritedAt || 0) - Number(a.favoritedAt || 0)
@@ -162,7 +170,9 @@ Page({
   },
 
   onSort(e: any) {
-    const sort = e.currentTarget.dataset.sort === 'price' ? 'price' : 'recent'
+    const value = e.currentTarget.dataset.sort
+    const sort =
+      value === 'price' ? 'price' : value === 'eaten' ? 'eaten' : 'recent'
     if (sort === this.data.sort) {
       return
     }

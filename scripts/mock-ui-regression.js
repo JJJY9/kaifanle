@@ -46,6 +46,8 @@ function chinaDate(offset) {
     wx.removeStorageSync('kfl_note_presets_v1')
     wx.removeStorageSync('kfl_favorites_cloud_v1')
     wx.removeStorageSync('kfl_favorites_sync_v1')
+    wx.removeStorageSync('kfl_eaten_cloud_v1')
+    wx.removeStorageSync('kfl_eaten_sync_v1')
     return true
   })
   const current = () => mp.currentPage()
@@ -2832,6 +2834,46 @@ function chinaDate(offset) {
     )
     await sleep(300)
   }
+  const eatenSortBase = (favoritesOriginal || [])[0]
+  if (eatenSortBase) {
+    const eatNow = Date.now()
+    await invoke(
+      mp,
+      `wx.setStorageSync('kfl_eaten_v1', JSON.stringify({ 'fav-old': ${
+        eatNow - 86400000
+      }, 'fav-new': ${eatNow} })); page.setData({ allFavorites: [
+        ${JSON.stringify({
+          ...eatenSortBase,
+          id: 'fav-old',
+          name: '旧菜',
+          favoritedAt: 2000
+        })},
+        ${JSON.stringify({
+          ...eatenSortBase,
+          id: 'fav-new',
+          name: '新菜',
+          favoritedAt: 1000
+        })}
+      ], sort: 'eaten' }, () => page.applyFilter()); return true`
+    )
+    await sleep(400)
+    page = await current()
+    data = await page.data()
+    check(
+      'mock 收藏按最近点过排序',
+      data.sort === 'eaten' &&
+        (data.display || []).length === 2 &&
+        data.display[0].id === 'fav-new',
+      (data.display || []).map(dish => dish.id).join(' / ')
+    )
+    await invoke(
+      mp,
+      `page.setData({ allFavorites: ${JSON.stringify(
+        favoritesOriginal
+      )}, sort: 'recent' }, () => page.applyFilter()); wx.removeStorageSync('kfl_eaten_v1'); return true`
+    )
+    await sleep(300)
+  }
   await invoke(mp, 'page.onRandomFavorite()')
   await sleep(1600)
   page = await current()
@@ -4667,6 +4709,9 @@ function chinaDate(offset) {
   check(
     'mock 干饭成就',
     (data.achievements || []).length === 7 &&
+      (data.achievements || []).every(item =>
+        /^\d+\/\d+$/.test(String(item.progress || ''))
+      ) &&
       Number(data.achievementDone) === earnedAchievements.length &&
       earnedAchievements.length >= 3 &&
       lockedAchievements.length >= 1 &&
@@ -4927,11 +4972,51 @@ function chinaDate(offset) {
         : '丢失'
     } · d02 ${(eatenAfterCancel || {}).d02 ? '残留' : '已清'}`
   )
+  await sleep(400)
+  const eatenCloudStore = await mp.evaluate(() => {
+    try {
+      return JSON.parse(wx.getStorageSync('kfl_eaten_cloud_v1') || '{}')
+    } catch (e) {
+      return {}
+    }
+  })
+  check(
+    'mock 吃过记录同步云端',
+    Boolean(eatenCloudStore.map) &&
+      Number(eatenCloudStore.map.d01) === todayStamp &&
+      !eatenCloudStore.map.d02,
+    `d01 ${
+      Number((eatenCloudStore.map || {}).d01 || 0) === todayStamp
+        ? '已同步'
+        : '未同步'
+    } · d02 ${(eatenCloudStore.map || {}).d02 ? '残留' : '已清'}`
+  )
 
   // 首页「上次吃」快捷再来一份
   await mp.switchTab('/pages/home/index')
   await sleep(1800)
   page = await current()
+  data = await page.data()
+  const yesterdayMidnight = new Date()
+  yesterdayMidnight.setDate(yesterdayMidnight.getDate() - 1)
+  yesterdayMidnight.setHours(0, 0, 0, 0)
+  await mp.evaluate(
+    new Function(
+      `wx.setStorageSync('kfl_eaten_cloud_v1', JSON.stringify({ map: { d10: ${yesterdayMidnight.getTime()} }, updatedAt: Date.now() + 60000 })); return true`
+    )
+  )
+  await invoke(mp, 'page.syncEatenCloud()')
+  await sleep(1600)
+  page = await current()
+  const pulledEaten = await invoke(
+    mp,
+    "const dish = (page._available || []).find(d => d.id === 'd10'); return dish ? (dish.lastEatenText || '') : 'missing'"
+  )
+  check(
+    'mock 吃过记录云端拉取',
+    pulledEaten === '昨天吃过',
+    pulledEaten || '没有标记'
+  )
   data = await page.data()
   check(
     'mock 上次吃入口',
@@ -5169,7 +5254,9 @@ function chinaDate(offset) {
     )
   }
   await mp.evaluate(
-    new Function("wx.removeStorageSync('kfl_eaten_v1'); return true;")
+    new Function(
+      "wx.removeStorageSync('kfl_eaten_v1'); wx.removeStorageSync('kfl_eaten_cloud_v1'); wx.removeStorageSync('kfl_eaten_sync_v1'); return true;"
+    )
   )
 
   const failed = results.filter(r => !r.ok)

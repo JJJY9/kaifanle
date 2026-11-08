@@ -340,3 +340,10 @@
   background: #FFD23F;
   box-shadow: 2rpx 2rpx 0 #111111;
 }
+
+.ach-progress {
+  margin-top: 4rpx;
+  color: #2D9CFF;
+  font-size: 18rpx;
+  font-weight: 800;
+}

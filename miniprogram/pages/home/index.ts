@@ -15,7 +15,7 @@ import {
   urgeOrder
 } from '../../services/api'
 import { cart } from '../../store/cart'
-import { eatenText, getLastEatenMap } from '../../store/eaten'
+import { eatenText, getLastEatenMap, syncEatenFromCloud } from '../../store/eaten'
 import { favorites } from '../../store/favorites'
 import { MEALS, STATUS_TEXT, mealName } from '../../utils/constants'
 import { USE_CLOUD } from '../../config'
@@ -169,6 +169,15 @@ Page({
         })
       }
     })
+
+    this.syncEatenCloud()
+  },
+
+  async syncEatenCloud() {
+    const changed = await syncEatenFromCloud().catch(() => false)
+    if (changed) {
+      this.loadMenu()
+    }
   },
 
   onShow() {
