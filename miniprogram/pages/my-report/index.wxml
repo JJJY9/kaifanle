@@ -2,7 +2,11 @@
   <view class="head">
     <view class="title-row">
       <text class="title display">干饭足迹</text>
-      <view class="sticker">本月</view>
+      <view class="sticker">{{monthOffset === 0 ? '本月' : '上月'}}</view>
+    </view>
+    <view class="month-row">
+      <view class="month-chip {{monthOffset === 0 ? 'active' : ''}}" data-offset="0" bindtap="onSelectMonth">本月</view>
+      <view class="month-chip {{monthOffset === 1 ? 'active' : ''}}" data-offset="1" bindtap="onSelectMonth">上月</view>
     </view>
     <text class="sub">{{monthText}} · 她吃过的都算数</text>
   </view>

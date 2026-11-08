@@ -12,6 +12,7 @@ Page({
   data: {
     loading: true,
     error: '',
+    monthOffset: 0,
     monthText: '',
     monthOrders: 0,
     monthSpend: 0,
@@ -45,7 +46,9 @@ Page({
 
   async load() {
     const seq = ++this._loadSeq
-    this.setData({ loading: true, error: '' })
+    this.setData(
+      this.data.monthText ? { error: '' } : { loading: true, error: '' }
+    )
     try {
       const [orders, stats] = await Promise.all([getOrders(), getMyStats()])
       if (seq !== this._loadSeq) {
@@ -53,8 +56,14 @@ Page({
       }
       const now = new Date()
       const todayKey = dateInputString()
-      const monthPrefix = `${now.getFullYear()}-${String(
-        now.getMonth() + 1
+      const offset = Number(this.data.monthOffset) === 1 ? 1 : 0
+      const monthRef = new Date(
+        now.getFullYear(),
+        now.getMonth() - offset,
+        1
+      )
+      const monthPrefix = `${monthRef.getFullYear()}-${String(
+        monthRef.getMonth() + 1
       ).padStart(2, '0')}`
       const effectiveDate = (order: any) => {
         if (order.scheduledDate) {
@@ -67,7 +76,10 @@ Page({
       }
       const monthly = orders.filter(order => {
         const date = effectiveDate(order)
-        return date.indexOf(monthPrefix + '-') === 0 && date <= todayKey
+        return (
+          date.indexOf(monthPrefix + '-') === 0 &&
+          (offset > 0 || date <= todayKey)
+        )
       })
       const active = monthly.filter(order => order.status !== 'cancelled')
       const spend = active.reduce(
@@ -137,8 +149,8 @@ Page({
         {
           key: 'month',
           icon: '📅',
-          label: '本月常客',
-          desc: '本月 3 单',
+          label: '当月常客',
+          desc: '当月 3 单',
           earned: active.length >= 3
         },
         {
@@ -158,8 +170,8 @@ Page({
         {
           key: 'king',
           icon: '👑',
-          label: '本月干饭王',
-          desc: '本月 10 单',
+          label: '当月干饭王',
+          desc: '当月 10 单',
           earned: active.length >= 10
         },
         {
@@ -174,7 +186,10 @@ Page({
       this.setData({
         loading: false,
         posterPath: '',
-        monthText: `${now.getFullYear()} 年 ${now.getMonth() + 1} 月`,
+        monthOffset: offset,
+        monthText: `${monthRef.getFullYear()} 年 ${
+          monthRef.getMonth() + 1
+        } 月`,
         monthOrders: active.length,
         monthSpend: Number(spend.toFixed(2)),
         totalOrders: Number(stats.total || 0),
@@ -199,6 +214,14 @@ Page({
 
   onRetry() {
     this.load()
+  },
+
+  onSelectMonth(e: any) {
+    const offset = Number(e.currentTarget.dataset.offset) === 1 ? 1 : 0
+    if (offset === Number(this.data.monthOffset || 0)) {
+      return
+    }
+    this.setData({ monthOffset: offset }, () => this.load())
   },
 
   async onSharePoster() {

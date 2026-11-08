@@ -210,6 +210,12 @@ export interface UserProfile {
   anniversary?: string
 }
 
+export interface FavoritesCloudData {
+  ids: string[]
+  times: Record<string, number>
+  updatedAt: number
+}
+
 export interface SpecialDay {
   kind: 'birthday' | 'anniversary'
   date: string

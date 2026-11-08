@@ -2334,6 +2334,39 @@ async function run() {
   assert.deepStrictEqual(res.data.tastes, ['微辣'])
   assert.strictEqual(res.data.address, '家里')
 
+  // 收藏云同步：读写、清洗、用户隔离
+  res = await call('getFavorites', {}, 'girl-openid')
+  assert.strictEqual(res.ok, true)
+  assert.deepStrictEqual(res.data.ids, [])
+  assert.strictEqual(Number(res.data.updatedAt), 0)
+  res = await call(
+    'saveFavorites',
+    {
+      ids: ['d01', 'd02', 'd01', 123, ''],
+      times: { d01: 111, d02: -5, d09: 999 },
+      updatedAt: 5000
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.deepStrictEqual(res.data.ids, ['d01', 'd02', '123'])
+  assert.deepStrictEqual(res.data.times, { d01: 111 })
+  assert.strictEqual(res.data.updatedAt, 5000)
+  res = await call('getFavorites', {}, 'girl-openid')
+  assert.deepStrictEqual(res.data.ids, ['d01', 'd02', '123'])
+  res = await call('getFavorites', {}, 'stranger-openid')
+  assert.deepStrictEqual(res.data.ids, [])
+  res = await call(
+    'saveFavorites',
+    { ids: ['d02'], times: { d02: 222 }, updatedAt: 6000 },
+    'girl-openid'
+  )
+  assert.deepStrictEqual(res.data.ids, ['d02'])
+  res = await call('getFavorites', {}, 'girl-openid')
+  assert.deepStrictEqual(res.data.ids, ['d02'])
+  assert.strictEqual(res.data.times.d02, 222)
+  assert.strictEqual(res.data.updatedAt, 6000)
+
   // 旧客户端不带日期字段：不能清空已保存的日期
   res = await call(
     'saveMyProfile',

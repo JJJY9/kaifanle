@@ -39,6 +39,11 @@ Page({
 
   onShow() {
     this.loadDishes()
+    favorites.syncFromCloud().then(changed => {
+      if (changed) {
+        this.loadDishes()
+      }
+    })
   },
 
   onUnload() {

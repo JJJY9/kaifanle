@@ -160,7 +160,7 @@
 
     <view wx:if="{{lastOrder}}" class="last-order" bindtap="onRepeatLast">
       <view class="last-order-info">
-        <text class="last-order-label">上次吃 · {{lastOrder.mealText}}</text>
+        <text class="last-order-label">上次吃 · {{lastOrder.dateText}} {{lastOrder.mealText}}</text>
         <text class="last-order-name">{{lastOrder.summary}}</text>
       </view>
       <view class="last-order-go">再来一份 ↺</view>

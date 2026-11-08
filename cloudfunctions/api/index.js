@@ -158,6 +158,10 @@ async function route(action, payload, openid) {
       return getMyProfile(openid)
     case 'saveMyProfile':
       return saveMyProfile(payload, openid)
+    case 'getFavorites':
+      return getFavorites(openid)
+    case 'saveFavorites':
+      return saveFavorites(payload, openid)
     case 'getSpecialDays':
       return getSpecialDays(openid)
     case 'getMySpecialDays':
@@ -600,6 +604,60 @@ function normalizeProfile(value) {
     address: String(source.address || '').slice(0, 60),
     birthday: normalizeDateKey(source.birthday),
     anniversary: normalizeDateKey(source.anniversary)
+  }
+}
+
+function normalizeFavorites(data) {
+  const ids = []
+  ;(Array.isArray(data && data.ids) ? data.ids : []).forEach(id => {
+    const value = String(id || '').trim()
+    if (value && ids.indexOf(value) === -1 && ids.length < 300) {
+      ids.push(value.slice(0, 100))
+    }
+  })
+  const times = {}
+  ids.forEach(id => {
+    const at = Number((data && data.times && data.times[id]) || 0)
+    if (isFinite(at) && at > 0) {
+      times[id] = at
+    }
+  })
+  return {
+    ids,
+    times,
+    updatedAt: Number((data && data.updatedAt) || 0)
+  }
+}
+
+async function getFavorites(openid) {
+  await ensureCollection('favorites')
+  try {
+    const res = await db.collection('favorites').doc(openid).get()
+    return normalizeFavorites(res.data)
+  } catch (e) {
+    // 只有「还没有收藏」才返回空；额度和网络错误必须上抛
+    if (isMissingDocError(e)) {
+      return normalizeFavorites(null)
+    }
+    throw e
+  }
+}
+
+async function saveFavorites(payload, openid) {
+  const normalized = normalizeFavorites(payload || {})
+  const updatedAt = Number((payload && payload.updatedAt) || 0) || Date.now()
+  await ensureCollection('favorites')
+  await db.collection('favorites').doc(openid).set({
+    data: {
+      ids: normalized.ids,
+      times: normalized.times,
+      updatedAt
+    }
+  })
+  return {
+    ids: normalized.ids,
+    times: normalized.times,
+    updatedAt
   }
 }
 

@@ -9,6 +9,7 @@ import type {
   DishSales,
   DishStats,
   DishInput,
+  FavoritesCloudData,
   InitResult,
   KitchenReport,
   KitchenStatus,
@@ -1784,6 +1785,55 @@ export async function updateBusiness(payload: Business): Promise<Business> {
 export async function getMyProfile(): Promise<UserProfile> {
   await delay(60)
   return JSON.parse(JSON.stringify(loadProfile()))
+}
+
+const FAVORITES_CLOUD_KEY = 'kfl_favorites_cloud_v1'
+
+function normalizeFavoritesCloud(data: any): FavoritesCloudData {
+  const ids: string[] = []
+  ;(Array.isArray(data && data.ids) ? data.ids : []).forEach((id: any) => {
+    const value = String(id || '').trim()
+    if (value && ids.indexOf(value) === -1 && ids.length < 300) {
+      ids.push(value.slice(0, 100))
+    }
+  })
+  const times: Record<string, number> = {}
+  ids.forEach(id => {
+    const at = Number((data && data.times && data.times[id]) || 0)
+    if (isFinite(at) && at > 0) {
+      times[id] = at
+    }
+  })
+  return { ids, times, updatedAt: Number((data && data.updatedAt) || 0) }
+}
+
+export async function getFavorites(): Promise<FavoritesCloudData> {
+  await delay(40)
+  try {
+    const raw = wx.getStorageSync(FAVORITES_CLOUD_KEY)
+    return normalizeFavoritesCloud(raw ? JSON.parse(raw) : null)
+  } catch (e) {
+    return normalizeFavoritesCloud(null)
+  }
+}
+
+export async function saveFavorites(
+  payload: FavoritesCloudData
+): Promise<FavoritesCloudData> {
+  await delay(60)
+  const normalized = normalizeFavoritesCloud(payload || ({} as any))
+  const updatedAt = Number(payload && payload.updatedAt) || Date.now()
+  const data = {
+    ids: normalized.ids,
+    times: normalized.times,
+    updatedAt
+  }
+  try {
+    wx.setStorageSync(FAVORITES_CLOUD_KEY, JSON.stringify(data))
+  } catch (e) {
+    // 忽略存储失败
+  }
+  return JSON.parse(JSON.stringify(data))
 }
 
 export async function saveMyProfile(

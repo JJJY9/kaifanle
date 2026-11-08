@@ -44,6 +44,8 @@ function chinaDate(offset) {
     wx.removeStorageSync('kfl_prep_checked_v1')
     wx.removeStorageSync('kfl_checkout_prefs_v1')
     wx.removeStorageSync('kfl_note_presets_v1')
+    wx.removeStorageSync('kfl_favorites_cloud_v1')
+    wx.removeStorageSync('kfl_favorites_sync_v1')
     return true
   })
   const current = () => mp.currentPage()
@@ -2686,6 +2688,20 @@ function chinaDate(offset) {
       data.allFavorites.every(dish => Boolean(dish.favoritedText)),
     `${(data.allFavorites || []).length} 道`
   )
+  const favCloud = await mp.evaluate(() => {
+    try {
+      return JSON.parse(wx.getStorageSync('kfl_favorites_cloud_v1') || '{}')
+    } catch (e) {
+      return {}
+    }
+  })
+  check(
+    'mock 收藏自动同步云端',
+    Array.isArray(favCloud.ids) &&
+      favCloud.ids.indexOf('d01') > -1 &&
+      Number(favCloud.updatedAt) > 0,
+    `${(favCloud.ids || []).length} 道`
+  )
   await invoke(mp, "page.onSearch({ detail: { value: '招牌' } })")
   await sleep(400)
   page = await current()
@@ -2867,10 +2883,32 @@ function chinaDate(offset) {
     Number(data.posterThemeIndex) === 1 && data.posterPath === '',
     `配色 ${data.posterThemeIndex}`
   )
+  await mp.evaluate(
+    new Function(
+      "wx.setStorageSync('kfl_favorites_cloud_v1', JSON.stringify({ ids: ['d02'], times: { d02: Date.now() }, updatedAt: Date.now() + 60000 })); return true"
+    )
+  )
   await mp.navigateBack()
   await sleep(700)
-  await invoke(mp, 'page.onToggleFavorite()')
-  await sleep(400)
+  await mp.navigateTo('/pages/favorites/index')
+  await sleep(1800)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 收藏云端拉取覆盖',
+    (data.allFavorites || []).length === 1 &&
+      data.allFavorites[0].id === 'd02',
+    (data.allFavorites || []).map(dish => dish.id).join('/') || '没有收藏'
+  )
+  await mp.mockWxMethod('showModal', {
+    confirm: true,
+    cancel: false,
+    content: ''
+  })
+  await invoke(mp, 'page.onClearAll()')
+  await sleep(800)
+  await mp.navigateBack()
+  await sleep(700)
 
   // 口味档案：生日 / 纪念日选择、清除与保存
   const specialBirthday = `2000-${chinaDate(5).slice(5)}`
@@ -4645,6 +4683,30 @@ function chinaDate(offset) {
     data.posterPath === '',
     data.posterPath || '已清空'
   )
+  await invoke(
+    mp,
+    "page.onSelectMonth({ currentTarget: { dataset: { offset: 1 } } })"
+  )
+  await sleep(1600)
+  page = await current()
+  data = await page.data()
+  const prevMonthLabel = (() => {
+    const d = new Date()
+    d.setMonth(d.getMonth() - 1)
+    return `${d.getFullYear()} 年 ${d.getMonth() + 1} 月`
+  })()
+  check(
+    'mock 足迹查看上月',
+    Number(data.monthOffset) === 1 &&
+      data.monthText === prevMonthLabel &&
+      Number(data.monthOrders) >= 0,
+    `${data.monthText} · ${data.monthOrders} 单`
+  )
+  await invoke(
+    mp,
+    "page.onSelectMonth({ currentTarget: { dataset: { offset: 0 } } })"
+  )
+  await sleep(1400)
   await mp.navigateBack()
   await sleep(600)
 
@@ -4866,8 +4928,11 @@ function chinaDate(offset) {
   check(
     'mock 上次吃入口',
     Boolean(data.lastOrder) &&
-      String(data.lastOrder.summary || '').length > 0,
-    data.lastOrder ? `${data.lastOrder.mealText} · ${data.lastOrder.summary}` : '没有记录'
+      String(data.lastOrder.summary || '').length > 0 &&
+      String(data.lastOrder.dateText || '').length > 0,
+    data.lastOrder
+      ? `${data.lastOrder.dateText} · ${data.lastOrder.mealText} · ${data.lastOrder.summary}`
+      : '没有记录'
   )
   await invoke(mp, 'page.onRepeatLast()')
   await sleep(1800)

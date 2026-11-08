@@ -13,6 +13,7 @@ import type {
   DishSales,
   DishStats,
   DishInput,
+  FavoritesCloudData,
   InitResult,
   KitchenReport,
   KitchenStatus,
@@ -628,10 +629,25 @@ export async function getMyProfile(force = false): Promise<UserProfile> {
   return mock.getMyProfile()
 }
 
+export async function getFavoritesCloud(): Promise<FavoritesCloudData> {
+  if (USE_CLOUD) {
+    return callApi<FavoritesCloudData>('getFavorites')
+  }
+  return mock.getFavorites()
+}
+
+export async function saveFavoritesCloud(
+  payload: FavoritesCloudData
+): Promise<FavoritesCloudData> {
+  if (USE_CLOUD) {
+    return callApi<FavoritesCloudData>('saveFavorites', payload)
+  }
+  return mock.saveFavorites(payload)
+}
+
 export async function saveMyProfile(
   payload: UserProfile
-): Promise<UserProfile> {
-  if (USE_CLOUD) {
+): Promise<UserProfile> {  if (USE_CLOUD) {
     const result = await callApi<UserProfile>('saveMyProfile', payload)
     specialDaysCache = null
     mySpecialDaysCache = null
