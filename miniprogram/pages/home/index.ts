@@ -1453,6 +1453,7 @@ Page({
       greetText: greeting()
     })
     this.loadActiveOrder()
+    favorites.syncFromCloud(true).catch(() => false)
     this.loadMenu().then(() => wx.stopPullDownRefresh())
   },
 

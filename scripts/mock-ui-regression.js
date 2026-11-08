@@ -192,6 +192,15 @@ function chinaDate(offset) {
     !data.isOpen || String(data.busyText || '').length > 0,
     data.busyText || (data.isOpen ? '没有提示' : '休息中')
   )
+  await invoke(mp, 'page.onPullDownRefresh()')
+  await sleep(1800)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 首页下拉刷新',
+    page.path === 'pages/home/index' && (data.sections || []).length > 0,
+    `${(data.sections || []).length} 个分类`
+  )
   await invoke(
     mp,
     "page.onSelectMeal({ currentTarget: { dataset: { meal: 'dinner' } } })"
@@ -2034,6 +2043,15 @@ function chinaDate(offset) {
       .filter(Boolean)
       .join('/') || '没有倒计时'
   )
+  await invoke(mp, 'page.onPullDownRefresh()')
+  await sleep(1200)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 许愿池下拉刷新',
+    (data.wishes || []).length >= 1,
+    `${(data.wishes || []).length} 个愿望`
+  )
   await invoke(
     mp,
     "page.onFilter({ currentTarget: { dataset: { filter: 'pending' } } })"
@@ -2881,6 +2899,15 @@ function chinaDate(offset) {
       favCloud.ids.indexOf('d01') > -1 &&
       Number(favCloud.updatedAt) > 0,
     `${(favCloud.ids || []).length} 道`
+  )
+  await invoke(mp, 'page.onPullDownRefresh()')
+  await sleep(1400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 收藏下拉刷新',
+    (data.allFavorites || []).length >= 1,
+    `${(data.allFavorites || []).length} 道`
   )
   await invoke(mp, "page.onSearch({ detail: { value: '招牌' } })")
   await sleep(400)

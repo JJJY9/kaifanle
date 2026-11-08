@@ -47,6 +47,14 @@ Page({
     })
   },
 
+  onPullDownRefresh() {
+    favorites
+      .syncFromCloud(true)
+      .catch(() => false)
+      .then(() => this.loadDishes())
+      .then(() => wx.stopPullDownRefresh())
+  },
+
   onUnload() {
     if (this._unsub) {
       this._unsub()

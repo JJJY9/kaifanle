@@ -34,6 +34,10 @@ Page({
     this.load()
   },
 
+  onPullDownRefresh() {
+    this.load().then(() => wx.stopPullDownRefresh())
+  },
+
   async load() {
     try {
       const [me, wishes] = await Promise.all([getMe(), getWishes()])

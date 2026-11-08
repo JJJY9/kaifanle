@@ -1,4 +1,6 @@
 {
   "navigationBarTitleText": "许愿池",
-  "backgroundColor": "#FFFDF6"
+  "enablePullDownRefresh": true,
+  "backgroundColor": "#FFFDF6",
+  "backgroundTextStyle": "dark"
 }
