@@ -3100,6 +3100,12 @@ function chinaDate(offset) {
   if (copyIngredientTexts.length) {
     expectedCopyLines.push(`食材：${copyIngredientTexts.join('、')}`)
   }
+  const copyAllergens = ((data.dish && data.dish.allergens) || []).filter(
+    Boolean
+  )
+  if (copyAllergens.length) {
+    expectedCopyLines.push(`含：${copyAllergens.join('、')}`)
+  }
   copyStepTexts.forEach((text, index) => {
     expectedCopyLines.push(`${index + 1}. ${text}`)
   })

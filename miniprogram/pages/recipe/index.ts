@@ -425,6 +425,12 @@ Page({
     if (ingredients.length) {
       lines.push(`食材：${ingredients.join('、')}`)
     }
+    const allergens = Array.isArray(dish.allergens)
+      ? dish.allergens.filter(Boolean)
+      : []
+    if (allergens.length) {
+      lines.push(`含：${allergens.join('、')}`)
+    }
     steps.forEach((step, index) => {
       lines.push(`${index + 1}. ${step.text}`)
     })
