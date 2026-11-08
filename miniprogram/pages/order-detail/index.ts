@@ -775,9 +775,13 @@ Page({
 
   onFavoriteAll() {
     const items = (this.data.order && this.data.order.items) || []
-    const ids = items
-      .map((item: any) => String(item.dishId || ''))
-      .filter(Boolean)
+    const ids = Array.from(
+      new Set(
+        items
+          .map((item: any) => String(item.dishId || ''))
+          .filter(Boolean)
+      )
+    )
     if (!ids.length) {
       wx.showToast({ title: '这单没有可收藏的菜', icon: 'none' })
       return

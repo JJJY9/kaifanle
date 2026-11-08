@@ -451,6 +451,8 @@ Page({
           id: item.id,
           name: item.name,
           categoryId: item.categoryId,
+          hasRecipe: Boolean(String(item.recipe || '').trim()),
+          status: item.status || 'on',
           emoji: item.emoji || item.char || '🍽',
           price: item.price,
           color: item.color || '#FFD23F'
@@ -466,7 +468,12 @@ Page({
     if (!id) {
       return
     }
-    wx.navigateTo({ url: `/pages/recipe/index?id=${id}` })
+    wx.navigateTo({
+      url: `/pages/recipe/index?id=${id}`,
+      fail: () => {
+        wx.redirectTo({ url: `/pages/recipe/index?id=${id}` })
+      }
+    })
   },
 
   onEdit() {

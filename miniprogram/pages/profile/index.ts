@@ -34,10 +34,7 @@ function formatSyncTime(at: number): string {
   if (days === 1) {
     return `昨天 ${hh}:${mm}`
   }
-  if (days <= 29) {
-    return `${days} 天前`
-  }
-  return ''
+  return `${days} 天前`
 }
 
 Page({

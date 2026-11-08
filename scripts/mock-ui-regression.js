@@ -678,6 +678,62 @@ function chinaDate(offset) {
     )} } } })`
   )
   await sleep(400)
+  const findSoldCard = async () => {
+    const cards = await page.$$('.home-dish-card')
+    for (const card of cards) {
+      let cardData = null
+      try {
+        cardData = await card.data()
+      } catch (e) {
+        cardData = null
+      }
+      if (cardData && cardData.dish && cardData.dish.id === 'd03') {
+        return card
+      }
+    }
+    return null
+  }
+  const soldHeartCard = await findSoldCard()
+  let soldHeartZ = ''
+  let soldHeartFav = null
+  let soldHeartSku = null
+  if (soldHeartCard) {
+    const soldHeartEl = await soldHeartCard.$('.media-fav')
+    if (soldHeartEl) {
+      soldHeartZ = String(await soldHeartEl.style('z-index'))
+      await soldHeartEl.tap()
+      await sleep(600)
+      page = await current()
+      const afterSoldHeartTap = await page.data()
+      soldHeartSku = Boolean(afterSoldHeartTap.skuVisible)
+      const soldHeartStore = await mp.evaluate(() => {
+        try {
+          return JSON.parse(wx.getStorageSync('kfl_favorites_v1') || '[]')
+        } catch (e) {
+          return []
+        }
+      })
+      soldHeartFav = soldHeartStore.indexOf('d03') > -1
+      const soldCardAgain = await findSoldCard()
+      if (soldCardAgain) {
+        const soldHeartAgain = await soldCardAgain.$('.media-fav')
+        if (soldHeartAgain) {
+          await soldHeartAgain.tap()
+          await sleep(500)
+        }
+      }
+    }
+  }
+  check(
+    'mock 售罄菜品心形收藏',
+    Boolean(soldHeartCard) &&
+      Number(soldHeartZ) >= 2 &&
+      soldHeartFav === true &&
+      soldHeartSku === false,
+    `z=${soldHeartZ || '?'} · ${soldHeartFav ? '已收藏' : '未收藏'} · ${
+      soldHeartSku ? '误开规格' : '未开规格'
+    }`
+  )
   await invoke(mp, "page.onSearchInput({ detail: { value: '番茄x' } })")
   await sleep(400)
   page = await current()
@@ -2849,6 +2905,8 @@ function chinaDate(offset) {
         item =>
           item.id !== 'd01' &&
           item.categoryId === data.dish.categoryId &&
+          item.hasRecipe === true &&
+          item.status !== 'off' &&
           Boolean(item.name) &&
           Number(item.price) >= 0
       ),
@@ -3585,7 +3643,7 @@ function chinaDate(offset) {
   )
   await mp.evaluate(
     new Function(
-      "wx.setStorageSync('kfl_favorites_cloud_v1', JSON.stringify({ ids: ['d02'], times: { d02: Date.now() }, updatedAt: Date.now() + 60000 })); return true"
+      "wx.setStorageSync('kfl_favorites_cloud_v1', JSON.stringify({ ids: ['d02'], times: { d02: Date.now() - 600000 }, updatedAt: Date.now() + 60000 })); return true"
     )
   )
   await mp.navigateBack()
@@ -3637,9 +3695,12 @@ function chinaDate(offset) {
   check(
     'mock 收藏复制清单按排序',
     (data.display || []).length >= 2 &&
+      data.sort === 'price' &&
       sortedPrices.every(
         (price, index) => index === 0 || sortedPrices[index - 1] <= price
       ) &&
+      (data.display || []).map(dish => dish.id).join('/') !==
+        (data.allFavorites || []).map(dish => dish.id).join('/') &&
       sortedListLines[0].indexOf('【我的收藏】') > -1 &&
       sortedListLines.length === expectedListLines.length + 1 &&
       expectedListLines.every(
@@ -3776,12 +3837,15 @@ function chinaDate(offset) {
   const sectionCountText = sectionCountEl
     ? String(await sectionCountEl.text())
     : ''
+  const initialRecipeRows = await page.$$('.row')
   const firstSectionDishes =
     ((data.displayGroups || [])[0] || {}).dishes || []
   check(
     'mock 菜谱分类道数',
-    sectionCountText === `${firstSectionDishes.length} 道`,
-    sectionCountText || '未显示'
+    (data.displayGroups || []).length === 1 &&
+      sectionCountText === `${initialRecipeRows.length} 道` &&
+      initialRecipeRows.length === firstSectionDishes.length,
+    `${sectionCountText || '未显示'} · 实际 ${initialRecipeRows.length} 行`
   )
   await invoke(mp, "page.onSearch({ detail: { value: '牛腩' } })")
   await sleep(400)
@@ -3791,6 +3855,18 @@ function chinaDate(offset) {
     'mock 菜谱搜索',
     (data.displayGroups || []).length > 0,
     `${data.displayGroups.length} 组`
+  )
+  const searchedRecipeRows = await page.$$('.row')
+  const searchedCountEl = await page.$('.section-count')
+  const searchedCountText = searchedCountEl
+    ? String(await searchedCountEl.text())
+    : ''
+  check(
+    'mock 菜谱分类道数跟随筛选',
+    searchedRecipeRows.length >= 1 &&
+      searchedRecipeRows.length < initialRecipeRows.length &&
+      searchedCountText === `${searchedRecipeRows.length} 道`,
+    `${searchedCountText || '未显示'} · 实际 ${searchedRecipeRows.length} 行`
   )
   await invoke(mp, "page.onSearch({ detail: { value: '1碗' } })")
   await sleep(400)
@@ -3965,21 +4041,55 @@ function chinaDate(offset) {
       favOnlyState.expected.join('/') === favOnlyState.shown.join('/'),
     `${favOnlyState.shown.length} 道收藏菜谱`
   )
-  await invoke(mp, 'page.onRandomRecipe()')
-  await sleep(1500)
-  page = await current()
-  const favOnlyRandom = await page.data()
-  const favOnlyRandomId = favOnlyRandom.dish && favOnlyRandom.dish.id
+  let favOnlyRandomOk = true
+  let favOnlyRandomLast = ''
+  for (let round = 0; round < 4; round += 1) {
+    await invoke(mp, 'page.onRandomRecipe()')
+    await sleep(1400)
+    page = await current()
+    const favOnlyRandom = await page.data()
+    const favOnlyRandomId = favOnlyRandom.dish && favOnlyRandom.dish.id
+    favOnlyRandomLast = favOnlyRandomId || ''
+    if (
+      page.path !== 'pages/recipe/index' ||
+      !favOnlyRandomId ||
+      favOnlyState.expected.indexOf(favOnlyRandomId) === -1
+    ) {
+      favOnlyRandomOk = false
+    }
+    await mp.navigateBack()
+    await sleep(800)
+    page = await current()
+  }
   check(
     'mock 菜谱只看收藏随机',
-    page.path === 'pages/recipe/index' &&
-      Boolean(favOnlyRandomId) &&
-      favOnlyState.shownRaw.indexOf(favOnlyRandomId) > -1,
-    favOnlyRandomId || page.path
+    favOnlyRandomOk,
+    `4 轮 · 最后 ${favOnlyRandomLast || '无'}`
   )
-  await mp.navigateBack()
-  await sleep(900)
-  page = await current()
+  await invoke(mp, "page.onSearch({ detail: { value: '不存在的菜xyz' } })")
+  await sleep(400)
+  await invoke(
+    mp,
+    "wx.__randomToast = ''; wx.__randomToastOrig = wx.showToast; wx.showToast = (o) => { wx.__randomToast = o && o.title; o && o.success && o.success() }; return true"
+  )
+  await invoke(mp, 'page.onRandomRecipe()')
+  await sleep(400)
+  const randomEmptyToast = await mp.evaluate(() => {
+    const title = wx.__randomToast || ''
+    if (wx.__randomToastOrig) {
+      wx.showToast = wx.__randomToastOrig
+    }
+    delete wx.__randomToastOrig
+    delete wx.__randomToast
+    return title
+  })
+  check(
+    'mock 菜谱筛选空随机提示',
+    randomEmptyToast === '换个关键词再试',
+    randomEmptyToast || '无提示'
+  )
+  await invoke(mp, 'page.onSearchClear()')
+  await sleep(300)
   await invoke(
     mp,
     `page.onToggleFavorite({ currentTarget: { dataset: { id: ${JSON.stringify(
@@ -4187,16 +4297,34 @@ function chinaDate(offset) {
       recipeHistoryCleared.stored.length === 0,
     '已清空'
   )
+  await invoke(mp, "page.onSearchConfirm({ detail: { value: '牛腩' } })")
+  await sleep(500)
+  page = await current()
+  data = await page.data()
+  const activeSearchClearEl = await page.$('.search-clear')
+  const activeSearchHistoryEl = await page.$('.search-history')
+  check(
+    'mock 菜谱搜索中状态',
+    data.searching === true &&
+      Boolean(activeSearchClearEl) &&
+      !activeSearchHistoryEl &&
+      (data.recipeSearchHistory || []).length >= 1,
+    `× ${activeSearchClearEl ? '显示' : '缺失'} · 历史 ${
+      activeSearchHistoryEl ? '未隐藏' : '已隐藏'
+    }`
+  )
   await invoke(mp, "page.onSearch({ detail: { value: '   ' } })")
-  await sleep(300)
+  await sleep(400)
   page = await current()
   data = await page.data()
   const blankClearEl = await page.$('.search-clear')
+  const blankHistoryEl = await page.$('.search-history')
   check(
     'mock 菜谱空白关键词状态',
     data.searching === false &&
       data.keyword === '   ' &&
       !blankClearEl &&
+      Boolean(blankHistoryEl) &&
       (data.displayGroups || []).length > 0,
     `searching=${data.searching}`
   )
@@ -5098,6 +5226,73 @@ function chinaDate(offset) {
     favAllAgainToast === '都收藏过啦',
     favAllAgainToast || '无提示'
   )
+  const originalOrderItems = await mp.evaluate(
+    new Function(
+      "const page = getCurrentPages()[getCurrentPages().length - 1]; return JSON.parse(JSON.stringify((page.data.order && page.data.order.items) || []))"
+    )
+  )
+  await invoke(
+    mp,
+    "page.onToggleItemFavorite({ currentTarget: { dataset: { id: 'd01', index: 0 } } })"
+  )
+  await sleep(400)
+  await invoke(
+    mp,
+    `page.setData({ 'order.items': [${JSON.stringify({
+      dishId: 'd01',
+      name: '番茄牛腩饭',
+      qty: 1,
+      lineTotal: 18
+    })}, ${JSON.stringify({
+      dishId: 'd01',
+      name: '番茄牛腩饭',
+      qty: 1,
+      lineTotal: 18
+    })}] })`
+  )
+  await sleep(300)
+  await invoke(
+    mp,
+    "wx.__dedupeToast = ''; wx.__dedupeToastOrig = wx.showToast; wx.showToast = (o) => { wx.__dedupeToast = o && o.title; o && o.success && o.success() }; return true"
+  )
+  await invoke(mp, 'page.onFavoriteAll()')
+  await sleep(400)
+  const dedupeToast = await mp.evaluate(() => {
+    const title = wx.__dedupeToast || ''
+    if (wx.__dedupeToastOrig) {
+      wx.showToast = wx.__dedupeToastOrig
+    }
+    delete wx.__dedupeToastOrig
+    delete wx.__dedupeToast
+    return title
+  })
+  const dedupeStored = await mp.evaluate(() => {
+    try {
+      return JSON.parse(wx.getStorageSync('kfl_favorites_v1') || '[]')
+    } catch (e) {
+      return []
+    }
+  })
+  const dedupeItems = await mp.evaluate(
+    new Function(
+      "const page = getCurrentPages()[getCurrentPages().length - 1]; return ((page.data.order && page.data.order.items) || []).map(item => Boolean(item.favorite))"
+    )
+  )
+  check(
+    'mock 订单一键收藏去重',
+    dedupeToast === '已收藏 1 道' &&
+      dedupeStored.indexOf('d01') > -1 &&
+      (dedupeItems || []).length === 2 &&
+      dedupeItems.every(Boolean),
+    `${dedupeToast || '无提示'} · ${
+      Array.isArray(dedupeStored) ? dedupeStored.join('/') : ''
+    }`
+  )
+  await invoke(
+    mp,
+    `page.setData({ 'order.items': ${JSON.stringify(originalOrderItems)} })`
+  )
+  await sleep(300)
   const stepDeltas = (data.steps || [])
     .map(step => step.deltaText)
     .filter(Boolean)
