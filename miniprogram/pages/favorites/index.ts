@@ -12,6 +12,26 @@ const POSTER_THEMES = [
 ]
 
 const FAVORITES_VIEW_KEY = 'kfl_favorites_view_v1'
+const POSTER_THEME_KEY = 'kfl_favorites_poster_theme_v1'
+
+function readPosterTheme(): number {
+  try {
+    const index = Number(wx.getStorageSync(POSTER_THEME_KEY))
+    return Number.isInteger(index) && index >= 0 && index < POSTER_THEMES.length
+      ? index
+      : 0
+  } catch (e) {
+    return 0
+  }
+}
+
+function writePosterTheme(index: number) {
+  try {
+    wx.setStorageSync(POSTER_THEME_KEY, index)
+  } catch (e) {
+    // 忽略存储失败
+  }
+}
 
 function readFavoritesView(): { sort: string; category: string } {
   try {
@@ -64,7 +84,8 @@ Page({
     const view = readFavoritesView()
     this.setData({
       sort: view.sort as any,
-      category: view.category
+      category: view.category,
+      posterThemeIndex: readPosterTheme()
     })
     this._unsub = favorites.subscribe(() => {
       this.setData({ posterPath: '' }, () => this.applyFilter())
@@ -290,11 +311,12 @@ Page({
   },
 
   onCyclePosterTheme() {
+    const next =
+      (Number(this.data.posterThemeIndex || 0) + 1) % POSTER_THEMES.length
+    writePosterTheme(next)
     this.setData(
       {
-        posterThemeIndex:
-          (Number(this.data.posterThemeIndex || 0) + 1) %
-          POSTER_THEMES.length,
+        posterThemeIndex: next,
         posterPath: ''
       },
       () => {

@@ -463,6 +463,14 @@ Page({
     }
   },
 
+  onShareTimeline() {
+    const dish = this.data.dish
+    return {
+      title: dish ? `${dish.name} · 做法` : '张饱饭堂 · 菜谱',
+      query: `id=${this.dishId}`
+    }
+  },
+
   async onSharePoster() {
     if (this.data.posterMaking || !this.data.dish) {
       return

@@ -142,6 +142,26 @@
   gap: 8rpx;
 }
 
+.row-fav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52rpx;
+  height: 52rpx;
+  margin-right: 2rpx;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  background: #FFFFFF;
+  font-size: 28rpx;
+  line-height: 1;
+  color: #111111;
+}
+
+.row-fav.on {
+  background: #FF5C8A;
+  color: #FFFFFF;
+}
+
 .steps {
   padding: 4rpx 14rpx;
   background: #FFFDF6;

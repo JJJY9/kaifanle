@@ -51,6 +51,11 @@
             <view class="step-preview">{{dish.firstStep}}</view>
           </view>
           <view class="meta">
+            <view
+              class="row-fav {{dish.favorite ? 'on' : ''}}"
+              catchtap="onToggleFavorite"
+              data-id="{{dish.id}}"
+            >{{dish.favorite ? '♥' : '♡'}}</view>
             <text class="steps">{{dish.stepsCount}} 步</text>
             <text class="arrow">→</text>
           </view>

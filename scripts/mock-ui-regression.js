@@ -53,6 +53,7 @@ function chinaDate(offset) {
     wx.removeStorageSync('kfl_eaten_ops_v1')
     wx.removeStorageSync('kfl_last_meal_v1')
     wx.removeStorageSync('kfl_favorites_view_v1')
+    wx.removeStorageSync('kfl_favorites_poster_theme_v1')
     wx.removeStorageSync('kfl_prep_dish_checked_v1')
     return true
   })
@@ -2727,6 +2728,20 @@ function chinaDate(offset) {
     Boolean(data.dish) && (data.steps || []).length >= 3,
     data.dish && `${data.dish.name} · ${data.steps.length} 步`
   )
+  const recipeShare = await invoke(mp, 'return page.onShareAppMessage()')
+  const recipeTimeline = await invoke(mp, 'return page.onShareTimeline()')
+  check(
+    'mock 菜谱朋友圈分享',
+    Boolean(recipeTimeline) &&
+      String(recipeTimeline.title || '').indexOf('做法') > -1 &&
+      String(recipeTimeline.title || '').indexOf(
+        String((data.dish && data.dish.name) || '')
+      ) > -1 &&
+      String(recipeTimeline.query || '') === 'id=d01' &&
+      Boolean(recipeShare) &&
+      String(recipeShare.path || '') === '/pages/recipe/index?id=d01',
+    (recipeTimeline && recipeTimeline.title) || '没有分享信息'
+  )
   check(
     'mock 菜谱食材展示',
     Boolean(data.dish) &&
@@ -3348,6 +3363,14 @@ function chinaDate(offset) {
     Number(data.posterThemeIndex) === 1 && data.posterPath === '',
     `配色 ${data.posterThemeIndex}`
   )
+  const posterThemeStored = await mp.evaluate(() =>
+    wx.getStorageSync('kfl_favorites_poster_theme_v1')
+  )
+  check(
+    'mock 收藏海报配色记忆写入',
+    String(posterThemeStored) === '1',
+    String(posterThemeStored)
+  )
   await mp.evaluate(
     new Function(
       "wx.setStorageSync('kfl_favorites_cloud_v1', JSON.stringify({ ids: ['d02'], times: { d02: Date.now() }, updatedAt: Date.now() + 60000 })); return true"
@@ -3365,6 +3388,11 @@ function chinaDate(offset) {
       (data.allFavorites || []).some(dish => dish.id === 'd01') &&
       (data.allFavorites || []).some(dish => dish.id === 'd02'),
     (data.allFavorites || []).map(dish => dish.id).join('/') || '没有收藏'
+  )
+  check(
+    'mock 收藏海报配色记忆恢复',
+    Number(data.posterThemeIndex) === 1,
+    `配色 ${data.posterThemeIndex}`
   )
   const favCard = await page.$('.fav-card')
   const favIdsBeforeLongPress = (data.allFavorites || []).map(dish => dish.id)
@@ -3517,6 +3545,63 @@ function chinaDate(offset) {
   )
   await invoke(mp, "page.onSearch({ detail: { value: '' } })")
   await sleep(300)
+  const recipeFavTarget = await invoke(
+    mp,
+    "const groups = page.data.groupList || page.data.groups || []; let target = ''; groups.some(group => (group.dishes || []).some(dish => { if (!dish.favorite) { target = dish.id; return true } return false })); return target"
+  )
+  const readRecipeFavState = id =>
+    mp.evaluate(
+      new Function(
+        `const page = getCurrentPages()[getCurrentPages().length - 1]
+         const scan = groups => {
+           let value = null
+           ;(groups || []).some(group => (group.dishes || []).some(dish => {
+             if (dish.id === ${JSON.stringify(id)}) { value = Boolean(dish.favorite) }
+             return false
+           }))
+           return value
+         }
+         const inGroups = scan(page.data.groups)
+         const inDisplay = scan(page.data.displayGroups)
+         const stored = (() => {
+           try { return JSON.parse(wx.getStorageSync('kfl_favorites_v1') || '[]') } catch (e) { return [] }
+         })()
+         return { groups: inGroups, display: inDisplay, stored: stored.indexOf(${JSON.stringify(
+           id
+         )}) > -1 }`
+      )
+    )
+  await invoke(
+    mp,
+    `page.onToggleFavorite({ currentTarget: { dataset: { id: ${JSON.stringify(
+      recipeFavTarget
+    )} } } })`
+  )
+  await sleep(500)
+  const recipeFavOn = await readRecipeFavState(recipeFavTarget)
+  check(
+    'mock 菜谱大全快捷收藏',
+    Boolean(recipeFavTarget) &&
+      recipeFavOn.groups === true &&
+      recipeFavOn.display === true &&
+      recipeFavOn.stored === true,
+    `${recipeFavTarget} · ${recipeFavOn.groups ? '已收藏' : '未收藏'}`
+  )
+  await invoke(
+    mp,
+    `page.onToggleFavorite({ currentTarget: { dataset: { id: ${JSON.stringify(
+      recipeFavTarget
+    )} } } })`
+  )
+  await sleep(500)
+  const recipeFavOff = await readRecipeFavState(recipeFavTarget)
+  check(
+    'mock 菜谱大全取消收藏',
+    recipeFavOff.groups === false &&
+      recipeFavOff.display === false &&
+      recipeFavOff.stored === false,
+    `${recipeFavTarget} · ${recipeFavOff.groups ? '仍收藏' : '已取消'}`
+  )
 
   // 营业设置与公告
   await mp.navigateTo('/pages/business/index')

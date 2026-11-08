@@ -1,4 +1,5 @@
 import { getCategories, getDishes } from '../../services/api'
+import { favorites } from '../../store/favorites'
 
 Page({
   data: {
@@ -34,7 +35,8 @@ Page({
         const item = {
           ...dish,
           stepsCount: steps.length,
-          firstStep: steps[0] || ''
+          firstStep: steps[0] || '',
+          favorite: favorites.has(dish.id)
         }
         if (!byCategory[dish.categoryId]) {
           byCategory[dish.categoryId] = []
@@ -99,6 +101,29 @@ Page({
     if (id) {
       wx.navigateTo({ url: `/pages/recipe/index?id=${id}` })
     }
+  },
+
+  onToggleFavorite(e: any) {
+    const id = String((e.currentTarget && e.currentTarget.dataset.id) || '')
+    if (!id) {
+      return
+    }
+    const favorite = favorites.toggle(id)
+    const update = (groups: any[]) =>
+      (groups || []).map(group => ({
+        ...group,
+        dishes: (group.dishes || []).map((dish: any) =>
+          dish.id === id ? { ...dish, favorite } : dish
+        )
+      }))
+    this.setData({
+      groups: update(this.data.groups),
+      displayGroups: update(this.data.displayGroups)
+    })
+    wx.showToast({
+      title: favorite ? '已收藏' : '已取消收藏',
+      icon: 'none'
+    })
   },
 
   onShareAppMessage() {
