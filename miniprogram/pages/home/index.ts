@@ -1498,15 +1498,30 @@ Page({
   },
 
   onShareAppMessage() {
+    const sections = this.data.sections || []
+    const dishCount = sections.reduce(
+      (sum, section) => sum + (section.dishes || []).length,
+      0
+    )
+    const title = dishCount
+      ? `张饱饭堂 · 今天 ${dishCount} 道菜等你点`
+      : '张饱饭堂 · 她点单，你掌勺'
     return {
-      title: '张饱饭堂 · 她点单，你掌勺',
+      title,
       path: '/pages/home/index'
     }
   },
 
   onShareTimeline() {
+    const sections = this.data.sections || []
+    const dishCount = sections.reduce(
+      (sum, section) => sum + (section.dishes || []).length,
+      0
+    )
     return {
-      title: '张饱饭堂 · 今天想吃啥？'
+      title: dishCount
+        ? `张饱饭堂 · 今天 ${dishCount} 道菜等你点`
+        : '张饱饭堂 · 今天想吃啥？'
     }
   }
 })

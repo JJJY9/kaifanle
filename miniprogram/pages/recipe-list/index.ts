@@ -278,15 +278,21 @@ Page({
   },
 
   onShareAppMessage() {
+    const title = this.data.total
+      ? `张饱饭堂 · ${this.data.total} 道家常菜谱`
+      : '张饱饭堂 · 菜谱大全'
     return {
-      title: '张饱饭堂 · 菜谱大全',
+      title,
       path: '/pages/recipe-list/index'
     }
   },
 
   onShareTimeline() {
+    const title = this.data.total
+      ? `张饱饭堂 · ${this.data.total} 道家常菜谱`
+      : '张饱饭堂 · 菜谱大全'
     return {
-      title: '张饱饭堂 · 菜谱大全'
+      title
     }
   }
 })

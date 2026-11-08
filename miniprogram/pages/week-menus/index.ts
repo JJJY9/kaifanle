@@ -584,15 +584,17 @@ Page({
   },
 
   onShareAppMessage() {
+    const range = String(this.data.rangeText || '').trim()
     return {
-      title: '这周吃什么？开饭咯',
+      title: range ? `本周饭表 · ${range} 吃什么？` : '这周吃什么？开饭咯',
       path: '/pages/week-menus/index'
     }
   },
 
   onShareTimeline() {
+    const range = String(this.data.rangeText || '').trim()
     return {
-      title: '这周吃什么？开饭咯'
+      title: range ? `本周饭表 · ${range} 吃什么？` : '这周吃什么？开饭咯'
     }
   }
 })

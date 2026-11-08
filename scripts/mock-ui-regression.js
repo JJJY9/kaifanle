@@ -87,6 +87,24 @@ function chinaDate(offset) {
   let page = await current()
   let data = await page.data()
   check('mock 首页加载', (data.sections || []).length > 0, `${data.sections.length} 个分类`)
+  const homeShare = await invoke(mp, 'return page.onShareAppMessage()')
+  const homeTimeline = await invoke(mp, 'return page.onShareTimeline()')
+  const homeDishCount = (data.sections || []).reduce(
+    (sum, section) => sum + (section.dishes || []).length,
+    0
+  )
+  check(
+    'mock 首页分享标题带菜品数',
+    homeDishCount >= 1 &&
+      String((homeShare && homeShare.title) || '').indexOf(
+        String(homeDishCount)
+      ) > -1 &&
+      String((homeShare && homeShare.path) || '') === '/pages/home/index' &&
+      String((homeTimeline && homeTimeline.title) || '').indexOf(
+        String(homeDishCount)
+      ) > -1,
+    (homeShare && homeShare.title) || '没有分享信息'
+  )
   const heroBeforeSwitch = data.hero && data.hero.id
   await invoke(mp, 'page.onNextHero()')
   await sleep(400)
@@ -3962,6 +3980,19 @@ function chinaDate(offset) {
       recipeSubText.indexOf(`共 ${data.total} 道`) > -1,
     recipeSubText || `${data.total} 道带做法`
   )
+  const recipeListShare = await invoke(mp, 'return page.onShareAppMessage()')
+  const recipeListTimeline = await invoke(mp, 'return page.onShareTimeline()')
+  check(
+    'mock 菜谱大全分享标题带数量',
+    data.total >= 1 &&
+      String((recipeListShare && recipeListShare.title) || '').indexOf(
+        String(data.total)
+      ) > -1 &&
+      String((recipeListTimeline && recipeListTimeline.title) || '').indexOf(
+        String(data.total)
+      ) > -1,
+    (recipeListShare && recipeListShare.title) || '没有分享信息'
+  )
   const sectionCountEl = await page.$('.section-count')
   const sectionCountText = sectionCountEl
     ? String(await sectionCountEl.text())
@@ -4660,6 +4691,19 @@ function chinaDate(offset) {
     'mock 本周饭表加载',
     page.path === 'pages/week-menus/index' && (data.days || []).length === 7,
     `${(data.days || []).length} 天`
+  )
+  const weekShare = await invoke(mp, 'return page.onShareAppMessage()')
+  const weekTimeline = await invoke(mp, 'return page.onShareTimeline()')
+  check(
+    'mock 饭表分享标题带区间',
+    Boolean(String(data.rangeText || '').trim()) &&
+      String((weekShare && weekShare.title) || '').indexOf(
+        String(data.rangeText)
+      ) > -1 &&
+      String((weekTimeline && weekTimeline.title) || '').indexOf(
+        String(data.rangeText)
+      ) > -1,
+    (weekShare && weekShare.title) || '没有分享信息'
   )
   const weekTextCopy = await mp.evaluate(() => {
     return new Promise(resolve => {
