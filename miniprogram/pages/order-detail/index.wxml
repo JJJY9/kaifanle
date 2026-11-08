@@ -145,6 +145,13 @@
             catchtap="onItemRecipe"
             data-id="{{item.dishId}}"
           >做法 ›</view>
+          <view
+            wx:if="{{item.dishId}}"
+            class="item-fav {{item.favorite ? 'on' : ''}}"
+            catchtap="onToggleItemFavorite"
+            data-id="{{item.dishId}}"
+            data-index="{{index}}"
+          >{{item.favorite ? '♥' : '♡'}}</view>
         </view>
         <view wx:if="{{item.specText}}" class="item-spec">{{item.specText}}</view>
         <view wx:if="{{item.allergens && item.allergens.length}}" class="item-allergen">含：{{item.allergens}}</view>

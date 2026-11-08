@@ -79,6 +79,8 @@
                 wx:for-item="dish"
                 wx:key="id"
                 class="dish-chip {{dish.soldout ? 'soldout' : ''}}"
+                data-id="{{dish.id}}"
+                catchtap="onTapDish"
               >
                 <text class="dish-icon">{{dish.icon}}</text>
                 <text class="dish-name">{{dish.name}}</text>

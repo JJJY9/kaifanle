@@ -1633,7 +1633,41 @@ function chinaDate(offset) {
   check(
     'mock 厨房菜品搜索',
     (data.displayDishes || []).length > 0 &&
-      data.displayDishes.every(dish => dish.name.indexOf('番茄') > -1),
+      data.displayDishes.every(
+        dish =>
+          `${dish.name} ${dish.desc || ''} ${(dish.tags || []).join(' ')} ${(
+            dish.ingredients || []
+          ).join(' ')}`.indexOf('番茄') > -1
+      ),
+    `${(data.displayDishes || []).length} 道`
+  )
+  await invoke(mp, "page.onDishSearch({ detail: { value: '照烧汁' } })")
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  const ingredientSearchOk =
+    (data.displayDishes || []).length > 0 &&
+    data.displayDishes.every(
+      dish =>
+        `${dish.name} ${dish.desc || ''} ${(dish.tags || []).join(' ')} ${(
+          dish.ingredients || []
+        ).join(' ')}`.indexOf('照烧汁') > -1
+    )
+  await invoke(mp, "page.onDishSearch({ detail: { value: '招牌' } })")
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  const tagSearchOk =
+    (data.displayDishes || []).length > 0 &&
+    data.displayDishes.every(
+      dish =>
+        `${dish.name} ${dish.desc || ''} ${(dish.tags || []).join(' ')} ${(
+          dish.ingredients || []
+        ).join(' ')}`.indexOf('招牌') > -1
+    )
+  check(
+    'mock 厨房菜品按标签与食材搜索',
+    ingredientSearchOk && tagSearchOk,
     `${(data.displayDishes || []).length} 道`
   )
   await invoke(mp, 'page.onClearDishSearch()')
@@ -2651,6 +2685,13 @@ function chinaDate(offset) {
   page = await current()
   data = await page.data()
   const cookStarted = data.cookMode === true && Number(data.cookIndex) === 0
+  const cookTimerStart = String(data.cookElapsedText || '')
+  await sleep(1400)
+  page = await current()
+  data = await page.data()
+  const cookTimerTicked =
+    /^\d{2}:\d{2}$/.test(String(data.cookElapsedText || '')) &&
+    String(data.cookElapsedText) !== cookTimerStart
   await invoke(mp, 'page.onCookNext()')
   await sleep(500)
   page = await current()
@@ -2663,10 +2704,20 @@ function chinaDate(offset) {
   await sleep(300)
   page = await current()
   data = await page.data()
+  const cookTimerAtExit = String(data.cookElapsedText || '')
+  await sleep(1200)
+  page = await current()
+  data = await page.data()
+  const cookTimerStopped =
+    String(data.cookElapsedText || '') === cookTimerAtExit
   check(
     'mock 开做模式逐步推进',
-    cookStarted && cookAdvanced && data.cookMode === false,
-    `第 ${Number(data.cookIndex) + 1} 步 · 完成 ${data.doneCount} 步`
+    cookStarted &&
+      cookAdvanced &&
+      data.cookMode === false &&
+      cookTimerTicked &&
+      cookTimerStopped,
+    `第 ${Number(data.cookIndex) + 1} 步 · 计时 ${cookTimerAtExit}`
   )
   await invoke(mp, 'page.onResetSteps()')
   await sleep(300)
@@ -3337,6 +3388,26 @@ function chinaDate(offset) {
     ),
     `今天 ${savedDate}`
   )
+  const weekDishChip = await page.$('.dish-chip')
+  if (weekDishChip) {
+    await weekDishChip.tap()
+    await sleep(1600)
+    page = await current()
+    const weekRecipeData = await page.data()
+    check(
+      'mock 饭表菜品进菜谱',
+      page.path === 'pages/recipe/index' &&
+        Boolean(weekRecipeData.dish) &&
+        String(weekRecipeData.dish.id || '').length > 0,
+      weekRecipeData.dish ? weekRecipeData.dish.name : page.path
+    )
+    await mp.navigateBack()
+    await sleep(900)
+    page = await current()
+    data = await page.data()
+  } else {
+    check('mock 饭表菜品进菜谱', false, '没有菜品可点')
+  }
   await invoke(
     mp,
     `page.onBook({ currentTarget: { dataset: { meal: ${JSON.stringify(
@@ -3517,6 +3588,23 @@ function chinaDate(offset) {
       String(data.monthText || '').indexOf('¥') > -1,
     data.monthText
   )
+  const monthLine = await page.$('.month-line')
+  if (monthLine) {
+    await monthLine.tap()
+    await sleep(1500)
+    page = await current()
+    check(
+      'mock 订单本月汇总进足迹',
+      page.path === 'pages/my-report/index',
+      page.path
+    )
+    await mp.navigateBack()
+    await sleep(900)
+    page = await current()
+    data = await page.data()
+  } else {
+    check('mock 订单本月汇总进足迹', false, '没有本月汇总')
+  }
   check(
     'mock 订单分页初始态',
     data.hasMore === false && data.loadingMore === false,
@@ -3799,10 +3887,48 @@ function chinaDate(offset) {
   )
   await mp.navigateBack()
   await sleep(900)
+  await invoke(
+    mp,
+    "page.onToggleItemFavorite({ currentTarget: { dataset: { id: 'd02', index: 0 } } })"
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  const itemFavOn = Boolean(
+    data.order && data.order.items[0] && data.order.items[0].favorite
+  )
+  const itemFavStored = await mp.evaluate(() => {
+    try {
+      return JSON.parse(wx.getStorageSync('kfl_favorites_v1') || '[]')
+    } catch (e) {
+      return []
+    }
+  })
+  await invoke(
+    mp,
+    "page.onToggleItemFavorite({ currentTarget: { dataset: { id: 'd02', index: 0 } } })"
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  const itemFavStoredAfter = await mp.evaluate(() => {
+    try {
+      return JSON.parse(wx.getStorageSync('kfl_favorites_v1') || '[]')
+    } catch (e) {
+      return []
+    }
+  })
+  check(
+    'mock 订单菜品收藏',
+    itemFavOn &&
+      itemFavStored.indexOf('d02') > -1 &&
+      Boolean(data.order && data.order.items[0]) &&
+      !data.order.items[0].favorite &&
+      itemFavStoredAfter.indexOf('d02') === -1,
+    itemFavOn ? '可收藏/取消' : '未收藏'
+  )
   await mp.navigateBack()
   await sleep(900)
-
-  // 订单评价
   await mp.navigateTo('/pages/order-detail/index?id=seed-2')
   await sleep(1600)
   page = await current()
@@ -5085,6 +5211,22 @@ function chinaDate(offset) {
     Number(data.stats && data.stats.monthSpend) >= 0 &&
       Number(data.stats && data.stats.month) >= 1,
     `¥${data.stats && data.stats.monthSpend} · ${data.stats && data.stats.month} 单`
+  )
+  await invoke(
+    mp,
+    "wx.__syncToasts = []; wx.showToast = (o) => { wx.__syncToasts.push(o && o.title); o && o.success && o.success() }; return true"
+  )
+  await invoke(
+    mp,
+    "page.onEntryTap({ currentTarget: { dataset: { key: 'sync' } } })"
+  )
+  await sleep(1400)
+  const syncToasts = await mp.evaluate(() => wx.__syncToasts || [])
+  check(
+    'mock 我的手动云同步',
+    Array.isArray(syncToasts) &&
+      syncToasts.some(title => String(title || '').indexOf('已') > -1),
+    syncToasts.join(' / ') || '没有提示'
   )
   await mp.navigateTo('/pages/kitchen/index')
   await sleep(2200)

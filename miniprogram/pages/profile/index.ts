@@ -1,6 +1,8 @@
 import { getMe, getMyStats, initDb, getCoupons } from '../../services/api'
 import { USE_CLOUD } from '../../config'
 import { formatTime } from '../../utils/format'
+import { favorites } from '../../store/favorites'
+import { syncEatenFromCloud } from '../../store/eaten'
 
 Page({
   data: {
@@ -87,6 +89,13 @@ Page({
         desc: '忌口、口味、地址与重要日子',
         icon: '味',
         color: '#FF6B35'
+      },
+      {
+        key: 'sync',
+        label: '云同步',
+        desc: '手动同步收藏与吃过记录',
+        icon: '云',
+        color: '#2FBF71'
       }
     ]
 
@@ -283,6 +292,25 @@ Page({
         )
         .join('\n')
       wx.setClipboardData({ data: text })
+      return
+    }
+
+    if (key === 'sync') {
+      wx.showLoading({ title: '同步中…' })
+      try {
+        const [favChanged, eatenChanged] = await Promise.all([
+          favorites.syncFromCloud(true),
+          syncEatenFromCloud(true)
+        ])
+        wx.hideLoading()
+        wx.showToast({
+          title: favChanged || eatenChanged ? '已同步云端更新' : '已是最新',
+          icon: 'none'
+        })
+      } catch (err: any) {
+        wx.hideLoading()
+        wx.showToast({ title: '同步失败，稍后再试', icon: 'none' })
+      }
       return
     }
 

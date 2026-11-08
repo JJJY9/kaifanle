@@ -1841,13 +1841,17 @@ Page({
       if (category !== 'all' && dish.categoryId !== category) {
         return false
       }
-      if (
-        keyword &&
-        `${dish.name} ${dish.desc || ''}`
-          .toLowerCase()
-          .indexOf(keyword) === -1
-      ) {
-        return false
+      if (keyword) {
+        const categoryName =
+          ((this._categories || []).find(
+            (item: any) => item.id === dish.categoryId
+          ) || {}).name || ''
+        const haystack = `${dish.name} ${dish.desc || ''} ${categoryName} ${(
+          dish.tags || []
+        ).join(' ')} ${(dish.ingredients || []).join(' ')}`.toLowerCase()
+        if (haystack.indexOf(keyword) === -1) {
+          return false
+        }
       }
       if (filter === 'low') {
         return low(dish)

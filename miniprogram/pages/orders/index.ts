@@ -255,6 +255,10 @@ Page({
     this.setData({ keyword: '' }, () => this.applyFilter())
   },
 
+  onGoFootprint() {
+    wx.navigateTo({ url: '/pages/my-report/index' })
+  },
+
   onPageScroll(e: any) {
     const showBackTop = Number((e && e.scrollTop) || 0) > 600
     if (showBackTop !== this.data.showBackTop) {

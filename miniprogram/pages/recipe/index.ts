@@ -74,12 +74,14 @@ Page({
     canOrder: false,
     orderBlockedText: '',
     cookMode: false,
-    cookIndex: 0
+    cookIndex: 0,
+    cookElapsedText: '00:00'
   },
 
   dishId: '',
   orderDate: '',
   requestedMeal: '',
+  _cookTimer: null as any,
 
   onLoad(options: any) {
     this.dishId = options.id || ''
@@ -263,10 +265,31 @@ Page({
       cookMode: true,
       cookIndex: firstUndone > -1 ? firstUndone : 0
     })
+    this.startCookTimer()
+  },
+
+  startCookTimer() {
+    this.stopCookTimer()
+    this.setData({ cookElapsedText: '00:00' })
+    let seconds = 0
+    this._cookTimer = setInterval(() => {
+      seconds += 1
+      const minutes = String(Math.floor(seconds / 60)).padStart(2, '0')
+      const rest = String(seconds % 60).padStart(2, '0')
+      this.setData({ cookElapsedText: `${minutes}:${rest}` })
+    }, 1000)
+  },
+
+  stopCookTimer() {
+    if (this._cookTimer) {
+      clearInterval(this._cookTimer)
+      this._cookTimer = null
+    }
   },
 
   onCookPrev() {
     this.setData({ cookIndex: Math.max(0, Number(this.data.cookIndex) - 1) })
+    this.startCookTimer()
   },
 
   onCookNext() {
@@ -291,15 +314,22 @@ Page({
       })
     }
     if (index >= steps.length - 1) {
+      this.stopCookTimer()
       this.setData({ cookMode: false })
       wx.showToast({ title: '开饭啦 🍚', icon: 'none' })
       return
     }
     this.setData({ cookIndex: index + 1 })
+    this.startCookTimer()
   },
 
   onCookExit() {
+    this.stopCookTimer()
     this.setData({ cookMode: false })
+  },
+
+  onUnload() {
+    this.stopCookTimer()
   },
 
   onToggleIngredient(e: any) {

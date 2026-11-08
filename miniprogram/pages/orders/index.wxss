@@ -339,3 +339,8 @@
   transform: translate(4rpx, 4rpx);
   box-shadow: none;
 }
+
+.month-arrow {
+  color: #2D9CFF;
+  font-weight: 800;
+}

@@ -389,6 +389,13 @@ Page({
     wx.switchTab({ url: '/pages/home/index' })
   },
 
+  onTapDish(e: any) {
+    const id = String(e.currentTarget.dataset.id || '')
+    if (id) {
+      wx.navigateTo({ url: '/pages/recipe/index?id=' + id })
+    }
+  },
+
   onBook(e: any) {
     const meal = e.currentTarget.dataset.meal as MealId
     const date = e.currentTarget.dataset.date

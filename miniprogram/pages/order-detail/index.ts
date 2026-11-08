@@ -2,6 +2,7 @@ import type { Dish, Order, OrderStatus } from '../../services/types'
 import { getOrder, cancelOrder, getDishes, getKitchenStatus, urgeOrder, rateOrder, sendOrderMessage, updateOrderNote, updateOrderSlot } from '../../services/api'
 import { addOrderToCart } from '../../utils/reorder'
 import { removeEaten } from '../../store/eaten'
+import { favorites } from '../../store/favorites'
 import { orderReceiptLines, receiptText } from '../../utils/receipt'
 import { prepareImageForUpload } from '../../utils/image'
 import { saveImageToAlbum } from '../../utils/save-image'
@@ -228,7 +229,8 @@ Page({
             ...item,
             key: `${index}-${item.dishId}`,
             lineTotal: item.price * item.qty,
-            specText: item.specs.join(' / ')
+            specText: item.specs.join(' / '),
+            favorite: item.dishId ? favorites.has(item.dishId) : false
           }))
         },
         steps: this.buildSteps(order),
@@ -750,6 +752,26 @@ Page({
       success: () => {
         wx.showToast({ title: '地址已复制', icon: 'none' })
       }
+    })
+  },
+
+  onToggleItemFavorite(e: any) {
+    const id = String((e && e.currentTarget && e.currentTarget.dataset.id) || '')
+    const rawIndex = e && e.currentTarget && e.currentTarget.dataset.index
+    const index =
+      rawIndex === undefined || rawIndex === null || rawIndex === ''
+        ? -1
+        : Number(rawIndex)
+    if (!id) {
+      return
+    }
+    const favorite = favorites.toggle(id)
+    if (index >= 0) {
+      this.setData({ [`order.items[${index}].favorite`]: favorite })
+    }
+    wx.showToast({
+      title: favorite ? '已收藏' : '已取消收藏',
+      icon: 'none'
     })
   },
 

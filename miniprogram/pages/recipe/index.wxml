@@ -102,6 +102,7 @@
 <view wx:if="{{cookMode}}" class="cook-mode">
   <view class="cook-head">
     <text class="cook-progress">第 {{cookIndex + 1}} / {{stepViews.length}} 步</text>
+    <text class="cook-timer">{{cookElapsedText}}</text>
     <view class="cook-exit" bindtap="onCookExit">退出</view>
   </view>
   <view class="cook-body">
