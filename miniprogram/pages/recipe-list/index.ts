@@ -36,6 +36,7 @@ Page({
     groups: [] as any[],
     displayGroups: [] as any[],
     keyword: '',
+    searching: false,
     favOnly: false,
     recipeSearchHistory: [] as string[],
     total: 0,
@@ -125,7 +126,7 @@ Page({
 
   onSearch(e: any) {
     const keyword = String(e.detail.value || '')
-    this.setData({ keyword })
+    this.setData({ keyword, searching: keyword.trim().length > 0 })
     this.applyFilter(keyword)
   },
 
@@ -136,6 +137,8 @@ Page({
       .trim()
       .slice(0, 20)
     if (!value) {
+      this.setData({ keyword: '', searching: false })
+      this.applyFilter('')
       return
     }
     const recipeSearchHistory = [value]
@@ -144,12 +147,12 @@ Page({
       )
       .slice(0, RECIPE_SEARCH_HISTORY_MAX)
     writeRecipeSearchHistory(recipeSearchHistory)
-    this.setData({ keyword: value, recipeSearchHistory })
+    this.setData({ keyword: value, searching: true, recipeSearchHistory })
     this.applyFilter(value)
   },
 
   onSearchClear() {
-    this.setData({ keyword: '' })
+    this.setData({ keyword: '', searching: false })
     this.applyFilter('')
   },
 
@@ -158,7 +161,7 @@ Page({
     if (!keyword) {
       return
     }
-    this.setData({ keyword })
+    this.setData({ keyword, searching: true })
     this.applyFilter(keyword)
   },
 
@@ -225,7 +228,11 @@ Page({
     )
     if (!pool.length) {
       wx.showToast({
-        title: this.data.favOnly ? '收藏里还没有菜谱' : '先调整筛选再试',
+        title: String(this.data.keyword || '').trim()
+          ? '换个关键词再试'
+          : this.data.favOnly
+          ? '收藏里还没有菜谱'
+          : '先调整筛选再试',
         icon: 'none'
       })
       return

@@ -54,6 +54,7 @@ function chinaDate(offset) {
     wx.removeStorageSync('kfl_last_meal_v1')
     wx.removeStorageSync('kfl_favorites_view_v1')
     wx.removeStorageSync('kfl_favorites_poster_theme_v1')
+    wx.removeStorageSync('kfl_recipe_search_v1')
     wx.removeStorageSync('kfl_prep_dish_checked_v1')
     return true
   })
@@ -124,6 +125,28 @@ function chinaDate(offset) {
     Number((data.activeOrder || {}).messageBadge) === 2 &&
       homeBadgeText.indexOf('新回复 2') > -1,
     homeBadgeText || '未渲染角标'
+  )
+  const homeCopiedNo = await mp.evaluate(() => {
+    return new Promise(resolve => {
+      const timer = setTimeout(() => resolve(''), 2000)
+      const original = wx.setClipboardData
+      wx.setClipboardData = function (options) {
+        wx.setClipboardData = original
+        clearTimeout(timer)
+        try {
+          if (options && options.success) options.success()
+        } catch (e) {}
+        resolve(options && options.data)
+      }
+      const page = getCurrentPages()[getCurrentPages().length - 1]
+      page.onCopyActiveOrder()
+    })
+  })
+  check(
+    'mock 首页今天这单复制单号',
+    Boolean((data.activeOrder || {}).no) &&
+      String(homeCopiedNo || '') === String(data.activeOrder.no),
+    homeCopiedNo || '没有复制到'
   )
   await invoke(mp, 'page.onQuickUrge()')
   await sleep(900)
@@ -1259,17 +1282,19 @@ function chinaDate(offset) {
     Number(data.prepDoneCount) === 0 &&
       (data.prepIngredients || []).every(item => !item.done)
   )
-  const prepDishName = (
-    (data.prepGroups || [])[0] &&
-    (data.prepGroups || [])[0].items &&
-    (data.prepGroups || [])[0].items[0] &&
-    (data.prepGroups || [])[0].items[0].name
-  ) || ''
+  const prepDishGroup = (data.prepGroups || [])[0] || {}
+  const prepDishName =
+    (prepDishGroup.items &&
+      prepDishGroup.items[0] &&
+      prepDishGroup.items[0].name) ||
+    ''
+  const prepDishMeal = prepDishGroup.meal || ''
+  const prepDishKey = prepDishName ? `${prepDishMeal}|${prepDishName}` : ''
   await invoke(
     mp,
     `page.onTogglePrepDish({ currentTarget: { dataset: { name: ${JSON.stringify(
       prepDishName
-    )} } } })`
+    )}, meal: ${JSON.stringify(prepDishMeal)} } } })`
   )
   await sleep(300)
   page = await current()
@@ -1287,25 +1312,44 @@ function chinaDate(offset) {
     'mock 备菜菜品勾选',
     Boolean(prepDishName) &&
       Number(data.prepDishDoneCount) === 1 &&
+      (data.prepGroups || []).reduce(
+        (sum, group) =>
+          sum +
+          (group.items || []).filter(item => item.done).length,
+        0
+      ) === 1 &&
       (data.prepGroups || []).some(group =>
         (group.items || []).some(
           item => item.name === prepDishName && item.done
         )
       ) &&
+      prepDishCheckedStore.date === chinaDate(0) &&
       Array.isArray(prepDishCheckedStore.keys) &&
-      prepDishCheckedStore.keys.indexOf(prepDishName) > -1,
-    `已备 ${data.prepDishDoneCount} 道`
+      prepDishCheckedStore.keys.indexOf(prepDishKey) > -1,
+    `已备 ${data.prepDishDoneCount} 道 · ${prepDishCheckedStore.date || '无日期'}`
   )
   await invoke(mp, 'page.onResetPrepDishDone()')
   await sleep(300)
   page = await current()
   data = await page.data()
+  const prepDishResetStore = await mp.evaluate(() => {
+    try {
+      return JSON.parse(
+        wx.getStorageSync('kfl_prep_dish_checked_v1') || '{}'
+      )
+    } catch (e) {
+      return {}
+    }
+  })
   check(
     'mock 备菜重置',
     Number(data.prepDishDoneCount) === 0 &&
       (data.prepGroups || []).every(group =>
         (group.items || []).every(item => !item.done)
-      )
+      ) &&
+      Array.isArray(prepDishResetStore.keys) &&
+      prepDishResetStore.keys.length === 0,
+    `存储 ${Array.isArray(prepDishResetStore.keys) ? prepDishResetStore.keys.length : '?'} 项`
   )
   const receiptOrder = (data.orders || [])[0]
   check(
@@ -2744,9 +2788,11 @@ function chinaDate(offset) {
   )
   const copiedRecipe = await mp.evaluate(() => {
     return new Promise(resolve => {
+      const timer = setTimeout(() => resolve(''), 2000)
       const original = wx.setClipboardData
       wx.setClipboardData = function (options) {
         wx.setClipboardData = original
+        clearTimeout(timer)
         try {
           if (options && options.success) options.success()
         } catch (e) {}
@@ -2757,16 +2803,25 @@ function chinaDate(offset) {
     })
   })
   const recipeCopyLines = String(copiedRecipe || '').split('\n')
+  const copyStepTexts = (data.stepViews || []).map(step => step.text)
+  const copyIngredientTexts = (data.ingredientViews || []).map(
+    view => view.text
+  )
+  const expectedCopyLines = [`【${(data.dish && data.dish.name) || ''}】做法`]
+  if (copyIngredientTexts.length) {
+    expectedCopyLines.push(`食材：${copyIngredientTexts.join('、')}`)
+  }
+  copyStepTexts.forEach((text, index) => {
+    expectedCopyLines.push(`${index + 1}. ${text}`)
+  })
   check(
     'mock 菜谱复制完整做法',
     typeof copiedRecipe === 'string' &&
-      copiedRecipe.indexOf('做法') > -1 &&
-      copiedRecipe.indexOf(String((data.dish && data.dish.name) || '')) >
-        -1 &&
-      copiedRecipe.indexOf('食材：') > -1 &&
-      copiedRecipe.indexOf('1. ') > -1 &&
-      recipeCopyLines.length >= 3,
-    recipeCopyLines[0] || '没有内容'
+      recipeCopyLines.length === expectedCopyLines.length &&
+      expectedCopyLines.every(
+        (line, index) => recipeCopyLines[index] === line
+      ),
+    `${recipeCopyLines.length} 行 · ${recipeCopyLines[0] || '没有内容'}`
   )
   check(
     'mock 菜谱食材展示',
@@ -3168,6 +3223,100 @@ function chinaDate(offset) {
       String(favoritesTimeline.title || '').indexOf('我的收藏') > -1,
     favoritesShare ? favoritesShare.title : '没有分享信息'
   )
+  const badgeTargetDish = (data.display || [])[0]
+  if (badgeTargetDish) {
+    const setBadgeState = state =>
+      invoke(
+        mp,
+        `page.setData({ display: (page.data.display || []).map(dish => dish.id === ${JSON.stringify(
+          badgeTargetDish.id
+        )} ? Object.assign({}, dish, ${JSON.stringify(state)}) : dish) })`
+      )
+    const readBadgeText = async selector => {
+      const el = await page.$('.fav-badge' + selector)
+      return el ? String(await el.text()) : ''
+    }
+    await setBadgeState({ status: 'off', stock: null })
+    await sleep(400)
+    const offBadgeText = await readBadgeText('.off')
+    await setBadgeState({ status: 'on', stock: 0 })
+    await sleep(400)
+    const soldStockText = await readBadgeText('.sold')
+    await setBadgeState({ status: 'soldout', stock: null })
+    await sleep(400)
+    const soldStatusText = await readBadgeText('.sold')
+    await setBadgeState({ status: 'on', stock: null })
+    await sleep(400)
+    const normalBadgeText = await readBadgeText('')
+    const restoreBadgeState = {
+      status:
+        typeof badgeTargetDish.status === 'string'
+          ? badgeTargetDish.status
+          : '',
+      stock:
+        badgeTargetDish.stock === undefined ||
+        badgeTargetDish.stock === null
+          ? null
+          : Number(badgeTargetDish.stock)
+    }
+    await setBadgeState(restoreBadgeState)
+    await sleep(300)
+    check(
+      'mock 收藏售罄与下架角标',
+      offBadgeText === '已下架' &&
+        soldStockText === '售罄' &&
+        soldStatusText === '售罄' &&
+        normalBadgeText === '',
+      `${offBadgeText || '无'} / ${soldStockText || '无'} / ${
+        soldStatusText || '无'
+      } / 正常${normalBadgeText ? '有角标' : '无角标'}`
+    )
+  }
+  const eatenTarget = (data.allFavorites || [])[0]
+  if (eatenTarget) {
+    const eatenBeforeRestore = await mp.evaluate(() => {
+      try {
+        return wx.getStorageSync('kfl_eaten_v1') || ''
+      } catch (e) {
+        return ''
+      }
+    })
+    await mp.evaluate(
+      new Function(
+        `let map = {}
+         try { map = JSON.parse(wx.getStorageSync('kfl_eaten_v1') || '{}') } catch (e) {}
+         map[${JSON.stringify(eatenTarget.id)}] = Date.now()
+         wx.setStorageSync('kfl_eaten_v1', JSON.stringify(map))
+         return true`
+      )
+    )
+    await invoke(mp, 'page.loadDishes()')
+    await sleep(1200)
+    page = await current()
+    const eatenFavData = await page.data()
+    const eatenFavDish = (eatenFavData.allFavorites || []).find(
+      dish => dish.id === eatenTarget.id
+    )
+    const eatenFavEl = await page.$('.fav-eaten')
+    const eatenFavText = eatenFavEl ? String(await eatenFavEl.text()) : ''
+    check(
+      'mock 收藏卡最近吃过',
+      Boolean(eatenFavDish) &&
+        eatenFavDish.lastEatenText === '今天吃过' &&
+        eatenFavText.indexOf('今天吃过') > -1,
+      `${(eatenFavDish && eatenFavDish.lastEatenText) || '无'} · ${
+        eatenFavText || '未渲染'
+      }`
+    )
+    await mp.evaluate(
+      new Function(
+        `wx.setStorageSync('kfl_eaten_v1', ${JSON.stringify(eatenBeforeRestore)})
+         return true`
+      )
+    )
+    await invoke(mp, 'page.loadDishes()')
+    await sleep(600)
+  }
   check('mock 收藏默认最近排序', data.sort === 'recent')
   const favoriteCategory = (data.allFavorites[0] || {}).categoryId
   await invoke(
@@ -3420,6 +3569,47 @@ function chinaDate(offset) {
     Number(data.posterThemeIndex) === 1,
     `配色 ${data.posterThemeIndex}`
   )
+  await invoke(
+    mp,
+    "page.onSort({ currentTarget: { dataset: { sort: 'price' } } })"
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  const copiedSortedList = await mp.evaluate(() => {
+    return new Promise(resolve => {
+      const timer = setTimeout(() => resolve(''), 2000)
+      const original = wx.setClipboardData
+      wx.setClipboardData = function (options) {
+        wx.setClipboardData = original
+        clearTimeout(timer)
+        try {
+          if (options && options.success) options.success()
+        } catch (e) {}
+        resolve(options && options.data)
+      }
+      const page = getCurrentPages()[getCurrentPages().length - 1]
+      page.onCopyList()
+    })
+  })
+  const sortedListLines = String(copiedSortedList || '').split('\n')
+  const sortedPrices = (data.display || []).map(dish => Number(dish.price))
+  const expectedListLines = (data.display || []).map(
+    dish => `${dish.name} ¥${dish.price}`
+  )
+  check(
+    'mock 收藏复制清单按排序',
+    (data.display || []).length >= 2 &&
+      sortedPrices.every(
+        (price, index) => index === 0 || sortedPrices[index - 1] <= price
+      ) &&
+      sortedListLines[0].indexOf('【我的收藏】') > -1 &&
+      sortedListLines.length === expectedListLines.length + 1 &&
+      expectedListLines.every(
+        (line, index) => sortedListLines[index + 1] === line
+      ),
+    `${expectedListLines.length} 道 · ${sortedListLines[0] || '没有内容'}`
+  )
   const favCard = await page.$('.fav-card')
   const favIdsBeforeLongPress = (data.allFavorites || []).map(dish => dish.id)
   if (favCard) {
@@ -3628,6 +3818,65 @@ function chinaDate(offset) {
       recipeFavOff.stored === false,
     `${recipeFavTarget} · ${recipeFavOff.groups ? '仍收藏' : '已取消'}`
   )
+  const firstHeartId = await invoke(
+    mp,
+    "const groups = page.data.displayGroups || []; const first = groups[0] && groups[0].dishes && groups[0].dishes[0]; return first ? first.id : ''"
+  )
+  const heartBeforeTap = await mp.evaluate(
+    new Function(
+      `try { return JSON.parse(wx.getStorageSync('kfl_favorites_v1') || '[]').indexOf(${JSON.stringify(
+        firstHeartId
+      )}) > -1 } catch (e) { return false }`
+    )
+  )
+  const rowHeartEl = await page.$('.row-fav')
+  if (rowHeartEl && firstHeartId) {
+    await rowHeartEl.tap()
+    await sleep(600)
+  }
+  let heartTapPage = await current()
+  const heartTapPath = heartTapPage.path
+  if (heartTapPath !== 'pages/recipe-list/index') {
+    await mp.navigateBack()
+    await sleep(800)
+  }
+  page = await current()
+  const heartAfterTapState = await mp.evaluate(
+    new Function(
+      `const page = getCurrentPages()[getCurrentPages().length - 1]
+       const flatten = groups => (groups || []).reduce((list, group) => list.concat(group.dishes || []), [])
+       const inStore = (() => { try { return JSON.parse(wx.getStorageSync('kfl_favorites_v1') || '[]').indexOf(${JSON.stringify(
+         firstHeartId
+       )}) > -1 } catch (e) { return false } })()
+       const dish = flatten(page.data.displayGroups).find(item => item.id === ${JSON.stringify(
+         firstHeartId
+       )})
+       return { store: inStore, shown: dish ? Boolean(dish.favorite) : null }`
+    )
+  )
+  const rowHeartAgain = await page.$('.row-fav')
+  if (rowHeartAgain && firstHeartId) {
+    await rowHeartAgain.tap()
+    await sleep(600)
+  }
+  const heartRestored = await mp.evaluate(
+    new Function(
+      `try { return JSON.parse(wx.getStorageSync('kfl_favorites_v1') || '[]').indexOf(${JSON.stringify(
+        firstHeartId
+      )}) > -1 } catch (e) { return false }`
+    )
+  )
+  check(
+    'mock 菜谱大全点心形收藏',
+    Boolean(firstHeartId) &&
+      heartTapPath === 'pages/recipe-list/index' &&
+      heartAfterTapState.store === !heartBeforeTap &&
+      heartAfterTapState.shown === heartAfterTapState.store &&
+      heartRestored === heartBeforeTap,
+    `${firstHeartId} · ${heartBeforeTap ? '已收藏' : '未收藏'} → ${
+      heartAfterTapState.store ? '已收藏' : '未收藏'
+    } → ${heartRestored ? '已收藏' : '未收藏'}`
+  )
 
   // 只看收藏筛选
   await invoke(
@@ -3668,6 +3917,21 @@ function chinaDate(offset) {
       favOnlyState.expected.join('/') === favOnlyState.shown.join('/'),
     `${favOnlyState.shown.length} 道收藏菜谱`
   )
+  await invoke(mp, 'page.onRandomRecipe()')
+  await sleep(1500)
+  page = await current()
+  const favOnlyRandom = await page.data()
+  const favOnlyRandomId = favOnlyRandom.dish && favOnlyRandom.dish.id
+  check(
+    'mock 菜谱只看收藏随机',
+    page.path === 'pages/recipe/index' &&
+      Boolean(favOnlyRandomId) &&
+      favOnlyState.shownRaw.indexOf(favOnlyRandomId) > -1,
+    favOnlyRandomId || page.path
+  )
+  await mp.navigateBack()
+  await sleep(900)
+  page = await current()
   await invoke(
     mp,
     `page.onToggleFavorite({ currentTarget: { dataset: { id: ${JSON.stringify(
@@ -3736,16 +4000,21 @@ function chinaDate(offset) {
     new Function(
       `const page = getCurrentPages()[getCurrentPages().length - 1]
        const flatten = groups => (groups || []).reduce((list, group) => list.concat(group.dishes || []), [])
-       const dish = flatten(page.data.groups).find(item => item.id === ${JSON.stringify(
-         recipeFavTarget
-       )})
-       return dish ? Boolean(dish.favorite) : null`
+       const pick = groups => {
+         const dish = flatten(groups).find(item => item.id === ${JSON.stringify(
+           recipeFavTarget
+         )})
+         return dish ? Boolean(dish.favorite) : null
+       }
+       return { groups: pick(page.data.groups), display: pick(page.data.displayGroups) }`
     )
   )
   check(
     'mock 菜谱大全收藏返回同步',
-    syncedFav === true,
-    `${recipeFavTarget} · ${syncedFav ? '已同步' : '未同步'}`
+    syncedFav.groups === true && syncedFav.display === true,
+    `${recipeFavTarget} · 数据 ${syncedFav.groups ? '已同步' : '未同步'} / 展示 ${
+      syncedFav.display ? '已同步' : '未同步'
+    }`
   )
   await invoke(
     mp,
@@ -3753,6 +4022,137 @@ function chinaDate(offset) {
       recipeFavTarget
     )} } } })`
   )
+  await sleep(300)
+
+  // 菜谱搜索历史
+  await invoke(mp, "page.onSearchConfirm({ detail: { value: '牛腩' } })")
+  await sleep(400)
+  await invoke(mp, 'page.onSearchClear()')
+  await sleep(400)
+  const recipeHistoryState = await mp.evaluate(() => {
+    const page = getCurrentPages()[getCurrentPages().length - 1]
+    const stored = (() => {
+      try {
+        return JSON.parse(wx.getStorageSync('kfl_recipe_search_v1') || '[]')
+      } catch (e) {
+        return []
+      }
+    })()
+    return {
+      history: page.data.recipeSearchHistory || [],
+      stored,
+      keyword: page.data.keyword
+    }
+  })
+  const historyChipEl = await page.$('.search-history-chip')
+  const historyChipText = historyChipEl ? String(await historyChipEl.text()) : ''
+  check(
+    'mock 菜谱搜索历史记录',
+    recipeHistoryState.history[0] === '牛腩' &&
+      recipeHistoryState.stored[0] === '牛腩' &&
+      recipeHistoryState.keyword === '' &&
+      historyChipText === '牛腩',
+    `${recipeHistoryState.history.join('/') || '无'} · ${historyChipText || '无 chip'}`
+  )
+  if (historyChipEl) {
+    await historyChipEl.tap()
+    await sleep(500)
+  }
+  page = await current()
+  data = await page.data()
+  const historyTapDishes = (data.displayGroups || []).reduce(
+    (list, group) => list.concat(group.dishes || []),
+    []
+  )
+  check(
+    'mock 菜谱搜索历史回填',
+    data.keyword === '牛腩' &&
+      historyTapDishes.length > 0 &&
+      historyTapDishes.every(dish =>
+        `${dish.name} ${dish.recipe || ''} ${(dish.ingredients || []).join(
+          ' '
+        )}`.indexOf('牛腩') > -1
+      ),
+    data.keyword
+  )
+  await invoke(mp, "page.onSearchConfirm({ detail: { value: '1碗' } })")
+  await sleep(300)
+  const searchClearEl = await page.$('.search-clear')
+  if (searchClearEl) {
+    await searchClearEl.tap()
+    await sleep(400)
+  }
+  page = await current()
+  data = await page.data()
+  const historyChipsForRemove = await page.$$('.search-history-chip')
+  let removedChip = false
+  for (const chip of historyChipsForRemove) {
+    const text = String(await chip.text())
+    if (text === '1碗') {
+      await chip.longpress()
+      removedChip = true
+      break
+    }
+  }
+  await sleep(500)
+  page = await current()
+  data = await page.data()
+  if (data.keyword) {
+    await invoke(mp, 'page.onSearchClear()')
+    await sleep(300)
+  }
+  const recipeHistoryAfterRemove = await mp.evaluate(() => {
+    const page = getCurrentPages()[getCurrentPages().length - 1]
+    const stored = (() => {
+      try {
+        return JSON.parse(wx.getStorageSync('kfl_recipe_search_v1') || '[]')
+      } catch (e) {
+        return []
+      }
+    })()
+    return { history: page.data.recipeSearchHistory || [], stored }
+  })
+  check(
+    'mock 菜谱搜索历史长按删除',
+    removedChip &&
+      recipeHistoryAfterRemove.history.indexOf('1碗') === -1 &&
+      recipeHistoryAfterRemove.stored.indexOf('1碗') === -1 &&
+      recipeHistoryAfterRemove.stored.indexOf('牛腩') > -1,
+    recipeHistoryAfterRemove.history.join('/') || '无'
+  )
+  const historyClearEl = await page.$('.search-history-clear')
+  if (historyClearEl) {
+    await historyClearEl.tap()
+    await sleep(400)
+  }
+  const recipeHistoryCleared = await mp.evaluate(() => {
+    const page = getCurrentPages()[getCurrentPages().length - 1]
+    let stored = []
+    try {
+      stored = JSON.parse(wx.getStorageSync('kfl_recipe_search_v1') || '[]')
+    } catch (e) {}
+    return { history: page.data.recipeSearchHistory || [], stored }
+  })
+  check(
+    'mock 菜谱搜索历史清空',
+    recipeHistoryCleared.history.length === 0 &&
+      recipeHistoryCleared.stored.length === 0,
+    '已清空'
+  )
+  await invoke(mp, "page.onSearch({ detail: { value: '   ' } })")
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  const blankClearEl = await page.$('.search-clear')
+  check(
+    'mock 菜谱空白关键词状态',
+    data.searching === false &&
+      data.keyword === '   ' &&
+      !blankClearEl &&
+      (data.displayGroups || []).length > 0,
+    `searching=${data.searching}`
+  )
+  await invoke(mp, 'page.onSearchClear()')
   await sleep(300)
 
   // 营业设置与公告
@@ -4606,6 +5006,49 @@ function chinaDate(offset) {
           item.allergens.indexOf('花生') > -1
       ),
     data.order ? '含花生' : '没找到订单'
+  )
+  const orderFavIds = (data.order.items || [])
+    .map(item => item.dishId)
+    .filter(Boolean)
+  await invoke(mp, 'page.onFavoriteAll()')
+  await sleep(600)
+  page = await current()
+  const favAllData = await page.data()
+  const favAllStored = await mp.evaluate(() => {
+    try {
+      return JSON.parse(wx.getStorageSync('kfl_favorites_v1') || '[]')
+    } catch (e) {
+      return []
+    }
+  })
+  check(
+    'mock 订单一键收藏整单',
+    orderFavIds.length >= 1 &&
+      orderFavIds.every(id => favAllStored.indexOf(id) > -1) &&
+      (favAllData.order.items || []).every(
+        item => !item.dishId || item.favorite === true
+      ),
+    `${orderFavIds.length} 道菜`
+  )
+  await invoke(
+    mp,
+    "wx.__favAllToast = ''; wx.__favAllToastOrig = wx.showToast; wx.showToast = (o) => { wx.__favAllToast = o && o.title; o && o.success && o.success() }; return true"
+  )
+  await invoke(mp, 'page.onFavoriteAll()')
+  await sleep(400)
+  const favAllAgainToast = await mp.evaluate(() => {
+    const title = wx.__favAllToast || ''
+    if (wx.__favAllToastOrig) {
+      wx.showToast = wx.__favAllToastOrig
+    }
+    delete wx.__favAllToastOrig
+    delete wx.__favAllToast
+    return title
+  })
+  check(
+    'mock 订单一键收藏跳过已收藏',
+    favAllAgainToast === '都收藏过啦',
+    favAllAgainToast || '无提示'
   )
   const stepDeltas = (data.steps || [])
     .map(step => step.deltaText)
@@ -5721,11 +6164,45 @@ function chinaDate(offset) {
     "page.quickAdd(page._available.find(d => d.status === 'on' && d.stock !== 0 && !(d.spicyLevels || []).length && !(d.addons || []).length))"
   )
   await sleep(500)
+  await invoke(
+    mp,
+    "page.onSelectMeal({ currentTarget: { dataset: { meal: 'dinner' } } })"
+  )
+  await sleep(1200)
+  await invoke(
+    mp,
+    "page.quickAdd(page._available.find(d => d.status === 'on' && d.stock !== 0 && !(d.spicyLevels || []).length && !(d.addons || []).length))"
+  )
+  await sleep(500)
   await mp.navigateTo('/pages/cart/index')
   await sleep(1200)
   page = await current()
   data = await page.data()
   const beforeClearAll = Number(data.count || 0)
+  const groupsBeforeClear = (data.groups || []).length
+  await mp.mockWxMethod('showModal', {
+    confirm: false,
+    cancel: true,
+    content: ''
+  })
+  await invoke(mp, 'page.onClearAll()')
+  await sleep(600)
+  page = await current()
+  data = await page.data()
+  const cartStoreAfterCancel = await mp.evaluate(() => {
+    try {
+      return JSON.parse(wx.getStorageSync('kfl_cart_v1') || '[]')
+    } catch (e) {
+      return []
+    }
+  })
+  check(
+    'mock 购物车清空取消',
+    groupsBeforeClear >= 2 &&
+      (data.groups || []).length === groupsBeforeClear &&
+      cartStoreAfterCancel.length > 0,
+    `${groupsBeforeClear} 组保持不变`
+  )
   await mp.mockWxMethod('showModal', {
     confirm: true,
     cancel: false,
@@ -5744,10 +6221,11 @@ function chinaDate(offset) {
   })
   check(
     'mock 购物车一键清空',
-    beforeClearAll >= 1 &&
+    beforeClearAll >= 2 &&
+      groupsBeforeClear >= 2 &&
       (data.groups || []).length === 0 &&
       cartStoreAfter.length === 0,
-    `${beforeClearAll} 份 → 0`
+    `${beforeClearAll} 份 · ${groupsBeforeClear} 组 → 0`
   )
 
   // 真实提交一笔明天午餐：验证下单写入的「吃过」标记与结算记忆

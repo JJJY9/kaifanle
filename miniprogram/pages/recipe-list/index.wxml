@@ -14,10 +14,10 @@
       bindinput="onSearch"
       bindconfirm="onSearchConfirm"
     />
-    <view wx:if="{{keyword}}" class="search-clear" bindtap="onSearchClear">×</view>
+    <view wx:if="{{searching}}" class="search-clear" bindtap="onSearchClear">×</view>
   </view>
 
-  <view wx:if="{{!keyword && recipeSearchHistory.length}}" class="search-history">
+  <view wx:if="{{!searching && recipeSearchHistory.length}}" class="search-history">
     <text class="search-history-label">最近搜</text>
     <view
       wx:for="{{recipeSearchHistory}}"

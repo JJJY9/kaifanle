@@ -177,6 +177,7 @@
             class="prep-row prep-dish-row {{dish.done ? 'done' : ''}}"
             data-name="{{dish.name}}"
             data-qty="{{dish.qty}}"
+            data-meal="{{group.meal}}"
             bindtap="onTogglePrepDish"
             bindlongpress="onCopyPrepDish"
           >

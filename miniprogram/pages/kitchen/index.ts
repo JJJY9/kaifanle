@@ -744,14 +744,14 @@ Page({
         ...group,
         items: group.items.map(item => ({
           ...item,
-          done: Boolean(prepDishChecked[item.name])
+          done: Boolean(prepDishChecked[`${group.meal}|${item.name}`])
         }))
       }))
       const prepDishDoneNames: Record<string, boolean> = {}
       prepGroupsWithDone.forEach(group => {
         group.items.forEach(item => {
           if (item.done) {
-            prepDishDoneNames[item.name] = true
+            prepDishDoneNames[`${group.meal}|${item.name}`] = true
           }
         })
       })
@@ -2580,27 +2580,31 @@ Page({
 
   onTogglePrepDish(e: any) {
     const name = String((e && e.currentTarget && e.currentTarget.dataset.name) || '')
-    if (!name) {
+    const meal = String((e && e.currentTarget && e.currentTarget.dataset.meal) || '')
+    if (!name || !meal) {
       return
     }
+    const key = `${meal}|${name}`
     const checked = readPrepDishChecked()
-    if (checked[name]) {
-      delete checked[name]
+    if (checked[key]) {
+      delete checked[key]
     } else {
-      checked[name] = true
+      checked[key] = true
     }
     writePrepDishChecked(Object.keys(checked))
     const prepGroups = (this.data.prepGroups || []).map(group => ({
       ...group,
       items: (group.items || []).map(item =>
-        item.name === name ? { ...item, done: Boolean(checked[name]) } : item
+        group.meal === meal && item.name === name
+          ? { ...item, done: Boolean(checked[key]) }
+          : item
       )
     }))
     const doneNames: Record<string, boolean> = {}
     prepGroups.forEach(group => {
       ;(group.items || []).forEach(item => {
         if (item.done) {
-          doneNames[item.name] = true
+          doneNames[`${group.meal}|${item.name}`] = true
         }
       })
     })
