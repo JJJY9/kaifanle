@@ -51,6 +51,21 @@ function readLastMeal(): MealId {
   return currentMeal()
 }
 
+const WEEKDAY_NAMES = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+
+function menuDateText(date: string, today: string): string {
+  const label = dateLabel(date, today)
+  if (label === '今天' || label === '明天') {
+    return label
+  }
+  const parts = String(date || '').split('-').map(Number)
+  if (parts.length !== 3 || parts.some(value => !isFinite(value))) {
+    return label
+  }
+  const day = new Date(parts[0], parts[1] - 1, parts[2])
+  return `${label} · ${WEEKDAY_NAMES[day.getDay()]}`
+}
+
 interface Section extends Category {
   dishes: Dish[]
 }
@@ -232,7 +247,7 @@ Page({
           {
             selectedMeal: pending.meal,
             selectedDate: date,
-            menuDateLabel: dateLabel(date, today)
+            menuDateLabel: menuDateText(date, today)
           },
           () => {
             this.updateCartBadge()
@@ -299,7 +314,7 @@ Page({
       maxDate,
       selectedDate,
       dateText: formatDate(),
-      menuDateLabel: dateLabel(selectedDate, today)
+      menuDateLabel: menuDateText(selectedDate, today)
     })
   },
 
@@ -547,7 +562,7 @@ Page({
     this.setData(
       {
         selectedDate: date,
-        menuDateLabel: dateLabel(date, this.data.todayDate)
+        menuDateLabel: menuDateText(date, this.data.todayDate)
       },
       () => this.loadMenu()
     )
@@ -1040,7 +1055,7 @@ Page({
         {
           selectedMeal: order.meal,
           selectedDate: targetDate,
-          menuDateLabel: dateLabel(targetDate, this.data.todayDate || today)
+          menuDateLabel: menuDateText(targetDate, this.data.todayDate || today)
         },
         () => {
           this.updateCartBadge()

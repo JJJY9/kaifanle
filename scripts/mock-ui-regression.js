@@ -979,6 +979,38 @@ function chinaDate(offset) {
   page = await current()
   data = await page.data()
   check('mock 只看能点的恢复', data.onlyAvailable === false)
+  const weekdaySelectDate = chinaDate(2)
+  await invoke(
+    mp,
+    `page.onSelectDate({ detail: { value: '${weekdaySelectDate}' } })`
+  )
+  await sleep(1600)
+  page = await current()
+  data = await page.data()
+  const weekdayParts = weekdaySelectDate.split('-').map(Number)
+  const weekdayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+  const expectedWeekday =
+    weekdayNames[
+      new Date(weekdayParts[0], weekdayParts[1] - 1, weekdayParts[2]).getDay()
+    ]
+  check(
+    'mock 首页日期显示星期',
+    String(data.menuDateLabel || '').indexOf(expectedWeekday) > -1 &&
+      String(data.menuDateLabel || '').indexOf('·') > -1,
+    data.menuDateLabel
+  )
+  await invoke(
+    mp,
+    `page.onSelectDate({ detail: { value: '${chinaDate(0)}' } })`
+  )
+  await sleep(1400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 首页今天日期文案',
+    data.menuDateLabel === '今天',
+    data.menuDateLabel
+  )
 
   await invoke(
     mp,
@@ -2263,6 +2295,28 @@ function chinaDate(offset) {
       .map(wish => wish.planCountdown)
       .filter(Boolean)
       .join('/') || '没有倒计时'
+  )
+  const wishCardEl = await page.$('.wish')
+  if (wishCardEl) {
+    await wishCardEl.longpress()
+    await sleep(700)
+  }
+  const copiedWish = await mp.evaluate(
+    new Function(
+      "return new Promise(resolve => wx.getClipboardData({ success: r => resolve(r.data || ''), fail: () => resolve('') }))"
+    )
+  )
+  const firstWishContent = String(
+    ((data.display || [])[0] || {}).content || ''
+  )
+  check(
+    'mock 许愿长按复制',
+    Boolean(wishCardEl) &&
+      Boolean(firstWishContent) &&
+      String(copiedWish || '').indexOf('【许愿】') > -1 &&
+      String(copiedWish || '').indexOf(firstWishContent) > -1 &&
+      String(copiedWish || '').indexOf('状态：') > -1,
+    String(copiedWish || '').split('\n')[0] || '空'
   )
   await invoke(mp, "page.setData({ wishes: [], display: [] }); return true")
   await invoke(mp, 'page.onPullDownRefresh()')
@@ -4531,6 +4585,36 @@ function chinaDate(offset) {
     'mock 本周饭表加载',
     page.path === 'pages/week-menus/index' && (data.days || []).length === 7,
     `${(data.days || []).length} 天`
+  )
+  const weekTextCopy = await mp.evaluate(() => {
+    return new Promise(resolve => {
+      const timer = setTimeout(() => resolve(''), 2000)
+      const original = wx.setClipboardData
+      wx.setClipboardData = function (options) {
+        wx.setClipboardData = original
+        clearTimeout(timer)
+        try {
+          if (options && options.success) options.success()
+        } catch (e) {}
+        resolve(options && options.data)
+      }
+      const page = getCurrentPages()[getCurrentPages().length - 1]
+      page.onCopyWeekText()
+    })
+  })
+  const weekTextLines = String(weekTextCopy || '').split('\n')
+  check(
+    'mock 饭表复制文字版',
+    typeof weekTextCopy === 'string' &&
+      weekTextLines.length === 8 &&
+      weekTextLines[0].indexOf('【张饱饭堂】本周饭表') > -1 &&
+      weekTextLines.slice(1).every(
+        line =>
+          line.indexOf('周') > -1 &&
+          line.indexOf('：') > -1 &&
+          (line.indexOf('早餐：') > -1 || line.indexOf('休息') > -1)
+      ),
+    `${weekTextLines.length} 行 · ${weekTextLines[0] || '空'}`
   )
   check(
     'mock 饭表标注特别日子',

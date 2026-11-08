@@ -102,6 +102,7 @@
     <view class="foot">
       <view class="foot-btn" bindtap="onGoHome">去点餐</view>
       <button class="foot-btn share" open-type="share">把这周分享给她</button>
+      <view class="foot-btn" bindtap="onCopyWeekText">复制文字版</view>
       <view class="foot-btn poster {{posterMaking ? 'disabled' : ''}}" bindtap="onMakeWeekPoster">{{posterMaking ? '生成中…' : '生成本周饭表图'}}</view>
       <view wx:if="{{posterPath}}" class="foot-link" bindtap="onPreviewWeekPoster">饭表图已生成，点这里分享 ›</view>
       <view wx:if="{{isAdmin}}" class="foot-link" bindtap="onGoMenu">去排菜单 →</view>

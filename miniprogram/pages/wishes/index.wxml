@@ -46,7 +46,7 @@
       title="这一档还没有"
       desc="换个状态看看，或者再许一个愿"
     />
-    <view wx:for="{{display}}" wx:key="id" class="wish card">
+    <view wx:for="{{display}}" wx:key="id" class="wish card" data-id="{{item.id}}" bindlongpress="onCopyWish">
       <view class="wish-top">
         <view class="wish-status {{item.status}}">{{item.statusText}}</view>
         <text class="wish-date">{{item.dateText}}</text>

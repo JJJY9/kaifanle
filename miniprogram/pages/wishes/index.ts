@@ -212,6 +212,27 @@ Page({
     }
   },
 
+  onCopyWish(e: any) {
+    const id = String((e.currentTarget && e.currentTarget.dataset.id) || '')
+    const wish = (this.data.display || []).find((item: any) => item.id === id)
+    if (!wish) {
+      return
+    }
+    const lines = [`【许愿】${wish.content}`]
+    const statusLine = [`状态：${wish.statusText || ''}`]
+    if (wish.plannedDate) {
+      statusLine.push(`安排 ${wish.plannedDate}`)
+    }
+    lines.push(statusLine.join(' · '))
+    if (wish.reply) {
+      lines.push(`掌勺人回复：${wish.reply}`)
+    }
+    wx.setClipboardData({
+      data: lines.join('\n'),
+      success: () => wx.showToast({ title: '愿望已复制', icon: 'none' })
+    })
+  },
+
   async onPlan(e: any) {
     const id = e.currentTarget.dataset.id
     const res: any = await wx.showModal({

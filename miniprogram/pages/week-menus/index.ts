@@ -413,6 +413,40 @@ Page({
     wx.navigateTo({ url: '/pages/menu-edit/index' })
   },
 
+  onCopyWeekText() {
+    const days = (this.data.days || []).slice(0, 7)
+    if (!days.length) {
+      wx.showToast({ title: '这周还没有饭表', icon: 'none' })
+      return
+    }
+    const range = String(this.data.rangeText || '').trim()
+    const lines = [`【张饱饭堂】本周饭表${range ? ' ' + range : ''}`]
+    days.forEach(day => {
+      const head = `${day.monthText}${day.dayNum}日 ${day.weekText}${
+        day.specialText ? `（${day.specialIcon}${day.specialText}）` : ''
+      }`
+      if (day.closed) {
+        lines.push(`${head}：休息`)
+        return
+      }
+      const mealParts = (day.meals || []).map(meal => {
+        if (meal.state === 'ready' && (meal.dishes || []).length) {
+          const names = meal.dishes.map(dish => dish.name).join('、')
+          const more = meal.moreCount ? ` 等 ${meal.dishes.length + meal.moreCount} 道` : ''
+          return `${meal.name}：${names}${more}`
+        }
+        return `${meal.name}：${meal.stateText || meal.hint || '未排'}`
+      })
+      lines.push(`${head}：${mealParts.join(' / ')}`)
+    })
+    wx.setClipboardData({
+      data: lines.join('\n'),
+      success: () => {
+        wx.showToast({ title: '饭表文字版已复制', icon: 'none' })
+      }
+    })
+  },
+
   async onMakeWeekPoster() {
     if (this.data.posterMaking) {
       return
