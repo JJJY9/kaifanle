@@ -160,6 +160,7 @@
       <block wx:if="{{showPrep}}">
         <view wx:if="{{!prepGroups.length}}" class="empty-line">今天还没有要备的菜</view>
         <view wx:if="{{prepGroups.length}}" class="prep-copy" bindtap="onCopyPrep">复制采购清单</view>
+        <view wx:if="{{prepDishDoneCount}}" class="prep-copy" catchtap="onResetPrepDishDone">重置备菜 {{prepDishDoneCount}}</view>
         <view wx:if="{{prepGroups.length}}" class="prep-copy" bindtap="onCopyPrepCsv">复制备菜 CSV</view>
         <view wx:if="{{prepGroups.length}}" class="prep-copy" bindtap="onSharePrepPoster">{{prepPosterMaking ? '生成中…' : '生成采购图'}}</view>
         <view wx:if="{{prepPosterPath}}" class="prep-copy" bindtap="onPreviewPrepPoster">预览采购图</view>
@@ -173,11 +174,13 @@
             wx:for="{{group.items}}"
             wx:key="name"
             wx:for-item="dish"
-            class="prep-row"
+            class="prep-row prep-dish-row {{dish.done ? 'done' : ''}}"
             data-name="{{dish.name}}"
             data-qty="{{dish.qty}}"
+            bindtap="onTogglePrepDish"
             bindlongpress="onCopyPrepDish"
           >
+            <view class="prep-check">{{dish.done ? '✓' : ''}}</view>
             <text class="prep-name">{{dish.name}}</text>
             <text class="prep-qty">×{{dish.qty}}</text>
           </view>

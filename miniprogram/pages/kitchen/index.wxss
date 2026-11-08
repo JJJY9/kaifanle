@@ -1657,3 +1657,18 @@
   font-size: 19rpx;
   font-weight: 700;
 }
+
+.prep-dish-row .prep-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.prep-dish-row.done .prep-check {
+  background: #2FBF71;
+  color: #FFFFFF;
+}
+
+.prep-dish-row.done .prep-name {
+  color: #9A9A9A;
+  text-decoration: line-through;
+}

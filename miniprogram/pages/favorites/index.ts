@@ -11,6 +11,34 @@ const POSTER_THEMES = [
   { header: '#2FBF71', row: '#E8F8EE', accent: '#FF6B35' }
 ]
 
+const FAVORITES_VIEW_KEY = 'kfl_favorites_view_v1'
+
+function readFavoritesView(): { sort: string; category: string } {
+  try {
+    const raw = wx.getStorageSync(FAVORITES_VIEW_KEY)
+    const data = raw ? JSON.parse(raw) : null
+    const sort = data && data.sort
+    const category = data && data.category
+    return {
+      sort: sort === 'price' || sort === 'eaten' ? sort : 'recent',
+      category: typeof category === 'string' && category ? category : 'all'
+    }
+  } catch (e) {
+    return { sort: 'recent', category: 'all' }
+  }
+}
+
+function writeFavoritesView(sort: string, category: string) {
+  try {
+    wx.setStorageSync(
+      FAVORITES_VIEW_KEY,
+      JSON.stringify({ sort, category })
+    )
+  } catch (e) {
+    // 忽略存储失败
+  }
+}
+
 Page({
   data: {
     loading: true,
@@ -33,6 +61,11 @@ Page({
   _lastRandomId: '',
 
   onLoad() {
+    const view = readFavoritesView()
+    this.setData({
+      sort: view.sort as any,
+      category: view.category
+    })
     this._unsub = favorites.subscribe(() => {
       this.setData({ posterPath: '' }, () => this.applyFilter())
     })
@@ -174,6 +207,7 @@ Page({
     if (category === this.data.category) {
       return
     }
+    writeFavoritesView(this.data.sort, category)
     this.setData({ category }, () => this.applyFilter())
   },
 
@@ -184,6 +218,7 @@ Page({
     if (sort === this.data.sort) {
       return
     }
+    writeFavoritesView(sort, this.data.category)
     this.setData({ sort }, () => this.applyFilter())
   },
 

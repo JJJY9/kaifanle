@@ -52,6 +52,8 @@ function chinaDate(offset) {
     wx.removeStorageSync('kfl_eaten_removed_v1')
     wx.removeStorageSync('kfl_eaten_ops_v1')
     wx.removeStorageSync('kfl_last_meal_v1')
+    wx.removeStorageSync('kfl_favorites_view_v1')
+    wx.removeStorageSync('kfl_prep_dish_checked_v1')
     return true
   })
   const current = () => mp.currentPage()
@@ -1213,6 +1215,54 @@ function chinaDate(offset) {
     'mock 采购食材重置',
     Number(data.prepDoneCount) === 0 &&
       (data.prepIngredients || []).every(item => !item.done)
+  )
+  const prepDishName = (
+    (data.prepGroups || [])[0] &&
+    (data.prepGroups || [])[0].items &&
+    (data.prepGroups || [])[0].items[0] &&
+    (data.prepGroups || [])[0].items[0].name
+  ) || ''
+  await invoke(
+    mp,
+    `page.onTogglePrepDish({ currentTarget: { dataset: { name: ${JSON.stringify(
+      prepDishName
+    )} } } })`
+  )
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  const prepDishCheckedStore = await mp.evaluate(() => {
+    try {
+      return JSON.parse(
+        wx.getStorageSync('kfl_prep_dish_checked_v1') || '{}'
+      )
+    } catch (e) {
+      return {}
+    }
+  })
+  check(
+    'mock 备菜菜品勾选',
+    Boolean(prepDishName) &&
+      Number(data.prepDishDoneCount) === 1 &&
+      (data.prepGroups || []).some(group =>
+        (group.items || []).some(
+          item => item.name === prepDishName && item.done
+        )
+      ) &&
+      Array.isArray(prepDishCheckedStore.keys) &&
+      prepDishCheckedStore.keys.indexOf(prepDishName) > -1,
+    `已备 ${data.prepDishDoneCount} 道`
+  )
+  await invoke(mp, 'page.onResetPrepDishDone()')
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 备菜重置',
+    Number(data.prepDishDoneCount) === 0 &&
+      (data.prepGroups || []).every(group =>
+        (group.items || []).every(item => !item.done)
+      )
   )
   const receiptOrder = (data.orders || [])[0]
   check(
@@ -3147,6 +3197,37 @@ function chinaDate(offset) {
     )
     await sleep(300)
   }
+  await invoke(
+    mp,
+    "page.onSort({ currentTarget: { dataset: { sort: 'price' } } })"
+  )
+  await invoke(
+    mp,
+    `page.onCategory({ currentTarget: { dataset: { id: ${JSON.stringify(
+      favoriteCategory
+    )} } } })`
+  )
+  await sleep(300)
+  await mp.navigateBack()
+  await sleep(700)
+  await mp.navigateTo('/pages/favorites/index')
+  await sleep(1600)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 收藏记住排序与分类',
+    data.sort === 'price' && data.category === favoriteCategory,
+    `${data.sort} · ${data.category}`
+  )
+  await invoke(
+    mp,
+    "page.onSort({ currentTarget: { dataset: { sort: 'recent' } } })"
+  )
+  await invoke(
+    mp,
+    "page.onCategory({ currentTarget: { dataset: { id: 'all' } } })"
+  )
+  await sleep(300)
   await invoke(mp, 'page.onRandomFavorite()')
   await sleep(1600)
   page = await current()

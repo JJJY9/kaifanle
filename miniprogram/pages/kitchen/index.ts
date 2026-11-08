@@ -88,6 +88,41 @@ function writeDishSearchHistory(list: string[]) {
 }
 
 const PREP_CHECKED_KEY = 'kfl_prep_checked_v1'
+const PREP_DISH_CHECKED_KEY = 'kfl_prep_dish_checked_v1'
+
+function readPrepDishChecked(): Record<string, boolean> {
+  try {
+    const raw = wx.getStorageSync(PREP_DISH_CHECKED_KEY)
+    const data = raw ? JSON.parse(raw) : null
+    if (
+      !data ||
+      data.date !== dateInputString() ||
+      !Array.isArray(data.keys)
+    ) {
+      return {}
+    }
+    const map: Record<string, boolean> = {}
+    data.keys.forEach((key: any) => {
+      if (typeof key === 'string' && key) {
+        map[key] = true
+      }
+    })
+    return map
+  } catch (e) {
+    return {}
+  }
+}
+
+function writePrepDishChecked(keys: string[]) {
+  try {
+    wx.setStorageSync(
+      PREP_DISH_CHECKED_KEY,
+      JSON.stringify({ date: dateInputString(), keys })
+    )
+  } catch (e) {
+    // 忽略存储失败
+  }
+}
 
 function readPrepChecked(): Record<string, boolean> {
   try {
@@ -186,6 +221,7 @@ Page({
     prepGroups: [] as any[],
     prepIngredients: [] as any[],
     prepDoneCount: 0,
+    prepDishDoneCount: 0,
     prepTotal: 0,
     weekStats: null as any,
     weekBars: [] as any[],
@@ -703,6 +739,22 @@ Page({
           allergyText: Object.keys(prepMealAllergens[meal.id] || {}).join('、')
         }
       }).filter(group => group.items.length)
+      const prepDishChecked = readPrepDishChecked()
+      const prepGroupsWithDone = prepGroups.map(group => ({
+        ...group,
+        items: group.items.map(item => ({
+          ...item,
+          done: Boolean(prepDishChecked[item.name])
+        }))
+      }))
+      const prepDishDoneNames: Record<string, boolean> = {}
+      prepGroupsWithDone.forEach(group => {
+        group.items.forEach(item => {
+          if (item.done) {
+            prepDishDoneNames[item.name] = true
+          }
+        })
+      })
       const prepTotal = prepItems.reduce((sum, item) => sum + item.qty, 0)
 
       // 采购食材：按菜品配方和订单份数汇总，数字用量可累加
@@ -915,9 +967,10 @@ Page({
         goalPercent,
         goalText,
         prepItems,
-        prepGroups,
+        prepGroups: prepGroupsWithDone,
         prepIngredients,
         prepDoneCount: prepIngredients.filter(item => item.done).length,
+        prepDishDoneCount: Object.keys(prepDishDoneNames).length,
         prepTotal,
         todo,
         todayClosed,
@@ -2523,6 +2576,47 @@ Page({
       done: false
     }))
     this.setData({ prepIngredients, prepDoneCount: 0 })
+  },
+
+  onTogglePrepDish(e: any) {
+    const name = String((e && e.currentTarget && e.currentTarget.dataset.name) || '')
+    if (!name) {
+      return
+    }
+    const checked = readPrepDishChecked()
+    if (checked[name]) {
+      delete checked[name]
+    } else {
+      checked[name] = true
+    }
+    writePrepDishChecked(Object.keys(checked))
+    const prepGroups = (this.data.prepGroups || []).map(group => ({
+      ...group,
+      items: (group.items || []).map(item =>
+        item.name === name ? { ...item, done: Boolean(checked[name]) } : item
+      )
+    }))
+    const doneNames: Record<string, boolean> = {}
+    prepGroups.forEach(group => {
+      ;(group.items || []).forEach(item => {
+        if (item.done) {
+          doneNames[item.name] = true
+        }
+      })
+    })
+    this.setData({
+      prepGroups,
+      prepDishDoneCount: Object.keys(doneNames).length
+    })
+  },
+
+  onResetPrepDishDone() {
+    writePrepDishChecked([])
+    const prepGroups = (this.data.prepGroups || []).map(group => ({
+      ...group,
+      items: (group.items || []).map(item => ({ ...item, done: false }))
+    }))
+    this.setData({ prepGroups, prepDishDoneCount: 0 })
   },
 
   onTogglePreorders() {
