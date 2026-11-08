@@ -67,6 +67,7 @@
     <view class="steps-title-row">
       <view class="steps-title display">怎么做</view>
       <view class="steps-actions">
+        <view wx:if="{{stepViews.length}}" class="steps-reset" bindtap="onCopyRecipe">复制做法</view>
         <view wx:if="{{stepViews.length}}" class="cook-start" bindtap="onStartCook">开始做菜 🔥</view>
         <view wx:if="{{doneCount}}" class="steps-reset" bindtap="onResetSteps">重置 {{doneCount}}/{{stepViews.length}}</view>
       </view>

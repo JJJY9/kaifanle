@@ -2742,6 +2742,32 @@ function chinaDate(offset) {
       String(recipeShare.path || '') === '/pages/recipe/index?id=d01',
     (recipeTimeline && recipeTimeline.title) || '没有分享信息'
   )
+  const copiedRecipe = await mp.evaluate(() => {
+    return new Promise(resolve => {
+      const original = wx.setClipboardData
+      wx.setClipboardData = function (options) {
+        wx.setClipboardData = original
+        try {
+          if (options && options.success) options.success()
+        } catch (e) {}
+        resolve(options && options.data)
+      }
+      const page = getCurrentPages()[getCurrentPages().length - 1]
+      page.onCopyRecipe()
+    })
+  })
+  const recipeCopyLines = String(copiedRecipe || '').split('\n')
+  check(
+    'mock 菜谱复制完整做法',
+    typeof copiedRecipe === 'string' &&
+      copiedRecipe.indexOf('做法') > -1 &&
+      copiedRecipe.indexOf(String((data.dish && data.dish.name) || '')) >
+        -1 &&
+      copiedRecipe.indexOf('食材：') > -1 &&
+      copiedRecipe.indexOf('1. ') > -1 &&
+      recipeCopyLines.length >= 3,
+    recipeCopyLines[0] || '没有内容'
+  )
   check(
     'mock 菜谱食材展示',
     Boolean(data.dish) &&
@@ -3602,6 +3628,132 @@ function chinaDate(offset) {
       recipeFavOff.stored === false,
     `${recipeFavTarget} · ${recipeFavOff.groups ? '仍收藏' : '已取消'}`
   )
+
+  // 只看收藏筛选
+  await invoke(
+    mp,
+    `page.onToggleFavorite({ currentTarget: { dataset: { id: ${JSON.stringify(
+      recipeFavTarget
+    )} } } })`
+  )
+  await sleep(400)
+  await invoke(mp, 'page.onToggleFavOnly()')
+  await sleep(400)
+  const readRecipeListState = () =>
+    mp.evaluate(
+      new Function(
+        `const page = getCurrentPages()[getCurrentPages().length - 1]
+         const flatten = groups => (groups || []).reduce((list, group) => list.concat(group.dishes || []), [])
+         const favIds = (() => {
+           try { return JSON.parse(wx.getStorageSync('kfl_favorites_v1') || '[]') } catch (e) { return [] }
+         })()
+         const all = flatten(page.data.groups)
+         const shown = flatten(page.data.displayGroups)
+         return {
+           favOnly: Boolean(page.data.favOnly),
+           expected: all.filter(dish => favIds.indexOf(dish.id) > -1).map(dish => dish.id).sort(),
+           shown: shown.map(dish => dish.id).sort(),
+           shownRaw: shown.map(dish => dish.id),
+           allCount: all.length,
+           emptyTitle: String(page.data.emptyTitle || ''),
+           emptyDesc: String(page.data.emptyDesc || '')
+         }`
+      )
+    )
+  const favOnlyState = await readRecipeListState()
+  check(
+    'mock 菜谱只看收藏',
+    favOnlyState.favOnly === true &&
+      favOnlyState.expected.length >= 1 &&
+      favOnlyState.expected.join('/') === favOnlyState.shown.join('/'),
+    `${favOnlyState.shown.length} 道收藏菜谱`
+  )
+  await invoke(
+    mp,
+    `page.onToggleFavorite({ currentTarget: { dataset: { id: ${JSON.stringify(
+      recipeFavTarget
+    )} } } })`
+  )
+  await sleep(400)
+  const favOnlyRemoved = await readRecipeListState()
+  check(
+    'mock 菜谱只看收藏取消后移除',
+    favOnlyRemoved.shownRaw.indexOf(recipeFavTarget) === -1 &&
+      (favOnlyRemoved.expected.length
+        ? favOnlyRemoved.shown.join('/') === favOnlyRemoved.expected.join('/')
+        : favOnlyRemoved.emptyTitle === '还没收藏菜谱' &&
+          favOnlyRemoved.emptyDesc.indexOf('收藏') > -1),
+    `${favOnlyRemoved.shown.length} 道 · ${favOnlyRemoved.emptyTitle}`
+  )
+  await invoke(mp, 'page.onToggleFavOnly()')
+  await sleep(400)
+  const favOffState = await readRecipeListState()
+  check(
+    'mock 菜谱关闭只看收藏',
+    favOffState.favOnly === false &&
+      favOffState.shown.length === favOffState.allCount,
+    `${favOffState.shown.length}/${favOffState.allCount} 道`
+  )
+  const recipePool = favOffState.shownRaw
+  await invoke(mp, 'page.onRandomRecipe()')
+  await sleep(1500)
+  page = await current()
+  const firstRandom = await page.data()
+  const firstRandomId = firstRandom.dish && firstRandom.dish.id
+  check(
+    'mock 菜谱随机一道',
+    page.path === 'pages/recipe/index' &&
+      Boolean(firstRandomId) &&
+      recipePool.indexOf(firstRandomId) > -1,
+    firstRandomId || page.path
+  )
+  await mp.navigateBack()
+  await sleep(900)
+  page = await current()
+  await invoke(mp, 'page.onRandomRecipe()')
+  await sleep(1500)
+  page = await current()
+  const secondRandom = await page.data()
+  const secondRandomId = secondRandom.dish && secondRandom.dish.id
+  check(
+    'mock 菜谱随机不重复',
+    page.path === 'pages/recipe/index' &&
+      Boolean(secondRandomId) &&
+      secondRandomId !== firstRandomId &&
+      recipePool.indexOf(secondRandomId) > -1,
+    `${firstRandomId} → ${secondRandomId}`
+  )
+  await mp.navigateBack()
+  await sleep(900)
+  page = await current()
+  await mp.navigateTo(`/pages/recipe/index?id=${recipeFavTarget}`)
+  await sleep(1500)
+  await invoke(mp, 'page.onToggleFavorite()')
+  await sleep(300)
+  await mp.navigateBack()
+  await sleep(900)
+  const syncedFav = await mp.evaluate(
+    new Function(
+      `const page = getCurrentPages()[getCurrentPages().length - 1]
+       const flatten = groups => (groups || []).reduce((list, group) => list.concat(group.dishes || []), [])
+       const dish = flatten(page.data.groups).find(item => item.id === ${JSON.stringify(
+         recipeFavTarget
+       )})
+       return dish ? Boolean(dish.favorite) : null`
+    )
+  )
+  check(
+    'mock 菜谱大全收藏返回同步',
+    syncedFav === true,
+    `${recipeFavTarget} · ${syncedFav ? '已同步' : '未同步'}`
+  )
+  await invoke(
+    mp,
+    `page.onToggleFavorite({ currentTarget: { dataset: { id: ${JSON.stringify(
+      recipeFavTarget
+    )} } } })`
+  )
+  await sleep(300)
 
   // 营业设置与公告
   await mp.navigateTo('/pages/business/index')

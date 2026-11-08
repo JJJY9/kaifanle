@@ -6,13 +6,39 @@ Page({
     groups: [] as any[],
     displayGroups: [] as any[],
     keyword: '',
+    favOnly: false,
     total: 0,
     loading: true,
-    error: ''
+    error: '',
+    emptyTitle: '还没有菜谱',
+    emptyDesc: '去菜品编辑里给菜写上做法吧'
   },
+
+  _lastRandomId: '',
 
   onLoad() {
     this.load()
+  },
+
+  onShow() {
+    if (!this.data.groups.length) {
+      return
+    }
+    let changed = false
+    const groups = this.data.groups.map(group => ({
+      ...group,
+      dishes: (group.dishes || []).map((dish: any) => {
+        const favorite = favorites.has(dish.id)
+        if (favorite !== dish.favorite) {
+          changed = true
+          return { ...dish, favorite }
+        }
+        return dish
+      })
+    }))
+    if (changed) {
+      this.setData({ groups }, () => this.applyFilter(this.data.keyword))
+    }
   },
 
   async load() {
@@ -75,20 +101,59 @@ Page({
     const kw = String(keyword || '')
       .trim()
       .toLowerCase()
+    const favOnly = Boolean(this.data.favOnly)
     const displayGroups = this.data.groups
       .map(group => ({
         ...group,
-        dishes: kw
-          ? group.dishes.filter(dish => {
-              const haystack = `${dish.name} ${dish.desc} ${dish.recipe} ${(
-                dish.ingredients || []
-              ).join(' ')}`.toLowerCase()
-              return haystack.indexOf(kw) > -1
-            })
-          : group.dishes
+        dishes: group.dishes
+          .filter(dish => !favOnly || dish.favorite)
+          .filter(dish => {
+            if (!kw) {
+              return true
+            }
+            const haystack = `${dish.name} ${dish.desc} ${dish.recipe} ${(
+              dish.ingredients || []
+            ).join(' ')}`.toLowerCase()
+            return haystack.indexOf(kw) > -1
+          })
       }))
       .filter(group => group.dishes.length > 0)
-    this.setData({ displayGroups })
+    let emptyTitle = '还没有菜谱'
+    let emptyDesc = '去菜品编辑里给菜写上做法吧'
+    if (kw) {
+      emptyTitle = '没搜到菜谱'
+      emptyDesc = '换个关键词试试'
+    } else if (favOnly) {
+      emptyTitle = '还没收藏菜谱'
+      emptyDesc = '在菜谱里点 ♡ 收藏几道试试'
+    }
+    this.setData({ displayGroups, emptyTitle, emptyDesc })
+  },
+
+  onToggleFavOnly() {
+    const favOnly = !this.data.favOnly
+    this.setData({ favOnly }, () => this.applyFilter(this.data.keyword))
+  },
+
+  onRandomRecipe() {
+    const pool = (this.data.displayGroups || []).reduce(
+      (list: any[], group: any) => list.concat(group.dishes || []),
+      []
+    )
+    if (!pool.length) {
+      wx.showToast({
+        title: this.data.favOnly ? '收藏里还没有菜谱' : '先调整筛选再试',
+        icon: 'none'
+      })
+      return
+    }
+    let pick = pool[Math.floor(Math.random() * pool.length)]
+    if (pool.length > 1 && pick.id === this._lastRandomId) {
+      const others = pool.filter((dish: any) => dish.id !== pick.id)
+      pick = others[Math.floor(Math.random() * others.length)] || pick
+    }
+    this._lastRandomId = pick.id
+    wx.navigateTo({ url: `/pages/recipe/index?id=${pick.id}` })
   },
 
   onRetry() {
@@ -109,17 +174,13 @@ Page({
       return
     }
     const favorite = favorites.toggle(id)
-    const update = (groups: any[]) =>
-      (groups || []).map(group => ({
-        ...group,
-        dishes: (group.dishes || []).map((dish: any) =>
-          dish.id === id ? { ...dish, favorite } : dish
-        )
-      }))
-    this.setData({
-      groups: update(this.data.groups),
-      displayGroups: update(this.data.displayGroups)
-    })
+    const groups = (this.data.groups || []).map(group => ({
+      ...group,
+      dishes: (group.dishes || []).map((dish: any) =>
+        dish.id === id ? { ...dish, favorite } : dish
+      )
+    }))
+    this.setData({ groups }, () => this.applyFilter(this.data.keyword))
     wx.showToast({
       title: favorite ? '已收藏' : '已取消收藏',
       icon: 'none'

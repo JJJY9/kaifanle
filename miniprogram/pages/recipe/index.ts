@@ -405,6 +405,34 @@ Page({
     })
   },
 
+  onCopyRecipe() {
+    const dish = this.data.dish
+    const steps = this.data.stepViews || []
+    if (!dish) {
+      return
+    }
+    if (!steps.length) {
+      wx.showToast({ title: '这道菜还没写做法', icon: 'none' })
+      return
+    }
+    const lines = [`【${dish.name}】做法`]
+    const ingredients = (this.data.ingredientViews || []).map(
+      view => view.text
+    )
+    if (ingredients.length) {
+      lines.push(`食材：${ingredients.join('、')}`)
+    }
+    steps.forEach((step, index) => {
+      lines.push(`${index + 1}. ${step.text}`)
+    })
+    wx.setClipboardData({
+      data: lines.join('\n'),
+      success: () => {
+        wx.showToast({ title: '做法已复制', icon: 'none' })
+      }
+    })
+  },
+
   onEdit() {
     if (this.data.isAdmin && this.dishId) {
       wx.navigateTo({ url: `/pages/dish-edit/index?id=${this.dishId}` })

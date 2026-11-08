@@ -45,6 +45,27 @@
   font-weight: 700;
 }
 
+.list-tools {
+  display: flex;
+  gap: 12rpx;
+  margin-top: 18rpx;
+}
+
+.tool-chip {
+  padding: 10rpx 22rpx;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  box-shadow: 3rpx 3rpx 0 #111111;
+  font-size: 23rpx;
+  font-weight: 800;
+}
+
+.tool-chip.on {
+  background: #FF5C8A;
+  color: #FFFFFF;
+}
+
 .section {
   margin-top: 30rpx;
 }
