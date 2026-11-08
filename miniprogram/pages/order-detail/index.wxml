@@ -137,7 +137,15 @@
     <view class="block-title">这顿吃了啥</view>
     <view wx:for="{{order.items}}" wx:key="key" class="item">
       <view class="item-left">
-        <view class="item-name">{{item.name}} <text class="item-qty">×{{item.qty}}</text></view>
+        <view class="item-name-row">
+          <text class="item-name">{{item.name}} <text class="item-qty">×{{item.qty}}</text></text>
+          <view
+            wx:if="{{item.dishId}}"
+            class="item-recipe"
+            catchtap="onItemRecipe"
+            data-id="{{item.dishId}}"
+          >做法 ›</view>
+        </view>
         <view wx:if="{{item.specText}}" class="item-spec">{{item.specText}}</view>
         <view wx:if="{{item.allergens && item.allergens.length}}" class="item-allergen">含：{{item.allergens}}</view>
         <view wx:if="{{item.note}}" class="item-spec">备注：{{item.note}}</view>
@@ -229,9 +237,9 @@
       <text>期望时间</text>
       <text>{{order.expectedTime}}</text>
     </view>
-    <view wx:if="{{order.address}}" class="receipt-row">
+    <view wx:if="{{order.address}}" class="receipt-row receipt-row-link" bindtap="onCopyAddress">
       <text>送到</text>
-      <text>{{order.address}}</text>
+      <text>{{order.address}} <text class="copy-hint">复制</text></text>
     </view>
     <view wx:if="{{order.profileText}}" class="receipt-row">
       <text>口味</text>

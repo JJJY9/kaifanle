@@ -22,6 +22,44 @@ const TIME_OPTIONS: Record<MealId, string[]> = {
 
 const MODES = ['在家吃', '送过来', '自取']
 const NOTE_PRESETS = ['少放辣', '多加点饭', '不要香菜', '早点送']
+const CHECKOUT_PREFS_KEY = 'kfl_checkout_prefs_v1'
+
+function readCheckoutPrefs(): {
+  mode: string
+  times: Record<string, string>
+} {
+  try {
+    const raw = wx.getStorageSync(CHECKOUT_PREFS_KEY)
+    const data = raw ? JSON.parse(raw) : null
+    return {
+      mode: data && typeof data.mode === 'string' ? data.mode : '',
+      times:
+        data && data.times && typeof data.times === 'object'
+          ? data.times
+          : {}
+    }
+  } catch (e) {
+    return { mode: '', times: {} }
+  }
+}
+
+function saveCheckoutPrefs(mode: string, meal: MealId, time: string) {
+  try {
+    const prefs = readCheckoutPrefs()
+    prefs.mode = mode
+    prefs.times[meal] = time
+    wx.setStorageSync(CHECKOUT_PREFS_KEY, JSON.stringify(prefs))
+  } catch (e) {
+    // 忽略存储失败
+  }
+}
+
+function preferredTimeIndex(meal: MealId): number {
+  const options = TIME_OPTIONS[meal] || TIME_OPTIONS.lunch
+  const saved = (readCheckoutPrefs().times || {})[meal] || ''
+  const index = options.indexOf(saved)
+  return index > -1 ? index : 0
+}
 
 function buildLines(meal?: MealId, date?: string): any[] {
   return cart
@@ -97,11 +135,14 @@ Page({
         ? requestedDate
         : todayDate
     const lines = buildLines(meal, scheduledDate)
+    const savedModeIndex = MODES.indexOf(readCheckoutPrefs().mode)
     this.setData({
       lines,
       total: totalOf(lines),
       meal,
       timeOptions: TIME_OPTIONS[meal] || TIME_OPTIONS.lunch,
+      timeIndex: preferredTimeIndex(meal),
+      modeIndex: savedModeIndex > -1 ? savedModeIndex : 0,
       scheduledDate,
       todayDate,
       maxDate,
@@ -364,7 +405,7 @@ Page({
       {
         meal,
         timeOptions: TIME_OPTIONS[meal],
-        timeIndex: 0,
+        timeIndex: preferredTimeIndex(meal),
         lines,
         total: totalOf(lines),
         slotInvalidCount: 0,
@@ -567,6 +608,7 @@ Page({
       })
       cart.clearSlot(meal, scheduledDate)
       recordEaten(lines.map((line: any) => line.dishId))
+      saveCheckoutPrefs(mode, meal, expectedTime)
       wx.redirectTo({ url: `/pages/order-detail/index?id=${order.id}` })
     } catch (e: any) {
       const message =

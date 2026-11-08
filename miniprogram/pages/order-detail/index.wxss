@@ -361,6 +361,27 @@
   font-weight: 700;
 }
 
+.item-name-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.item-name-row .item-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.item-recipe {
+  flex: 0 0 auto;
+  padding: 2rpx 12rpx;
+  background: #FFF7DA;
+  border: 2rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 19rpx;
+  font-weight: 800;
+}
+
 .item-qty {
   color: #5C5C5C;
   font-size: 22rpx;
@@ -741,4 +762,14 @@
 
 .sk-detail {
   height: 900rpx;
+}
+
+.copy-hint {
+  margin-left: 6rpx;
+  padding: 0 10rpx;
+  background: #FFF7DA;
+  border: 2rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 18rpx;
+  font-weight: 800;
 }

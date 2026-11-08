@@ -112,6 +112,12 @@
   box-shadow: 2rpx 2rpx 0 #111111;
 }
 
+.sort-chip.random {
+  margin-left: auto;
+  background: #FFD23F;
+  box-shadow: 2rpx 2rpx 0 #111111;
+}
+
 .search-icon {
   font-size: 24rpx;
 }

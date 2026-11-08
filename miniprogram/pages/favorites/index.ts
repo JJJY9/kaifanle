@@ -29,6 +29,7 @@ Page({
   },
 
   _unsub: null as null | (() => void),
+  _lastRandomId: '',
 
   onLoad() {
     this._unsub = favorites.subscribe(() => {
@@ -168,6 +169,24 @@ Page({
     if (id) {
       wx.navigateTo({ url: '/pages/recipe/index?id=' + id })
     }
+  },
+
+  onRandomFavorite() {
+    const pool =
+      (this.data.display && this.data.display.length
+        ? this.data.display
+        : this.data.allFavorites) || []
+    if (!pool.length) {
+      wx.showToast({ title: '还没有收藏的菜', icon: 'none' })
+      return
+    }
+    let pick = pool[Math.floor(Math.random() * pool.length)]
+    if (pool.length > 1 && pick.id === this._lastRandomId) {
+      const others = pool.filter((dish: Dish) => dish.id !== pick.id)
+      pick = others[Math.floor(Math.random() * others.length)] || pick
+    }
+    this._lastRandomId = pick.id
+    wx.navigateTo({ url: '/pages/recipe/index?id=' + pick.id })
   },
 
   onGoHome() {

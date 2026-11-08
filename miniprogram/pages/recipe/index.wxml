@@ -36,6 +36,7 @@
   <view class="order-btn {{canOrder ? '' : 'disabled'}}" bindtap="onOrderDish">
     {{canOrder ? '🍚 点这道 · 加入' + orderMealText : orderBlockedText}}
   </view>
+  <view wx:if="{{dish.stock >= 0 && dish.stock > 0 && dish.stock <= 5}}" class="order-stock">今天仅剩 {{dish.stock}} 份，早点下单</view>
 
   <view wx:if="{{dish.ingredients && dish.ingredients.length}}" class="steps-card card">
     <view class="steps-title-row">

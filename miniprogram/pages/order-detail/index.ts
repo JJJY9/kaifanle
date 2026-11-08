@@ -714,6 +714,26 @@ Page({
     })
   },
 
+  onItemRecipe(e: any) {
+    const id = String((e && e.currentTarget && e.currentTarget.dataset.id) || '')
+    if (id) {
+      wx.navigateTo({ url: '/pages/recipe/index?id=' + id })
+    }
+  },
+
+  onCopyAddress() {
+    const address = this.data.order && this.data.order.address
+    if (!address) {
+      return
+    }
+    wx.setClipboardData({
+      data: String(address),
+      success: () => {
+        wx.showToast({ title: '地址已复制', icon: 'none' })
+      }
+    })
+  },
+
   onCopyOrderReceipt() {
     const order = this.data.order
     if (!order) {

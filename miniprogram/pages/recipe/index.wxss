@@ -342,3 +342,11 @@
 .sk {
   height: 600rpx;
 }
+
+.order-stock {
+  margin-top: 10rpx;
+  text-align: center;
+  color: #D9431C;
+  font-size: 22rpx;
+  font-weight: 800;
+}

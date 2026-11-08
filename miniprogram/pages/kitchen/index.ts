@@ -180,6 +180,8 @@ Page({
   _watching: false,
   _watchGen: 0,
   _knownPending: [] as string[],
+  _knownUnread: 0,
+  _unreadReady: false,
   _statsAt: 0,
   _rawOrders: [] as any[],
   _categories: [] as any[],
@@ -437,16 +439,29 @@ Page({
       const pendingIds = active
         .filter(order => order.status === 'pending')
         .map(order => order.id)
-      if (this._knownPending.length) {
-        const fresh = pendingIds.filter(
-          id => this._knownPending.indexOf(id) === -1
-        )
-        if (fresh.length) {
-          wx.vibrateShort({ type: 'heavy', fail: () => {} } as any)
-          wx.showToast({ title: '来新订单啦', icon: 'none' })
-        }
+      const fresh =
+        this._knownPending.length > 0
+          ? pendingIds.filter(id => this._knownPending.indexOf(id) === -1)
+          : []
+      if (fresh.length) {
+        wx.vibrateShort({ type: 'heavy', fail: () => {} } as any)
+        wx.showToast({ title: '来新订单啦', icon: 'none' })
       }
       this._knownPending = pendingIds
+      const unreadTotal = activeAll.reduce(
+        (sum, order) => sum + Math.max(0, Number(order.adminUnread) || 0),
+        0
+      )
+      if (
+        this._unreadReady &&
+        unreadTotal > this._knownUnread &&
+        !fresh.length
+      ) {
+        wx.vibrateShort({ type: 'light', fail: () => {} } as any)
+        wx.showToast({ title: '有新留言', icon: 'none' })
+      }
+      this._knownUnread = unreadTotal
+      this._unreadReady = true
       const dishById: Record<string, any> = {}
       dishes.forEach((dish: any) => {
         dishById[dish.id] = dish

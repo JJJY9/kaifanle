@@ -42,6 +42,7 @@ function chinaDate(offset) {
     wx.removeStorageSync('kfl_recipe_ingredients_v1')
     wx.removeStorageSync('kfl_eaten_v1')
     wx.removeStorageSync('kfl_prep_checked_v1')
+    wx.removeStorageSync('kfl_checkout_prefs_v1')
     return true
   })
   const current = () => mp.currentPage()
@@ -345,6 +346,25 @@ function chinaDate(offset) {
   await invoke(mp, "page.setData({ profileDislikes: [] })")
   await invoke(mp, 'page.applyDislikes()')
   await sleep(300)
+  await mp.evaluate(
+    new Function(
+      "wx.setStorageSync('kfl_checkout_prefs_v1', JSON.stringify({ mode: '送过来', times: { breakfast: '08:00' } })); return true;"
+    )
+  )
+  await invoke(mp, "page.onLoad({ meal: 'breakfast' })")
+  await sleep(1500)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 结算记住就餐方式与时间',
+    data.modeIndex === 1 &&
+      data.timeIndex === 2 &&
+      data.timeOptions[2] === '08:00',
+    `${data.modes[data.modeIndex]} · ${data.timeOptions[data.timeIndex]}`
+  )
+  await mp.evaluate(
+    new Function("wx.removeStorageSync('kfl_checkout_prefs_v1'); return true;")
+  )
   const hintToday = data.todayDate
   await invoke(
     mp,
@@ -1043,6 +1063,17 @@ function chinaDate(offset) {
     messageOrder
       ? `${messageOrder.lastMessageText} · ${messageOrder.messageBadge} 条未读`
       : '没找到订单'
+  )
+  await invoke(
+    mp,
+    "wx.__vibrateCount = 0; wx.vibrateShort = function (o) { wx.__vibrateCount = (wx.__vibrateCount || 0) + 1; try { o && o.success && o.success() } catch (e) {} }; page._unreadReady = true; page._knownUnread = 0; page.load(); return true;"
+  )
+  await sleep(1800)
+  const vibrateCount = await mp.evaluate(() => wx.__vibrateCount || 0)
+  check(
+    'mock 厨房新留言振动提醒',
+    vibrateCount >= 1,
+    `${vibrateCount} 次`
   )
   const activeOrderCard = await page.$('.order.card')
   if (activeOrderCard) {
@@ -2387,6 +2418,24 @@ function chinaDate(offset) {
     cartQtyAfter === cartQtyBefore + 2 && data.skuVisible === false,
     `购物车 ${cartQtyBefore} → ${cartQtyAfter} 份`
   )
+  await invoke(
+    mp,
+    'page.setData({ dish: Object.assign({}, page.data.dish, { stock: 3 }) })'
+  )
+  await sleep(300)
+  page = await current()
+  const stockHintEl = await page.$('.order-stock')
+  const stockHintText = stockHintEl ? String(await stockHintEl.text()) : ''
+  check(
+    'mock 菜谱库存紧张提示',
+    stockHintText.indexOf('仅剩 3 份') > -1,
+    stockHintText || '未显示'
+  )
+  await invoke(
+    mp,
+    'page.setData({ dish: Object.assign({}, page.data.dish, { stock: null }) })'
+  )
+  await sleep(200)
   check(
     'mock 菜谱点单统计',
     String(data.statsText || '').indexOf('被点') > -1,
@@ -2586,6 +2635,22 @@ function chinaDate(offset) {
     )
     await sleep(300)
   }
+  await invoke(mp, 'page.onRandomFavorite()')
+  await sleep(1600)
+  page = await current()
+  const randomFavoriteData = await page.data()
+  const favoriteIds = (favoritesOriginal || []).map(dish => dish.id)
+  check(
+    'mock 收藏随机挑一道',
+    page.path === 'pages/recipe/index' &&
+      Boolean(randomFavoriteData.dish) &&
+      favoriteIds.indexOf(randomFavoriteData.dish.id) > -1,
+    randomFavoriteData.dish ? randomFavoriteData.dish.name : page.path
+  )
+  await mp.navigateBack()
+  await sleep(900)
+  page = await current()
+  data = await page.data()
   await invoke(mp, 'page.onMakePoster()')
   await sleep(1200)
   page = await current()
@@ -3360,6 +3425,41 @@ function chinaDate(offset) {
       orderClip.indexOf(String(data.order.no)) > -1,
     `${String(orderClip || '').length} 字`
   )
+  await invoke(
+    mp,
+    "page.setData({ order: Object.assign({}, page.data.order, { address: '测试地址 1 号' }) })"
+  )
+  await invoke(mp, 'page.onCopyAddress()')
+  await sleep(500)
+  const addressClip = await mp.evaluate(
+    new Function(
+      "return new Promise(resolve => wx.getClipboardData({ success: r => resolve(r.data || ''), fail: () => resolve('') }))"
+    )
+  )
+  check(
+    'mock 订单地址复制',
+    String(addressClip || '') === '测试地址 1 号',
+    String(addressClip || '')
+  )
+  const orderItemDishId = (data.order.items[0] || {}).dishId
+  await invoke(
+    mp,
+    `page.onItemRecipe({ currentTarget: { dataset: { id: ${JSON.stringify(
+      orderItemDishId
+    )} } } })`
+  )
+  await sleep(1600)
+  page = await current()
+  const orderRecipeData = await page.data()
+  check(
+    'mock 订单菜品看做法',
+    page.path === 'pages/recipe/index' &&
+      Boolean(orderRecipeData.dish) &&
+      orderRecipeData.dish.id === orderItemDishId,
+    orderRecipeData.dish ? orderRecipeData.dish.name : page.path
+  )
+  await mp.navigateBack()
+  await sleep(900)
   await mp.navigateBack()
   await sleep(900)
 
