@@ -30,6 +30,27 @@ import {
 } from '../../utils/format'
 import { addOrderToCart } from '../../utils/reorder'
 
+const LAST_MEAL_KEY = 'kfl_last_meal_v1'
+
+function readLastMeal(): MealId {
+  try {
+    const raw = wx.getStorageSync(LAST_MEAL_KEY)
+    const data = raw ? JSON.parse(raw) : null
+    const meal = data && data.meal
+    const at = Number(data && data.at)
+    if (
+      ['breakfast', 'lunch', 'dinner'].indexOf(meal) > -1 &&
+      isFinite(at) &&
+      Date.now() - at < 12 * 60 * 60 * 1000
+    ) {
+      return meal as MealId
+    }
+  } catch (e) {
+    // 忽略
+  }
+  return currentMeal()
+}
+
 interface Section extends Category {
   dishes: Dish[]
 }
@@ -143,7 +164,7 @@ Page({
       dateText: formatDate(),
       greetText: greeting(),
       isOpen: isOpenNow(),
-      selectedMeal: currentMeal(),
+      selectedMeal: readLastMeal(),
       selectedDate: today,
       todayDate: today,
       tomorrowDate: dateInputString(tomorrow),
@@ -499,6 +520,14 @@ Page({
     const meal = e.currentTarget.dataset.meal as MealId
     if (meal === this.data.selectedMeal) {
       return
+    }
+    try {
+      wx.setStorageSync(
+        LAST_MEAL_KEY,
+        JSON.stringify({ meal, at: Date.now() })
+      )
+    } catch (e) {
+      // 忽略存储失败
     }
     if (this._pendingReorder && this._pendingReorder.meal !== meal) {
       this._pendingReorder = null

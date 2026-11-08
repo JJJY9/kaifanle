@@ -1,7 +1,7 @@
 <view class="page">
   <view class="head">
     <text class="title display">菜谱大全</text>
-    <text class="sub">每道菜都教你做，点开看步骤</text>
+    <text class="sub">共 {{total}} 道带做法 · 每道菜都教你做</text>
   </view>
 
   <view class="search-bar">

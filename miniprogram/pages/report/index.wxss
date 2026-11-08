@@ -683,3 +683,9 @@
   height: 900px;
   pointer-events: none;
 }
+
+.range-chip.copy {
+  margin-left: auto;
+  background: #FFD23F;
+  box-shadow: 2rpx 2rpx 0 #111111;
+}

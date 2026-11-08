@@ -16,6 +16,7 @@
         data-range="30"
         bindtap="onRange"
       >近 30 天</view>
+      <view class="range-chip copy" bindtap="onCopySummary">复制小结</view>
     </view>
   </view>
 

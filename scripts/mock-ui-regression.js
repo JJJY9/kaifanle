@@ -51,6 +51,7 @@ function chinaDate(offset) {
     wx.removeStorageSync('kfl_eaten_sync_v1')
     wx.removeStorageSync('kfl_eaten_removed_v1')
     wx.removeStorageSync('kfl_eaten_ops_v1')
+    wx.removeStorageSync('kfl_last_meal_v1')
     return true
   })
   const current = () => mp.currentPage()
@@ -191,6 +192,25 @@ function chinaDate(offset) {
     !data.isOpen || String(data.busyText || '').length > 0,
     data.busyText || (data.isOpen ? '没有提示' : '休息中')
   )
+  await invoke(
+    mp,
+    "page.onSelectMeal({ currentTarget: { dataset: { meal: 'dinner' } } })"
+  )
+  await sleep(1300)
+  await mp.reLaunch('/pages/home/index')
+  await sleep(2000)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 首页记住上次餐次',
+    data.selectedMeal === 'dinner',
+    data.selectedMeal
+  )
+  await invoke(
+    mp,
+    "page.onSelectMeal({ currentTarget: { dataset: { meal: 'lunch' } } })"
+  )
+  await sleep(1300)
 
   // 购物车按餐次隔离：早餐加的菜不会出现在午餐购物车
   await invoke(
@@ -3097,10 +3117,14 @@ function chinaDate(offset) {
   await sleep(1600)
   page = await current()
   data = await page.data()
+  const recipeSubEl = await page.$('.sub')
+  const recipeSubText = recipeSubEl ? String(await recipeSubEl.text()) : ''
   check(
     'mock 菜谱大全',
-    (data.groups || []).length > 0 && data.total >= 1,
-    `${data.total} 道带做法`
+    (data.groups || []).length > 0 &&
+      data.total >= 1 &&
+      recipeSubText.indexOf(`共 ${data.total} 道`) > -1,
+    recipeSubText || `${data.total} 道带做法`
   )
   await invoke(mp, "page.onSearch({ detail: { value: '牛腩' } })")
   await sleep(400)
@@ -4338,6 +4362,20 @@ function chinaDate(offset) {
     data.report
       ? `${data.report.totalOrders} 单 / ¥${data.report.revenue}`
       : '没有数据'
+  )
+  await invoke(mp, 'page.onCopySummary()')
+  await sleep(600)
+  const reportClip = await mp.evaluate(
+    new Function(
+      "return new Promise(resolve => wx.getClipboardData({ success: r => resolve(r.data || ''), fail: () => resolve('') }))"
+    )
+  )
+  check(
+    'mock 月报复制小结',
+    String(reportClip || '').indexOf('经营小结') > -1 &&
+      String(reportClip || '').indexOf('营收 ¥') > -1 &&
+      String(reportClip || '').indexOf(String(data.report.totalOrders)) > -1,
+    `${String(reportClip || '').length} 字`
   )
   const categoryRevenue = (data.categoryStats || []).reduce(
     (sum, item) => sum + Number(item.revenue || 0),

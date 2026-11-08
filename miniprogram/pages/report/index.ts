@@ -318,6 +318,42 @@ Page({
     this.setData({ range }, () => this.load())
   },
 
+  onCopySummary() {
+    const report: any = this.data.report
+    if (!report) {
+      return
+    }
+    const lines = [
+      `【张饱饭堂】近 ${report.days} 天经营小结`,
+      `${String(report.startDate || '').slice(5)} 至 ${String(
+        report.endDate || ''
+      ).slice(5)}`,
+      `订单 ${report.totalOrders} 单 · 完成 ${report.completed} · 取消 ${report.cancelled}`,
+      `营收 ¥${report.revenue} · 客单价 ¥${report.avgOrder}`,
+      `成本 ¥${report.costStats.cost} · 毛利 ¥${report.costStats.profit}（${report.costStats.margin}%）`
+    ]
+    if (report.topDishes && report.topDishes.length) {
+      lines.push(
+        `卖得好：${report.topDishes
+          .slice(0, 3)
+          .map((dish: any) => `${dish.name}×${dish.qty}`)
+          .join('、')}`
+      )
+    }
+    if (report.ratedCount) {
+      lines.push(
+        `评价 ${report.ratedCount} 条 · 平均 ${report.avgRating}/3 · 好评率 ${report.goodRate}%`
+      )
+    }
+    if (report.monthRevenue) {
+      lines.push(`本月已营收 ¥${report.monthRevenue}`)
+    }
+    wx.setClipboardData({
+      data: lines.join('\n'),
+      success: () => wx.showToast({ title: '小结已复制', icon: 'none' })
+    })
+  },
+
   onDishTap(e: any) {
     const id = String((e.currentTarget && e.currentTarget.dataset.id) || '')
     if (!id) {
