@@ -1363,6 +1363,35 @@ async function run() {
       Number(fallbackOrder.messages[0].at),
     '无事务时已读时间应落库'
   )
+  // 无事务时的云同步写入也要能合并落库
+  res = await call('getFavorites', {}, 'fallback-openid')
+  const fallbackFavBase = Number(res.data.updatedAt)
+  res = await call(
+    'saveFavorites',
+    {
+      ids: ['d10'],
+      times: { d10: Date.now() },
+      removed: {},
+      baseUpdatedAt: fallbackFavBase
+    },
+    'fallback-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.ok(res.data.ids.indexOf('d10') > -1)
+  res = await call('getEaten', {}, 'fallback-openid')
+  const fallbackEatenBase = Number(res.data.updatedAt)
+  res = await call(
+    'saveEaten',
+    {
+      map: { d11: Date.now() },
+      ops: { d11: Date.now() },
+      removed: {},
+      baseUpdatedAt: fallbackEatenBase
+    },
+    'fallback-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.ok(Object.prototype.hasOwnProperty.call(res.data.map, 'd11'))
   transactionsEnabled = true
 
   // 厨房拒单可带原因，顾客能看到

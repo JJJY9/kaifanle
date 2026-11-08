@@ -204,7 +204,7 @@ node scripts/smoke-cloud.js
 npx -p typescript tsc --noEmit
 ```
 
-UI 回归与云端验收见 [docs/验收手册.md](docs/验收手册.md)。
+UI 回归与云端验收见 [docs/验收手册.md](docs/验收手册.md)；上线前逐项核对见 [docs/上线前检查清单.md](docs/上线前检查清单.md)。
 
 ## 路线图
 
