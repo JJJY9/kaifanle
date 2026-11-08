@@ -134,7 +134,10 @@
   </view>
 
   <view class="block card">
-    <view class="block-title">这顿吃了啥</view>
+    <view class="block-head">
+      <view class="block-title">这顿吃了啥</view>
+      <view class="fav-all" bindtap="onFavoriteAll">♡ 收藏本单</view>
+    </view>
     <view wx:for="{{order.items}}" wx:key="key" class="item">
       <view class="item-left">
         <view class="item-name-row">

@@ -203,6 +203,13 @@
   color: #5C5C5C;
 }
 
+.fav-eaten {
+  margin-top: 6rpx;
+  color: #5C5C5C;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
 .fav-desc {
   margin-top: 2rpx;
   color: #5C5C5C;

@@ -108,6 +108,7 @@
           <text wx:elif="{{item.status === 'soldout' || item.stock === 0}}" class="fav-badge sold">售罄</text>
           <text wx:for="{{item.tags}}" wx:key="*this" class="fav-tag">{{item}}</text>
         </view>
+        <view wx:if="{{item.lastEatenText}}" class="fav-eaten">🍚 {{item.lastEatenText}}</view>
         <view wx:if="{{item.favoritedText}}" class="fav-time">收藏于 {{item.favoritedText}}</view>
       </view>
       <view class="fav-right">

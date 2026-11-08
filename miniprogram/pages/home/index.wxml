@@ -55,7 +55,7 @@
       <text wx:if="{{selectedDate !== todayDate}}" class="date-hint">预订 / 预览</text>
     </view>
     <view wx:if="{{deadlineText}}" class="deadline-hint">⏰ {{deadlineText}}</view>
-    <view wx:if="{{activeOrder}}" class="active-order" bindtap="onActiveOrderTap">
+    <view wx:if="{{activeOrder}}" class="active-order" bindtap="onActiveOrderTap" bindlongpress="onCopyActiveOrder">
       <view class="active-order-main">
         <view class="active-order-label-row">
           <text class="active-order-label">今天这单 · {{activeOrder.mealText}}</text>

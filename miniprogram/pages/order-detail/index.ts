@@ -773,6 +773,29 @@ Page({
     })
   },
 
+  onFavoriteAll() {
+    const items = (this.data.order && this.data.order.items) || []
+    const ids = items
+      .map((item: any) => String(item.dishId || ''))
+      .filter(Boolean)
+    if (!ids.length) {
+      wx.showToast({ title: '这单没有可收藏的菜', icon: 'none' })
+      return
+    }
+    const fresh = ids.filter((id: string) => !favorites.has(id))
+    if (!fresh.length) {
+      wx.showToast({ title: '都收藏过啦', icon: 'none' })
+      return
+    }
+    fresh.forEach((id: string) => favorites.toggle(id))
+    this.setData({
+      'order.items': items.map((item: any) =>
+        item.dishId ? { ...item, favorite: favorites.has(item.dishId) } : item
+      )
+    })
+    wx.showToast({ title: `已收藏 ${fresh.length} 道`, icon: 'none' })
+  },
+
   onCopyOrderReceipt() {
     const order = this.data.order
     if (!order) {

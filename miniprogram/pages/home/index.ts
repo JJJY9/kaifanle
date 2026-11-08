@@ -870,6 +870,7 @@ Page({
         {
           activeOrder: {
             id: order.id,
+            no: order.no || '',
             status: order.status,
             statusText: STATUS_TEXT[order.status],
             mealText: mealName(order.meal),
@@ -923,6 +924,18 @@ Page({
       return
     }
     wx.navigateTo({ url: `/pages/order-detail/index?id=${order.id}` })
+  },
+
+  onCopyActiveOrder() {
+    const order = this.data.activeOrder
+    const no = String((order && order.no) || '')
+    if (!no) {
+      return
+    }
+    wx.setClipboardData({
+      data: no,
+      success: () => wx.showToast({ title: '订单号已复制', icon: 'none' })
+    })
   },
 
   async onQuickUrge() {

@@ -1,7 +1,7 @@
 import type { Dish } from '../../services/types'
 import { getCategories, getDishes } from '../../services/api'
 import { favorites } from '../../store/favorites'
-import { getLastEatenMap } from '../../store/eaten'
+import { getLastEatenMap, eatenText } from '../../store/eaten'
 import { formatDate } from '../../utils/format'
 import { saveImageToAlbum } from '../../utils/save-image'
 
@@ -126,6 +126,7 @@ Page({
       dishes.forEach(dish => {
         dishMap[dish.id] = dish
       })
+      const eatenMap = getLastEatenMap()
       // 收藏 id 按收藏先后追加，倒序即最近收藏在前
       const allFavorites = favorites
         .getIds()
@@ -140,7 +141,8 @@ Page({
           return {
             ...dish,
             favoritedAt: at,
-            favoritedText: at ? formatDate(at) : '较早'
+            favoritedText: at ? formatDate(at) : '较早',
+            lastEatenText: eatenText(Number(eatenMap[dish.id] || 0))
           }
         })
         .filter(Boolean)
