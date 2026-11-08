@@ -189,7 +189,7 @@ function chinaDate(offset) {
         (Date.now() - homeMidnight.getTime()) / 60000
       )
       const waitedValue = String((data.activeOrder || {}).waitedText || '')
-      if (minsIntoDay <= 2) {
+      if (minsIntoDay < 2) {
         return waitedValue === '' && waitedText === ''
       }
       const waitedMinutes = Number(waitedValue.replace(/[^\d]/g, ''))
@@ -202,18 +202,24 @@ function chinaDate(offset) {
     })(),
     String((data.activeOrder || {}).waitedText || '无')
   )
+  const guardMidnight = new Date()
+  guardMidnight.setHours(0, 0, 0, 0)
+  const guardNow = Math.max(
+    Date.now(),
+    guardMidnight.getTime() + 25 * 60 * 1000
+  )
   const waitCrossDay = await invoke(
     mp,
-    'return page.computeWaitedText(Date.now() - 26 * 60 * 60 * 1000)'
+    `return page.computeWaitedText(${guardNow - 26 * 60 * 60 * 1000}, ${guardNow})`
   )
   const waitSameDay = await invoke(
     mp,
-    'return page.computeWaitedText(Date.now() - 20 * 60 * 1000)'
+    `return page.computeWaitedText(${guardNow - 20 * 60 * 1000}, ${guardNow})`
   )
   check(
     'mock 已等时长跨天守卫',
     String(waitCrossDay || '') === '' &&
-      /^已等 \d+ 分钟$/.test(String(waitSameDay || '')),
+      String(waitSameDay || '') === '已等 20 分钟',
     `${waitCrossDay || '空'} / ${waitSameDay || '空'}`
   )
   const etaCountdownValue = String(
@@ -221,8 +227,39 @@ function chinaDate(offset) {
   )
   check(
     'mock 首页今天这单出锅倒计时',
-    /^(还有 \d+ 分钟|马上出锅)$/.test(etaCountdownValue),
-    etaCountdownValue || '无'
+    (() => {
+      const etaTimeMatch = String(
+        (data.activeOrder || {}).expectedTime || ''
+      ).match(/^(\d{1,2}):(\d{2})$/)
+      if (!etaTimeMatch) {
+        return false
+      }
+      const etaTarget = new Date()
+      etaTarget.setHours(
+        Number(etaTimeMatch[1]),
+        Number(etaTimeMatch[2]),
+        0,
+        0
+      )
+      const etaExpectedMin = Math.round(
+        (etaTarget.getTime() - Date.now()) / 60000
+      )
+      let ok = false
+      if (etaExpectedMin <= 0) {
+        ok = etaCountdownValue === '马上出锅'
+      } else {
+        const etaShownMin = Number(etaCountdownValue.replace(/[^\d]/g, ''))
+        ok =
+          /^还有 \d+ 分钟$/.test(etaCountdownValue) &&
+          Math.abs(etaShownMin - etaExpectedMin) <= 2
+      }
+      return (
+        ok &&
+        etaCountdownValue !== '' &&
+        String(etaText || '').indexOf(etaCountdownValue) > -1
+      )
+    })(),
+    `${etaCountdownValue || '无'} · ${etaText || '无 DOM'}`
   )
   const homeCopiedNo = await mp.evaluate(() => {
     return new Promise(resolve => {
@@ -4737,6 +4774,52 @@ function chinaDate(offset) {
     )} } } })`
   )
   await sleep(300)
+  await invoke(mp, "page.onSearch({ detail: { value: '不存在xyz' } })")
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 菜谱空态清空搜索',
+    data.emptyActionText === '清空搜索' &&
+      (data.displayGroups || []).length === 0,
+    data.emptyActionText || '无动作'
+  )
+  await invoke(mp, 'page.onEmptyAction()')
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 菜谱空态动作恢复',
+    data.keyword === '' && (data.displayGroups || []).length > 0,
+    `${(data.displayGroups || []).length} 组`
+  )
+  await invoke(mp, 'page.onToggleFavOnly()')
+  await sleep(300)
+  await invoke(mp, "page.onSearch({ detail: { value: '不存在xyz' } })")
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 菜谱空态清空筛选',
+    data.emptyActionText === '清空筛选' &&
+      (data.displayGroups || []).length === 0,
+    data.emptyActionText || '无动作'
+  )
+  await invoke(mp, 'page.onEmptyAction()')
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  const emptyActionFavStored = await mp.evaluate(() =>
+    wx.getStorageSync('kfl_recipe_fav_only_v1')
+  )
+  check(
+    'mock 菜谱空态筛选复位',
+    data.favOnly === false &&
+      data.keyword === '' &&
+      emptyActionFavStored === '' &&
+      (data.displayGroups || []).length > 0,
+    `${(data.displayGroups || []).length} 组`
+  )
 
   // 营业设置与公告
   await mp.navigateTo('/pages/business/index')
@@ -5138,9 +5221,28 @@ function chinaDate(offset) {
         String((seedOrderWait && seedOrderWait.waitedText) || '')
       ) &&
       finishedOrderWaits.every(order => !order.waitedText) &&
-      (orderListMinsIntoDay <= 2 ||
+      (orderListMinsIntoDay < 2 ||
         String((seedOrderWait && seedOrderWait.waitedText) || '') !== ''),
     (seedOrderWait && seedOrderWait.waitedText) || '空'
+  )
+  const preorderOrderWaits = (data.displayOrders || []).filter(
+    order => order.isPreorder
+  )
+  const orderWaitedChipEl = await page.$('.waited-chip')
+  const orderWaitedChipText = orderWaitedChipEl
+    ? String(await orderWaitedChipEl.text())
+    : ''
+  const seedWaitText = String(
+    (seedOrderWait && seedOrderWait.waitedText) || ''
+  )
+  check(
+    'mock 订单列表已等角标渲染',
+    (seedWaitText
+      ? orderWaitedChipText.indexOf(seedWaitText) > -1
+      : orderWaitedChipText === '') &&
+      preorderOrderWaits.length >= 1 &&
+      preorderOrderWaits.every(order => !order.waitedText),
+    `${orderWaitedChipText || '无角标'} · 预订 ${preorderOrderWaits.length} 单`
   )
   check(
     'mock 订单评价表情',
@@ -5562,7 +5664,9 @@ function chinaDate(offset) {
     'mock 小票图片过敏原按宽度截断',
     longReceiptAllergen.indexOf('含：') === 0 &&
       longReceiptAllergen.indexOf('…') === longReceiptAllergen.length - 1 &&
-      longReceiptAllergen.length < 30,
+      longReceiptAllergen.indexOf('花生') > -1 &&
+      longReceiptAllergen.length <=
+        '含：花生、牛奶、鸡蛋、小麦、大豆、坚果、鱼、虾、蟹、芝麻'.length - 2,
     longReceiptAllergen || '无'
   )
   await invoke(

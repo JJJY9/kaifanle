@@ -165,6 +165,7 @@ Page({
   _urging: false,
   _urgeTimer: null as any,
   _etaTimer: null as any,
+  _etaDate: '',
   _visible: false,
 
   onLoad() {
@@ -256,6 +257,8 @@ Page({
           () => {
             this.updateCartBadge()
             this.loadMenu()
+            this.scheduleEtaRefresh()
+            this.loadActiveOrder()
           }
         )
         return
@@ -275,12 +278,17 @@ Page({
         pendingDate <= maxDate &&
         pendingDate !== this.data.selectedDate
       ) {
-        this.setData({
-          selectedDate: pendingDate,
-          menuDateLabel: menuDateText(pendingDate, today)
-        })
+        this.setData(
+          {
+            selectedDate: pendingDate,
+            menuDateLabel: menuDateText(pendingDate, today)
+          },
+          () => this.updateCartBadge()
+        )
       }
     }
+    // 保证可见时倒计时定时器存在（含 pendingReorder 早退/请求失败等路径）
+    this.scheduleEtaRefresh()
     // 每次回到首页都刷新菜单，保证厨房端的售罄/上架能同步过来
     this.loadMenu()
     this.loadLastOrder()
@@ -943,8 +951,11 @@ Page({
     }
   },
 
-  computeWaitedText(createdAt: number) {
-    return sameDayWaitText(Number(createdAt || 0))
+  computeWaitedText(createdAt: number, now?: number) {
+    return sameDayWaitText(
+      Number(createdAt || 0),
+      now === undefined ? Date.now() : Number(now)
+    )
   },
 
   scheduleEtaRefresh() {
@@ -955,6 +966,7 @@ Page({
     if (!this._visible || !this.data.activeOrder) {
       return
     }
+    this._etaDate = dateInputString()
     this.refreshEtaCountdown()
     this._etaTimer = setInterval(() => this.refreshEtaCountdown(), 60 * 1000)
   },
@@ -962,6 +974,15 @@ Page({
   refreshEtaCountdown() {
     const order = this.data.activeOrder
     if (!order) {
+      if (this._etaTimer) {
+        clearInterval(this._etaTimer)
+        this._etaTimer = null
+      }
+      return
+    }
+    if (this._etaDate && dateInputString() !== this._etaDate) {
+      // 跨天后旧的「预计出锅」不再属于今天，停表并清空
+      this.setData({ 'activeOrder.etaCountdown': '' })
       if (this._etaTimer) {
         clearInterval(this._etaTimer)
         this._etaTimer = null

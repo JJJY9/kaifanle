@@ -113,10 +113,21 @@ Page({
     const view = orders.map(order => ({
       ...order,
       statusText: STATUS_TEXT[order.status],
-      waitedText:
-        ['pending', 'accepted', 'cooking', 'ready'].indexOf(order.status) > -1
-          ? sameDayWaitText(Number(order.createdAt || 0))
-          : '',
+      waitedText: (() => {
+        if (
+          ['pending', 'accepted', 'cooking', 'ready'].indexOf(order.status) ===
+          -1
+        ) {
+          return ''
+        }
+        const effective =
+          order.scheduledDate ||
+          dateInputString(new Date(Number(order.createdAt || 0)))
+        if (effective !== today) {
+          return ''
+        }
+        return sameDayWaitText(Number(order.createdAt || 0))
+      })(),
       mealText: mealName(order.meal),
       timeText: formatTime(order.createdAt),
       thumb: (() => {

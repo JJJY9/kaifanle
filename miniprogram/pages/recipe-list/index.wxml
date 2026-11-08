@@ -89,5 +89,7 @@
     wx:else
     title="{{emptyTitle}}"
     desc="{{emptyDesc}}"
+    actionText="{{emptyActionText}}"
+    bind:action="onEmptyAction"
   />
 </view>

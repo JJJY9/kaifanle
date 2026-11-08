@@ -60,7 +60,8 @@ Page({
     loading: true,
     error: '',
     emptyTitle: '还没有菜谱',
-    emptyDesc: '去菜品编辑里给菜写上做法吧'
+    emptyDesc: '去菜品编辑里给菜写上做法吧',
+    emptyActionText: ''
   },
 
   _lastRandomId: '',
@@ -226,14 +227,31 @@ Page({
       .filter(group => group.dishes.length > 0)
     let emptyTitle = '还没有菜谱'
     let emptyDesc = '去菜品编辑里给菜写上做法吧'
+    let emptyActionText = ''
     if (kw) {
       emptyTitle = '没搜到菜谱'
       emptyDesc = '换个关键词试试'
+      emptyActionText = favOnly ? '清空筛选' : '清空搜索'
     } else if (favOnly) {
       emptyTitle = '还没收藏菜谱'
       emptyDesc = '在菜谱里点 ♡ 收藏几道试试'
+      emptyActionText = '看全部菜谱'
     }
-    this.setData({ displayGroups, emptyTitle, emptyDesc })
+    this.setData({ displayGroups, emptyTitle, emptyDesc, emptyActionText })
+  },
+
+  onEmptyAction() {
+    if (this.data.favOnly) {
+      writeFavOnly(false)
+      this.setData(
+        { favOnly: false, keyword: '', searching: false },
+        () => this.applyFilter('')
+      )
+      return
+    }
+    if (String(this.data.keyword || '')) {
+      this.onSearchClear()
+    }
   },
 
   onToggleFavOnly() {
