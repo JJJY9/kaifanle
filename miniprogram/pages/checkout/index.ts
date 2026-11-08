@@ -54,11 +54,30 @@ function saveCheckoutPrefs(mode: string, meal: MealId, time: string) {
   }
 }
 
-function preferredTimeIndex(meal: MealId): number {
+function preferredTimeIndex(
+  meal: MealId,
+  date: string,
+  today: string
+): number {
   const options = TIME_OPTIONS[meal] || TIME_OPTIONS.lunch
   const saved = (readCheckoutPrefs().times || {})[meal] || ''
   const index = options.indexOf(saved)
-  return index > -1 ? index : 0
+  if (index <= 0) {
+    return 0
+  }
+  if (date === today) {
+    const now = new Date()
+    const nowMinutes = now.getHours() * 60 + now.getMinutes()
+    const [hour, minute] = saved.split(':').map(Number)
+    if (
+      !Number.isFinite(hour) ||
+      !Number.isFinite(minute) ||
+      nowMinutes >= hour * 60 + minute
+    ) {
+      return 0
+    }
+  }
+  return index
 }
 
 const NOTE_PRESETS_KEY = 'kfl_note_presets_v1'
@@ -168,7 +187,7 @@ Page({
       total: totalOf(lines),
       meal,
       timeOptions: TIME_OPTIONS[meal] || TIME_OPTIONS.lunch,
-      timeIndex: preferredTimeIndex(meal),
+      timeIndex: preferredTimeIndex(meal, scheduledDate, todayDate),
       modeIndex: savedModeIndex > -1 ? savedModeIndex : 0,
       notePresets: NOTE_PRESETS.concat(readCustomNotePresets()),
       scheduledDate,
@@ -433,7 +452,11 @@ Page({
       {
         meal,
         timeOptions: TIME_OPTIONS[meal],
-        timeIndex: preferredTimeIndex(meal),
+        timeIndex: preferredTimeIndex(
+          meal,
+          this.data.scheduledDate,
+          this.data.todayDate
+        ),
         lines,
         total: totalOf(lines),
         slotInvalidCount: 0,
@@ -467,6 +490,11 @@ Page({
       {
         scheduledDate: date,
         dateDisplay: dateLabel(date, this.data.todayDate),
+        timeIndex: preferredTimeIndex(
+          this.data.meal,
+          date,
+          this.data.todayDate
+        ),
         lines,
         total: totalOf(lines),
         slotInvalidCount: 0,
@@ -692,7 +720,12 @@ Page({
         requestId
       })
       cart.clearSlot(meal, scheduledDate)
-      recordEaten(lines.map((line: any) => line.dishId))
+      // 按餐期日期记「吃过」，预订单不会提前显示今天吃过
+      const eatenAt = new Date(scheduledDate + 'T00:00:00').getTime()
+      recordEaten(
+        lines.map((line: any) => line.dishId),
+        Number.isFinite(eatenAt) ? eatenAt : Date.now()
+      )
       saveCheckoutPrefs(mode, meal, expectedTime)
       wx.redirectTo({ url: `/pages/order-detail/index?id=${order.id}` })
     } catch (e: any) {

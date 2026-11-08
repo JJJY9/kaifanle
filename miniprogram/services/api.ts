@@ -394,7 +394,12 @@ export async function exportData(): Promise<BackupData> {
 
 export async function getOrder(id: string): Promise<Order | null> {
   if (USE_CLOUD) {
-    return callApi<Order | null>('getOrder', { id })
+    const order = await callApi<Order | null>('getOrder', { id })
+    // 顾客打开订单会清掉未读，首页「新回复」角标缓存要同步失效
+    if (order && order.viewerRole === 'customer') {
+      activeOrderCache = null
+    }
+    return order
   }
   return mock.getOrder(id)
 }

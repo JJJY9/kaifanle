@@ -53,7 +53,10 @@ export function eatenText(at: number, now: number = Date.now()): string {
   from.setHours(0, 0, 0, 0)
   to.setHours(0, 0, 0, 0)
   const days = Math.round((to.getTime() - from.getTime()) / 86400000)
-  if (days <= 0) {
+  if (days < 0) {
+    return ''
+  }
+  if (days === 0) {
     return '今天吃过'
   }
   if (days === 1) {

@@ -1970,6 +1970,34 @@ async function checkContentSafety(openid, content) {
   }
 }
 
+// 按文件头判断图片类型，避免把 jpg 当 png 送给审核接口
+function imageContentType(buffer) {
+  const buf = buffer && buffer.length ? buffer : Buffer.from('')
+  if (
+    buf.length >= 4 &&
+    buf[0] === 0x89 &&
+    buf[1] === 0x50 &&
+    buf[2] === 0x4e &&
+    buf[3] === 0x47
+  ) {
+    return 'image/png'
+  }
+  if (buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) {
+    return 'image/jpeg'
+  }
+  if (buf.length >= 3 && buf.slice(0, 3).toString() === 'GIF') {
+    return 'image/gif'
+  }
+  if (
+    buf.length >= 12 &&
+    buf.slice(0, 4).toString() === 'RIFF' &&
+    buf.slice(8, 12).toString() === 'WEBP'
+  ) {
+    return 'image/webp'
+  }
+  return 'image/png'
+}
+
 // 晒图内容安全：仅在图片有变化时检查；审核接口不可用时放行，不挡评价
 async function checkImagesSafety(images) {
   const list = Array.isArray(images) ? images : []
@@ -1981,10 +2009,11 @@ async function checkImagesSafety(images) {
     let risky = false
     try {
       const download = await cloud.downloadFile({ fileID })
+      const content = download && download.fileContent
       const res = await cloud.openapi.security.imgSecCheck({
         media: {
-          contentType: 'image/png',
-          value: download && download.fileContent
+          contentType: imageContentType(content),
+          value: content
         }
       })
       risky = Number((res && res.errCode) || 0) === 87014

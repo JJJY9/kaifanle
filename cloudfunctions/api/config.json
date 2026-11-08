@@ -2,7 +2,8 @@
   "permissions": {
     "openapi": [
       "subscribeMessage.send",
-      "security.msgSecCheck"
+      "security.msgSecCheck",
+      "security.imgSecCheck"
     ]
   },
   "triggers": [

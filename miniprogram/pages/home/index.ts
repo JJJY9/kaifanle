@@ -1269,7 +1269,11 @@ Page({
   onRecipeTap(e: any) {
     const dish = e.detail && e.detail.dish
     if (dish && dish.id) {
-      wx.navigateTo({ url: `/pages/recipe/index?id=${dish.id}` })
+      wx.navigateTo({
+        url: `/pages/recipe/index?id=${dish.id}&meal=${
+          this.data.selectedMeal
+        }&date=${this.data.selectedDate}`
+      })
     }
   },
 

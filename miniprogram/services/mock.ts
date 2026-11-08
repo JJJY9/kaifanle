@@ -598,7 +598,7 @@ function seedOrders(): Order[] {
         }
       ],
       adminUnread: 1,
-      customerUnread: 0,
+      customerUnread: 2,
       createdAt: t1
     },
     {

@@ -1,7 +1,7 @@
 import { getDish, getDishStats, getMe } from '../../services/api'
 import { favorites } from '../../store/favorites'
 import { cart } from '../../store/cart'
-import { currentMeal, dateInputString } from '../../utils/format'
+import { currentMeal, dateInputString, dateLabel } from '../../utils/format'
 import { saveImageToAlbum } from '../../utils/save-image'
 
 const STEP_PROGRESS_KEY = 'kfl_recipe_steps_v1'
@@ -70,14 +70,31 @@ Page({
     skuDish: null as any,
     orderMeal: 'lunch' as string,
     orderMealText: '午餐',
+    orderTargetText: '午餐',
     canOrder: false,
     orderBlockedText: ''
   },
 
   dishId: '',
+  orderDate: '',
+  requestedMeal: '',
 
   onLoad(options: any) {
     this.dishId = options.id || ''
+    const today = dateInputString()
+    const max = new Date()
+    max.setDate(max.getDate() + 7)
+    const maxDate = dateInputString(max)
+    const requestedDate = String(options.date || '')
+    this.orderDate =
+      requestedDate && requestedDate >= today && requestedDate <= maxDate
+        ? requestedDate
+        : today
+    const requestedMeal = String(options.meal || '')
+    this.requestedMeal =
+      ['breakfast', 'lunch', 'dinner'].indexOf(requestedMeal) > -1
+        ? requestedMeal
+        : ''
     this.setData({
       favorite: this.dishId ? favorites.has(this.dishId) : false
     })
@@ -133,11 +150,21 @@ Page({
           : ['breakfast', 'lunch', 'dinner']
       const preferredMeal = currentMeal()
       const orderMeal =
-        dishMeals.indexOf(preferredMeal) > -1
+        this.requestedMeal && dishMeals.indexOf(this.requestedMeal) > -1
+          ? this.requestedMeal
+          : dishMeals.indexOf(preferredMeal) > -1
           ? preferredMeal
           : ['lunch', 'dinner', 'breakfast'].find(
               meal => dishMeals.indexOf(meal) > -1
             ) || 'lunch'
+      const today = dateInputString()
+      const orderDateLabel = dateLabel(
+        this.orderDate || today,
+        today
+      )
+      const orderTargetText = `${
+        orderDateLabel === '今天' ? '' : orderDateLabel
+      }${MEAL_TEXT[orderMeal] || '午餐'}`
       const soldOut = dish.status === 'soldout' || dish.stock === 0
       this.setData({
         dish,
@@ -152,6 +179,7 @@ Page({
         statsText,
         orderMeal,
         orderMealText: MEAL_TEXT[orderMeal] || '午餐',
+        orderTargetText,
         canOrder: !soldOut && dish.status !== 'off',
         orderBlockedText:
           dish.status === 'off' ? '已下架' : soldOut ? '今天卖完了' : '',
@@ -290,7 +318,7 @@ Page({
     cart.add({
       ...e.detail.line,
       meal: this.data.orderMeal,
-      date: dateInputString()
+      date: this.orderDate || dateInputString()
     })
     this.setData({ skuVisible: false })
     wx.showToast({ title: '已加购', icon: 'none' })

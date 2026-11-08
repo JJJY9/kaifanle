@@ -10,6 +10,7 @@ const Module = require('module')
 
 const store = new Map()
 const sentMessages = []
+const imgSecCheckTypes = []
 let currentOpenid = 'admin-openid'
 let transactionsEnabled = true
 let beforeQueryUpdate = null
@@ -254,7 +255,15 @@ const fakeSdk = {
         return { errCode: 0, result: { suggest: 'pass' } }
       },
       async imgSecCheck({ media }) {
+        imgSecCheckTypes.push(String((media && media.contentType) || ''))
         const content = String((media && media.value) || '')
+        if (content.indexOf('risky-throw') > -1) {
+          const err = new Error(
+            'openapi.security.imgSecCheck:fail risky content'
+          )
+          err.errCode = 87014
+          throw err
+        }
         if (content.indexOf('risky') > -1) {
           return { errCode: 87014 }
         }
@@ -270,9 +279,18 @@ const fakeSdk = {
     if (id.indexOf('unavailable') > -1) {
       throw new Error('download failed')
     }
-    return {
-      fileContent: Buffer.from(id.indexOf('risky') > -1 ? 'risky-image' : 'safe-image')
+    if (id.indexOf('photo.jpg') > -1) {
+      return {
+        fileContent: Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10])
+      }
     }
+    let content = 'safe-image'
+    if (id.indexOf('throw') > -1) {
+      content = 'risky-throw'
+    } else if (id.indexOf('risky') > -1) {
+      content = 'risky-image'
+    }
+    return { fileContent: Buffer.from(content) }
   },
   getWXContext() {
     return { OPENID: currentOpenid }
@@ -719,12 +737,23 @@ async function run() {
   res = await call('getAllOrders', {}, 'admin-openid')
   messageOrder = res.data.find(order => order.id === created.data.id)
   assert.strictEqual(Number(messageOrder.customerUnread), 0)
+  assert.ok(
+    Number(messageOrder.customerReadAt) >=
+      Number(messageOrder.messages[1].at),
+    '已读时间应落库'
+  )
   res = await call('getOrder', { id: created.data.id }, 'admin-openid')
   assert.strictEqual(Number(res.data.adminUnread), 0)
   assert.strictEqual(res.data.viewerRole, 'admin')
   assert.ok(
     Number(res.data.adminReadAt) >= Number(res.data.messages[0].at),
     '掌勺人打开后应记录已读时间'
+  )
+  res = await call('getAllOrders', {}, 'admin-openid')
+  messageOrder = res.data.find(order => order.id === created.data.id)
+  assert.ok(
+    Number(messageOrder.adminReadAt) >= Number(messageOrder.messages[0].at),
+    '掌勺人已读时间应落库'
   )
   res = await call(
     'sendOrderMessage',
@@ -943,6 +972,35 @@ async function run() {
   assert.ok(String(res.error).indexOf('敏感') > -1)
   res = await call('getOrder', { id: created.data.id }, 'girl-openid')
   assert.deepStrictEqual(res.data.ratingImages, ['cloud://ok/a.jpg'])
+  // 审核接口以异常形式抛 87014 也要拦截
+  res = await call(
+    'rateOrder',
+    {
+      id: created.data.id,
+      rating: 3,
+      feedback: '超好吃',
+      images: ['cloud://ok/risky-throw.jpg']
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, false)
+  assert.ok(String(res.error).indexOf('敏感') > -1)
+  // jpg 图片按 image/jpeg 送审
+  res = await call(
+    'rateOrder',
+    {
+      id: created.data.id,
+      rating: 3,
+      feedback: '超好吃',
+      images: ['cloud://ok/photo.jpg']
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.ok(
+    imgSecCheckTypes.indexOf('image/jpeg') > -1,
+    'jpg 应按 image/jpeg 送审'
+  )
   res = await call(
     'rateOrder',
     {
@@ -1286,6 +1344,19 @@ async function run() {
   res = await call('getOrder', { id: fallbackOrderId }, 'girl-openid')
   assert.ok(
     res.data.messages.some(item => item.content === '事务关闭时也能留言')
+  )
+  res = await call('getOrder', { id: fallbackOrderId }, 'admin-openid')
+  assert.strictEqual(Number(res.data.adminUnread), 0)
+  assert.ok(
+    Number(res.data.adminReadAt) >= Number(res.data.messages[0].at),
+    '无事务时也应记录已读时间'
+  )
+  res = await call('getAllOrders', {}, 'admin-openid')
+  const fallbackOrder = res.data.find(order => order.id === fallbackOrderId)
+  assert.ok(
+    Number(fallbackOrder.adminReadAt) >=
+      Number(fallbackOrder.messages[0].at),
+    '无事务时已读时间应落库'
   )
   transactionsEnabled = true
 
