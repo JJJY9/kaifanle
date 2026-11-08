@@ -5282,6 +5282,20 @@ function chinaDate(offset) {
       (data.activeOrder && data.activeOrder.etaCountdown) || '为空'
     }`
   )
+  // 先清空购物车残留（菜谱测试会留下明天晚餐一行），确保本段角标断言只受本段影响
+  await mp.navigateTo('/pages/cart/index')
+  await sleep(1200)
+  page = await current()
+  data = await page.data()
+  for (const group of data.groups || []) {
+    await invoke(
+      mp,
+      `page.onClearGroup({ currentTarget: { dataset: { meal: ${JSON.stringify(
+        group.meal
+      )}, date: ${JSON.stringify(group.date)} } } })`
+    )
+    await sleep(300)
+  }
   await mp.switchTab('/pages/home/index')
   await sleep(1000)
   await invoke(
@@ -5377,17 +5391,26 @@ function chinaDate(offset) {
     ['breakfast', 'lunch', 'dinner'].every(
       meal => Number((actual || {})[meal] || 0) === Number(expected[meal] || 0)
     )
+  const mealCountChipEl = await page.$('.meal-cart-count')
+  const mealCountChipText = mealCountChipEl
+    ? String(await mealCountChipEl.text())
+    : ''
+  const firstMealWithCount = ['breakfast', 'lunch', 'dinner'].find(
+    meal => Number(todayMealExpected[meal] || 0) > 0
+  )
   check(
     'mock 日期选择刷新角标',
     todayCartAfterReset >= 1 &&
       pickerTomorrowCart === 0 &&
       pickerTomorrowOther >= 1 &&
+      Boolean(firstMealWithCount) &&
+      mealCountChipText === String(todayMealExpected[firstMealWithCount]) &&
       mealCountsMatch(pickerTomorrowMeals, tomorrowMealExpected) &&
       mealCountsMatch(data.mealCartCounts, todayMealExpected) &&
       Number(data.cartCount || 0) >= 1,
     `今天 ${todayCartAfterReset} → 明天 ${pickerTomorrowCart}/${pickerTomorrowOther} · 今日餐次 ${JSON.stringify(
       data.mealCartCounts || {}
-    )}`
+    )} · 角标 ${mealCountChipText || '无'}`
   )
   await mp.navigateTo('/pages/cart/index')
   await sleep(1400)
@@ -5456,6 +5479,9 @@ function chinaDate(offset) {
     `${orderWaitedChipText || '无角标'} · 预订 ${preorderOrderWaits.length} 单`
   )
   const orderGroupEl = await page.$('.group-label')
+  const orderGroupDate = orderGroupEl
+    ? String((await orderGroupEl.attribute('data-date')) || '')
+    : ''
   if (orderGroupEl) {
     await orderGroupEl.longpress()
     await sleep(700)
@@ -5465,12 +5491,26 @@ function chinaDate(offset) {
       "return new Promise(resolve => wx.getClipboardData({ success: r => resolve(r.data || ''), fail: () => resolve('') }))"
     )
   )
+  const dayClipLines = String(dayOrdersClip || '').split('\n')
+  const dayClipNos = String(dayClipLines[1] || '')
+    .split('、')
+    .map(text => text.trim())
+    .filter(Boolean)
+  const expectedDayNos = (data.orders || [])
+    .filter(order => order.groupKey === orderGroupDate)
+    .map(order => `#${String(order.no || '')}`)
   check(
     'mock 订单列表复制当日单号',
     Boolean(orderGroupEl) &&
-      String(dayOrdersClip || '').indexOf('【订单清单】') > -1 &&
-      String(dayOrdersClip || '').indexOf('#') > -1,
-    String(dayOrdersClip || '').split('\n')[0] || '空'
+      Boolean(orderGroupDate) &&
+      String(dayClipLines[0] || '').indexOf('【订单清单】') > -1 &&
+      String(dayClipLines[0] || '').indexOf(orderGroupDate) > -1 &&
+      String(dayClipLines[0] || '').indexOf(
+        `· ${dayClipNos.length} 单`
+      ) > -1 &&
+      dayClipNos.length === expectedDayNos.length &&
+      dayClipNos.every(no => expectedDayNos.indexOf(no) > -1),
+    String(dayClipLines[0] || '空')
   )
   check(
     'mock 订单评价表情',

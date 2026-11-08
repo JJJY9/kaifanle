@@ -295,7 +295,7 @@ Page({
     if (!date) {
       return
     }
-    const orders = (this.data.orders || []).filter(
+    const orders = this.filteredOrders().filter(
       order => order.groupKey === date
     )
     const nos = orders.map(order => String(order.no || '')).filter(Boolean)
@@ -328,11 +328,11 @@ Page({
     wx.pageScrollTo({ scrollTop: 0, duration: 300 })
   },
 
-  applyFilter() {
+  filteredOrders() {
     const filter = this.data.filter
     const keyword = this.data.keyword.trim().toLowerCase()
     const meal = this.data.meal
-    const list = this.data.orders.filter(order => {
+    return (this.data.orders || []).filter(order => {
       if (meal !== 'all' && order.meal !== meal) {
         return false
       }
@@ -370,6 +370,13 @@ Page({
       }
       return true
     })
+  },
+
+  applyFilter() {
+    const filter = this.data.filter
+    const keyword = this.data.keyword.trim()
+    const meal = this.data.meal
+    const list = this.filteredOrders()
     let lastLabel = ''
     const groupCounts: Record<string, number> = {}
     list.forEach(order => {
