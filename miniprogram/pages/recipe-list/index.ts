@@ -1,12 +1,43 @@
 import { getCategories, getDishes } from '../../services/api'
 import { favorites } from '../../store/favorites'
 
+const RECIPE_SEARCH_HISTORY_KEY = 'kfl_recipe_search_v1'
+const RECIPE_SEARCH_HISTORY_MAX = 6
+
+function readRecipeSearchHistory(): string[] {
+  try {
+    const raw = wx.getStorageSync(RECIPE_SEARCH_HISTORY_KEY)
+    const list = raw ? JSON.parse(raw) : []
+    if (!Array.isArray(list)) {
+      return []
+    }
+    return list
+      .map((item: any) => String(item || '').trim())
+      .filter(Boolean)
+      .slice(0, RECIPE_SEARCH_HISTORY_MAX)
+  } catch (e) {
+    return []
+  }
+}
+
+function writeRecipeSearchHistory(list: string[]) {
+  try {
+    wx.setStorageSync(
+      RECIPE_SEARCH_HISTORY_KEY,
+      JSON.stringify((list || []).slice(0, RECIPE_SEARCH_HISTORY_MAX))
+    )
+  } catch (e) {
+    // 忽略存储失败
+  }
+}
+
 Page({
   data: {
     groups: [] as any[],
     displayGroups: [] as any[],
     keyword: '',
     favOnly: false,
+    recipeSearchHistory: [] as string[],
     total: 0,
     loading: true,
     error: '',
@@ -17,6 +48,7 @@ Page({
   _lastRandomId: '',
 
   onLoad() {
+    this.setData({ recipeSearchHistory: readRecipeSearchHistory() })
     this.load()
   },
 
@@ -95,6 +127,57 @@ Page({
     const keyword = String(e.detail.value || '')
     this.setData({ keyword })
     this.applyFilter(keyword)
+  },
+
+  onSearchConfirm(e: any) {
+    const value = String(
+      (e && e.detail && e.detail.value) || this.data.keyword || ''
+    )
+      .trim()
+      .slice(0, 20)
+    if (!value) {
+      return
+    }
+    const recipeSearchHistory = [value]
+      .concat(
+        (this.data.recipeSearchHistory || []).filter(item => item !== value)
+      )
+      .slice(0, RECIPE_SEARCH_HISTORY_MAX)
+    writeRecipeSearchHistory(recipeSearchHistory)
+    this.setData({ keyword: value, recipeSearchHistory })
+    this.applyFilter(value)
+  },
+
+  onSearchClear() {
+    this.setData({ keyword: '' })
+    this.applyFilter('')
+  },
+
+  onRecipeHistoryTap(e: any) {
+    const keyword = String(e.currentTarget.dataset.keyword || '')
+    if (!keyword) {
+      return
+    }
+    this.setData({ keyword })
+    this.applyFilter(keyword)
+  },
+
+  onRecipeHistoryRemove(e: any) {
+    const keyword = String(e.currentTarget.dataset.keyword || '')
+    if (!keyword) {
+      return
+    }
+    const recipeSearchHistory = (this.data.recipeSearchHistory || []).filter(
+      item => item !== keyword
+    )
+    writeRecipeSearchHistory(recipeSearchHistory)
+    this.setData({ recipeSearchHistory })
+    wx.showToast({ title: '已从搜索历史移除', icon: 'none' })
+  },
+
+  onRecipeHistoryClear() {
+    writeRecipeSearchHistory([])
+    this.setData({ recipeSearchHistory: [] })
   },
 
   applyFilter(keyword: string) {

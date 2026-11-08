@@ -73,6 +73,7 @@
         bindtap="onSort"
       >最近点过</view>
       <view class="sort-chip random" bindtap="onRandomFavorite">🎲 随机一道</view>
+      <view class="sort-chip" bindtap="onCopyList">📋 复制清单</view>
     </view>
 
     <empty-state
@@ -103,6 +104,8 @@
         <view class="fav-name">{{item.name}}</view>
         <view class="fav-desc">{{item.desc}}</view>
         <view class="fav-tags">
+          <text wx:if="{{item.status === 'off'}}" class="fav-badge off">已下架</text>
+          <text wx:elif="{{item.status === 'soldout' || item.stock === 0}}" class="fav-badge sold">售罄</text>
           <text wx:for="{{item.tags}}" wx:key="*this" class="fav-tag">{{item}}</text>
         </view>
         <view wx:if="{{item.favoritedText}}" class="fav-time">收藏于 {{item.favoritedText}}</view>

@@ -278,6 +278,21 @@ Page({
     wx.navigateTo({ url: '/pages/recipe/index?id=' + pick.id })
   },
 
+  onCopyList() {
+    const list = (this.data.display || []).slice()
+    if (!list.length) {
+      wx.showToast({ title: '没有可复制的收藏', icon: 'none' })
+      return
+    }
+    const lines = list.map(dish => `${dish.name} ¥${dish.price}`)
+    wx.setClipboardData({
+      data: [`【我的收藏】共 ${list.length} 道`].concat(lines).join('\n'),
+      success: () => {
+        wx.showToast({ title: '收藏清单已复制', icon: 'none' })
+      }
+    })
+  },
+
   onGoHome() {
     wx.switchTab({ url: '/pages/home/index' })
   },

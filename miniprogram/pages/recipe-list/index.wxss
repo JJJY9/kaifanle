@@ -45,6 +45,48 @@
   font-weight: 700;
 }
 
+.search-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 999rpx;
+  background: #111111;
+  color: #FFFFFF;
+  font-size: 24rpx;
+  line-height: 1;
+}
+
+.search-history {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8rpx;
+  margin-top: 12rpx;
+}
+
+.search-history-label {
+  color: #5C5C5C;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
+.search-history-chip {
+  padding: 4rpx 14rpx;
+  background: #FFFFFF;
+  border: 2rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
+.search-history-clear {
+  color: #9A9A9A;
+  font-size: 19rpx;
+  font-weight: 700;
+}
+
 .list-tools {
   display: flex;
   gap: 12rpx;

@@ -185,6 +185,24 @@
   white-space: nowrap;
 }
 
+.fav-badge {
+  margin-right: 8rpx;
+  padding: 2rpx 12rpx;
+  border: 2rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 18rpx;
+  font-weight: 800;
+}
+
+.fav-badge.sold {
+  background: #FFD23F;
+}
+
+.fav-badge.off {
+  background: #E8E8E8;
+  color: #5C5C5C;
+}
+
 .fav-desc {
   margin-top: 2rpx;
   color: #5C5C5C;

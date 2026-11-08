@@ -12,7 +12,22 @@
       value="{{keyword}}"
       confirm-type="search"
       bindinput="onSearch"
+      bindconfirm="onSearchConfirm"
     />
+    <view wx:if="{{keyword}}" class="search-clear" bindtap="onSearchClear">×</view>
+  </view>
+
+  <view wx:if="{{!keyword && recipeSearchHistory.length}}" class="search-history">
+    <text class="search-history-label">最近搜</text>
+    <view
+      wx:for="{{recipeSearchHistory}}"
+      wx:key="*this"
+      class="search-history-chip"
+      data-keyword="{{item}}"
+      bindtap="onRecipeHistoryTap"
+      bindlongpress="onRecipeHistoryRemove"
+    >{{item}}</view>
+    <text class="search-history-clear" bindtap="onRecipeHistoryClear">清空</text>
   </view>
 
   <view class="list-tools">
