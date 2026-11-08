@@ -8,6 +8,7 @@
     <view class="cart-summary card">
       <text>全部 {{count}} 份</text>
       <text class="summary-total">¥{{total}}</text>
+      <text class="summary-clear" bindtap="onClearAll">清空</text>
     </view>
 
     <view wx:for="{{groups}}" wx:key="key" class="group card">

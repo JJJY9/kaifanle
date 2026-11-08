@@ -311,7 +311,9 @@
       wx:key="id"
       class="order card {{item.urgent ? 'urgent' : ''}}"
       data-id="{{item.id}}"
+      data-no="{{item.no}}"
       bindtap="onHistoryTap"
+      bindlongpress="onCopyOrderNo"
     >
       <view class="order-top">
         <text class="no">#{{item.no}}</text>

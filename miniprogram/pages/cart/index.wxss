@@ -179,3 +179,13 @@
   font-size: 21rpx;
   font-weight: 700;
 }
+
+.summary-clear {
+  margin-left: auto;
+  padding: 2rpx 16rpx;
+  background: #FFFFFF;
+  border: 2rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  font-weight: 800;
+}

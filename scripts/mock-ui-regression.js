@@ -1280,6 +1280,32 @@ function chinaDate(offset) {
       ? `${messageOrder.lastMessageText} · ${messageOrder.messageBadge} 条未读`
       : '没找到订单'
   )
+  await mp.evaluate(
+    new Function(
+      "return new Promise(resolve => wx.setClipboardData({ data: '__clip_sentinel__', success: () => resolve(true), fail: () => resolve(false) }))"
+    )
+  )
+  const kitchenOrderNo =
+    ((data.ordersView || [])[0] || {}).no || ''
+  const kitchenOrderCard = await page.$('.order.card')
+  if (kitchenOrderCard) {
+    await kitchenOrderCard.longpress()
+    await sleep(700)
+  }
+  page = await current()
+  const kitchenNoClip = await mp.evaluate(
+    new Function(
+      "return new Promise(resolve => wx.getClipboardData({ success: r => resolve(r.data || ''), fail: () => resolve('') }))"
+    )
+  )
+  check(
+    'mock 厨房长按复制单号',
+    page.path === 'pages/kitchen/index' &&
+      Boolean(kitchenOrderCard) &&
+      Boolean(kitchenOrderNo) &&
+      String(kitchenNoClip || '') === String(kitchenOrderNo),
+    String(kitchenNoClip || '')
+  )
   await invoke(mp, "page.onOrderSearch({ detail: { value: '番茄' } })")
   await invoke(mp, 'page.onOrderSearchConfirm()')
   await sleep(400)
@@ -5404,6 +5430,46 @@ function chinaDate(offset) {
   page = await current()
   data = await page.data()
   check('mock 购物车清空', (data.groups || []).length === 0)
+  await mp.switchTab('/pages/home/index')
+  await sleep(1500)
+  await invoke(
+    mp,
+    "page.onSelectMeal({ currentTarget: { dataset: { meal: 'lunch' } } })"
+  )
+  await sleep(1200)
+  await invoke(
+    mp,
+    "page.quickAdd(page._available.find(d => d.status === 'on' && d.stock !== 0 && !(d.spicyLevels || []).length && !(d.addons || []).length))"
+  )
+  await sleep(500)
+  await mp.navigateTo('/pages/cart/index')
+  await sleep(1200)
+  page = await current()
+  data = await page.data()
+  const beforeClearAll = Number(data.count || 0)
+  await mp.mockWxMethod('showModal', {
+    confirm: true,
+    cancel: false,
+    content: ''
+  })
+  await invoke(mp, 'page.onClearAll()')
+  await sleep(700)
+  page = await current()
+  data = await page.data()
+  const cartStoreAfter = await mp.evaluate(() => {
+    try {
+      return JSON.parse(wx.getStorageSync('kfl_cart_v1') || '[]')
+    } catch (e) {
+      return []
+    }
+  })
+  check(
+    'mock 购物车一键清空',
+    beforeClearAll >= 1 &&
+      (data.groups || []).length === 0 &&
+      cartStoreAfter.length === 0,
+    `${beforeClearAll} 份 → 0`
+  )
 
   // 真实提交一笔明天午餐：验证下单写入的「吃过」标记与结算记忆
   const submitDate = chinaDate(1)

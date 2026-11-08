@@ -111,6 +111,24 @@ Page({
     this.render()
   },
 
+  async onClearAll() {
+    if (!this.data.count) {
+      return
+    }
+    const res: any = await wx.showModal({
+      title: '清空购物车？',
+      content: `一共 ${this.data.count} 份，清空后需要重新选。`,
+      confirmText: '清空',
+      cancelText: '算了'
+    })
+    if (!res.confirm) {
+      return
+    }
+    cart.clear()
+    this.render()
+    wx.showToast({ title: '已清空', icon: 'none' })
+  },
+
   onCheckout(e: any) {
     const meal = e.currentTarget.dataset.meal
     const date = e.currentTarget.dataset.date

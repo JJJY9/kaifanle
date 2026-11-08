@@ -3110,6 +3110,17 @@ Page({
     }
   },
 
+  onCopyOrderNo(e: any) {
+    const no = String((e && e.currentTarget && e.currentTarget.dataset.no) || '')
+    if (!no) {
+      return
+    }
+    wx.setClipboardData({
+      data: no,
+      success: () => wx.showToast({ title: '订单号已复制', icon: 'none' })
+    })
+  },
+
   onOpenReceipt(e: any) {
     const id = e.currentTarget.dataset.id
     if (!id) {
