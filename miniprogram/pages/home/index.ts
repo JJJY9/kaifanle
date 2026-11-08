@@ -116,6 +116,10 @@ Page({
     cartCount: 0,
     cartTotal: 0,
     otherCartCount: 0,
+    mealCartCounts: { breakfast: 0, lunch: 0, dinner: 0 } as Record<
+      string,
+      number
+    >,
     skuVisible: false,
     activeDish: null as Dish | null,
     loading: true,
@@ -620,10 +624,11 @@ Page({
   },
 
   updateCartBadge() {
+    const selectedDate = this.data.selectedDate
     const lines = (this._cartLines || []).filter(
       line =>
         line.meal === this.data.selectedMeal &&
-        line.date === this.data.selectedDate
+        line.date === selectedDate
     )
     const count = lines.reduce((sum, line) => sum + line.qty, 0)
     const total = lines.reduce((sum, line) => sum + line.qty * line.price, 0)
@@ -631,10 +636,24 @@ Page({
       (sum, line) => sum + line.qty,
       0
     )
+    const mealCartCounts: Record<string, number> = {
+      breakfast: 0,
+      lunch: 0,
+      dinner: 0
+    }
+    ;(this._cartLines || []).forEach(line => {
+      if (
+        line.date === selectedDate &&
+        mealCartCounts[line.meal] !== undefined
+      ) {
+        mealCartCounts[line.meal] += line.qty
+      }
+    })
     this.setData({
       cartCount: count,
       cartTotal: total,
-      otherCartCount: Math.max(0, allCount - count)
+      otherCartCount: Math.max(0, allCount - count),
+      mealCartCounts
     })
   },
 

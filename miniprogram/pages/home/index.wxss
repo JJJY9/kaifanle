@@ -369,6 +369,18 @@
   color: #FFFFFF;
 }
 
+.meal-cart-count {
+  margin-left: 8rpx;
+  min-width: 30rpx;
+  padding: 0 8rpx;
+  border-radius: 999rpx;
+  background: #FF6B35;
+  color: #FFFFFF;
+  font-size: 18rpx;
+  line-height: 30rpx;
+  text-align: center;
+}
+
 .meal-notice {
   margin-top: 16rpx;
   padding: 12rpx 20rpx;

@@ -5345,6 +5345,7 @@ function chinaDate(offset) {
   data = await page.data()
   const pickerTomorrowCart = Number(data.cartCount || 0)
   const pickerTomorrowOther = Number(data.otherCartCount || 0)
+  const pickerTomorrowMeals = { ...(data.mealCartCounts || {}) }
   await invoke(
     mp,
     `page.onSelectDate({ detail: { value: '${String(
@@ -5354,13 +5355,39 @@ function chinaDate(offset) {
   await sleep(1300)
   page = await current()
   data = await page.data()
+  const cartLinesSnapshot = await mp.evaluate(() => {
+    try {
+      return JSON.parse(wx.getStorageSync('kfl_cart_v1') || '[]')
+    } catch (e) {
+      return []
+    }
+  })
+  const deriveMealCounts = date => {
+    const counts = { breakfast: 0, lunch: 0, dinner: 0 }
+    ;(cartLinesSnapshot || []).forEach(line => {
+      if (line && line.date === date && counts[line.meal] !== undefined) {
+        counts[line.meal] += Number(line.qty || 0)
+      }
+    })
+    return counts
+  }
+  const todayMealExpected = deriveMealCounts(String(data.todayDate || ''))
+  const tomorrowMealExpected = deriveMealCounts(pickerTomorrowDate)
+  const mealCountsMatch = (actual, expected) =>
+    ['breakfast', 'lunch', 'dinner'].every(
+      meal => Number((actual || {})[meal] || 0) === Number(expected[meal] || 0)
+    )
   check(
     'mock 日期选择刷新角标',
     todayCartAfterReset >= 1 &&
       pickerTomorrowCart === 0 &&
       pickerTomorrowOther >= 1 &&
+      mealCountsMatch(pickerTomorrowMeals, tomorrowMealExpected) &&
+      mealCountsMatch(data.mealCartCounts, todayMealExpected) &&
       Number(data.cartCount || 0) >= 1,
-    `今天 ${todayCartAfterReset} → 明天 ${pickerTomorrowCart}/${pickerTomorrowOther} → 今天 ${data.cartCount}`
+    `今天 ${todayCartAfterReset} → 明天 ${pickerTomorrowCart}/${pickerTomorrowOther} · 今日餐次 ${JSON.stringify(
+      data.mealCartCounts || {}
+    )}`
   )
   await mp.navigateTo('/pages/cart/index')
   await sleep(1400)
@@ -5427,6 +5454,23 @@ function chinaDate(offset) {
       preorderOrderWaits.length >= 1 &&
       preorderOrderWaits.every(order => !order.waitedText),
     `${orderWaitedChipText || '无角标'} · 预订 ${preorderOrderWaits.length} 单`
+  )
+  const orderGroupEl = await page.$('.group-label')
+  if (orderGroupEl) {
+    await orderGroupEl.longpress()
+    await sleep(700)
+  }
+  const dayOrdersClip = await mp.evaluate(
+    new Function(
+      "return new Promise(resolve => wx.getClipboardData({ success: r => resolve(r.data || ''), fail: () => resolve('') }))"
+    )
+  )
+  check(
+    'mock 订单列表复制当日单号',
+    Boolean(orderGroupEl) &&
+      String(dayOrdersClip || '').indexOf('【订单清单】') > -1 &&
+      String(dayOrdersClip || '').indexOf('#') > -1,
+    String(dayOrdersClip || '').split('\n')[0] || '空'
   )
   check(
     'mock 订单评价表情',

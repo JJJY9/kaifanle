@@ -72,6 +72,7 @@
         class="group-label"
         data-date="{{item.groupKey}}"
         bindtap="onToggleDate"
+        bindlongpress="onCopyDayOrders"
       >{{item.dateText}} {{item.groupDateText}} · {{item.groupCount}} 单 <text class="group-toggle">{{item.collapsed ? '展开' : '收起'}}</text></view>
       <view
         wx:if="{{!item.collapsed}}"

@@ -290,6 +290,27 @@ Page({
     }
   },
 
+  onCopyDayOrders(e: any) {
+    const date = String((e.currentTarget && e.currentTarget.dataset.date) || '')
+    if (!date) {
+      return
+    }
+    const orders = (this.data.orders || []).filter(
+      order => order.groupKey === date
+    )
+    const nos = orders.map(order => String(order.no || '')).filter(Boolean)
+    if (!nos.length) {
+      return
+    }
+    wx.setClipboardData({
+      data: [
+        `【订单清单】${date} · ${nos.length} 单`,
+        nos.map(no => `#${no}`).join('、')
+      ].join('\n'),
+      success: () => wx.showToast({ title: '当日订单号已复制', icon: 'none' })
+    })
+  },
+
   onCopyOrderNo(e: any) {
     const no = String((e && e.currentTarget && e.currentTarget.dataset.no) || '')
     if (!no) {

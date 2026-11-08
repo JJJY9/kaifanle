@@ -29,7 +29,7 @@
         class="meal-tab {{selectedMeal === item.id ? 'active' : ''}}"
         data-meal="{{item.id}}"
         bindtap="onSelectMeal"
-      >{{item.name}}</view>
+      >{{item.name}}<text wx:if="{{mealCartCounts[item.id]}}" class="meal-cart-count">{{mealCartCounts[item.id]}}</text></view>
     </view>
 
     <view class="date-row">
