@@ -56,6 +56,13 @@
       >{{item.label}} {{item.count}}</view>
     </view>
 
+    <view class="meal-row">
+      <view class="meal-chip {{meal === 'all' ? 'active' : ''}}" data-meal="all" bindtap="onSelectMeal">全部餐次</view>
+      <view class="meal-chip {{meal === 'breakfast' ? 'active' : ''}}" data-meal="breakfast" bindtap="onSelectMeal">早餐</view>
+      <view class="meal-chip {{meal === 'lunch' ? 'active' : ''}}" data-meal="lunch" bindtap="onSelectMeal">午餐</view>
+      <view class="meal-chip {{meal === 'dinner' ? 'active' : ''}}" data-meal="dinner" bindtap="onSelectMeal">晚餐</view>
+    </view>
+
     <view class="sort-row">
       <view
         class="sort-chip {{sort === 'new' ? 'active' : ''}}"

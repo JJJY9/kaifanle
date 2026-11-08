@@ -19,6 +19,7 @@ interface ReviewView {
   no: string
   dateText: string
   mealText: string
+  meal: string
   timeText: string
   rating: number
   emoji: string
@@ -40,6 +41,7 @@ Page({
     reviews: [] as ReviewView[],
     display: [] as ReviewView[],
     filter: 'all' as 'all' | '3' | '2' | '1',
+    meal: 'all' as 'all' | 'breakfast' | 'lunch' | 'dinner',
     filters: [] as any[],
     sort: 'new' as 'new' | 'rating',
     onlyImages: false,
@@ -91,6 +93,7 @@ Page({
             no: order.no,
             dateText: dateLabel(date),
             mealText: mealName(order.meal),
+            meal: order.meal,
             timeText: formatTime(order.ratedAt || order.createdAt),
             rating: rating.value,
             emoji: rating.emoji,
@@ -167,6 +170,14 @@ Page({
     this.setData({ filter }, () => this.applyFilter())
   },
 
+  onSelectMeal(e: any) {
+    const meal = e.currentTarget.dataset.meal
+    if (meal === this.data.meal) {
+      return
+    }
+    this.setData({ meal }, () => this.applyFilter())
+  },
+
   onSort(e: any) {
     const sort = e.currentTarget.dataset.sort === 'rating' ? 'rating' : 'new'
     if (sort === this.data.sort) {
@@ -180,10 +191,14 @@ Page({
     const base = this.data.onlyImages
       ? this.data.reviews.filter(review => review.images.length > 0)
       : this.data.reviews
+    const withMeal =
+      this.data.meal === 'all'
+        ? base
+        : base.filter(review => review.meal === this.data.meal)
     const matched =
       filter === 'all'
-        ? base.slice()
-        : base.filter(review => String(review.rating) === filter)
+        ? withMeal.slice()
+        : withMeal.filter(review => String(review.rating) === filter)
     const display =
       this.data.sort === 'rating'
         ? matched.sort((a, b) => b.rating - a.rating)

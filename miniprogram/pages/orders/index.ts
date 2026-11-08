@@ -262,6 +262,19 @@ Page({
     }
   },
 
+  onCopyOrderNo(e: any) {
+    const no = String((e && e.currentTarget && e.currentTarget.dataset.no) || '')
+    if (!no) {
+      return
+    }
+    wx.setClipboardData({
+      data: no,
+      success: () => {
+        wx.showToast({ title: '订单号已复制', icon: 'none' })
+      }
+    })
+  },
+
   onBackTop() {
     wx.pageScrollTo({ scrollTop: 0, duration: 300 })
   },

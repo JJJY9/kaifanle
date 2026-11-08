@@ -274,3 +274,25 @@
   font-size: 21rpx;
   font-weight: 800;
 }
+
+.meal-row {
+  display: flex;
+  gap: 10rpx;
+  margin-bottom: 16rpx;
+}
+
+.meal-chip {
+  flex: 1;
+  text-align: center;
+  padding: 6rpx 0;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 21rpx;
+  font-weight: 800;
+}
+
+.meal-chip.active {
+  background: #FFD23F;
+  box-shadow: 2rpx 2rpx 0 #111111;
+}

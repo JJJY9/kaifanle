@@ -1230,8 +1230,19 @@ Page({
       wx.showToast({ title: '先等厨房上菜', icon: 'none' })
       return
     }
-    const dish = pool[Math.floor(Math.random() * pool.length)]
-    wx.showToast({ title: `不如吃${dish.name}？`, icon: 'none' })
+    const eaten = getLastEatenMap()
+    const fresh = pool.filter(
+      dish => eatenText(Number(eaten[dish.id] || 0)) !== '今天吃过'
+    )
+    const base = fresh.length ? fresh : pool
+    const favPool = base.filter(dish => favorites.has(dish.id))
+    const fromFav = favPool.length > 0 && Math.random() < 0.5
+    const pickPool = fromFav ? favPool : base
+    const dish = pickPool[Math.floor(Math.random() * pickPool.length)]
+    wx.showToast({
+      title: `${fromFav ? '你收藏的' : '不如吃'}${dish.name}？`,
+      icon: 'none'
+    })
     this.openSku(dish)
   },
 

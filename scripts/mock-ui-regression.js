@@ -547,6 +547,31 @@ function chinaDate(offset) {
     'page.setData({ notice: "", noticeLong: false, noticeExpanded: false })'
   )
   await sleep(200)
+  const surpriseTarget = await invoke(
+    mp,
+    "const pool = (page._available || []).filter(d => d.status !== 'soldout' && d.stock !== 0); return pool[0] ? pool[0].id : ''"
+  )
+  await invoke(
+    mp,
+    `const ids = (page._available || []).map(d => d.id); const map = {}; const now = Date.now(); ids.forEach(id => { if (id !== ${JSON.stringify(
+      surpriseTarget
+    )}) map[id] = now }); wx.setStorageSync('kfl_eaten_v1', JSON.stringify(map)); page.onSurprise(); return true`
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 帮我选避开今天吃过的',
+    Boolean(surpriseTarget) &&
+      data.skuVisible === true &&
+      Boolean(data.activeDish) &&
+      data.activeDish.id === surpriseTarget,
+    data.activeDish ? data.activeDish.name : '没有推荐'
+  )
+  await invoke(mp, 'page.onSkuClose()')
+  await mp.evaluate(
+    new Function("wx.removeStorageSync('kfl_eaten_v1'); return true;")
+  )
   await invoke(mp, "page.onSearchInput({ detail: { value: '番茄x' } })")
   await sleep(400)
   page = await current()
@@ -3343,6 +3368,21 @@ function chinaDate(offset) {
   )
   await invoke(
     mp,
+    "page.onCopyOrderNo({ currentTarget: { dataset: { no: '000123' } } })"
+  )
+  await sleep(500)
+  const ordersCopyClip = await mp.evaluate(
+    new Function(
+      "return new Promise(resolve => wx.getClipboardData({ success: r => resolve(r.data || ''), fail: () => resolve('') }))"
+    )
+  )
+  check(
+    'mock 订单列表长按复制单号',
+    String(ordersCopyClip || '') === '000123',
+    String(ordersCopyClip || '')
+  )
+  await invoke(
+    mp,
     "page.onSelectMeal({ currentTarget: { dataset: { meal: 'lunch' } } })"
   )
   await sleep(400)
@@ -3793,6 +3833,24 @@ function chinaDate(offset) {
     await invoke(
       mp,
       "page.onSelectFilter({ currentTarget: { dataset: { filter: 'all' } } })"
+    )
+    await invoke(
+      mp,
+      "page.onSelectMeal({ currentTarget: { dataset: { meal: 'lunch' } } })"
+    )
+    await sleep(400)
+    page = await current()
+    data = await page.data()
+    check(
+      'mock 我的评价按餐次筛选',
+      data.meal === 'lunch' &&
+        (data.display || []).length > 0 &&
+        data.display.every(review => review.meal === 'lunch'),
+      `午餐 ${(data.display || []).length} 条`
+    )
+    await invoke(
+      mp,
+      "page.onSelectMeal({ currentTarget: { dataset: { meal: 'all' } } })"
     )
     await invoke(
       mp,

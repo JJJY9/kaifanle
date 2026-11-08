@@ -77,7 +77,9 @@
         wx:if="{{!item.collapsed}}"
         class="order card"
         data-id="{{item.id}}"
+        data-no="{{item.no}}"
         bindtap="onTapOrder"
+        bindlongpress="onCopyOrderNo"
       >
         <view class="order-top">
           <view class="order-id">
