@@ -357,6 +357,52 @@
   gap: 18rpx;
 }
 
+.related-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-top: 6rpx;
+}
+
+.related-item {
+  width: calc((100% - 32rpx) / 3);
+  padding: 14rpx 12rpx;
+  background: #FFFDF6;
+  border: 3rpx solid #111111;
+  border-radius: 20rpx;
+  box-shadow: 3rpx 3rpx 0 #111111;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6rpx;
+}
+
+.related-emoji {
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3rpx solid #111111;
+  border-radius: 16rpx;
+  font-size: 34rpx;
+}
+
+.related-name {
+  max-width: 100%;
+  font-size: 21rpx;
+  font-weight: 800;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.related-price {
+  color: #FF6B35;
+  font-size: 20rpx;
+  font-weight: 800;
+}
+
 .cook-start {
   padding: 4rpx 16rpx;
   background: #FF6B35;

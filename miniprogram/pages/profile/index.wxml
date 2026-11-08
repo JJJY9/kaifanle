@@ -38,6 +38,7 @@
       <view class="entry-info">
         <view class="entry-label">{{item.label}}</view>
         <view class="entry-desc">{{item.desc}}</view>
+        <view wx:if="{{item.key === 'sync' && lastSyncText}}" class="entry-desc entry-sync-time">上次同步：{{lastSyncText}}</view>
       </view>
       <text class="entry-arrow">→</text>
     </view>

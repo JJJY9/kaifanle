@@ -88,6 +88,23 @@
     <view wx:else class="empty-steps">这道菜还没写做法，可以在菜品编辑里补充</view>
   </view>
 
+  <view wx:if="{{relatedDishes.length}}" class="steps-card card">
+    <view class="steps-title display">同分类的其他菜</view>
+    <view class="related-list">
+      <view
+        wx:for="{{relatedDishes}}"
+        wx:key="id"
+        class="related-item"
+        data-id="{{item.id}}"
+        bindtap="onTapRelated"
+      >
+        <view class="related-emoji" style="background: {{item.color}};">{{item.emoji}}</view>
+        <view class="related-name">{{item.name}}</view>
+        <view class="related-price">¥{{item.price}}</view>
+      </view>
+    </view>
+  </view>
+
   <view class="poster-btn {{posterMaking ? 'disabled' : ''}}" bindtap="onSharePoster">
     {{posterMaking ? '生成中…' : '生成菜品海报'}}
   </view>

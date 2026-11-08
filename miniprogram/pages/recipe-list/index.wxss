@@ -139,6 +139,12 @@
   opacity: 0.35;
 }
 
+.section-count {
+  color: #8A8A8A;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
 .list {
   padding: 4rpx 22rpx;
 }

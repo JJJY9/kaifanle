@@ -4,6 +4,42 @@ import { formatTime } from '../../utils/format'
 import { favorites } from '../../store/favorites'
 import { syncEatenFromCloud } from '../../store/eaten'
 
+const LAST_SYNC_KEY = 'kfl_last_sync_v1'
+
+function formatSyncTime(at: number): string {
+  if (!at) {
+    return ''
+  }
+  const from = new Date(at)
+  if (!isFinite(from.getTime())) {
+    return ''
+  }
+  const now = new Date()
+  const todayStart = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  ).getTime()
+  const fromStart = new Date(
+    from.getFullYear(),
+    from.getMonth(),
+    from.getDate()
+  ).getTime()
+  const days = Math.round((todayStart - fromStart) / 86400000)
+  const hh = String(from.getHours()).padStart(2, '0')
+  const mm = String(from.getMinutes()).padStart(2, '0')
+  if (days <= 0) {
+    return `今天 ${hh}:${mm}`
+  }
+  if (days === 1) {
+    return `昨天 ${hh}:${mm}`
+  }
+  if (days <= 29) {
+    return `${days} 天前`
+  }
+  return ''
+}
+
 Page({
   data: {
     user: {
@@ -21,7 +57,8 @@ Page({
     isAdmin: !USE_CLOUD,
     initialized: !USE_CLOUD,
     openid: '',
-    entries: [] as any[]
+    entries: [] as any[],
+    lastSyncText: ''
   },
 
   onLoad() {
@@ -37,6 +74,9 @@ Page({
     if (tabBar) {
       tabBar.setData({ selected: 2 })
     }
+    this.setData({
+      lastSyncText: formatSyncTime(Number(wx.getStorageSync(LAST_SYNC_KEY) || 0))
+    })
     this.loadMe()
   },
 
@@ -303,6 +343,13 @@ Page({
           syncEatenFromCloud(true, true)
         ])
         wx.hideLoading()
+        const at = Date.now()
+        try {
+          wx.setStorageSync(LAST_SYNC_KEY, at)
+        } catch (e) {
+          // 忽略存储失败
+        }
+        this.setData({ lastSyncText: formatSyncTime(at) })
         wx.showToast({
           title: favChanged || eatenChanged ? '已同步云端更新' : '已是最新',
           icon: 'none'

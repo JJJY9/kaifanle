@@ -1,4 +1,4 @@
-import { getDish, getDishStats, getMe } from '../../services/api'
+import { getDish, getDishStats, getDishes, getMe } from '../../services/api'
 import { favorites } from '../../store/favorites'
 import { cart } from '../../store/cart'
 import { currentMeal, dateInputString, dateLabel } from '../../utils/format'
@@ -75,7 +75,8 @@ Page({
     orderBlockedText: '',
     cookMode: false,
     cookIndex: 0,
-    cookElapsedText: '00:00'
+    cookElapsedText: '00:00',
+    relatedDishes: [] as any[]
   },
 
   dishId: '',
@@ -204,6 +205,7 @@ Page({
           dish.status === 'off' ? '已下架' : soldOut ? '今天卖完了' : '',
         loading: false
       })
+      this.loadRelated(dish)
     } catch (e: any) {
       this.setData({
         loading: false,
@@ -431,6 +433,40 @@ Page({
         wx.showToast({ title: '做法已复制', icon: 'none' })
       }
     })
+  },
+
+  async loadRelated(dish: any) {
+    try {
+      const dishes = await getDishes()
+      const relatedDishes = (dishes || [])
+        .filter(
+          item =>
+            item.id !== dish.id &&
+            item.categoryId === dish.categoryId &&
+            String(item.recipe || '').trim() &&
+            item.status !== 'off'
+        )
+        .slice(0, 5)
+        .map(item => ({
+          id: item.id,
+          name: item.name,
+          categoryId: item.categoryId,
+          emoji: item.emoji || item.char || '🍽',
+          price: item.price,
+          color: item.color || '#FFD23F'
+        }))
+      this.setData({ relatedDishes })
+    } catch (e) {
+      // 推荐加载失败不影响菜谱
+    }
+  },
+
+  onTapRelated(e: any) {
+    const id = String((e.currentTarget && e.currentTarget.dataset.id) || '')
+    if (!id) {
+      return
+    }
+    wx.navigateTo({ url: `/pages/recipe/index?id=${id}` })
   },
 
   onEdit() {

@@ -52,6 +52,7 @@
         <view class="section-dot" style="background: {{item.color}};"></view>
         <text class="section-name">{{item.name}}</text>
         <view class="section-line"></view>
+        <text class="section-count">{{item.dishes.length}} 道</text>
       </view>
       <view class="list card">
         <view

@@ -159,6 +159,13 @@
   font-size: 22rpx;
 }
 
+.entry-sync-time {
+  margin-top: 4rpx;
+  color: #2FBF71;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
 .entry-arrow {
   font-size: 30rpx;
   font-weight: 800;

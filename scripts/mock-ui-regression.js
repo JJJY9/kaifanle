@@ -55,6 +55,7 @@ function chinaDate(offset) {
     wx.removeStorageSync('kfl_favorites_view_v1')
     wx.removeStorageSync('kfl_favorites_poster_theme_v1')
     wx.removeStorageSync('kfl_recipe_search_v1')
+    wx.removeStorageSync('kfl_last_sync_v1')
     wx.removeStorageSync('kfl_prep_dish_checked_v1')
     return true
   })
@@ -2837,6 +2838,42 @@ function chinaDate(offset) {
       data.dish.allergens.indexOf('花生') > -1,
     data.dish ? (data.dish.allergens || []).join('、') : '没有过敏原'
   )
+  page = await current()
+  data = await page.data()
+  const relatedDishes = data.relatedDishes || []
+  check(
+    'mock 菜谱同分类推荐',
+    relatedDishes.length >= 1 &&
+      relatedDishes.length <= 5 &&
+      relatedDishes.every(
+        item =>
+          item.id !== 'd01' &&
+          item.categoryId === data.dish.categoryId &&
+          Boolean(item.name) &&
+          Number(item.price) >= 0
+      ),
+    `${relatedDishes.length} 道`
+  )
+  const firstRelated = relatedDishes[0]
+  const relatedItemEl = await page.$('.related-item')
+  if (relatedItemEl && firstRelated) {
+    await relatedItemEl.tap()
+    await sleep(1500)
+  }
+  page = await current()
+  const relatedTapData = await page.data()
+  check(
+    'mock 菜谱同分类推荐进入',
+    Boolean(firstRelated) &&
+      page.path === 'pages/recipe/index' &&
+      Boolean(relatedTapData.dish) &&
+      relatedTapData.dish.id === firstRelated.id,
+    relatedTapData.dish ? relatedTapData.dish.name : page.path
+  )
+  await mp.navigateBack()
+  await sleep(900)
+  page = await current()
+  data = await page.data()
   await invoke(
     mp,
     'page.onToggleIngredient({ currentTarget: { dataset: { index: 0 } } })'
@@ -3734,6 +3771,17 @@ function chinaDate(offset) {
       data.total >= 1 &&
       recipeSubText.indexOf(`共 ${data.total} 道`) > -1,
     recipeSubText || `${data.total} 道带做法`
+  )
+  const sectionCountEl = await page.$('.section-count')
+  const sectionCountText = sectionCountEl
+    ? String(await sectionCountEl.text())
+    : ''
+  const firstSectionDishes =
+    ((data.displayGroups || [])[0] || {}).dishes || []
+  check(
+    'mock 菜谱分类道数',
+    sectionCountText === `${firstSectionDishes.length} 道`,
+    sectionCountText || '未显示'
   )
   await invoke(mp, "page.onSearch({ detail: { value: '牛腩' } })")
   await sleep(400)
@@ -6468,6 +6516,20 @@ function chinaDate(offset) {
     'mock 我的手动云同步',
     syncToasts[0] === '已同步云端更新' && syncFavs.indexOf('d03') > -1,
     `${syncToasts.join('/') || '无提示'} · ${syncFavs.join('/') || '无收藏'}`
+  )
+  page = await current()
+  data = await page.data()
+  const lastSyncStoreValue = await mp.evaluate(() =>
+    wx.getStorageSync('kfl_last_sync_v1')
+  )
+  const syncTimeEl = await page.$('.entry-sync-time')
+  const syncTimeText = syncTimeEl ? String(await syncTimeEl.text()) : ''
+  check(
+    'mock 我的上次同步时间',
+    String(data.lastSyncText || '').indexOf('今天') === 0 &&
+      Number(lastSyncStoreValue) > 0 &&
+      syncTimeText.indexOf('上次同步：今天') > -1,
+    data.lastSyncText || '未显示'
   )
   await mp.navigateTo('/pages/kitchen/index')
   await sleep(2200)
