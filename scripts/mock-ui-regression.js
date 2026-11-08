@@ -2336,6 +2336,27 @@ function chinaDate(offset) {
       String(copiedWish || '').indexOf('状态：') > -1,
     String(copiedWish || '').split('\n')[0] || '空'
   )
+  await mp.evaluate(
+    new Function(
+      "return new Promise(resolve => wx.setClipboardData({ data: '__wish_btn_sentinel__', success: () => resolve(true), fail: () => resolve(false) }))"
+    )
+  )
+  const wishBtnEl = await page.$('.wish-btn')
+  if (wishBtnEl) {
+    await wishBtnEl.longpress()
+    await sleep(700)
+  }
+  const wishBtnClip = await mp.evaluate(
+    new Function(
+      "return new Promise(resolve => wx.getClipboardData({ success: r => resolve(r.data || ''), fail: () => resolve('') }))"
+    )
+  )
+  check(
+    'mock 许愿按钮长按不误复制',
+    Boolean(wishBtnEl) &&
+      String(wishBtnClip || '') === '__wish_btn_sentinel__',
+    String(wishBtnClip || '').slice(0, 14)
+  )
   await invoke(mp, "page.setData({ wishes: [], display: [] }); return true")
   await invoke(mp, 'page.onPullDownRefresh()')
   await sleep(1200)
@@ -3327,6 +3348,34 @@ function chinaDate(offset) {
       ? data.posterAllergenText || '无过敏原行'
       : '未生成'
   )
+  const originalAllergens = JSON.parse(
+    JSON.stringify((data.dish && data.dish.allergens) || [])
+  )
+  await invoke(
+    mp,
+    "page.setData({ dish: Object.assign({}, page.data.dish, { allergens: ['花生', '牛奶', '鸡蛋', '小麦粉', '亚硫酸盐', '坚果'] }) })"
+  )
+  await sleep(300)
+  await invoke(mp, 'page.onSharePoster()')
+  await sleep(2500)
+  page = await current()
+  data = await page.data()
+  const longAllergenText = String(data.posterAllergenText || '')
+  check(
+    'mock 海报过敏原按宽度截断',
+    longAllergenText.indexOf('含：') === 0 &&
+      longAllergenText.indexOf('…') === longAllergenText.length - 1 &&
+      longAllergenText.length < 24 &&
+      longAllergenText.length >= 8,
+    longAllergenText || '无'
+  )
+  await invoke(
+    mp,
+    `page.setData({ dish: Object.assign({}, page.data.dish, { allergens: ${JSON.stringify(
+      originalAllergens
+    )} }) })`
+  )
+  await sleep(200)
 
   // 收藏页：先收藏当前菜，再取消
   await invoke(mp, 'page.onToggleFavorite()')

@@ -627,21 +627,26 @@ Page({
       const allergens = Array.isArray(dish.allergens)
         ? dish.allergens.filter(Boolean)
         : []
-      const posterAllergenText = allergens.length
+      let posterAllergenText = allergens.length
         ? `含：${allergens.join('、')}`
         : ''
-      this.setData({ posterAllergenText })
       if (posterAllergenText) {
         ctx.fillStyle = '#C0392B'
         ctx.font = '24px "PingFang SC", sans-serif'
-        ctx.fillText(
-          posterAllergenText.length > 22
-            ? posterAllergenText.slice(0, 22) + '…'
-            : posterAllergenText,
-          48,
-          748
-        )
+        const maxWidth = width - 96
+        if (ctx.measureText(posterAllergenText).width > maxWidth) {
+          let fitted = posterAllergenText
+          while (
+            fitted.length > 1 &&
+            ctx.measureText(fitted + '…').width > maxWidth
+          ) {
+            fitted = fitted.slice(0, fitted.length - 1)
+          }
+          posterAllergenText = fitted + '…'
+        }
+        ctx.fillText(posterAllergenText, 48, 748)
       }
+      this.setData({ posterAllergenText })
 
       ctx.fillStyle = '#FF6B35'
       ctx.fillRect(48, 780, 150, 56)

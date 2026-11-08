@@ -54,7 +54,7 @@
       <view class="wish-content">{{item.content}}</view>
       <view wx:if="{{item.plannedDate}}" class="wish-plan">安排：{{item.plannedDate}}<text wx:if="{{item.planCountdown}}"> · {{item.planCountdown}}</text></view>
       <view wx:if="{{item.reply}}" class="wish-reply">回复：{{item.reply}}</view>
-      <view wx:if="{{isAdmin}}" class="wish-actions">
+      <view wx:if="{{isAdmin}}" class="wish-actions" catchlongpress="onWishActionsLongpress">
         <view
           wx:if="{{item.status === 'pending'}}"
           class="wish-btn"
@@ -83,7 +83,7 @@
           bindtap="onDeleteWish"
         >删除</view>
       </view>
-      <view wx:if="{{!isAdmin && item.status === 'pending'}}" class="wish-actions">
+      <view wx:if="{{!isAdmin && item.status === 'pending'}}" class="wish-actions" catchlongpress="onWishActionsLongpress">
         <view
           class="wish-btn {{deletingId === item.id ? 'disabled' : ''}}"
           data-id="{{item.id}}"
