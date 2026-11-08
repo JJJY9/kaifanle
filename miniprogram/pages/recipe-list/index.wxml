@@ -87,6 +87,7 @@
 
   <empty-state
     wx:else
+    class="recipe-empty"
     title="{{emptyTitle}}"
     desc="{{emptyDesc}}"
     actionText="{{emptyActionText}}"

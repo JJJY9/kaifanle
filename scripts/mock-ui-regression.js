@@ -189,8 +189,13 @@ function chinaDate(offset) {
         (Date.now() - homeMidnight.getTime()) / 60000
       )
       const waitedValue = String((data.activeOrder || {}).waitedText || '')
-      if (minsIntoDay < 2) {
-        return waitedValue === '' && waitedText === ''
+      if (minsIntoDay < 3) {
+        return (
+          (waitedValue === '' || /^已等 [1-3] 分钟$/.test(waitedValue)) &&
+          (waitedValue === ''
+            ? waitedText === ''
+            : waitedText.indexOf(waitedValue) > -1)
+        )
       }
       const waitedMinutes = Number(waitedValue.replace(/[^\d]/g, ''))
       return (
@@ -244,14 +249,25 @@ function chinaDate(offset) {
       const etaExpectedMin = Math.round(
         (etaTarget.getTime() - Date.now()) / 60000
       )
+      const etaNowMidnight = new Date()
+      etaNowMidnight.setHours(0, 0, 0, 0)
+      const etaMinsIntoDay = Math.floor(
+        (Date.now() - etaNowMidnight.getTime()) / 60000
+      )
       let ok = false
-      if (etaExpectedMin <= 0) {
-        ok = etaCountdownValue === '马上出锅'
-      } else {
+      if (etaMinsIntoDay < 5) {
+        ok = /^(还有 \d+ 分钟|马上出锅)$/.test(etaCountdownValue)
+      } else if (Math.abs(etaExpectedMin) <= 2) {
+        ok =
+          etaCountdownValue === '马上出锅' ||
+          /^还有 [123] 分钟$/.test(etaCountdownValue)
+      } else if (etaExpectedMin > 0) {
         const etaShownMin = Number(etaCountdownValue.replace(/[^\d]/g, ''))
         ok =
           /^还有 \d+ 分钟$/.test(etaCountdownValue) &&
           Math.abs(etaShownMin - etaExpectedMin) <= 2
+      } else {
+        ok = etaCountdownValue === '马上出锅'
       }
       return (
         ok &&
@@ -260,6 +276,33 @@ function chinaDate(offset) {
       )
     })(),
     `${etaCountdownValue || '无'} · ${etaText || '无 DOM'}`
+  )
+  await invoke(
+    mp,
+    "page._etaDate = '2000-01-01'; page.refreshEtaCountdown(); return true"
+  )
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 首页倒计时跨天守卫',
+    Boolean(data.activeOrder) &&
+      data.activeOrder.etaCountdown === '' &&
+      data.activeOrder.expectedText === '' &&
+      data.activeOrder.waitedText === '',
+    `${(data.activeOrder || {}).etaCountdown || '已清空'}`
+  )
+  await invoke(mp, 'page.loadActiveOrder()')
+  await sleep(1200)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 首页倒计时恢复',
+    Boolean(data.activeOrder) &&
+      /^(还有 \d+ 分钟|马上出锅)$/.test(
+        String(data.activeOrder.etaCountdown || '')
+      ),
+    String((data.activeOrder || {}).etaCountdown || '无')
   )
   const homeCopiedNo = await mp.evaluate(() => {
     return new Promise(resolve => {
@@ -4082,6 +4125,22 @@ function chinaDate(offset) {
       favGroupHeadText.indexOf('道') > -1,
     `${(data.displayGroups || []).length} 组 · ${favGroupHeadText || '无表头'}`
   )
+  const groupingChips = data.categoryChips || []
+  const groupingAllChip = groupingChips.find(chip => chip.id === 'all')
+  const groupingStapleChip = groupingChips.find(chip => chip.id === 'staple')
+  const groupingOtherChip = groupingChips.find(
+    chip => chip.id !== 'all' && chip.id !== 'staple'
+  )
+  check(
+    'mock 收藏分类数量区分',
+    Boolean(groupingAllChip) &&
+      Number(groupingAllChip.count) === 3 &&
+      Boolean(groupingStapleChip) &&
+      Number(groupingStapleChip.count) === 2 &&
+      Boolean(groupingOtherChip) &&
+      Number(groupingOtherChip.count) === 1,
+    groupingChips.map(chip => `${chip.name}:${chip.count}`).join('/')
+  )
   await mp.switchTab('/pages/home/index')
   await sleep(1500)
   await invoke(
@@ -4784,14 +4843,25 @@ function chinaDate(offset) {
   await sleep(400)
   page = await current()
   data = await page.data()
+  const emptyStateEl = await page.$('.recipe-empty')
+  let emptyStateActionEl = null
+  if (emptyStateEl) {
+    emptyStateActionEl = await emptyStateEl.$('.action')
+  }
+  const emptyStateActionText = emptyStateActionEl
+    ? String(await emptyStateActionEl.text())
+    : ''
   check(
     'mock 菜谱空态清空搜索',
     data.emptyActionText === '清空搜索' &&
+      emptyStateActionText === '清空搜索' &&
       (data.displayGroups || []).length === 0,
-    data.emptyActionText || '无动作'
+    emptyStateActionText || data.emptyActionText || '无动作'
   )
-  await invoke(mp, 'page.onEmptyAction()')
-  await sleep(400)
+  if (emptyStateActionEl) {
+    await emptyStateActionEl.tap()
+    await sleep(500)
+  }
   page = await current()
   data = await page.data()
   check(
@@ -5149,6 +5219,18 @@ function chinaDate(offset) {
   } else {
     check('mock 饭表菜品进菜谱', false, '没有菜品可点')
   }
+  // 先把首页切到不同餐次，确保预订走「需要切换」的完整分支
+  await mp.switchTab('/pages/home/index')
+  await sleep(1000)
+  const otherBookMeal = savedMeal === 'breakfast' ? 'dinner' : 'breakfast'
+  await invoke(
+    mp,
+    `page.onSelectMeal({ currentTarget: { dataset: { meal: '${otherBookMeal}' } } })`
+  )
+  await sleep(1300)
+  await mp.navigateTo('/pages/week-menus/index')
+  await sleep(1800)
+  page = await current()
   await invoke(
     mp,
     `page.onBook({ currentTarget: { dataset: { meal: ${JSON.stringify(
@@ -5158,13 +5240,30 @@ function chinaDate(offset) {
   await sleep(1900)
   page = await current()
   data = await page.data()
+  const pendingEtaTimer = await mp.evaluate(() => {
+    const page = getCurrentPages()[getCurrentPages().length - 1]
+    return Boolean(page && page._etaTimer)
+  })
   check(
     'mock 本周饭表预订跳转',
     page.path === 'pages/home/index' &&
       data.selectedMeal === savedMeal &&
-      data.selectedDate === savedDate,
-    `${data.selectedDate} · ${data.selectedMeal}`
+      data.selectedDate === savedDate &&
+      pendingEtaTimer === true,
+    `${data.selectedDate} · ${data.selectedMeal} · 倒计时${pendingEtaTimer ? '已重建' : '未重建'}`
   )
+  await mp.switchTab('/pages/home/index')
+  await sleep(1000)
+  await invoke(
+    mp,
+    "page.onQuickDate({ currentTarget: { dataset: { date: page.data.todayDate } } })"
+  )
+  await sleep(1200)
+  await invoke(
+    mp,
+    "page.quickAdd(page._available.find(d => d.status === 'on' && d.stock !== 0 && !(d.spicyLevels || []).length && !(d.addons || []).length))"
+  )
+  await sleep(400)
   await mp.navigateTo('/pages/week-menus/index')
   await sleep(1600)
   page = await current()
@@ -5187,8 +5286,10 @@ function chinaDate(offset) {
     Boolean(dayTapTarget) &&
       page.path === 'pages/home/index' &&
       data.selectedDate === dayTapTarget &&
-      pendingDateCleared === null,
-    `${dayTapTarget || '无'} · ${data.selectedDate || ''}`
+      pendingDateCleared === null &&
+      Number(data.cartCount || 0) === 0 &&
+      Number(data.otherCartCount || 0) >= 1,
+    `${dayTapTarget || '无'} · ${data.selectedDate || ''} · 当天 ${data.cartCount || 0} / 其他 ${data.otherCartCount || 0}`
   )
   await mp.switchTab('/pages/home/index')
   await sleep(900)
@@ -5197,6 +5298,19 @@ function chinaDate(offset) {
     "page.onQuickDate({ currentTarget: { dataset: { date: page.data.todayDate } } })"
   )
   await sleep(1200)
+  await mp.navigateTo('/pages/cart/index')
+  await sleep(1400)
+  page = await current()
+  data = await page.data()
+  for (const group of data.groups || []) {
+    await invoke(
+      mp,
+      `page.onClearGroup({ currentTarget: { dataset: { meal: ${JSON.stringify(
+        group.meal
+      )}, date: ${JSON.stringify(group.date)} } } })`
+    )
+    await sleep(400)
+  }
   // 恢复默认，保持 mock 状态干净
   await mp.navigateTo('/pages/menu-edit/index')
   await sleep(1600)
@@ -5227,7 +5341,7 @@ function chinaDate(offset) {
         String((seedOrderWait && seedOrderWait.waitedText) || '')
       ) &&
       finishedOrderWaits.every(order => !order.waitedText) &&
-      (orderListMinsIntoDay < 2 ||
+      (orderListMinsIntoDay < 3 ||
         String((seedOrderWait && seedOrderWait.waitedText) || '') !== ''),
     (seedOrderWait && seedOrderWait.waitedText) || '空'
   )
@@ -6037,8 +6151,15 @@ function chinaDate(offset) {
       'mock 评价统计长按复制',
       Boolean(statsCardEl) &&
         String(copiedStats || '').indexOf('【我的评价】') > -1 &&
-        String(copiedStats || '').indexOf('好评率') > -1 &&
-        String(copiedStats || '').indexOf('掌勺人回复') > -1,
+        String(copiedStats || '').indexOf(
+          `已评价 ${Number((data.stats || {}).count || 0)} 单`
+        ) > -1 &&
+        String(copiedStats || '').indexOf(
+          `好评率 ${Number((data.stats || {}).goodRate || 0)}%`
+        ) > -1 &&
+        String(copiedStats || '').indexOf(
+          `掌勺人回复 ${Number((data.stats || {}).replies || 0)} 条`
+        ) > -1,
       String(copiedStats || '').split('\n')[0] || '空'
     )
     check(

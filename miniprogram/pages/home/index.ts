@@ -345,14 +345,17 @@ Page({
           ? selected
           : maxDate
         : today
-    this.setData({
-      todayDate: today,
-      tomorrowDate: dateInputString(tomorrow),
-      maxDate,
-      selectedDate,
-      dateText: formatDate(),
-      menuDateLabel: menuDateText(selectedDate, today)
-    })
+    this.setData(
+      {
+        todayDate: today,
+        tomorrowDate: dateInputString(tomorrow),
+        maxDate,
+        selectedDate,
+        dateText: formatDate(),
+        menuDateLabel: menuDateText(selectedDate, today)
+      },
+      () => this.updateCartBadge()
+    )
   },
 
   async loadMenu() {
@@ -601,7 +604,10 @@ Page({
         selectedDate: date,
         menuDateLabel: menuDateText(date, this.data.todayDate)
       },
-      () => this.loadMenu()
+      () => {
+        this.loadMenu()
+        this.updateCartBadge()
+      }
     )
   },
 
@@ -942,6 +948,7 @@ Page({
           }
         },
         () => {
+          this._etaDate = dateInputString()
           this.scheduleUrgeRefresh()
           this.scheduleEtaRefresh()
         }
@@ -966,7 +973,6 @@ Page({
     if (!this._visible || !this.data.activeOrder) {
       return
     }
-    this._etaDate = dateInputString()
     this.refreshEtaCountdown()
     this._etaTimer = setInterval(() => this.refreshEtaCountdown(), 60 * 1000)
   },
@@ -981,8 +987,12 @@ Page({
       return
     }
     if (this._etaDate && dateInputString() !== this._etaDate) {
-      // 跨天后旧的「预计出锅」不再属于今天，停表并清空
-      this.setData({ 'activeOrder.etaCountdown': '' })
+      // 跨天后旧的「预计出锅」不再属于今天，停表并清空当天字段
+      this.setData({
+        'activeOrder.etaCountdown': '',
+        'activeOrder.expectedText': '',
+        'activeOrder.waitedText': ''
+      })
       if (this._etaTimer) {
         clearInterval(this._etaTimer)
         this._etaTimer = null
