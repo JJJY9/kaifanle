@@ -255,6 +255,15 @@
   font-weight: 700;
 }
 
+.active-order-no {
+  padding: 2rpx 10rpx;
+  background: #FFFDF6;
+  border: 2rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 18rpx;
+  font-weight: 800;
+}
+
 .active-order-text {
   font-size: 23rpx;
   font-weight: 800;

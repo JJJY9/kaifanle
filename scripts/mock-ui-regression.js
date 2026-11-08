@@ -148,6 +148,16 @@ function chinaDate(offset) {
   )
   const waitedEl = await page.$('.active-order-waited')
   const waitedText = waitedEl ? String(await waitedEl.text()) : ''
+  const activeOrderNoEl = await page.$('.active-order-no')
+  const activeOrderNoText = activeOrderNoEl
+    ? String(await activeOrderNoEl.text())
+    : ''
+  check(
+    'mock 首页今天这单订单号',
+    Boolean((data.activeOrder || {}).no) &&
+      activeOrderNoText === `#${data.activeOrder.no}`,
+    activeOrderNoText || '未显示'
+  )
   check(
     'mock 首页今天这单已等时长',
     /^已等 \d+ 分钟$/.test(

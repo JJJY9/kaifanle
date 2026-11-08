@@ -59,6 +59,7 @@
       <view class="active-order-main">
         <view class="active-order-label-row">
           <text class="active-order-label">今天这单 · {{activeOrder.mealText}}</text>
+          <text wx:if="{{activeOrder.no}}" class="active-order-no">#{{activeOrder.no}}</text>
           <text wx:if="{{activeOrder.messageBadge}}" class="active-order-badge">新回复 {{activeOrder.messageBadge}}</text>
           <text
             wx:if="{{activeOrder.canUrge}}"

@@ -169,7 +169,7 @@ node scripts/init-cloud-db.js ws://127.0.0.1:9420
 │   ├── components/          菜品卡、规格弹层、购物车、空状态
 │   ├── pages/               点餐、结算、订单、我的、厨房端
 │   ├── services/            types / mock 数据 / API 封装
-│   ├── store/               购物车状态
+│   ├── store/               购物车、收藏、吃过记录与云同步
 │   └── utils/               日期、文案、常量
 ├── scripts/check-project.js 项目自检脚本
 ├── project.config.json      微信开发者工具配置
