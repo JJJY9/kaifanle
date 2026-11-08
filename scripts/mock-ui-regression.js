@@ -2724,6 +2724,21 @@ function chinaDate(offset) {
   )
   await invoke(
     mp,
+    'page.onCopyStep({ currentTarget: { dataset: { index: 0 } } })'
+  )
+  await sleep(500)
+  const stepClip = await mp.evaluate(
+    new Function(
+      "return new Promise(resolve => wx.getClipboardData({ success: r => resolve(r.data || ''), fail: () => resolve('') }))"
+    )
+  )
+  check(
+    'mock 长按复制步骤',
+    String(stepClip || '') === String((data.steps || [])[0] || ''),
+    String(stepClip || '')
+  )
+  await invoke(
+    mp,
     'page.onToggleStep({ currentTarget: { dataset: { index: 0 } } })'
   )
   await sleep(300)
@@ -3109,6 +3124,27 @@ function chinaDate(offset) {
       (data.allFavorites || []).some(dish => dish.id === 'd01') &&
       (data.allFavorites || []).some(dish => dish.id === 'd02'),
     (data.allFavorites || []).map(dish => dish.id).join('/') || '没有收藏'
+  )
+  const favCard = await page.$('.fav-card')
+  const favIdsBeforeLongPress = (data.allFavorites || []).map(dish => dish.id)
+  if (favCard) {
+    await favCard.longpress()
+    await sleep(800)
+  }
+  page = await current()
+  data = await page.data()
+  if (String(page.path).indexOf('recipe') > -1) {
+    await mp.navigateBack()
+    await sleep(700)
+    page = await current()
+    data = await page.data()
+  }
+  const favIdsAfterLongPress = (data.allFavorites || []).map(dish => dish.id)
+  check(
+    'mock 收藏长按取消',
+    favIdsBeforeLongPress.length === 2 &&
+      favIdsAfterLongPress.length === 1,
+    `${favIdsBeforeLongPress.join('/')} → ${favIdsAfterLongPress.join('/')}`
   )
   await mp.mockWxMethod('showModal', {
     confirm: true,
@@ -4193,6 +4229,27 @@ function chinaDate(offset) {
       ),
       (data.reviews || [])[0] ? data.reviews[0].dishes : '没有评价'
     )
+    const firstReview = (data.reviews || [])[0]
+    if (firstReview) {
+      await invoke(
+        mp,
+        `page.onCopyReview({ currentTarget: { dataset: { id: ${JSON.stringify(
+          firstReview.id
+        )} } } })`
+      )
+      await sleep(500)
+      const reviewClip = await mp.evaluate(
+        new Function(
+          "return new Promise(resolve => wx.getClipboardData({ success: r => resolve(r.data || ''), fail: () => resolve('') }))"
+        )
+      )
+      check(
+        'mock 长按复制评价',
+        String(reviewClip || '').indexOf(firstReview.label) > -1 &&
+          String(reviewClip || '').indexOf(firstReview.dateText) > -1,
+        `${String(reviewClip || '').length} 字`
+      )
+    }
     check(
       'mock 评价晒图展示',
       (data.reviews || []).some(

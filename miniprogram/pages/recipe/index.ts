@@ -245,6 +245,18 @@ Page({
     })
   },
 
+  onCopyStep(e: any) {
+    const index = Number(e.currentTarget.dataset.index)
+    const step = (this.data.stepViews || [])[index]
+    if (!step) {
+      return
+    }
+    wx.setClipboardData({
+      data: step.text,
+      success: () => wx.showToast({ title: '步骤已复制', icon: 'none' })
+    })
+  },
+
   onResetSteps() {
     writeDishProgress(STEP_PROGRESS_KEY, this.dishId, [])
     this.setData({

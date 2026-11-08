@@ -78,6 +78,7 @@
         class="step-row {{item.done ? 'done' : ''}}"
         data-index="{{index}}"
         bindtap="onToggleStep"
+        bindlongpress="onCopyStep"
       >
         <view class="step-no">{{item.done ? '✓' : index + 1}}</view>
         <view class="step-text">{{item.text}}</view>

@@ -87,6 +87,7 @@
       class="fav-card card"
       data-id="{{item.id}}"
       bindtap="onTapDish"
+      bindlongpress="onLongPressDish"
     >
       <view class="fav-media" style="background: {{item.color}};">
         <image

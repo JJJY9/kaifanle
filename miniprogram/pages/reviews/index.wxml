@@ -93,6 +93,7 @@
       class="review card"
       data-id="{{item.id}}"
       bindtap="onTapReview"
+      bindlongpress="onCopyReview"
     >
       <view class="review-top">
         <view class="rating-badge {{item.tone}}">

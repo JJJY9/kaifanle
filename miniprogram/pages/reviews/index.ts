@@ -251,10 +251,35 @@ Page({
     wx.previewImage({ current: src, urls: review.images })
   },
 
-  onTapReview(e: any) {    const id = e.currentTarget.dataset.id
+  onTapReview(e: any) {
+    const id = e.currentTarget.dataset.id
     if (id) {
       wx.navigateTo({ url: `/pages/order-detail/index?id=${id}` })
     }
+  },
+
+  onCopyReview(e: any) {
+    const id = String((e.currentTarget && e.currentTarget.dataset.id) || '')
+    const review =
+      (this.data.display || []).find((item: any) => item.id === id) ||
+      (this.data.reviews || []).find((item: any) => item.id === id)
+    if (!review) {
+      return
+    }
+    const lines = [
+      `${review.dateText} · ${review.mealText} · ${review.emoji}${review.label}`,
+      review.feedback || ''
+    ]
+    if ((review.tags || []).length) {
+      lines.push(`标签：${review.tags.join('、')}`)
+    }
+    if (review.reply) {
+      lines.push(`掌勺人：${review.reply}`)
+    }
+    wx.setClipboardData({
+      data: lines.filter(Boolean).join('\n'),
+      success: () => wx.showToast({ title: '评价已复制', icon: 'none' })
+    })
   },
 
   onGoHome() {

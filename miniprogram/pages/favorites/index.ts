@@ -186,6 +186,16 @@ Page({
     }
   },
 
+  onLongPressDish(e: any) {
+    const id = String((e.currentTarget && e.currentTarget.dataset.id) || '')
+    if (!id || !favorites.has(id)) {
+      return
+    }
+    favorites.toggle(id)
+    wx.showToast({ title: '已取消收藏', icon: 'none' })
+    this.loadDishes()
+  },
+
   onRandomFavorite() {
     const pool =
       (this.data.display && this.data.display.length
