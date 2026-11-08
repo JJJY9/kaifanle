@@ -6,10 +6,15 @@ import { formatDate } from '../../utils/format'
 import { saveImageToAlbum } from '../../utils/save-image'
 
 const POSTER_THEMES = [
-  { header: '#FF5C8A', row: '#FFF7DA', accent: '#FF6B35' },
-  { header: '#2D9CFF', row: '#EAF4FF', accent: '#FF6B35' },
-  { header: '#2FBF71', row: '#E8F8EE', accent: '#FF6B35' }
+  { name: '樱花粉', header: '#FF5C8A', row: '#FFF7DA', accent: '#FF6B35' },
+  { name: '天空蓝', header: '#2D9CFF', row: '#EAF4FF', accent: '#FF6B35' },
+  { name: '抹茶绿', header: '#2FBF71', row: '#E8F8EE', accent: '#FF6B35' }
 ]
+
+function themeName(index: number): string {
+  const theme = POSTER_THEMES[index] || POSTER_THEMES[0]
+  return theme.name
+}
 
 const FAVORITES_VIEW_KEY = 'kfl_favorites_view_v1'
 const POSTER_THEME_KEY = 'kfl_favorites_poster_theme_v1'
@@ -75,7 +80,8 @@ Page({
     emptyDesc: '换个菜名试试',
     posterMaking: false,
     posterPath: '',
-    posterThemeIndex: 0
+    posterThemeIndex: 0,
+    posterThemeName: '樱花粉'
   },
 
   _unsub: null as null | (() => void),
@@ -83,10 +89,12 @@ Page({
 
   onLoad() {
     const view = readFavoritesView()
+    const posterThemeIndex = readPosterTheme()
     this.setData({
       sort: view.sort as any,
       category: view.category,
-      posterThemeIndex: readPosterTheme()
+      posterThemeIndex,
+      posterThemeName: themeName(posterThemeIndex)
     })
     this._unsub = favorites.subscribe(() => {
       this.setData({ posterPath: '' }, () => this.applyFilter())
@@ -362,10 +370,11 @@ Page({
     this.setData(
       {
         posterThemeIndex: next,
+        posterThemeName: themeName(next),
         posterPath: ''
       },
       () => {
-        wx.showToast({ title: '配色已切换', icon: 'none' })
+        wx.showToast({ title: `配色：${themeName(next)}`, icon: 'none' })
       }
     )
   },

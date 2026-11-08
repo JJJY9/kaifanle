@@ -55,6 +55,7 @@ function chinaDate(offset) {
     wx.removeStorageSync('kfl_favorites_view_v1')
     wx.removeStorageSync('kfl_favorites_poster_theme_v1')
     wx.removeStorageSync('kfl_recipe_search_v1')
+    wx.removeStorageSync('kfl_recipe_fav_only_v1')
     wx.removeStorageSync('kfl_last_sync_v1')
     wx.removeStorageSync('kfl_prep_dish_checked_v1')
     return true
@@ -144,6 +145,23 @@ function chinaDate(offset) {
     Number((data.activeOrder || {}).messageBadge) === 2 &&
       homeBadgeText.indexOf('新回复 2') > -1,
     homeBadgeText || '未渲染角标'
+  )
+  const waitedEl = await page.$('.active-order-waited')
+  const waitedText = waitedEl ? String(await waitedEl.text()) : ''
+  check(
+    'mock 首页今天这单已等时长',
+    /^已等 \d+ 分钟$/.test(
+      String((data.activeOrder || {}).waitedText || '')
+    ) &&
+      Number(
+        String((data.activeOrder || {}).waitedText || '').replace(
+          /[^\d]/g,
+          ''
+        )
+      ) >= 1 &&
+      waitedText.indexOf(String((data.activeOrder || {}).waitedText || '')) >
+        -1,
+    String((data.activeOrder || {}).waitedText || '无')
   )
   const homeCopiedNo = await mp.evaluate(() => {
     return new Promise(resolve => {
@@ -3776,6 +3794,14 @@ function chinaDate(offset) {
     Number(data.posterThemeIndex) === 1 && data.posterPath === '',
     `配色 ${data.posterThemeIndex}`
   )
+  const themeLinkEl = await page.$('.foot-link')
+  const themeLinkText = themeLinkEl ? String(await themeLinkEl.text()) : ''
+  check(
+    'mock 收藏海报配色名称',
+    String(data.posterThemeName || '') === '天空蓝' &&
+      themeLinkText.indexOf('天空蓝') > -1,
+    `${data.posterThemeName || '无'} · ${themeLinkText || '无入口'}`
+  )
   const posterThemeStored = await mp.evaluate(() =>
     wx.getStorageSync('kfl_favorites_poster_theme_v1')
   )
@@ -4539,6 +4565,35 @@ function chinaDate(offset) {
   )
   await invoke(mp, 'page.onSearchClear()')
   await sleep(300)
+  await mp.evaluate(
+    new Function(
+      "wx.setStorageSync('kfl_recipe_fav_only_v1', '1'); return true"
+    )
+  )
+  await mp.navigateBack()
+  await sleep(800)
+  await mp.navigateTo('/pages/recipe-list/index')
+  await sleep(1600)
+  page = await current()
+  data = await page.data()
+  const favOnlyRestore = await readRecipeListState()
+  check(
+    'mock 菜谱只看收藏记忆',
+    data.favOnly === true &&
+      favOnlyRestore.favOnly === true &&
+      favOnlyRestore.shown.length === favOnlyRestore.expected.length,
+    `${favOnlyRestore.shown.length} 道`
+  )
+  await invoke(mp, 'page.onToggleFavOnly()')
+  await sleep(400)
+  const favOnlyStoredOff = await mp.evaluate(() =>
+    wx.getStorageSync('kfl_recipe_fav_only_v1')
+  )
+  check(
+    'mock 菜谱只看收藏关闭记忆',
+    favOnlyStoredOff === '',
+    String(favOnlyStoredOff)
+  )
 
   // 营业设置与公告
   await mp.navigateTo('/pages/business/index')

@@ -3,6 +3,23 @@ import { favorites } from '../../store/favorites'
 
 const RECIPE_SEARCH_HISTORY_KEY = 'kfl_recipe_search_v1'
 const RECIPE_SEARCH_HISTORY_MAX = 6
+const RECIPE_FAV_ONLY_KEY = 'kfl_recipe_fav_only_v1'
+
+function readFavOnly(): boolean {
+  try {
+    return wx.getStorageSync(RECIPE_FAV_ONLY_KEY) === '1'
+  } catch (e) {
+    return false
+  }
+}
+
+function writeFavOnly(value: boolean) {
+  try {
+    wx.setStorageSync(RECIPE_FAV_ONLY_KEY, value ? '1' : '')
+  } catch (e) {
+    // 忽略存储失败
+  }
+}
 
 function readRecipeSearchHistory(): string[] {
   try {
@@ -49,7 +66,10 @@ Page({
   _lastRandomId: '',
 
   onLoad() {
-    this.setData({ recipeSearchHistory: readRecipeSearchHistory() })
+    this.setData({
+      recipeSearchHistory: readRecipeSearchHistory(),
+      favOnly: readFavOnly()
+    })
     this.load()
   },
 
@@ -218,6 +238,7 @@ Page({
 
   onToggleFavOnly() {
     const favOnly = !this.data.favOnly
+    writeFavOnly(favOnly)
     this.setData({ favOnly }, () => this.applyFilter(this.data.keyword))
   },
 

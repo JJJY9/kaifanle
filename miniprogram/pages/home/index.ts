@@ -888,6 +888,14 @@ Page({
             no: order.no || '',
             status: order.status,
             statusText: STATUS_TEXT[order.status],
+            waitedText: (() => {
+              const createdAt = Number(order.createdAt || 0)
+              if (!createdAt) {
+                return ''
+              }
+              const minutes = Math.floor((Date.now() - createdAt) / 60000)
+              return minutes >= 1 ? `已等 ${minutes} 分钟` : ''
+            })(),
             mealText: mealName(order.meal),
             lastMessageText,
             expectedText: eta,
