@@ -992,6 +992,7 @@ async function getDishStats(payload) {
   let ratedCount = 0
   let ratingSum = 0
   let goodCount = 0
+  let lastAt = 0
   ;(res.data || []).forEach(order => {
     if (order.status === 'cancelled') {
       return
@@ -1007,6 +1008,7 @@ async function getDishStats(payload) {
       return
     }
     orders++
+    lastAt = Math.max(lastAt, Number(order.createdAt || 0))
     const rating = Number(order.rating)
     if ([1, 2, 3].indexOf(rating) > -1) {
       ratedCount++
@@ -1021,6 +1023,7 @@ async function getDishStats(payload) {
     days,
     orders,
     qty,
+    lastAt,
     ratedCount,
     avgRating: ratedCount
       ? Number((ratingSum / ratedCount).toFixed(1))

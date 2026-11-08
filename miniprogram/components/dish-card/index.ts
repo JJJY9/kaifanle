@@ -5,12 +5,21 @@ Component({
   },
 
   data: {
-    imageFailed: false
+    imageFailed: false,
+    spicyText: ''
   },
 
   observers: {
-    dish() {
-      this.setData({ imageFailed: false })
+    dish(dish: any) {
+      const levels =
+        dish && Array.isArray(dish.spicyLevels) ? dish.spicyLevels : []
+      let spicyText = ''
+      if (levels.indexOf('特辣') > -1) {
+        spicyText = '🌶🌶'
+      } else if (levels.indexOf('中辣') > -1) {
+        spicyText = '🌶'
+      }
+      this.setData({ imageFailed: false, spicyText })
     }
   },
 

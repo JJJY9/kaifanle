@@ -131,6 +131,19 @@ Page({
           stats.ratedCount > 0
             ? ` · 平均 ${stats.avgRating}/3 分 · 好评率 ${stats.goodRate}%`
             : ' · 暂无评分'
+        const lastAt = Number(stats.lastAt || 0)
+        if (lastAt) {
+          const last = new Date(lastAt)
+          last.setHours(0, 0, 0, 0)
+          const todayStart = new Date()
+          todayStart.setHours(0, 0, 0, 0)
+          const diff = Math.round(
+            (todayStart.getTime() - last.getTime()) / 86400000
+          )
+          const when =
+            diff <= 0 ? '今天' : diff === 1 ? '昨天' : `${diff} 天前`
+          statsText += ` · 最近 ${when}点过`
+        }
       }
       const doneIndices = readDishProgress(STEP_PROGRESS_KEY)[dish.id] || []
       const stepViews = steps.map((text, index) => ({

@@ -7,6 +7,7 @@
     <image wx:if="{{(dish.image || dish.cartoon) && !imageFailed}}" class="media-img" src="{{dish.image || dish.cartoon}}" mode="aspectFill" lazy-load binderror="onImageError" />
     <text wx:else class="media-char">{{dish.emoji || dish.char}}</text>
     <view wx:if="{{dish.tags[0] && dish.status !== 'soldout' && dish.stock !== 0}}" class="media-tag">{{dish.tags[0]}}</view>
+    <view wx:if="{{spicyText}}" class="media-spicy">{{spicyText}}</view>
     <view wx:if="{{dish.status === 'soldout' || dish.stock === 0}}" class="soldout-mask">
       <text class="soldout-text">售罄</text>
     </view>

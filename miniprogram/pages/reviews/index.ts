@@ -1,6 +1,7 @@
 import type { Order } from '../../services/types'
 import { getOrders } from '../../services/api'
 import { mealName } from '../../utils/constants'
+import { dishEmoji } from '../../utils/dish-emoji'
 import {
   dateInputString,
   dateLabel,
@@ -110,7 +111,19 @@ Page({
             replyTime: order.ownerReplyAt
               ? formatTime(order.ownerReplyAt)
               : '',
-            dishes: itemSummary((order.items || []).map(item => item.name)),
+            dishes: (() => {
+              const items = order.items || []
+              const shown = items
+                .slice(0, 3)
+                .map(item => `${dishEmoji(item.name)}${item.name}`)
+                .join('、')
+              if (!items.length) {
+                return itemSummary([])
+              }
+              return items.length > 3
+                ? `${shown} 等 ${items.length} 样`
+                : shown
+            })(),
             amount: Number(order.amount || 0)
           }
         })

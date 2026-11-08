@@ -1993,6 +1993,7 @@ export async function getDishStats(dishId: string): Promise<DishStats> {
   let ratedCount = 0
   let ratingSum = 0
   let goodCount = 0
+  let lastAt = 0
   loadOrders()
     .filter(order => Number(order.createdAt) >= start)
     .forEach(order => {
@@ -2010,6 +2011,7 @@ export async function getDishStats(dishId: string): Promise<DishStats> {
         return
       }
       orders++
+      lastAt = Math.max(lastAt, Number(order.createdAt || 0))
       const rating = Number(order.rating)
       if ([1, 2, 3].indexOf(rating) > -1) {
         ratedCount++
@@ -2024,6 +2026,7 @@ export async function getDishStats(dishId: string): Promise<DishStats> {
     days,
     orders,
     qty,
+    lastAt,
     ratedCount,
     avgRating: ratedCount
       ? Number((ratingSum / ratedCount).toFixed(1))

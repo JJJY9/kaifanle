@@ -1147,6 +1147,10 @@ async function run() {
   assert.strictEqual(res.ok, true)
   assert.ok(res.data.orders >= 1)
   assert.ok(res.data.qty >= 2)
+  assert.ok(
+    Number(res.data.lastAt) > 0,
+    '菜品统计应返回最近一次被点时间'
+  )
   assert.strictEqual(res.data.ratedCount, 1)
   assert.strictEqual(res.data.avgRating, 1)
   assert.strictEqual(res.data.goodRate, 0)
@@ -1158,6 +1162,7 @@ async function run() {
   assert.strictEqual(res.ok, true)
   assert.strictEqual(res.data.orders, 0)
   assert.strictEqual(res.data.qty, 0)
+  assert.strictEqual(Number(res.data.lastAt), 0)
   res = await call('getDishStats', {}, 'girl-openid')
   assert.strictEqual(res.ok, false)
   assert.ok(String(res.error).indexOf('缺少菜品') > -1)

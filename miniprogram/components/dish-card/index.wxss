@@ -192,3 +192,15 @@
 .is-soldout .price-wrap {
   color: #B8B8B8;
 }
+
+.media-spicy {
+  position: absolute;
+  left: 10rpx;
+  bottom: 10rpx;
+  padding: 2rpx 10rpx;
+  background: #FFFFFF;
+  border: 2rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 18rpx;
+  line-height: 1.5;
+}

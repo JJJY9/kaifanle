@@ -2596,7 +2596,8 @@ function chinaDate(offset) {
   await sleep(900)
   check(
     'mock 菜谱点单统计',
-    String(data.statsText || '').indexOf('被点') > -1,
+    String(data.statsText || '').indexOf('被点') > -1 &&
+      String(data.statsText || '').indexOf('最近') > -1,
     data.statsText
   )
   await invoke(
@@ -3856,6 +3857,13 @@ function chinaDate(offset) {
         review => Array.isArray(review.tags) && review.tags.length > 0
       ),
       `${(data.reviews || []).filter(review => (review.tags || []).length).length} 条带标签`
+    )
+    check(
+      'mock 评价菜品图标',
+      (data.reviews || []).some(
+        review => String(review.dishes || '').indexOf('🍛') > -1
+      ),
+      (data.reviews || [])[0] ? data.reviews[0].dishes : '没有评价'
     )
     check(
       'mock 评价晒图展示',

@@ -340,6 +340,7 @@ export interface DishStats {
   days: number
   orders: number
   qty: number
+  lastAt?: number
   ratedCount: number
   avgRating: number
   goodRate: number
