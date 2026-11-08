@@ -1971,6 +1971,14 @@ function chinaDate(offset) {
       (data.filters || []).length === 4,
     `${(data.wishes || []).length} 个愿望`
   )
+  check(
+    'mock 许愿池安排倒计时',
+    (data.wishes || []).some(wish => wish.planCountdown === '明天安排'),
+    (data.wishes || [])
+      .map(wish => wish.planCountdown)
+      .filter(Boolean)
+      .join('/') || '没有倒计时'
+  )
   await invoke(
     mp,
     "page.onFilter({ currentTarget: { dataset: { filter: 'pending' } } })"
@@ -2741,6 +2749,31 @@ function chinaDate(offset) {
   )
   await invoke(mp, 'page.onResetSteps()')
   await sleep(300)
+  await invoke(
+    mp,
+    "wx.__cookToasts = []; wx.showToast = (o) => { wx.__cookToasts.push(o && o.title); o && o.success && o.success() }; return true"
+  )
+  await invoke(mp, 'page.onStartCook()')
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  const cookTotalSteps = (data.stepViews || []).length
+  for (let i = 0; i < cookTotalSteps; i++) {
+    await invoke(mp, 'page.onCookNext()')
+    await sleep(200)
+  }
+  await sleep(400)
+  const cookToasts = await mp.evaluate(() => wx.__cookToasts || [])
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 开做完成显示总用时',
+    data.cookMode === false &&
+      cookToasts.some(title => String(title).indexOf('共用时') > -1),
+    cookToasts.join(' / ') || '没有提示'
+  )
+  await invoke(mp, 'page.onResetSteps()')
+  await sleep(200)
   await invoke(mp, 'page.onSharePoster()')
   await sleep(2500)
   page = await current()
@@ -3462,6 +3495,16 @@ function chinaDate(offset) {
   page = await current()
   data = await page.data()
   check('mock 订单列表', (data.orders || []).length > 0, `${data.orders.length} 单`)
+  check(
+    'mock 订单评价表情',
+    (data.displayOrders || []).some(
+      order => ['😋', '🙂', '😵'].indexOf(order.ratingEmoji) > -1
+    ),
+    (data.displayOrders || [])
+      .filter(order => order.ratingEmoji)
+      .map(order => order.ratingEmoji)
+      .join('/') || '没有评价'
+  )
   const firstOrderGroup = (data.displayOrders || [])[0]
   if (firstOrderGroup) {
     const groupBeforeCount = (data.displayOrders || []).length

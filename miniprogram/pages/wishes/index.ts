@@ -37,10 +37,36 @@ Page({
   async load() {
     try {
       const [me, wishes] = await Promise.all([getMe(), getWishes()])
+      const today = new Date()
+      const todayUtc = Date.UTC(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate()
+      )
+      const countdownText = (date: string) => {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date || ''))) {
+          return ''
+        }
+        const parts = String(date).split('-').map(Number)
+        const target = Date.UTC(parts[0], parts[1] - 1, parts[2])
+        const diff = Math.round((target - todayUtc) / 86400000)
+        if (diff === 0) {
+          return '今天安排'
+        }
+        if (diff === 1) {
+          return '明天安排'
+        }
+        if (diff > 1) {
+          return `还有 ${diff} 天`
+        }
+        return `已过 ${-diff} 天`
+      }
       const view = wishes.map(wish => ({
         ...wish,
         statusText: STATUS_TEXT[wish.status] || wish.status,
-        dateText: formatDate(wish.createdAt)
+        dateText: formatDate(wish.createdAt),
+        planCountdown:
+          wish.status === 'done' ? '' : countdownText(wish.plannedDate)
       }))
       const filters = [
         { key: 'all', label: '全部', count: view.length },

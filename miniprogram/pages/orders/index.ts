@@ -152,6 +152,14 @@ Page({
       summary: itemSummary(order.items.map(item => item.name)),
       totalQty: order.items.reduce((sum, item) => sum + item.qty, 0),
       rated: Boolean(order.rating),
+      ratingEmoji:
+        Number(order.rating) === 3
+          ? '😋'
+          : Number(order.rating) === 2
+          ? '🙂'
+          : Number(order.rating) === 1
+          ? '😵'
+          : '',
       replied: Boolean(order.ownerReply)
     }))
     const counts = {

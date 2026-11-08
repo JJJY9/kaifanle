@@ -82,6 +82,8 @@ Page({
   orderDate: '',
   requestedMeal: '',
   _cookTimer: null as any,
+  _cookStepSeconds: 0,
+  _cookTotalSeconds: 0,
 
   onLoad(options: any) {
     this.dishId = options.id || ''
@@ -261,6 +263,7 @@ Page({
       return
     }
     const firstUndone = steps.findIndex(step => !step.done)
+    this._cookTotalSeconds = 0
     this.setData({
       cookMode: true,
       cookIndex: firstUndone > -1 ? firstUndone : 0
@@ -270,14 +273,22 @@ Page({
 
   startCookTimer() {
     this.stopCookTimer()
+    this._cookStepSeconds = 0
     this.setData({ cookElapsedText: '00:00' })
-    let seconds = 0
     this._cookTimer = setInterval(() => {
-      seconds += 1
+      this._cookStepSeconds += 1
+      const seconds = this._cookStepSeconds
       const minutes = String(Math.floor(seconds / 60)).padStart(2, '0')
       const rest = String(seconds % 60).padStart(2, '0')
       this.setData({ cookElapsedText: `${minutes}:${rest}` })
     }, 1000)
+  },
+
+  accumulateCookStep() {
+    if (this._cookStepSeconds > 0) {
+      this._cookTotalSeconds += this._cookStepSeconds
+      this._cookStepSeconds = 0
+    }
   },
 
   stopCookTimer() {
@@ -288,6 +299,7 @@ Page({
   },
 
   onCookPrev() {
+    this.accumulateCookStep()
     this.setData({ cookIndex: Math.max(0, Number(this.data.cookIndex) - 1) })
     this.startCookTimer()
   },
@@ -314,16 +326,28 @@ Page({
       })
     }
     if (index >= steps.length - 1) {
+      this.accumulateCookStep()
       this.stopCookTimer()
       this.setData({ cookMode: false })
-      wx.showToast({ title: '开饭啦 🍚', icon: 'none' })
+      const total = this._cookTotalSeconds
+      const minutes = Math.floor(total / 60)
+      const rest = total % 60
+      const timeText = minutes
+        ? `${minutes} 分 ${rest} 秒`
+        : `${rest} 秒`
+      wx.showToast({
+        title: `开饭啦 🍚 共用时 ${timeText}`,
+        icon: 'none'
+      })
       return
     }
+    this.accumulateCookStep()
     this.setData({ cookIndex: index + 1 })
     this.startCookTimer()
   },
 
   onCookExit() {
+    this.accumulateCookStep()
     this.stopCookTimer()
     this.setData({ cookMode: false })
   },

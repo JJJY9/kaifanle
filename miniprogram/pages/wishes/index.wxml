@@ -52,7 +52,7 @@
         <text class="wish-date">{{item.dateText}}</text>
       </view>
       <view class="wish-content">{{item.content}}</view>
-      <view wx:if="{{item.plannedDate}}" class="wish-plan">安排：{{item.plannedDate}}</view>
+      <view wx:if="{{item.plannedDate}}" class="wish-plan">安排：{{item.plannedDate}}<text wx:if="{{item.planCountdown}}"> · {{item.planCountdown}}</text></view>
       <view wx:if="{{item.reply}}" class="wish-reply">回复：{{item.reply}}</view>
       <view wx:if="{{isAdmin}}" class="wish-actions">
         <view
