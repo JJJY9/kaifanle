@@ -41,6 +41,7 @@ function chinaDate(offset) {
     wx.removeStorageSync('kfl_recipe_steps_v1')
     wx.removeStorageSync('kfl_recipe_ingredients_v1')
     wx.removeStorageSync('kfl_eaten_v1')
+    wx.removeStorageSync('kfl_prep_checked_v1')
     return true
   })
   const current = () => mp.currentPage()
@@ -983,6 +984,49 @@ function chinaDate(offset) {
       item => item.name === '鸡腿' && String(item.text).indexOf('1只') > -1
     ),
     `${(data.prepIngredients || []).length} 种食材`
+  )
+  const prepIngredientKey = (
+    (data.prepIngredients || []).find(
+      item => item.name === '鸡腿' && String(item.text).indexOf('1只') > -1
+    ) || (data.prepIngredients || [])[0] ||
+    {}
+  ).key
+  await invoke(
+    mp,
+    `page.onTogglePrepItem({ currentTarget: { dataset: { key: ${JSON.stringify(
+      prepIngredientKey
+    )} } } })`
+  )
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  const prepCheckedMap = await mp.evaluate(() => {
+    try {
+      return JSON.parse(wx.getStorageSync('kfl_prep_checked_v1') || '{}')
+    } catch (e) {
+      return {}
+    }
+  })
+  check(
+    'mock 采购食材勾选已买',
+    Boolean(prepIngredientKey) &&
+      (data.prepIngredients || []).some(
+        item => item.key === prepIngredientKey && item.done === true
+      ) &&
+      Number(data.prepDoneCount) === 1 &&
+      prepCheckedMap.date &&
+      Array.isArray(prepCheckedMap.keys) &&
+      prepCheckedMap.keys.indexOf(prepIngredientKey) > -1,
+    `已买 ${data.prepDoneCount}/${(data.prepIngredients || []).length}`
+  )
+  await invoke(mp, 'page.onResetPrepChecked()')
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 采购食材重置',
+    Number(data.prepDoneCount) === 0 &&
+      (data.prepIngredients || []).every(item => !item.done)
   )
   const receiptOrder = (data.orders || [])[0]
   check(
@@ -3032,6 +3076,20 @@ function chinaDate(offset) {
     'mock 订单列表新留言标记',
     (data.orders || []).some(order => Number(order.messageBadge) >= 1),
     `${(data.orders || []).filter(order => order.messageBadge).length} 单有未读`
+  )
+  await invoke(mp, 'page.onPageScroll({ scrollTop: 800 })')
+  await sleep(200)
+  page = await current()
+  data = await page.data()
+  const backTopShown = data.showBackTop === true
+  await invoke(mp, 'page.onPageScroll({ scrollTop: 100 })')
+  await sleep(200)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 订单列表回到顶部按钮',
+    backTopShown && data.showBackTop === false,
+    backTopShown ? '滚动后显示、回滚后隐藏' : '未显示'
   )
   await invoke(
     mp,

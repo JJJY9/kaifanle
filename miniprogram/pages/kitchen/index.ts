@@ -63,6 +63,42 @@ function writeDishSearchHistory(list: string[]) {
   }
 }
 
+const PREP_CHECKED_KEY = 'kfl_prep_checked_v1'
+
+function readPrepChecked(): Record<string, boolean> {
+  try {
+    const raw = wx.getStorageSync(PREP_CHECKED_KEY)
+    const data = raw ? JSON.parse(raw) : null
+    if (
+      !data ||
+      data.date !== dateInputString() ||
+      !Array.isArray(data.keys)
+    ) {
+      return {}
+    }
+    const map: Record<string, boolean> = {}
+    data.keys.forEach((key: any) => {
+      if (typeof key === 'string' && key) {
+        map[key] = true
+      }
+    })
+    return map
+  } catch (e) {
+    return {}
+  }
+}
+
+function writePrepChecked(keys: string[]) {
+  try {
+    wx.setStorageSync(
+      PREP_CHECKED_KEY,
+      JSON.stringify({ date: dateInputString(), keys })
+    )
+  } catch (e) {
+    // 忽略存储失败
+  }
+}
+
 Page({
   data: {
     orders: [] as any[],
@@ -125,6 +161,7 @@ Page({
     prepItems: [] as any[],
     prepGroups: [] as any[],
     prepIngredients: [] as any[],
+    prepDoneCount: 0,
     prepTotal: 0,
     weekStats: null as any,
     weekBars: [] as any[],
@@ -674,6 +711,7 @@ Page({
         })
       const formatAmount = (value: number) =>
         String(Math.round(value * 10) / 10)
+      const prepChecked = readPrepChecked()
       const prepIngredients = Object.keys(ingNum)
         .map(key => {
           const parts = key.split('|')
@@ -691,6 +729,7 @@ Page({
           }))
         )
         .sort((a, b) => a.name.localeCompare(b.name))
+        .map(item => ({ ...item, done: Boolean(prepChecked[item.key]) }))
 
       // 近 7 天经营概况（不含已取消订单）；静默轮询沿用上次结果
       let weekStats = this.data.weekStats
@@ -838,6 +877,7 @@ Page({
         prepItems,
         prepGroups,
         prepIngredients,
+        prepDoneCount: prepIngredients.filter(item => item.done).length,
         prepTotal,
         todo,
         todayClosed,
@@ -2361,6 +2401,36 @@ Page({
 
   onTogglePrep() {
     this.setData({ showPrep: !this.data.showPrep })
+  },
+
+  onTogglePrepItem(e: any) {
+    const key = String((e && e.currentTarget && e.currentTarget.dataset.key) || '')
+    if (!key) {
+      return
+    }
+    const checked = readPrepChecked()
+    if (checked[key]) {
+      delete checked[key]
+    } else {
+      checked[key] = true
+    }
+    writePrepChecked(Object.keys(checked))
+    const prepIngredients = (this.data.prepIngredients || []).map(item =>
+      item.key === key ? { ...item, done: Boolean(checked[key]) } : item
+    )
+    this.setData({
+      prepIngredients,
+      prepDoneCount: prepIngredients.filter(item => item.done).length
+    })
+  },
+
+  onResetPrepChecked() {
+    writePrepChecked([])
+    const prepIngredients = (this.data.prepIngredients || []).map(item => ({
+      ...item,
+      done: false
+    }))
+    this.setData({ prepIngredients, prepDoneCount: 0 })
   },
 
   onTogglePreorders() {

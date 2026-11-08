@@ -183,8 +183,18 @@
           </view>
         </view>
         <view wx:if="{{prepIngredients.length}}" class="prep-ingredients">
-          <view class="prep-group-title">采购食材</view>
-          <view wx:for="{{prepIngredients}}" wx:key="key" class="prep-row">
+          <view class="prep-ingredients-head">
+            <view class="prep-group-title">采购食材<text wx:if="{{prepDoneCount}}" class="prep-done-count"> · 已买 {{prepDoneCount}}/{{prepIngredients.length}}</text></view>
+            <view wx:if="{{prepDoneCount}}" class="prep-group-copy" catchtap="onResetPrepChecked">重置</view>
+          </view>
+          <view
+            wx:for="{{prepIngredients}}"
+            wx:key="key"
+            class="prep-row prep-ingredient-row {{item.done ? 'done' : ''}}"
+            data-key="{{item.key}}"
+            bindtap="onTogglePrepItem"
+          >
+            <view class="prep-check">{{item.done ? '✓' : ''}}</view>
             <text class="prep-name">{{item.name}}</text>
             <text class="prep-ingredient-amount">{{item.text}}</text>
           </view>

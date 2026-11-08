@@ -43,6 +43,7 @@ Page({
     loading: true,
     loadingMore: false,
     hasMore: false,
+    showBackTop: false,
     monthText: '',
     error: '',
     keyword: '',
@@ -252,6 +253,17 @@ Page({
 
   onClearSearch() {
     this.setData({ keyword: '' }, () => this.applyFilter())
+  },
+
+  onPageScroll(e: any) {
+    const showBackTop = Number((e && e.scrollTop) || 0) > 600
+    if (showBackTop !== this.data.showBackTop) {
+      this.setData({ showBackTop })
+    }
+  },
+
+  onBackTop() {
+    wx.pageScrollTo({ scrollTop: 0, duration: 300 })
   },
 
   applyFilter() {

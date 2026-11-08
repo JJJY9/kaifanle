@@ -509,6 +509,52 @@
   border-top: 3rpx dashed rgba(17, 17, 17, 0.2);
 }
 
+.prep-ingredients-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.prep-done-count {
+  color: #2F7D4F;
+  font-size: 21rpx;
+}
+
+.prep-ingredient-row {
+  justify-content: flex-start;
+  gap: 12rpx;
+}
+
+.prep-ingredient-row .prep-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.prep-check {
+  flex: 0 0 34rpx;
+  width: 34rpx;
+  height: 34rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFFFFF;
+  border: 3rpx solid #111111;
+  border-radius: 8rpx;
+  font-size: 20rpx;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.prep-ingredient-row.done .prep-check {
+  background: #2FBF71;
+  color: #FFFFFF;
+}
+
+.prep-ingredient-row.done .prep-name {
+  color: #9A9A9A;
+  text-decoration: line-through;
+}
+
 .prep-ingredient-amount {
   color: #2D6FD9;
   font-size: 24rpx;

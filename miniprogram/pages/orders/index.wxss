@@ -320,3 +320,22 @@
 .load-more.disabled {
   opacity: 0.5;
 }
+
+.back-top {
+  position: fixed;
+  right: 24rpx;
+  bottom: calc(160rpx + env(safe-area-inset-bottom));
+  z-index: 60;
+  padding: 12rpx 22rpx;
+  background: #FFD23F;
+  border: 3rpx solid #111111;
+  border-radius: 999rpx;
+  box-shadow: 4rpx 4rpx 0 #111111;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
+.back-top:active {
+  transform: translate(4rpx, 4rpx);
+  box-shadow: none;
+}

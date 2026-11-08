@@ -1970,6 +1970,36 @@ async function checkContentSafety(openid, content) {
   }
 }
 
+// 晒图内容安全：仅在图片有变化时检查；审核接口不可用时放行，不挡评价
+async function checkImagesSafety(images) {
+  const list = Array.isArray(images) ? images : []
+  for (const src of list) {
+    const fileID = String(src || '')
+    if (!/^cloud:\/\//.test(fileID)) {
+      continue
+    }
+    let risky = false
+    try {
+      const download = await cloud.downloadFile({ fileID })
+      const res = await cloud.openapi.security.imgSecCheck({
+        media: {
+          contentType: 'image/png',
+          value: download && download.fileContent
+        }
+      })
+      risky = Number((res && res.errCode) || 0) === 87014
+    } catch (err) {
+      risky = Boolean(err && String(err.errCode) === '87014')
+      if (!risky) {
+        console.warn('[api] imgSecCheck skipped:', (err && err.errMsg) || err)
+      }
+    }
+    if (risky) {
+      throw new Error('晒图有敏感内容，换一张试试')
+    }
+  }
+}
+
 async function requireAdmin(openid) {
   const ok = await isAdminOpenid(openid)
   if (!ok) {
@@ -3105,6 +3135,9 @@ async function rateOrder(payload, openid) {
   const imagesChanged =
     images.length !== oldImages.length ||
     images.some(src => oldImages.indexOf(src) === -1)
+  if (imagesChanged && images.length) {
+    await checkImagesSafety(images)
+  }
   const changed =
     Number(order.rating) !== rating ||
     String(order.feedback || '') !== feedback ||

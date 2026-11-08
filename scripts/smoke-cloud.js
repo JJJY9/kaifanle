@@ -252,11 +252,27 @@ const fakeSdk = {
           return { errCode: 0, result: { suggest: 'risky' } }
         }
         return { errCode: 0, result: { suggest: 'pass' } }
+      },
+      async imgSecCheck({ media }) {
+        const content = String((media && media.value) || '')
+        if (content.indexOf('risky') > -1) {
+          return { errCode: 87014 }
+        }
+        return { errCode: 0 }
       }
     }
   },
   async deleteFile() {
     return { fileList: [] }
+  },
+  async downloadFile({ fileID }) {
+    const id = String(fileID || '')
+    if (id.indexOf('unavailable') > -1) {
+      throw new Error('download failed')
+    }
+    return {
+      fileContent: Buffer.from(id.indexOf('risky') > -1 ? 'risky-image' : 'safe-image')
+    }
   },
   getWXContext() {
     return { OPENID: currentOpenid }
@@ -901,6 +917,45 @@ async function run() {
   assert.strictEqual(res.data.rating, 3)
   assert.strictEqual(res.data.feedback, '超好吃')
   assert.deepStrictEqual(res.data.ratingTags, ['好吃', '分量足'])
+  assert.deepStrictEqual(res.data.ratingImages, ['cloud://ok/a.jpg'])
+  // 晒图内容安全：涉敏图片拒绝，审核接口不可用时不拦截
+  res = await call(
+    'rateOrder',
+    {
+      id: created.data.id,
+      rating: 3,
+      feedback: '超好吃',
+      images: ['cloud://ok/risky.jpg']
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, false)
+  assert.ok(String(res.error).indexOf('敏感') > -1)
+  res = await call('getOrder', { id: created.data.id }, 'girl-openid')
+  assert.deepStrictEqual(res.data.ratingImages, ['cloud://ok/a.jpg'])
+  res = await call(
+    'rateOrder',
+    {
+      id: created.data.id,
+      rating: 3,
+      feedback: '超好吃',
+      images: ['cloud://ok/unavailable.jpg']
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, true)
+  assert.deepStrictEqual(res.data.ratingImages, ['cloud://ok/unavailable.jpg'])
+  res = await call(
+    'rateOrder',
+    {
+      id: created.data.id,
+      rating: 3,
+      feedback: '超好吃',
+      images: ['cloud://ok/a.jpg']
+    },
+    'girl-openid'
+  )
+  assert.strictEqual(res.ok, true)
   assert.deepStrictEqual(res.data.ratingImages, ['cloud://ok/a.jpg'])
   res = await call(
     'rateOrder',
