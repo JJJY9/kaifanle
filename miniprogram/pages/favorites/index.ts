@@ -113,6 +113,10 @@ Page({
     const keyword = String(this.data.keyword || '')
       .trim()
       .toLowerCase()
+    const categoryNames: Record<string, string> = {}
+    ;(this.data.categories || []).forEach((category: any) => {
+      categoryNames[category.id] = String(category.name || '')
+    })
     const source =
       this.data.category === 'all'
         ? this.data.allFavorites
@@ -121,7 +125,9 @@ Page({
           )
     const matched = keyword
       ? source.filter(dish =>
-          `${dish.name} ${dish.desc || ''}`
+          `${dish.name} ${dish.desc || ''} ${
+            categoryNames[dish.categoryId] || ''
+          } ${(dish.tags || []).join(' ')}`
             .toLowerCase()
             .indexOf(keyword) > -1
         )

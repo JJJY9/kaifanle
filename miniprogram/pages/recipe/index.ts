@@ -3,10 +3,11 @@ import { favorites } from '../../store/favorites'
 import { saveImageToAlbum } from '../../utils/save-image'
 
 const STEP_PROGRESS_KEY = 'kfl_recipe_steps_v1'
+const INGREDIENT_PROGRESS_KEY = 'kfl_recipe_ingredients_v1'
 
-function readStepProgress(): Record<string, number[]> {
+function readDishProgress(key: string): Record<string, number[]> {
   try {
-    const raw = wx.getStorageSync(STEP_PROGRESS_KEY)
+    const raw = wx.getStorageSync(key)
     const data = raw ? JSON.parse(raw) : {}
     if (!data || typeof data !== 'object' || Array.isArray(data)) {
       return {}
@@ -25,18 +26,18 @@ function readStepProgress(): Record<string, number[]> {
   }
 }
 
-function writeStepProgress(dishId: string, indices: number[]) {
+function writeDishProgress(key: string, dishId: string, indices: number[]) {
   if (!dishId) {
     return
   }
   try {
-    const data = readStepProgress()
+    const data = readDishProgress(key)
     if (indices.length) {
       data[dishId] = indices
     } else {
       delete data[dishId]
     }
-    wx.setStorageSync(STEP_PROGRESS_KEY, JSON.stringify(data))
+    wx.setStorageSync(key, JSON.stringify(data))
   } catch (e) {
     // 忽略存储失败
   }
@@ -48,6 +49,8 @@ Page({
     steps: [] as string[],
     stepViews: [] as { text: string; done: boolean }[],
     doneCount: 0,
+    ingredientViews: [] as { text: string; done: boolean }[],
+    doneIngredients: 0,
     isAdmin: false,
     favorite: false,
     imageFailed: false,
@@ -97,16 +100,27 @@ Page({
             ? ` · 平均 ${stats.avgRating}/3 分 · 好评率 ${stats.goodRate}%`
             : ' · 暂无评分'
       }
-      const doneIndices = readStepProgress()[dish.id] || []
+      const doneIndices = readDishProgress(STEP_PROGRESS_KEY)[dish.id] || []
       const stepViews = steps.map((text, index) => ({
         text,
         done: doneIndices.indexOf(index) > -1
+      }))
+      const ingredients = (dish.ingredients || [])
+        .map((item: any) => String(item || '').trim())
+        .filter(Boolean)
+      const ingredientDone =
+        readDishProgress(INGREDIENT_PROGRESS_KEY)[dish.id] || []
+      const ingredientViews = ingredients.map((text: string, index: number) => ({
+        text,
+        done: ingredientDone.indexOf(index) > -1
       }))
       this.setData({
         dish,
         steps,
         stepViews,
         doneCount: stepViews.filter(step => step.done).length,
+        ingredientViews,
+        doneIngredients: ingredientViews.filter(step => step.done).length,
         isAdmin: Boolean(me && me.isAdmin),
         favorite: favorites.has(dish.id),
         imageFailed: false,
@@ -141,7 +155,8 @@ Page({
       i === index ? { ...item, done } : item
     )
     const doneCount = nextViews.filter(item => item.done).length
-    writeStepProgress(
+    writeDishProgress(
+      STEP_PROGRESS_KEY,
       this.dishId,
       nextViews
         .map((item, i) => (item.done ? i : -1))
@@ -154,13 +169,50 @@ Page({
   },
 
   onResetSteps() {
-    writeStepProgress(this.dishId, [])
+    writeDishProgress(STEP_PROGRESS_KEY, this.dishId, [])
     this.setData({
       stepViews: (this.data.steps || []).map(text => ({
         text,
         done: false
       })),
       doneCount: 0
+    })
+  },
+
+  onToggleIngredient(e: any) {
+    const index = Number(e.currentTarget.dataset.index)
+    const item = (this.data.ingredientViews || [])[index]
+    if (!item) {
+      return
+    }
+    const done = !item.done
+    const nextViews = (this.data.ingredientViews || []).map((view, i) =>
+      i === index ? { ...view, done } : view
+    )
+    writeDishProgress(
+      INGREDIENT_PROGRESS_KEY,
+      this.dishId,
+      nextViews.map((view, i) => (view.done ? i : -1)).filter(i => i > -1)
+    )
+    this.setData({
+      [`ingredientViews[${index}].done`]: done,
+      doneIngredients: nextViews.filter(view => view.done).length
+    })
+  },
+
+  onCopyIngredients() {
+    const dish = this.data.dish
+    const views = this.data.ingredientViews || []
+    if (!dish || !views.length) {
+      return
+    }
+    const lines = views.map(view => `- ${view.text}`)
+    const text = [`【${dish.name}】食材清单`].concat(lines).join('\n')
+    wx.setClipboardData({
+      data: text,
+      success: () => {
+        wx.showToast({ title: '食材清单已复制', icon: 'none' })
+      }
     })
   },
 

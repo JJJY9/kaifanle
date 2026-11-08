@@ -203,9 +203,32 @@
   min-width: 0;
 }
 
+.active-order-label-row {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
 .active-order-label {
   color: #2F7D4F;
   font-size: 19rpx;
+  font-weight: 800;
+}
+
+.active-order-badge {
+  padding: 0 10rpx;
+  background: #FF5C8A;
+  border: 2rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 17rpx;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.active-order-eta {
+  margin-top: 2rpx;
+  color: #FF6B35;
+  font-size: 20rpx;
   font-weight: 800;
 }
 

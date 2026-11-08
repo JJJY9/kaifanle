@@ -788,6 +788,15 @@ Page({
             String(lastMessage.content || '').length > 24 ? '…' : ''
           }`
         : ''
+      const expectedRaw = String(order.expectedTime || '').trim()
+      const eta =
+        order.status === 'ready'
+          ? ''
+          : expectedRaw === '尽快'
+            ? '尽快出锅'
+            : expectedRaw
+              ? `预计 ${expectedRaw} 出锅`
+              : ''
       this.setData({
         activeOrder: {
           id: order.id,
@@ -795,6 +804,7 @@ Page({
           statusText: STATUS_TEXT[order.status],
           mealText: mealName(order.meal),
           lastMessageText,
+          expectedText: eta,
           messageBadge: Math.max(0, Number(order.customerUnread) || 0),
           summary:
             itemSummary((order.items || []).map(item => item.name)) +

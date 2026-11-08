@@ -34,11 +34,23 @@
   </view>
 
   <view wx:if="{{dish.ingredients && dish.ingredients.length}}" class="steps-card card">
-    <view class="steps-title display">食材</view>
+    <view class="steps-title-row">
+      <view class="steps-title display">食材</view>
+      <view class="ingredient-actions">
+        <text wx:if="{{doneIngredients}}" class="ingredient-progress">已备 {{doneIngredients}}/{{ingredientViews.length}}</text>
+        <view class="steps-reset" bindtap="onCopyIngredients">复制清单</view>
+      </view>
+    </view>
     <view class="ingredient-list">
-      <view wx:for="{{dish.ingredients}}" wx:key="*this" class="ingredient-row">
-        <text class="ingredient-dot">·</text>
-        <text class="ingredient-text">{{item}}</text>
+      <view
+        wx:for="{{ingredientViews}}"
+        wx:key="index"
+        class="ingredient-row {{item.done ? 'done' : ''}}"
+        data-index="{{index}}"
+        bindtap="onToggleIngredient"
+      >
+        <view class="ingredient-check">{{item.done ? '✓' : ''}}</view>
+        <text class="ingredient-text">{{item.text}}</text>
       </view>
     </view>
     <view wx:if="{{dish.allergens && dish.allergens.length}}" class="allergen-line">
