@@ -6162,6 +6162,23 @@ function chinaDate(offset) {
         ) > -1,
       String(copiedStats || '').split('\n')[0] || '空'
     )
+    const reviewsShare = await invoke(mp, 'return page.onShareAppMessage()')
+    const reviewsTimeline = await invoke(
+      mp,
+      'return page.onShareTimeline()'
+    )
+    check(
+      'mock 我的评价分享设置',
+      Boolean(reviewsShare) &&
+        String(reviewsShare.title || '').indexOf('我的评价') > -1 &&
+        String(reviewsShare.title || '').indexOf(
+          String(Number((data.stats || {}).count || 0))
+        ) > -1 &&
+        String(reviewsShare.path || '') === '/pages/reviews/index' &&
+        Boolean(reviewsTimeline) &&
+        String(reviewsTimeline.title || '').indexOf('好评率') > -1,
+      (reviewsShare && reviewsShare.title) || '没有分享信息'
+    )
     check(
       'mock 评价标签展示',
       (data.reviews || []).some(

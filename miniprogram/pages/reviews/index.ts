@@ -319,5 +319,26 @@ Page({
   onRetry() {
     this.setData({ loading: true, error: '' })
     this.load()
+  },
+
+  onShareAppMessage() {
+    const stats = this.data.stats || {}
+    const count = Number(stats.count || 0)
+    return {
+      title: count
+        ? `我的评价 · ${count} 单 · 好评率 ${Number(stats.goodRate || 0)}%`
+        : '我的评价 · 每一顿都值得被记住',
+      path: '/pages/reviews/index'
+    }
+  },
+
+  onShareTimeline() {
+    const stats = this.data.stats || {}
+    const count = Number(stats.count || 0)
+    return {
+      title: count
+        ? `我的评价 · ${count} 单 · 好评率 ${Number(stats.goodRate || 0)}%`
+        : '我的评价 · 每一顿都值得被记住'
+    }
   }
 })
