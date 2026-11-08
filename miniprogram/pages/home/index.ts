@@ -29,6 +29,7 @@ import {
   itemSummary
 } from '../../utils/format'
 import { addOrderToCart } from '../../utils/reorder'
+import { sameDayWaitText } from '../../utils/wait'
 
 const LAST_MEAL_KEY = 'kfl_last_meal_v1'
 
@@ -163,6 +164,8 @@ Page({
   _repeating: false,
   _urging: false,
   _urgeTimer: null as any,
+  _etaTimer: null as any,
+  _visible: false,
 
   onLoad() {
     const app = getApp()
@@ -213,6 +216,7 @@ Page({
   },
 
   onShow() {
+    this._visible = true
     const tabBar: any = (this as any).getTabBar
       ? (this as any).getTabBar()
       : null
@@ -266,9 +270,14 @@ Page({
   },
 
   onHide() {
+    this._visible = false
     if (this._urgeTimer) {
       clearTimeout(this._urgeTimer)
       this._urgeTimer = null
+    }
+    if (this._etaTimer) {
+      clearInterval(this._etaTimer)
+      this._etaTimer = null
     }
   },
 
@@ -888,22 +897,12 @@ Page({
             no: order.no || '',
             status: order.status,
             statusText: STATUS_TEXT[order.status],
-            waitedText: (() => {
-              const createdAt = Number(order.createdAt || 0)
-              if (!createdAt) {
-                return ''
-              }
-              const created = new Date(createdAt)
-              const now = new Date()
-              if (created.toDateString() !== now.toDateString()) {
-                return ''
-              }
-              const minutes = Math.floor((now.getTime() - createdAt) / 60000)
-              return minutes >= 1 ? `已等 ${minutes} 分钟` : ''
-            })(),
+            waitedText: sameDayWaitText(Number(order.createdAt || 0)),
             mealText: mealName(order.meal),
             lastMessageText,
             expectedText: eta,
+            expectedTime: String(order.expectedTime || ''),
+            etaCountdown: '',
             messageBadge: Math.max(0, Number(order.customerUnread) || 0),
             urgeUntil,
             urgeCooling: urgeUntil > Date.now(),
@@ -914,10 +913,52 @@ Page({
               ` · 共 ${totalQty} 份`
           }
         },
-        () => this.scheduleUrgeRefresh()
+        () => {
+          this.scheduleUrgeRefresh()
+          this.scheduleEtaRefresh()
+        }
       )
     } catch (e) {
       // 没有进行中订单时保持隐藏
+    }
+  },
+
+  computeWaitedText(createdAt: number) {
+    return sameDayWaitText(Number(createdAt || 0))
+  },
+
+  scheduleEtaRefresh() {
+    if (this._etaTimer) {
+      clearInterval(this._etaTimer)
+      this._etaTimer = null
+    }
+    if (!this._visible || !this.data.activeOrder) {
+      return
+    }
+    this.refreshEtaCountdown()
+    this._etaTimer = setInterval(() => this.refreshEtaCountdown(), 60 * 1000)
+  },
+
+  refreshEtaCountdown() {
+    const order = this.data.activeOrder
+    if (!order) {
+      if (this._etaTimer) {
+        clearInterval(this._etaTimer)
+        this._etaTimer = null
+      }
+      return
+    }
+    const match = String(order.expectedTime || '').match(/^(\d{1,2}):(\d{2})$/)
+    if (!match) {
+      return
+    }
+    const now = new Date()
+    const target = new Date()
+    target.setHours(Number(match[1]), Number(match[2]), 0, 0)
+    const minutes = Math.round((target.getTime() - now.getTime()) / 60000)
+    const etaCountdown = minutes <= 0 ? '马上出锅' : `还有 ${minutes} 分钟`
+    if (etaCountdown !== (order.etaCountdown || '')) {
+      this.setData({ 'activeOrder.etaCountdown': etaCountdown })
     }
   },
 

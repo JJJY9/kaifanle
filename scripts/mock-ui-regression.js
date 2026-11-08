@@ -182,24 +182,47 @@ function chinaDate(offset) {
   )
   check(
     'mock 首页今天这单已等时长',
-    /^已等 \d+ 分钟$/.test(
-      String((data.activeOrder || {}).waitedText || '')
-    ) &&
-      Number(
-        String((data.activeOrder || {}).waitedText || '').replace(
-          /[^\d]/g,
-          ''
-        )
-      ) >= 1 &&
-      Number(
-        String((data.activeOrder || {}).waitedText || '').replace(
-          /[^\d]/g,
-          ''
-        )
-      ) <= 120 &&
-      waitedText.indexOf(String((data.activeOrder || {}).waitedText || '')) >
-        -1,
+    (() => {
+      const homeMidnight = new Date()
+      homeMidnight.setHours(0, 0, 0, 0)
+      const minsIntoDay = Math.floor(
+        (Date.now() - homeMidnight.getTime()) / 60000
+      )
+      const waitedValue = String((data.activeOrder || {}).waitedText || '')
+      if (minsIntoDay <= 2) {
+        return waitedValue === '' && waitedText === ''
+      }
+      const waitedMinutes = Number(waitedValue.replace(/[^\d]/g, ''))
+      return (
+        /^已等 \d+ 分钟$/.test(waitedValue) &&
+        waitedMinutes >= 1 &&
+        waitedMinutes <= minsIntoDay &&
+        waitedText.indexOf(waitedValue) > -1
+      )
+    })(),
     String((data.activeOrder || {}).waitedText || '无')
+  )
+  const waitCrossDay = await invoke(
+    mp,
+    'return page.computeWaitedText(Date.now() - 26 * 60 * 60 * 1000)'
+  )
+  const waitSameDay = await invoke(
+    mp,
+    'return page.computeWaitedText(Date.now() - 20 * 60 * 1000)'
+  )
+  check(
+    'mock 已等时长跨天守卫',
+    String(waitCrossDay || '') === '' &&
+      /^已等 \d+ 分钟$/.test(String(waitSameDay || '')),
+    `${waitCrossDay || '空'} / ${waitSameDay || '空'}`
+  )
+  const etaCountdownValue = String(
+    (data.activeOrder || {}).etaCountdown || ''
+  )
+  check(
+    'mock 首页今天这单出锅倒计时',
+    /^(还有 \d+ 分钟|马上出锅)$/.test(etaCountdownValue),
+    etaCountdownValue || '无'
   )
   const homeCopiedNo = await mp.evaluate(() => {
     return new Promise(resolve => {
@@ -1053,7 +1076,12 @@ function chinaDate(offset) {
   page = await current()
   data = await page.data()
   check('mock 只看能点的恢复', data.onlyAvailable === false)
-  const weekdaySelectDate = chinaDate(2)
+  const weekdayBase = String(data.todayDate || chinaDate(0))
+  const weekdayBaseDate = new Date(weekdayBase + 'T00:00:00')
+  weekdayBaseDate.setDate(weekdayBaseDate.getDate() + 2)
+  const weekdayMonth = String(weekdayBaseDate.getMonth() + 1).padStart(2, '0')
+  const weekdayDay = String(weekdayBaseDate.getDate()).padStart(2, '0')
+  const weekdaySelectDate = `${weekdayBaseDate.getFullYear()}-${weekdayMonth}-${weekdayDay}`
   await invoke(
     mp,
     `page.onSelectDate({ detail: { value: '${weekdaySelectDate}' } })`
@@ -3858,7 +3886,7 @@ function chinaDate(offset) {
   )
   await mp.evaluate(
     new Function(
-      "wx.setStorageSync('kfl_favorites_cloud_v1', JSON.stringify({ ids: ['d02'], times: { d02: Date.now() - 600000 }, updatedAt: Date.now() + 60000 })); return true"
+      "wx.setStorageSync('kfl_favorites_cloud_v1', JSON.stringify({ ids: ['d02'], times: { d02: Date.now() }, updatedAt: Date.now() + 60000 })); return true"
     )
   )
   await mp.navigateBack()
@@ -3879,13 +3907,26 @@ function chinaDate(offset) {
     Number(data.posterThemeIndex) === 1,
     `配色 ${data.posterThemeIndex}`
   )
+  const eatenFixtureBefore = await mp.evaluate(() => {
+    try {
+      return wx.getStorageSync('kfl_eaten_v1') || ''
+    } catch (e) {
+      return ''
+    }
+  })
+  await mp.evaluate(
+    new Function(
+      `wx.setStorageSync('kfl_eaten_v1', JSON.stringify({ d01: Date.now(), d02: Date.now() - 86400000 })); return true`
+    )
+  )
   await invoke(
     mp,
-    "page.onSort({ currentTarget: { dataset: { sort: 'price' } } })"
+    "page.onSort({ currentTarget: { dataset: { sort: 'eaten' } } })"
   )
   await sleep(400)
   page = await current()
   data = await page.data()
+  const eatenOrderIds = (data.display || []).map(dish => dish.id)
   const copiedSortedList = await mp.evaluate(() => {
     return new Promise(resolve => {
       const timer = setTimeout(() => resolve(''), 2000)
@@ -3903,18 +3944,15 @@ function chinaDate(offset) {
     })
   })
   const sortedListLines = String(copiedSortedList || '').split('\n')
-  const sortedPrices = (data.display || []).map(dish => Number(dish.price))
   const expectedListLines = (data.display || []).map(
     dish => `${dish.name} ¥${dish.price}`
   )
   check(
     'mock 收藏复制清单按排序',
     (data.display || []).length >= 2 &&
-      data.sort === 'price' &&
-      sortedPrices.every(
-        (price, index) => index === 0 || sortedPrices[index - 1] <= price
-      ) &&
-      (data.display || []).map(dish => dish.id).join('/') !==
+      data.sort === 'eaten' &&
+      eatenOrderIds[0] === 'd01' &&
+      eatenOrderIds.join('/') !==
         (data.allFavorites || []).map(dish => dish.id).join('/') &&
       sortedListLines[0].indexOf('【我的收藏】') > -1 &&
       sortedListLines.length === expectedListLines.length + 1 &&
@@ -3922,6 +3960,33 @@ function chinaDate(offset) {
         (line, index) => sortedListLines[index + 1] === line
       ),
     `${expectedListLines.length} 道 · ${sortedListLines[0] || '没有内容'}`
+  )
+  await invoke(
+    mp,
+    "page.onSort({ currentTarget: { dataset: { sort: 'price' } } })"
+  )
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  const priceOrderIds = (data.display || []).map(dish => dish.id)
+  const priceOrderValues = (data.display || []).map(dish =>
+    Number(dish.price)
+  )
+  check(
+    'mock 收藏价格排序顺序',
+    data.sort === 'price' &&
+      priceOrderValues.every(
+        (value, index) => index === 0 || priceOrderValues[index - 1] <= value
+      ) &&
+      priceOrderIds.join('/') !== eatenOrderIds.join('/'),
+    priceOrderIds.join('/') || '无'
+  )
+  await mp.evaluate(
+    new Function(
+      `wx.setStorageSync('kfl_eaten_v1', ${JSON.stringify(
+        eatenFixtureBefore
+      )}); return true`
+    )
   )
   await mp.switchTab('/pages/home/index')
   await sleep(1500)
@@ -5415,6 +5480,33 @@ function chinaDate(offset) {
       ? data.receiptAllergenText || '无过敏原行'
       : '未生成'
   )
+  const receiptItemsBefore = await mp.evaluate(
+    new Function(
+      "const page = getCurrentPages()[getCurrentPages().length - 1]; return JSON.parse(JSON.stringify((page.data.order && page.data.order.items) || []))"
+    )
+  )
+  await invoke(
+    mp,
+    "page.setData({ 'order.items': [{ dishId: 'd01', name: '长过敏原测试', qty: 1, price: 1, lineTotal: 1, specs: [], note: '', allergens: ['花生', '牛奶', '鸡蛋', '小麦', '大豆', '坚果', '鱼', '虾', '蟹', '芝麻'] }] })"
+  )
+  await sleep(300)
+  await invoke(mp, 'page.onMakeOrderPoster()')
+  await sleep(1400)
+  page = await current()
+  data = await page.data()
+  const longReceiptAllergen = String(data.receiptAllergenText || '')
+  check(
+    'mock 小票图片过敏原按宽度截断',
+    longReceiptAllergen.indexOf('含：') === 0 &&
+      longReceiptAllergen.indexOf('…') === longReceiptAllergen.length - 1 &&
+      longReceiptAllergen.length < 30,
+    longReceiptAllergen || '无'
+  )
+  await invoke(
+    mp,
+    `page.setData({ 'order.items': ${JSON.stringify(receiptItemsBefore)} })`
+  )
+  await sleep(200)
   await mp.mockWxMethod('showModal', {
     confirm: true,
     cancel: false,

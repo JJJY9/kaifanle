@@ -722,8 +722,14 @@ function seedOrders(): Order[] {
       note: '明天的午饭',
       scheduledDate: dateInputString(new Date(now + 24 * 60 * 60 * 1000)),
       status: 'pending',
-      timeline: [{ status: 'pending', title: '已下单', time: now - 10 * 60 * 1000 }],
-      createdAt: now - 10 * 60 * 1000
+      timeline: [
+        {
+          status: 'pending',
+          title: '已下单',
+          time: Math.max(now - 10 * 60 * 1000, dayStart.getTime() + 60 * 1000)
+        }
+      ],
+      createdAt: Math.max(now - 10 * 60 * 1000, dayStart.getTime() + 60 * 1000)
     },
     {
       id: 'seed-4',

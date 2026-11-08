@@ -69,7 +69,7 @@
         </view>
         <text class="active-order-text">{{activeOrder.statusText}} · {{activeOrder.summary}}</text>
         <text wx:if="{{activeOrder.waitedText}}" class="active-order-waited">⏳ {{activeOrder.waitedText}}</text>
-        <text wx:if="{{activeOrder.expectedText}}" class="active-order-eta">⏰ {{activeOrder.expectedText}}</text>
+        <text wx:if="{{activeOrder.expectedText}}" class="active-order-eta">⏰ {{activeOrder.expectedText}}{{activeOrder.etaCountdown ? ' · ' + activeOrder.etaCountdown : ''}}</text>
         <text wx:if="{{activeOrder.lastMessageText}}" class="active-order-message">💬 {{activeOrder.lastMessageText}}</text>
       </view>
       <text class="active-order-arrow">查看 ›</text>

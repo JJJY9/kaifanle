@@ -3,6 +3,7 @@ import { getOrder, cancelOrder, getDishes, getKitchenStatus, urgeOrder, rateOrde
 import { addOrderToCart } from '../../utils/reorder'
 import { removeEaten } from '../../store/eaten'
 import { favorites } from '../../store/favorites'
+import { sameDayWaitText } from '../../utils/wait'
 import { orderReceiptLines, receiptText } from '../../utils/receipt'
 import { prepareImageForUpload } from '../../utils/image'
 import { saveImageToAlbum } from '../../utils/save-image'
@@ -153,10 +154,12 @@ Page({
           }
           if (kitchenStatus) {
             const ahead = Math.max(0, Number(kitchenStatus.active || 0) - 1)
-            const minutes = Math.floor(
-              (Date.now() - Number(order.createdAt || 0)) / 60000
+            const waitText = sameDayWaitText(
+              Number(order.createdAt || 0),
+              Date.now(),
+              5
             )
-            const wait = minutes >= 5 ? ` · 已等 ${minutes} 分钟` : ''
+            const wait = waitText ? ` · ${waitText}` : ''
             queueText =
               (ahead > 0 ? `厨房前面还有 ${ahead} 单` : '马上轮到你') + wait
           }
@@ -964,8 +967,20 @@ Page({
         infoY += 32
       }
       if (receiptAllergenText) {
-        ctx.fillText(fit(receiptAllergenText, 28), 48, infoY)
+        let allergenLine = receiptAllergenText
+        const maxAllergenWidth = width - 96
+        if (ctx.measureText(allergenLine).width > maxAllergenWidth) {
+          while (
+            allergenLine.length > 1 &&
+            ctx.measureText(allergenLine + '…').width > maxAllergenWidth
+          ) {
+            allergenLine = allergenLine.slice(0, allergenLine.length - 1)
+          }
+          allergenLine += '…'
+        }
+        ctx.fillText(allergenLine, 48, infoY)
         infoY += 32
+        this.setData({ receiptAllergenText: allergenLine })
       }
 
       ctx.fillStyle = '#8C8C8C'
