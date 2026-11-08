@@ -8,6 +8,11 @@
     <text wx:else class="media-char">{{dish.emoji || dish.char}}</text>
     <view wx:if="{{dish.tags[0] && dish.status !== 'soldout' && dish.stock !== 0}}" class="media-tag">{{dish.tags[0]}}</view>
     <view wx:if="{{spicyText}}" class="media-spicy">{{spicyText}}</view>
+    <view
+      wx:if="{{dish.status !== 'off'}}"
+      class="media-fav {{favorite ? 'on' : ''}}"
+      catchtap="onFavorite"
+    >{{favorite ? '♥' : '♡'}}</view>
     <view wx:if="{{dish.status === 'soldout' || dish.stock === 0}}" class="soldout-mask">
       <text class="soldout-text">售罄</text>
     </view>

@@ -183,12 +183,10 @@ Page({
         favoriteCount: ids.length,
         favoriteLabel: `♡ 我的收藏${ids.length ? ' ' + ids.length : ''}`
       })
-      if (this.data.onlyFavorites) {
-        this.renderSections()
-        this.setData({
-          searchResults: this.filterDishes(this.data.keyword)
-        })
-      }
+      this.renderSections()
+      this.setData({
+        searchResults: this.filterDishes(this.data.keyword)
+      })
     })
   },
 
@@ -699,6 +697,7 @@ Page({
               dish.status === 'soldout' || dish.stock === 0 ? 1 : 0
             return rank(a) - rank(b)
           })
+          .map(dish => ({ ...dish, favorite: favorites.has(dish.id) }))
       }))
       .filter(section => section.dishes.length > 0)
     const favoriteHero = pool.find(dish => favorites.has(dish.id))
@@ -1170,6 +1169,7 @@ Page({
         .toLowerCase()
       return haystack.indexOf(kw) > -1
     })
+      .map(dish => ({ ...dish, favorite: favorites.has(dish.id) }))
   },
 
   suggestDishes(keyword: string): Dish[] {
@@ -1333,6 +1333,18 @@ Page({
       icon: 'none'
     })
     this.openSku(dish)
+  },
+
+  onDishFavorite(e: any) {
+    const dish = e.detail && e.detail.dish
+    if (!dish || !dish.id) {
+      return
+    }
+    const favorite = favorites.toggle(dish.id)
+    wx.showToast({
+      title: favorite ? '已收藏' : '已取消收藏',
+      icon: 'none'
+    })
   },
 
   onDishTap(e: any) {

@@ -188,10 +188,13 @@
       <dish-card
         wx:for="{{searchResults}}"
         wx:key="id"
+        class="home-dish-card"
         dish="{{item}}"
+        favorite="{{item.favorite}}"
         bind:select="onDishTap"
         bind:add="onQuickAdd"
         bind:recipe="onRecipeTap"
+        bind:favorite="onDishFavorite"
       />
     </view>
     <block wx:if="{{!searchResults.length}}">
@@ -247,10 +250,13 @@
         <dish-card
           wx:for="{{item.dishes}}"
           wx:key="id"
+          class="home-dish-card"
           dish="{{item}}"
+          favorite="{{item.favorite}}"
           bind:select="onDishTap"
           bind:add="onQuickAdd"
           bind:recipe="onRecipeTap"
+          bind:favorite="onDishFavorite"
         />
       </view>
     </view>

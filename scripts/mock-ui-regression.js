@@ -611,6 +611,48 @@ function chinaDate(offset) {
   await mp.evaluate(
     new Function("wx.removeStorageSync('kfl_eaten_v1'); return true;")
   )
+  const dishFavTarget = await invoke(
+    mp,
+    "const list = page.selectAllComponents('.home-dish-card') || []; const comp = list.find(item => item.data.dish && !item.data.favorite); return comp ? comp.data.dish.id : ''"
+  )
+  await invoke(
+    mp,
+    `page.onDishFavorite({ detail: { dish: { id: ${JSON.stringify(
+      dishFavTarget
+    )} } } })`
+  )
+  await sleep(500)
+  const dishFavAfter = await mp.evaluate(
+    new Function(
+      `const page = getCurrentPages()[getCurrentPages().length - 1]
+       const list = page.selectAllComponents('.home-dish-card') || []
+       const comp = list.find(item => item.data.dish && item.data.dish.id === ${JSON.stringify(
+         dishFavTarget
+       )})
+       return comp ? Boolean(comp.data.favorite) : null`
+    )
+  )
+  const dishFavStore = await mp.evaluate(() => {
+    try {
+      return JSON.parse(wx.getStorageSync('kfl_favorites_v1') || '[]')
+    } catch (e) {
+      return []
+    }
+  })
+  check(
+    'mock 菜品卡快捷收藏',
+    Boolean(dishFavTarget) &&
+      dishFavAfter === true &&
+      dishFavStore.indexOf(dishFavTarget) > -1,
+    `${dishFavTarget} · ${dishFavAfter ? '已收藏' : '未收藏'}`
+  )
+  await invoke(
+    mp,
+    `page.onDishFavorite({ detail: { dish: { id: ${JSON.stringify(
+      dishFavTarget
+    )} } } })`
+  )
+  await sleep(400)
   await invoke(mp, "page.onSearchInput({ detail: { value: '番茄x' } })")
   await sleep(400)
   page = await current()

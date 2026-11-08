@@ -204,3 +204,23 @@
   font-size: 18rpx;
   line-height: 1.5;
 }
+
+.media-fav {
+  position: absolute;
+  top: 10rpx;
+  right: 10rpx;
+  width: 44rpx;
+  height: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFFFFF;
+  border: 2rpx solid #111111;
+  border-radius: 50%;
+  font-size: 24rpx;
+  line-height: 1;
+}
+
+.media-fav.on {
+  color: #FF5C8A;
+}

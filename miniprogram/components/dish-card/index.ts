@@ -1,7 +1,8 @@
 Component({
   properties: {
     dish: { type: Object, value: null },
-    showAdd: { type: Boolean, value: true }
+    showAdd: { type: Boolean, value: true },
+    favorite: { type: Boolean, value: false }
   },
 
   data: {
@@ -38,6 +39,14 @@ Component({
 
     onAdd() {
       this.triggerEvent('add', { dish: this.data.dish })
+    },
+
+    onFavorite() {
+      const dish = this.data.dish
+      if (!dish || dish.status === 'off') {
+        return
+      }
+      this.triggerEvent('favorite', { dish })
     },
 
     onRecipe() {
