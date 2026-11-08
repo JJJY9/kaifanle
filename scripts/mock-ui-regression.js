@@ -255,7 +255,8 @@ function chinaDate(offset) {
         (Date.now() - etaNowMidnight.getTime()) / 60000
       )
       let ok = false
-      if (etaMinsIntoDay < 5) {
+      if (etaMinsIntoDay < 1) {
+        // 仅在刚过午夜的片刻容忍“加载时还是昨天、断言时已跨天”的时钟差
         ok = /^(还有 \d+ 分钟|马上出锅)$/.test(etaCountdownValue)
       } else if (Math.abs(etaExpectedMin) <= 2) {
         ok =
@@ -5275,8 +5276,11 @@ function chinaDate(offset) {
     page.path === 'pages/home/index' &&
       data.selectedMeal === savedMeal &&
       data.selectedDate === savedDate &&
-      pendingEtaTimer === true,
-    `${data.selectedDate} · ${data.selectedMeal} · 倒计时${pendingEtaTimer ? '已重建' : '未重建'}`
+      pendingEtaTimer === true &&
+      String((data.activeOrder && data.activeOrder.etaCountdown) || '') !== '',
+    `${data.selectedDate} · ${data.selectedMeal} · 倒计时${
+      (data.activeOrder && data.activeOrder.etaCountdown) || '为空'
+    }`
   )
   await mp.switchTab('/pages/home/index')
   await sleep(1000)
@@ -5324,6 +5328,40 @@ function chinaDate(offset) {
     "page.onQuickDate({ currentTarget: { dataset: { date: page.data.todayDate } } })"
   )
   await sleep(1200)
+  page = await current()
+  data = await page.data()
+  const todayCartAfterReset = Number(data.cartCount || 0)
+  const pickerBase = new Date(String(data.todayDate || '') + 'T00:00:00')
+  pickerBase.setDate(pickerBase.getDate() + 1)
+  const pickerMonth = String(pickerBase.getMonth() + 1).padStart(2, '0')
+  const pickerDay = String(pickerBase.getDate()).padStart(2, '0')
+  const pickerTomorrowDate = `${pickerBase.getFullYear()}-${pickerMonth}-${pickerDay}`
+  await invoke(
+    mp,
+    `page.onSelectDate({ detail: { value: '${pickerTomorrowDate}' } })`
+  )
+  await sleep(1300)
+  page = await current()
+  data = await page.data()
+  const pickerTomorrowCart = Number(data.cartCount || 0)
+  const pickerTomorrowOther = Number(data.otherCartCount || 0)
+  await invoke(
+    mp,
+    `page.onSelectDate({ detail: { value: '${String(
+      data.todayDate || ''
+    )}' } })`
+  )
+  await sleep(1300)
+  page = await current()
+  data = await page.data()
+  check(
+    'mock 日期选择刷新角标',
+    todayCartAfterReset >= 1 &&
+      pickerTomorrowCart === 0 &&
+      pickerTomorrowOther >= 1 &&
+      Number(data.cartCount || 0) >= 1,
+    `今天 ${todayCartAfterReset} → 明天 ${pickerTomorrowCart}/${pickerTomorrowOther} → 今天 ${data.cartCount}`
+  )
   await mp.navigateTo('/pages/cart/index')
   await sleep(1400)
   page = await current()
@@ -6173,20 +6211,29 @@ function chinaDate(offset) {
         "return new Promise(resolve => wx.getClipboardData({ success: r => resolve(r.data || ''), fail: () => resolve('') }))"
       )
     )
+    const derivedReviews = data.reviews || []
+    const derivedReviewCount = derivedReviews.length
+    const derivedGood = derivedReviews.filter(
+      review => Number(review.rating) === 3
+    ).length
+    const derivedGoodRate = derivedReviewCount
+      ? Math.round((derivedGood / derivedReviewCount) * 100)
+      : 0
+    const derivedReplies = derivedReviews.filter(review =>
+      Boolean(review.reply)
+    ).length
     check(
       'mock 评价统计长按复制',
       Boolean(statsCardEl) &&
         String(copiedStats || '').indexOf('【我的评价】') > -1 &&
         String(copiedStats || '').indexOf(
-          `已评价 ${Number((data.stats || {}).count || 0)} 单`
+          `已评价 ${derivedReviewCount} 单`
         ) > -1 &&
+        String(copiedStats || '').indexOf(`好评率 ${derivedGoodRate}%`) > -1 &&
         String(copiedStats || '').indexOf(
-          `好评率 ${Number((data.stats || {}).goodRate || 0)}%`
-        ) > -1 &&
-        String(copiedStats || '').indexOf(
-          `掌勺人回复 ${Number((data.stats || {}).replies || 0)} 条`
+          `掌勺人回复 ${derivedReplies} 条`
         ) > -1,
-      String(copiedStats || '').split('\n')[0] || '空'
+      `${copiedStats ? String(copiedStats).split('\n')[0] : '空'} · 推导 ${derivedReviewCount}/${derivedGoodRate}%/${derivedReplies}`
     )
     const reviewsShare = await invoke(mp, 'return page.onShareAppMessage()')
     const reviewsTimeline = await invoke(
@@ -6198,7 +6245,10 @@ function chinaDate(offset) {
       Boolean(reviewsShare) &&
         String(reviewsShare.title || '').indexOf('我的评价') > -1 &&
         String(reviewsShare.title || '').indexOf(
-          String(Number((data.stats || {}).count || 0))
+          String(derivedReviewCount)
+        ) > -1 &&
+        String(reviewsShare.title || '').indexOf(
+          `${derivedGoodRate}%`
         ) > -1 &&
         String(reviewsShare.path || '') === '/pages/reviews/index' &&
         Boolean(reviewsTimeline) &&
