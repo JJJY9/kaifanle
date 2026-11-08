@@ -82,6 +82,23 @@ function chinaDate(offset) {
     console.log('警告：购物车未能完全清空')
   }
 
+  // 上一轮被中断时可能残留收藏；进收藏页走真实的「清空全部」重置 store 内存与存储
+  await mp.navigateTo('/pages/favorites/index')
+  await sleep(1200)
+  const resetFavPage = await current()
+  const resetFavData = await resetFavPage.data()
+  if (Number(resetFavData.count || 0) > 0) {
+    await mp.mockWxMethod('showModal', {
+      confirm: true,
+      cancel: false,
+      content: ''
+    })
+    await invoke(mp, 'page.onClearAll()')
+    await sleep(600)
+  }
+  await mp.navigateBack()
+  await sleep(800)
+
   // 首页
   await mp.reLaunch('/pages/home/index')
   await sleep(2500)
@@ -90,19 +107,24 @@ function chinaDate(offset) {
   check('mock 首页加载', (data.sections || []).length > 0, `${data.sections.length} 个分类`)
   const homeShare = await invoke(mp, 'return page.onShareAppMessage()')
   const homeTimeline = await invoke(mp, 'return page.onShareTimeline()')
-  const homeDishCount = (data.sections || []).reduce(
-    (sum, section) => sum + (section.dishes || []).length,
-    0
+  const homeAvailableCount = Number(
+    await invoke(mp, 'return (page._available || []).length')
   )
+  const homeShareLabel = String(data.menuDateLabel || '今天')
   check(
     'mock 首页分享标题带菜品数',
-    homeDishCount >= 1 &&
+    homeAvailableCount >= 1 &&
       String((homeShare && homeShare.title) || '').indexOf(
-        String(homeDishCount)
+        String(homeAvailableCount)
       ) > -1 &&
+      String((homeShare && homeShare.title) || '').indexOf(homeShareLabel) >
+        -1 &&
       String((homeShare && homeShare.path) || '') === '/pages/home/index' &&
       String((homeTimeline && homeTimeline.title) || '').indexOf(
-        String(homeDishCount)
+        String(homeAvailableCount)
+      ) > -1 &&
+      String((homeTimeline && homeTimeline.title) || '').indexOf(
+        homeShareLabel
       ) > -1,
     (homeShare && homeShare.title) || '没有分享信息'
   )
@@ -169,6 +191,12 @@ function chinaDate(offset) {
           ''
         )
       ) >= 1 &&
+      Number(
+        String((data.activeOrder || {}).waitedText || '').replace(
+          /[^\d]/g,
+          ''
+        )
+      ) <= 120 &&
       waitedText.indexOf(String((data.activeOrder || {}).waitedText || '')) >
         -1,
     String((data.activeOrder || {}).waitedText || '无')
@@ -1044,6 +1072,14 @@ function chinaDate(offset) {
     String(data.menuDateLabel || '').indexOf(expectedWeekday) > -1 &&
       String(data.menuDateLabel || '').indexOf('·') > -1,
     data.menuDateLabel
+  )
+  const weekdayShare = await invoke(mp, 'return page.onShareAppMessage()')
+  check(
+    'mock 首页分享标题跟随日期',
+    String((weekdayShare && weekdayShare.title) || '').indexOf('后天') > -1 &&
+      String((weekdayShare && weekdayShare.title) || '').indexOf('今天') ===
+        -1,
+    (weekdayShare && weekdayShare.title) || '没有分享信息'
   )
   await invoke(
     mp,
@@ -4575,10 +4611,22 @@ function chinaDate(offset) {
   )
   await invoke(mp, 'page.onSearchClear()')
   await sleep(300)
-  await mp.evaluate(
-    new Function(
-      "wx.setStorageSync('kfl_recipe_fav_only_v1', '1'); return true"
-    )
+  await invoke(
+    mp,
+    `page.onToggleFavorite({ currentTarget: { dataset: { id: ${JSON.stringify(
+      recipeFavTarget
+    )} } } })`
+  )
+  await sleep(400)
+  await invoke(mp, 'page.onToggleFavOnly()')
+  await sleep(400)
+  const favOnlyOnStored = await mp.evaluate(() =>
+    wx.getStorageSync('kfl_recipe_fav_only_v1')
+  )
+  check(
+    'mock 菜谱只看收藏开关写入',
+    favOnlyOnStored === '1',
+    String(favOnlyOnStored)
   )
   await mp.navigateBack()
   await sleep(800)
@@ -4591,8 +4639,10 @@ function chinaDate(offset) {
     'mock 菜谱只看收藏记忆',
     data.favOnly === true &&
       favOnlyRestore.favOnly === true &&
+      favOnlyRestore.expected.indexOf(recipeFavTarget) > -1 &&
+      favOnlyRestore.shownRaw.indexOf(recipeFavTarget) > -1 &&
       favOnlyRestore.shown.length === favOnlyRestore.expected.length,
-    `${favOnlyRestore.shown.length} 道`
+    `${favOnlyRestore.shown.length} 道 · ${favOnlyRestore.shownRaw.join('/')}`
   )
   await invoke(mp, 'page.onToggleFavOnly()')
   await sleep(400)
@@ -4604,6 +4654,13 @@ function chinaDate(offset) {
     favOnlyStoredOff === '',
     String(favOnlyStoredOff)
   )
+  await invoke(
+    mp,
+    `page.onToggleFavorite({ currentTarget: { dataset: { id: ${JSON.stringify(
+      recipeFavTarget
+    )} } } })`
+  )
+  await sleep(300)
 
   // 营业设置与公告
   await mp.navigateTo('/pages/business/index')
@@ -5350,8 +5407,13 @@ function chinaDate(offset) {
   data = await page.data()
   check(
     'mock 订单小票图片',
-    Boolean(data.posterPath) && data.posterMaking === false,
-    data.posterPath ? '已生成' : '未生成'
+    Boolean(data.posterPath) &&
+      data.posterMaking === false &&
+      String(data.receiptAllergenText || '').indexOf('含：') === 0 &&
+      String(data.receiptAllergenText || '').indexOf('花生') > -1,
+    data.posterPath
+      ? data.receiptAllergenText || '无过敏原行'
+      : '未生成'
   )
   await mp.mockWxMethod('showModal', {
     confirm: true,

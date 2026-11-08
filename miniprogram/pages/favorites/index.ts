@@ -237,7 +237,8 @@ Page({
     const displayGroups: any[] = []
     const groupIndex: Record<string, number> = {}
     display.forEach(dish => {
-      const categoryId = String((dish as any).categoryId || 'other')
+      const rawCategoryId = String((dish as any).categoryId || 'other')
+      const categoryId = categoryMeta[rawCategoryId] ? rawCategoryId : 'other'
       let index = groupIndex[categoryId]
       if (index === undefined) {
         const meta = categoryMeta[categoryId]

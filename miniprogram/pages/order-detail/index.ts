@@ -54,6 +54,7 @@ Page({
     messageAnchor: '',
     posterMaking: false,
     posterPath: '',
+    receiptAllergenText: '',
     messagePresets: ['少放辣', '多放饭', '快好了吗', '谢谢啦'],
     sendingMessage: false,
     submittingRating: false,
@@ -846,9 +847,25 @@ Page({
       const items = (order.items || []).slice(0, 10)
       const moreCount = Math.max(0, (order.items || []).length - items.length)
       const rows = items.length + (moreCount ? 1 : 0)
+      const allergenList: string[] = []
+      ;(order.items || []).forEach((item: any) => {
+        ;(item.allergens || []).forEach((value: string) => {
+          const allergen = String(value || '').trim()
+          if (allergen && allergenList.indexOf(allergen) === -1) {
+            allergenList.push(allergen)
+          }
+        })
+      })
+      const receiptAllergenText = allergenList.length
+        ? `含：${allergenList.join('、')}`
+        : ''
+      this.setData({ receiptAllergenText })
       const dpr = (wx.getWindowInfo && wx.getWindowInfo().pixelRatio) || 2
       const width = 600
-      const height = Math.max(780, 220 + rows * 64 + 280)
+      const height = Math.max(
+        780,
+        220 + rows * 64 + 280 + (receiptAllergenText ? 32 : 0)
+      )
       canvas.width = width * dpr
       canvas.height = height * dpr
       const ctx = canvas.getContext('2d')
@@ -944,6 +961,10 @@ Page({
       }
       if (order.note) {
         ctx.fillText(fit(`备注：${order.note}`, 28), 48, infoY)
+        infoY += 32
+      }
+      if (receiptAllergenText) {
+        ctx.fillText(fit(receiptAllergenText, 28), 48, infoY)
         infoY += 32
       }
 

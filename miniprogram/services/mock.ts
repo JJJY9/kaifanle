@@ -329,8 +329,29 @@ function saveOrders(): void {
   }
 }
 
+function refreshDaySeedWishes(): void {
+  if (!wishCache) {
+    return
+  }
+  const seed2 = wishCache.find(wish => wish && wish.id === 'wish-seed-2')
+  if (!seed2) {
+    return
+  }
+  const tomorrow = dateInputString(new Date(Date.now() + 24 * 60 * 60 * 1000))
+  if (
+    seed2.status === 'planned' &&
+    seed2.content === '想喝奶茶' &&
+    seed2.plannedDate !== tomorrow
+  ) {
+    // 演示种子按天刷新，倒计时不会因跨天或长时间挂起而失效
+    seed2.plannedDate = tomorrow
+    saveWishes()
+  }
+}
+
 function loadWishes(): Wish[] {
   if (wishCache) {
+    refreshDaySeedWishes()
     return wishCache
   }
   try {
@@ -740,8 +761,28 @@ function seedOrders(): Order[] {
   ]
 }
 
+function refreshDaySeedOrders(): void {
+  if (!orderCache) {
+    return
+  }
+  const today = dateInputString()
+  const staleSeed = orderCache.some(
+    order =>
+      /^seed-/.test(order.id) &&
+      dateInputString(new Date(order.createdAt)) !== today
+  )
+  if (!staleSeed) {
+    return
+  }
+  orderCache = orderCache
+    .filter(order => !/^seed-/.test(order.id))
+    .concat(seedOrders())
+  saveOrders()
+}
+
 function loadOrders(): Order[] {
   if (orderCache) {
+    refreshDaySeedOrders()
     return orderCache
   }
   try {

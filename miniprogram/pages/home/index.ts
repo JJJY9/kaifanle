@@ -893,7 +893,12 @@ Page({
               if (!createdAt) {
                 return ''
               }
-              const minutes = Math.floor((Date.now() - createdAt) / 60000)
+              const created = new Date(createdAt)
+              const now = new Date()
+              if (created.toDateString() !== now.toDateString()) {
+                return ''
+              }
+              const minutes = Math.floor((now.getTime() - createdAt) / 60000)
               return minutes >= 1 ? `已等 ${minutes} 分钟` : ''
             })(),
             mealText: mealName(order.meal),
@@ -1506,13 +1511,10 @@ Page({
   },
 
   onShareAppMessage() {
-    const sections = this.data.sections || []
-    const dishCount = sections.reduce(
-      (sum, section) => sum + (section.dishes || []).length,
-      0
-    )
+    const dishCount = (this._available || []).length
+    const label = String(this.data.menuDateLabel || '今天')
     const title = dishCount
-      ? `张饱饭堂 · 今天 ${dishCount} 道菜等你点`
+      ? `张饱饭堂 · ${label} ${dishCount} 道菜等你点`
       : '张饱饭堂 · 她点单，你掌勺'
     return {
       title,
@@ -1521,14 +1523,11 @@ Page({
   },
 
   onShareTimeline() {
-    const sections = this.data.sections || []
-    const dishCount = sections.reduce(
-      (sum, section) => sum + (section.dishes || []).length,
-      0
-    )
+    const dishCount = (this._available || []).length
+    const label = String(this.data.menuDateLabel || '今天')
     return {
       title: dishCount
-        ? `张饱饭堂 · 今天 ${dishCount} 道菜等你点`
+        ? `张饱饭堂 · ${label} ${dishCount} 道菜等你点`
         : '张饱饭堂 · 今天想吃啥？'
     }
   }
