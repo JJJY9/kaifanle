@@ -610,6 +610,18 @@ function chinaDate(offset) {
       data.searchSuggestions.some(dish => dish.name.indexOf('番茄') > -1),
     `${(data.searchSuggestions || []).length} 个推荐`
   )
+  await invoke(mp, 'page.onGoWish()')
+  await sleep(1400)
+  page = await current()
+  check(
+    'mock 搜索无果去许愿池',
+    page.path === 'pages/wishes/index',
+    page.path
+  )
+  await mp.navigateBack()
+  await sleep(900)
+  page = await current()
+  data = await page.data()
 
   await invoke(mp, "page.onSearchInput({ detail: { value: '主食' } })")
   await sleep(400)
@@ -1207,6 +1219,49 @@ function chinaDate(offset) {
     messageOrder
       ? `${messageOrder.lastMessageText} · ${messageOrder.messageBadge} 条未读`
       : '没找到订单'
+  )
+  await invoke(mp, "page.onOrderSearch({ detail: { value: '番茄' } })")
+  await invoke(mp, 'page.onOrderSearchConfirm()')
+  await sleep(400)
+  page = await current()
+  data = await page.data()
+  const orderHistoryStored = await mp.evaluate(() => {
+    try {
+      return JSON.parse(
+        wx.getStorageSync('kfl_kitchen_order_search_v1') || '[]'
+      )
+    } catch (e) {
+      return []
+    }
+  })
+  const orderHistorySaved =
+    (data.orderSearchHistory || [])[0] === '番茄' &&
+    orderHistoryStored[0] === '番茄'
+  await invoke(mp, 'page.onClearOrderSearch()')
+  await sleep(300)
+  await invoke(
+    mp,
+    "page.onOrderSearchHistoryTap({ currentTarget: { dataset: { keyword: '番茄' } } })"
+  )
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  const orderHistoryTapOk = data.orderKeyword === '番茄'
+  await invoke(
+    mp,
+    "page.onRemoveOrderSearchHistory({ currentTarget: { dataset: { keyword: '番茄' } } })"
+  )
+  await sleep(300)
+  page = await current()
+  data = await page.data()
+  const orderHistoryRemoved =
+    (data.orderSearchHistory || []).indexOf('番茄') === -1
+  await invoke(mp, 'page.onClearOrderSearch()')
+  await sleep(300)
+  check(
+    'mock 厨房订单搜索历史',
+    orderHistorySaved && orderHistoryTapOk && orderHistoryRemoved,
+    (data.orderSearchHistory || []).join('/') || '没有历史'
   )
   await invoke(
     mp,
@@ -4099,6 +4154,18 @@ function chinaDate(offset) {
         Array.isArray(data.order.ratingImages) &&
         data.order.ratingImages.indexOf('http://tmp/review-test.png') > -1,
       data.order ? (data.order.ratingImages || []).join('、') : '没有订单'
+    )
+    await invoke(mp, 'page.onCopyOrderReceipt()')
+    await sleep(600)
+    const ratedReceipt = await mp.evaluate(
+      new Function(
+        "return new Promise(resolve => wx.getClipboardData({ success: r => resolve(r.data || ''), fail: () => resolve('') }))"
+      )
+    )
+    check(
+      'mock 小票含评价',
+      String(ratedReceipt || '').indexOf('评价：😋 好吃') > -1,
+      `${String(ratedReceipt || '').length} 字`
     )
 
     // 我的评价页：汇总评分与筛选

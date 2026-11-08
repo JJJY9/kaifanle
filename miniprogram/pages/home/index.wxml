@@ -212,6 +212,7 @@
         title="没搜到"
         desc="换个关键词试试，或者去许愿池点个菜"
       />
+      <view class="search-wish" bindtap="onGoWish">去许愿池点一个 →</view>
     </block>
   </block>
 

@@ -1628,3 +1628,32 @@
 .copy-receipts.disabled {
   opacity: 0.5;
 }
+
+.order-search-history {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8rpx;
+  margin: 10rpx 0 4rpx;
+}
+
+.order-search-history-label {
+  color: #5C5C5C;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
+.order-search-chip {
+  padding: 4rpx 14rpx;
+  background: #FFFFFF;
+  border: 2rpx solid #111111;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
+.order-search-history-clear {
+  color: #9A9A9A;
+  font-size: 19rpx;
+  font-weight: 700;
+}

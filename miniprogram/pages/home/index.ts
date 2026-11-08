@@ -1281,6 +1281,10 @@ Page({
     }
   },
 
+  onGoWish() {
+    wx.navigateTo({ url: '/pages/wishes/index' })
+  },
+
   onClearHistory() {
     writeSearchHistory([])
     this.setData({ searchHistory: [] })

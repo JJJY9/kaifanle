@@ -40,6 +40,30 @@ const MAX_BATCH_PRICE_DISHES = 50
 const MAX_PRICE_ADJUST_PERCENT = 90
 const DISH_SEARCH_HISTORY_KEY = 'kfl_kitchen_dish_search_v1'
 const DISH_SEARCH_HISTORY_MAX = 6
+const ORDER_SEARCH_HISTORY_KEY = 'kfl_kitchen_order_search_v1'
+const ORDER_SEARCH_HISTORY_MAX = 6
+
+function readOrderSearchHistory(): string[] {
+  try {
+    const raw = wx.getStorageSync(ORDER_SEARCH_HISTORY_KEY)
+    const list = raw ? JSON.parse(raw) : []
+    return Array.isArray(list)
+      ? list
+          .filter(item => typeof item === 'string')
+          .slice(0, ORDER_SEARCH_HISTORY_MAX)
+      : []
+  } catch (e) {
+    return []
+  }
+}
+
+function writeOrderSearchHistory(list: string[]) {
+  try {
+    wx.setStorageSync(ORDER_SEARCH_HISTORY_KEY, JSON.stringify(list))
+  } catch (e) {
+    // 忽略存储失败
+  }
+}
 
 function readDishSearchHistory(): string[] {
   try {
@@ -169,6 +193,7 @@ Page({
     todo: { pending: 0, replies: 0, lowStock: 0, preorders: 0 },
     dishKeyword: '',
     dishSearchHistory: [] as string[],
+    orderSearchHistory: [] as string[],
     dishFilter: 'all' as 'all' | 'low' | 'soldout' | 'off' | 'missing' | 'cost',
     dishCategory: 'all',
     dishFilters: [] as any[],
@@ -1796,6 +1821,7 @@ Page({
 
   onLoad(options: any) {
     this.setData({ dishSearchHistory: readDishSearchHistory() })
+    this.setData({ orderSearchHistory: readOrderSearchHistory() })
     const filter = String((options && options.filter) || '')
     if (['low', 'soldout', 'off', 'missing', 'cost'].indexOf(filter) > -1) {
       this.setData({ dishFilter: filter })
@@ -2090,6 +2116,53 @@ Page({
         this.setData({ ordersView: this.filterOrders(this.data.orders) })
       }
     )
+  },
+
+  onOrderSearchConfirm(e?: any) {
+    const value = String(
+      (e && e.detail && e.detail.value) || this.data.orderKeyword || ''
+    )
+      .trim()
+      .slice(0, 20)
+    if (!value) {
+      return
+    }
+    const history = readOrderSearchHistory().filter(item => item !== value)
+    history.unshift(value)
+    writeOrderSearchHistory(history.slice(0, ORDER_SEARCH_HISTORY_MAX))
+    this.setData(
+      {
+        orderKeyword: value,
+        orderSearchHistory: readOrderSearchHistory()
+      },
+      () => this.setData({ ordersView: this.filterOrders(this.data.orders) })
+    )
+  },
+
+  onOrderSearchHistoryTap(e: any) {
+    const keyword = String(e.currentTarget.dataset.keyword || '')
+    if (!keyword) {
+      return
+    }
+    this.setData({ orderKeyword: keyword }, () =>
+      this.setData({ ordersView: this.filterOrders(this.data.orders) })
+    )
+  },
+
+  onRemoveOrderSearchHistory(e: any) {
+    const keyword = String(e.currentTarget.dataset.keyword || '')
+    if (!keyword) {
+      return
+    }
+    writeOrderSearchHistory(
+      readOrderSearchHistory().filter(item => item !== keyword)
+    )
+    this.setData({ orderSearchHistory: readOrderSearchHistory() })
+  },
+
+  onClearOrderSearchHistory() {
+    writeOrderSearchHistory([])
+    this.setData({ orderSearchHistory: [] })
   },
 
   onToggleHistory() {

@@ -896,3 +896,11 @@
   height: 208rpx;
   margin-top: 20rpx;
 }
+
+.search-wish {
+  margin-top: 12rpx;
+  text-align: center;
+  color: #2D9CFF;
+  font-size: 22rpx;
+  font-weight: 800;
+}

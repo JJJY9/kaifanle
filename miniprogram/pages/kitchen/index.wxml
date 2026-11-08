@@ -283,9 +283,23 @@
         class="order-search-input"
         value="{{orderKeyword}}"
         placeholder="搜单号 / 菜名 / 备注"
+        confirm-type="search"
         bindinput="onOrderSearch"
+        bindconfirm="onOrderSearchConfirm"
       />
       <view wx:if="{{orderKeyword}}" class="order-search-clear" bindtap="onClearOrderSearch">×</view>
+    </view>
+    <view wx:if="{{!orderKeyword && orderSearchHistory.length}}" class="order-search-history">
+      <text class="order-search-history-label">最近搜</text>
+      <view
+        wx:for="{{orderSearchHistory}}"
+        wx:key="*this"
+        class="order-search-chip"
+        data-keyword="{{item}}"
+        bindtap="onOrderSearchHistoryTap"
+        bindlongpress="onRemoveOrderSearchHistory"
+      >{{item}}</view>
+      <text class="order-search-history-clear" bindtap="onClearOrderSearchHistory">清空</text>
     </view>
     <view wx:if="{{!ordersView.length}}" class="empty-line">{{orderKeyword ? '没搜到相关订单' : '暂时没有待处理的订单，歇会儿吧'}}</view>
 

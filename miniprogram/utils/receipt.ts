@@ -43,5 +43,15 @@ export function receiptText(order: any, lines: any[]): string {
   if (order.note) {
     head.push(`整单备注：${order.note}`)
   }
+  const rating = Number(order.rating)
+  if ([1, 2, 3].indexOf(rating) > -1) {
+    const emoji = rating === 3 ? '😋' : rating === 2 ? '🙂' : '😵'
+    const label = rating === 3 ? '好吃' : rating === 2 ? '一般' : '翻车'
+    const feedback = String(order.feedback || '').trim()
+    head.push(`评价：${emoji} ${label}${feedback ? ` · ${feedback}` : ''}`)
+  }
+  if (order.ownerReply) {
+    head.push(`掌勺人：${order.ownerReply}`)
+  }
   return head.join('\n')
 }
