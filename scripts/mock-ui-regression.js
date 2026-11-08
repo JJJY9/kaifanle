@@ -3902,6 +3902,17 @@ function chinaDate(offset) {
       (data.allFavorites || []).some(dish => dish.id === 'd02'),
     (data.allFavorites || []).map(dish => dish.id).join('/') || '没有收藏'
   )
+  const favCategoryChips = data.categoryChips || []
+  const favAllChip = favCategoryChips.find(chip => chip.id === 'all')
+  const favStapleChip = favCategoryChips.find(chip => chip.id === 'staple')
+  check(
+    'mock 收藏分类数量',
+    Boolean(favAllChip) &&
+      Number(favAllChip.count) === 2 &&
+      Boolean(favStapleChip) &&
+      Number(favStapleChip.count) === 2,
+    favCategoryChips.map(chip => `${chip.name}:${chip.count}`).join('/')
+  )
   check(
     'mock 收藏海报配色记忆恢复',
     Number(data.posterThemeIndex) === 1,
@@ -5901,6 +5912,24 @@ function chinaDate(offset) {
       (data.reviews || []).length >= 1 &&
         Number((data.stats || {}).count || 0) >= 1,
       `${(data.reviews || []).length} 条`
+    )
+    const statsCardEl = await page.$('.stats-card')
+    if (statsCardEl) {
+      await statsCardEl.longpress()
+      await sleep(700)
+    }
+    const copiedStats = await mp.evaluate(
+      new Function(
+        "return new Promise(resolve => wx.getClipboardData({ success: r => resolve(r.data || ''), fail: () => resolve('') }))"
+      )
+    )
+    check(
+      'mock 评价统计长按复制',
+      Boolean(statsCardEl) &&
+        String(copiedStats || '').indexOf('【我的评价】') > -1 &&
+        String(copiedStats || '').indexOf('好评率') > -1 &&
+        String(copiedStats || '').indexOf('掌勺人回复') > -1,
+      String(copiedStats || '').split('\n')[0] || '空'
     )
     check(
       'mock 评价标签展示',

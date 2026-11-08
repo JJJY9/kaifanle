@@ -29,7 +29,7 @@
   />
 
   <block wx:else>
-    <view class="stats-card card">
+    <view class="stats-card card" bindlongpress="onCopyStats">
       <view class="stat">
         <text class="stat-num">{{stats.count}}</text>
         <text class="stat-label">已评价</text>

@@ -71,6 +71,7 @@ Page({
     allFavorites: [] as Dish[],
     display: [] as Dish[],
     displayGroups: [] as any[],
+    categoryChips: [] as any[],
     keyword: '',
     count: 0,
     sort: 'recent' as 'recent' | 'price' | 'eaten',
@@ -253,9 +254,22 @@ Page({
       }
       displayGroups[index].dishes.push(dish)
     })
+    const allFavorites = this.data.allFavorites || []
+    const categoryChips = [
+      { id: 'all', name: '全部', count: allFavorites.length }
+    ].concat(
+      (this.data.categories || []).map((category: any) => ({
+        id: category.id,
+        name: category.name,
+        count: allFavorites.filter(
+          (dish: any) => dish.categoryId === category.id
+        ).length
+      }))
+    )
     this.setData({
       display,
       displayGroups,
+      categoryChips,
       emptyTitle: hasKeyword ? '没搜到' : '这个分类还没有收藏',
       emptyDesc: hasKeyword ? '换个菜名试试' : '换个分类看看'
     })

@@ -248,6 +248,23 @@ Page({
     )
   },
 
+  onCopyStats() {
+    const stats = this.data.stats || {}
+    const lines = [
+      '【我的评价】',
+      `已评价 ${Number(stats.count || 0)} 单 · 好评率 ${Number(
+        stats.goodRate || 0
+      )}%`,
+      `掌勺人回复 ${Number(stats.replies || 0)} 条 · 带图 ${Number(
+        this.data.imageCount || 0
+      )} 条`
+    ]
+    wx.setClipboardData({
+      data: lines.join('\n'),
+      success: () => wx.showToast({ title: '评价统计已复制', icon: 'none' })
+    })
+  },
+
   onToggleImages() {
     this.setData({ onlyImages: !this.data.onlyImages }, () =>
       this.applyFilter()

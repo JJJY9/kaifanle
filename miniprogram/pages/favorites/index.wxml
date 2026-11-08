@@ -43,17 +43,12 @@
 
     <view wx:if="{{categories.length}}" class="cat-row">
       <view
-        class="cat-chip {{category === 'all' ? 'active' : ''}}"
-        data-id="all"
-        bindtap="onCategory"
-      >全部</view>
-      <view
-        wx:for="{{categories}}"
+        wx:for="{{categoryChips}}"
         wx:key="id"
         class="cat-chip {{category === item.id ? 'active' : ''}}"
         data-id="{{item.id}}"
         bindtap="onCategory"
-      >{{item.name}}</view>
+      >{{item.name}} {{item.count}}</view>
     </view>
 
     <view class="sort-row">
