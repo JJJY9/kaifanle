@@ -15,7 +15,8 @@ const ORDER_STATUS_TEMPLATE_ID =
 // 消息点开时进入的小程序版本：
 // developer = 开发版，trial = 体验版，formal = 正式版
 // 优先读取云函数环境变量 MINIPROGRAM_STATE（云开发控制台 → 云函数 → 配置），
-// 便于不改代码切换：开发版预览真机验收设 developer，体验版设 trial，正式发布后设 formal。
+// 便于不改代码切换。当前阶段没有体验版/正式版，默认 developer（真机用开发版预览验收）；
+// 体验版验收时用环境变量设为 trial，正式发布后设为 formal。
 const MINIPROGRAM_STATE_CANDIDATES = ['developer', 'trial', 'formal']
 const MINIPROGRAM_STATE = (() => {
   const fromEnv = String(
@@ -26,7 +27,7 @@ const MINIPROGRAM_STATE = (() => {
   ).trim()
   return MINIPROGRAM_STATE_CANDIDATES.indexOf(fromEnv) > -1
     ? fromEnv
-    : 'trial'
+    : 'developer'
 })()
 
 function pad(n) {

@@ -143,13 +143,13 @@ node scripts/init-cloud-db.js ws://127.0.0.1:9420
    - `cloudfunctions/api/templates.js` 的 `NEW_ORDER_TEMPLATE_ID` / `ORDER_STATUS_TEMPLATE_ID`
 3. 按实际模板的字段名修改 `templates.js` 里 `data` 的键（如 `thing1`、`time2`、`amount3`）。
    字段必须与模板一一对应，否则发送会失败
-4. 设置订阅消息的「小程序版本状态」：在云开发控制台 → 云函数 → api → 配置里新增环境变量 `MINIPROGRAM_STATE`，体验版填 `trial`、开发版调试填 `developer`、正式发布后填 `formal`（代码默认 `trial`，环境变量优先，改完无需重新部署）
+4. 订阅消息的「小程序版本状态」由代码 + 云函数环境变量共同决定：代码默认 `developer`（当前阶段真机用开发版预览验收即可）；如需切换，在云开发控制台 → 云函数 → api → 配置里加环境变量 `MINIPROGRAM_STATE`（`developer` / `trial` / `formal`），环境变量优先、无需重新部署
 5. 重新「上传并部署」api 云函数（`config.json` 已声明 `subscribeMessage.send` 权限）
 
 > 私用小程序只能使用**一次性订阅**：一次授权只能发一条消息。
 > 所以顾客每次下单都会重新请求授权；管理员点一次提醒按钮，能收到下一单的通知。
 >
-> 订阅消息的小程序版本状态由云函数环境变量 `MINIPROGRAM_STATE` 控制（`developer` / `trial` / `formal`），代码默认 `trial`。真机验收的具体步骤见 [docs/上线前检查清单.md](docs/上线前检查清单.md) 第 2 节。
+> 订阅消息的小程序版本状态默认 `developer`（开发版预览真机验收）；体验版验收用环境变量 `MINIPROGRAM_STATE=trial`，正式发布后设 `formal`。真机验收步骤见 [docs/上线前检查清单.md](docs/上线前检查清单.md) 第 2 节。
 
 ## 目录结构
 
