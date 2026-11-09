@@ -1,13 +1,24 @@
 {
-  "desc": "管理端和订单详情不参与微信搜索索引",
+  "desc": "仅首页、菜谱、菜谱大全、本周饭表与隐私说明参与微信搜索索引；个人与管理员页面一律不索引",
   "rules": [
+    { "action": "disallow", "page": "pages/profile/index" },
+    { "action": "disallow", "page": "pages/orders/index" },
+    { "action": "disallow", "page": "pages/order-detail/index" },
+    { "action": "disallow", "page": "pages/checkout/index" },
+    { "action": "disallow", "page": "pages/cart/index" },
     { "action": "disallow", "page": "pages/kitchen/index" },
     { "action": "disallow", "page": "pages/dish-edit/index" },
+    { "action": "disallow", "page": "pages/dish-templates/index" },
+    { "action": "disallow", "page": "pages/dish-import/index" },
     { "action": "disallow", "page": "pages/menu-edit/index" },
     { "action": "disallow", "page": "pages/business/index" },
     { "action": "disallow", "page": "pages/category-manage/index" },
-    { "action": "disallow", "page": "pages/order-detail/index" },
-    { "action": "disallow", "page": "pages/checkout/index" },
+    { "action": "disallow", "page": "pages/report/index" },
+    { "action": "disallow", "page": "pages/my-report/index" },
+    { "action": "disallow", "page": "pages/reviews/index" },
+    { "action": "disallow", "page": "pages/preferences/index" },
+    { "action": "disallow", "page": "pages/coupons/index" },
+    { "action": "disallow", "page": "pages/wishes/index" },
     { "action": "allow", "page": "*" }
   ]
 }

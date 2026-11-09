@@ -143,13 +143,13 @@ node scripts/init-cloud-db.js ws://127.0.0.1:9420
    - `cloudfunctions/api/templates.js` 的 `NEW_ORDER_TEMPLATE_ID` / `ORDER_STATUS_TEMPLATE_ID`
 3. 按实际模板的字段名修改 `templates.js` 里 `data` 的键（如 `thing1`、`time2`、`amount3`）。
    字段必须与模板一一对应，否则发送会失败
-4. 设置 `templates.js` 里的 `MINIPROGRAM_STATE`：体验版 `trial`、开发版 `developer`、正式版 `formal`
+4. 设置订阅消息的「小程序版本状态」：在云开发控制台 → 云函数 → api → 配置里新增环境变量 `MINIPROGRAM_STATE`，体验版填 `trial`、开发版调试填 `developer`、正式发布后填 `formal`（代码默认 `trial`，环境变量优先，改完无需重新部署）
 5. 重新「上传并部署」api 云函数（`config.json` 已声明 `subscribeMessage.send` 权限）
 
 > 私用小程序只能使用**一次性订阅**：一次授权只能发一条消息。
 > 所以顾客每次下单都会重新请求授权；管理员点一次提醒按钮，能收到下一单的通知。
 >
-> `templates.js` 里的 `MINIPROGRAM_STATE` 默认是 `trial`（体验版）。用开发版调试时改成 `developer`，正式发布后改成 `formal`。
+> 订阅消息的小程序版本状态由云函数环境变量 `MINIPROGRAM_STATE` 控制（`developer` / `trial` / `formal`），代码默认 `trial`。真机验收的具体步骤见 [docs/上线前检查清单.md](docs/上线前检查清单.md) 第 2 节。
 
 ## 目录结构
 
@@ -236,7 +236,7 @@ UI 回归与云端验收见 [docs/验收手册.md](docs/验收手册.md)；上�
 - [ ] 小程序后台把 `cdn.jsdelivr.net` 加入 downloadFile 合法域名（标题字体）
 - [ ] `templates.js` 的 `MINIPROGRAM_STATE` 切换为 `formal`（正式版）
 - [ ] 对公众售卖需要：个体户主体、食品经营许可证、ICP 备案、微信支付
-- [ ] `sitemap.json` 已排除管理端与订单详情页（默认已配置）
+- [ ] `sitemap.json` 已将全部个人页与管理员页排除索引，仅首页/菜谱/菜谱大全/本周饭表可被搜索
 
 ---
 
