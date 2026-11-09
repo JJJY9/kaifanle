@@ -180,7 +180,44 @@ for (const file of files.filter(f => f.endsWith('.wxml'))) {
   }
 }
 
-// 7. 客户端 action 与服务端路由一致
+// 7. 规格弹层结构约束：底部「加购」栏必须绝对定位钉在弹层底部，
+//    滚动区必须有 min-height:0，否则长内容（做法展开）在部分机型会把按钮顶出屏幕
+const skuWxssPath = path.join(ROOT, 'components', 'sku-sheet', 'index.wxss')
+if (fs.existsSync(skuWxssPath)) {
+  const css = fs.readFileSync(skuWxssPath, 'utf8')
+  const ruleOf = selector => {
+    const re = new RegExp(
+      `(?:^|\\n)\\s*\\${selector}\\s*\\{([\\s\\S]*?)\\}`
+    )
+    const m = css.match(re)
+    return m ? m[1] : ''
+  }
+  const footRule = ruleOf('.foot')
+  if (!footRule) {
+    errors.push('sku-sheet: 找不到 .foot 规则')
+  } else {
+    if (!/position\s*:\s*absolute/.test(footRule)) {
+      errors.push('sku-sheet: .foot 必须 position: absolute（防止被长内容顶出屏幕）')
+    }
+    if (!/bottom\s*:/.test(footRule)) {
+      errors.push('sku-sheet: .foot 必须显式声明 bottom')
+    }
+  }
+  const bodyRule = ruleOf('.body')
+  if (!bodyRule) {
+    errors.push('sku-sheet: 找不到 .body 规则')
+  } else if (!/min-height\s*:\s*0/.test(bodyRule)) {
+    errors.push('sku-sheet: .body 必须 min-height: 0（允许 flex 收缩）')
+  }
+  const sheetRule = ruleOf('.sheet')
+  if (!sheetRule) {
+    errors.push('sku-sheet: 找不到 .sheet 规则')
+  } else if (!/padding\s*:[^;]*150rpx/.test(sheetRule)) {
+    errors.push('sku-sheet: .sheet 的 padding 需为绝对定位的 .foot 预留高度（150rpx）')
+  }
+}
+
+// 8. 客户端 action 与服务端路由一致
 const apiPath = path.join(__dirname, '..', 'miniprogram', 'services', 'api.ts')
 const serverPath = path.join(__dirname, '..', 'cloudfunctions', 'api', 'index.js')
 if (fs.existsSync(apiPath) && fs.existsSync(serverPath)) {

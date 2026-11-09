@@ -1,10 +1,15 @@
 <view
   wx:if="{{visible && dish}}"
   class="mask"
+  style="{{kbHeight ? 'padding-bottom:' + kbHeight + 'px;' : ''}}"
   bindtap="onClose"
   catchtouchmove="noop"
 >
-  <view class="sheet" catchtap="noop">
+  <view
+    class="sheet"
+    catchtap="noop"
+    style="{{sheetMaxHeight ? 'max-height:' + sheetMaxHeight + 'px;' : ''}}"
+  >
     <view class="handle"></view>
     <view class="close" bindtap="onClose">×</view>
 
@@ -31,7 +36,11 @@
       </view>
     </view>
 
-    <scroll-view class="body" scroll-y>
+    <scroll-view
+      class="body"
+      scroll-y
+      style="{{bodyMaxHeight ? 'max-height:' + bodyMaxHeight + 'px;' : ''}}"
+    >
       <block wx:if="{{spicyLevels.length}}">
         <view class="field-label">辣度</view>
         <view class="chips">
@@ -67,7 +76,11 @@
         class="note"
         placeholder="比如：少放葱花"
         value="{{note}}"
+        adjust-position="{{false}}"
         bindinput="onNote"
+        bindfocus="onNoteFocus"
+        bindblur="onNoteBlur"
+        bindkeyboardheightchange="onNoteKb"
       />
 
       <block wx:if="{{recipeLines.length}}">

@@ -4,6 +4,9 @@ Component({
   data: {
     selected: 0,
     cartCount: 0,
+    // 弹层类浮层（规格弹层）打开时隐藏 tabBar：自定义 tabBar 渲染在页面 fixed 遮罩之上，
+    // 不隐藏会盖住弹层底部操作栏
+    hidden: false,
     list: [
       { pagePath: '/pages/home/index', text: '点餐' },
       { pagePath: '/pages/orders/index', text: '订单' },

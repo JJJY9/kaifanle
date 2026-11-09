@@ -226,7 +226,7 @@ Page({
       ? (this as any).getTabBar()
       : null
     if (tabBar) {
-      tabBar.setData({ selected: 0 })
+      tabBar.setData({ selected: 0, hidden: Boolean(this.data.skuVisible) })
     }
     this.syncEatenCloud()
     favorites.syncFromCloud().catch(() => false)
@@ -1585,10 +1585,24 @@ Page({
       return
     }
     this.setData({ activeDish: dish, skuVisible: true })
+    this.setTabBarHidden(true)
+  },
+
+  // 自定义 tabBar 渲染在页面 fixed 遮罩之上，弹层打开时必须隐藏，否则会盖住底部「加购」
+  setTabBarHidden(hidden: boolean) {
+    const tabBar: any = (this as any).getTabBar
+      ? (this as any).getTabBar()
+      : null
+    if (tabBar && typeof tabBar.setData === 'function') {
+      if (Boolean(tabBar.data && tabBar.data.hidden) !== hidden) {
+        tabBar.setData({ hidden })
+      }
+    }
   },
 
   onSkuClose() {
     this.setData({ skuVisible: false })
+    this.setTabBarHidden(false)
   },
 
   onSkuAdd(e: any) {
@@ -1598,6 +1612,7 @@ Page({
       date: this.data.selectedDate
     })
     this.setData({ skuVisible: false })
+    this.setTabBarHidden(false)
     wx.showToast({ title: '已加购', icon: 'none' })
   },
 

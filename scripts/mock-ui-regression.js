@@ -814,6 +814,163 @@ function chinaDate(offset) {
   await mp.evaluate(
     new Function("wx.removeStorageSync('kfl_eaten_v1'); return true;")
   )
+  // 规格弹层布局：做法展开后底部「加购」必须仍在视口内（长内容不能把按钮顶出屏幕）
+  const skuLayoutTarget = await invoke(
+    mp,
+    "const list = page._available || []; const dish = list.find(item => item.recipe && item.recipe.length) || list[0]; if (!dish) return ''; page.openSku(dish); return dish.id"
+  )
+  await sleep(500)
+  await invoke(
+    mp,
+    "const sheet = page.selectComponent('#skuSheet'); if (!sheet) return false; if (!sheet.data.recipeOpen) sheet.onToggleRecipe(); return Boolean(sheet.data.recipeOpen)"
+  )
+  await sleep(400)
+  const measureSkuSheet = () =>
+    invoke(
+      mp,
+      `const sheet = page.selectComponent('#skuSheet')
+       if (!sheet) return null
+       return new Promise(resolve => {
+         const q = sheet.createSelectorQuery().in(sheet)
+         q.select('.body').boundingClientRect()
+         q.select('.foot').boundingClientRect()
+         q.select('.confirm').boundingClientRect()
+         q.select('.close').boundingClientRect()
+         q.select('.sheet').boundingClientRect()
+         q.exec(res => {
+           const info = wx.getWindowInfo ? wx.getWindowInfo() : {}
+           const tabBar = page.getTabBar ? page.getTabBar() : null
+           const round = value =>
+             typeof value === 'number' && isFinite(value)
+               ? Math.round(value * 10) / 10
+               : null
+           const rect = index => res[index] || null
+           resolve({
+             windowHeight: round(info.windowHeight),
+             bodyMaxHeight: round(sheet.data.bodyMaxHeight),
+             kbHeight: round(sheet.data.kbHeight),
+             sheetMaxHeight: round(sheet.data.sheetMaxHeight),
+             recipeOpen: Boolean(sheet.data.recipeOpen),
+             recipeLinesLen: (sheet.data.recipeLines || []).length,
+             tabBarHidden:
+               tabBar && tabBar.data ? Boolean(tabBar.data.hidden) : null,
+             bodyHeight: rect(0) ? round(rect(0).height) : null,
+             bodyBottom: rect(0) ? round(rect(0).bottom) : null,
+             footTop: rect(1) ? round(rect(1).top) : null,
+             footBottom: rect(1) ? round(rect(1).bottom) : null,
+             confirmTop: rect(2) ? round(rect(2).top) : null,
+             confirmBottom: rect(2) ? round(rect(2).bottom) : null,
+             confirmHeight: rect(2) ? round(rect(2).height) : null,
+             closeTop: rect(3) ? round(rect(3).top) : null,
+             closeBottom: rect(3) ? round(rect(3).bottom) : null,
+             sheetTop: rect(4) ? round(rect(4).top) : null
+           })
+         })
+       })`
+    )
+  const skuLayoutGeom = await measureSkuSheet()
+  check(
+    'mock 规格弹层做法展开后加购按钮在视口内',
+    Boolean(skuLayoutTarget) &&
+      Boolean(skuLayoutGeom) &&
+      Number(skuLayoutGeom.confirmHeight) > 0 &&
+      Number(skuLayoutGeom.confirmTop) >= 0 &&
+      Number(skuLayoutGeom.confirmBottom) <= Number(skuLayoutGeom.windowHeight) &&
+      Number(skuLayoutGeom.footBottom) <= Number(skuLayoutGeom.windowHeight),
+    skuLayoutGeom && skuLayoutGeom.confirmTop !== null
+      ? `按钮 ${skuLayoutGeom.confirmTop}~${skuLayoutGeom.confirmBottom} / 视口 ${skuLayoutGeom.windowHeight}`
+      : '未取到按钮位置'
+  )
+  check(
+    'mock 规格弹层打开时隐藏 tabBar 且做法已展开',
+    Boolean(skuLayoutGeom) &&
+      skuLayoutGeom.tabBarHidden === true &&
+      skuLayoutGeom.recipeOpen === true &&
+      Number(skuLayoutGeom.recipeLinesLen) > 0,
+    skuLayoutGeom
+      ? `tabBar=${
+          skuLayoutGeom.tabBarHidden === true ? '已隐藏' : String(skuLayoutGeom.tabBarHidden)
+        } · 做法 ${skuLayoutGeom.recipeLinesLen} 行`
+      : '未取到状态'
+  )
+  await invoke(
+    mp,
+    `const list = page._available || []
+     const base = list.find(item => item.recipe && item.recipe.length) || list[0]
+     if (!base) return false
+     const parts = []
+     for (let i = 0; i < 120; i += 1) {
+       parts.push('步骤 ' + (i + 1) + '：把锅烧热，倒油，慢慢炒香。')
+     }
+     const dish = Object.assign({}, base, { recipe: parts.join('\\n') })
+     page.openSku(dish)
+     const sheet = page.selectComponent('#skuSheet')
+     if (sheet && !sheet.data.recipeOpen) sheet.onToggleRecipe()
+     return true`
+  )
+  await sleep(700)
+  const skuStressGeom = await measureSkuSheet()
+  check(
+    'mock 规格弹层超长做法时滚动区限高且加购可见',
+    Boolean(skuStressGeom) &&
+      skuStressGeom.recipeOpen === true &&
+      Number(skuStressGeom.recipeLinesLen) >= 120 &&
+      Number(skuStressGeom.bodyMaxHeight) > 0 &&
+      Number(skuStressGeom.bodyHeight) <= Number(skuStressGeom.bodyMaxHeight) + 1 &&
+      Number(skuStressGeom.confirmTop) >= 0 &&
+      Number(skuStressGeom.confirmBottom) <= Number(skuStressGeom.windowHeight),
+    skuStressGeom && skuStressGeom.bodyHeight !== null
+      ? `做法 ${skuStressGeom.recipeLinesLen} 行·滚动区 ${skuStressGeom.bodyHeight}px·上限 ${skuStressGeom.bodyMaxHeight}px·按钮底 ${skuStressGeom.confirmBottom} / 视口 ${skuStressGeom.windowHeight}`
+      : '未取到布局数据'
+  )
+  // 键盘弹起：弹层上移到键盘上方，顶部关闭按钮必须仍在视口内、加购仍在键盘上方
+  await invoke(
+    mp,
+    "const sheet = page.selectComponent('#skuSheet'); if (!sheet) return false; sheet.onNoteKb({ detail: { height: 300 } }); return true"
+  )
+  await sleep(500)
+  const skuKbGeom = await measureSkuSheet()
+  check(
+    'mock 规格弹层键盘弹起时整体上移且关闭按钮可见',
+    Boolean(skuKbGeom) &&
+      skuKbGeom.kbHeight === 300 &&
+      Number(skuKbGeom.sheetTop) >= 0 &&
+      Number(skuKbGeom.closeTop) >= 0 &&
+      Number(skuKbGeom.closeBottom) <= Number(skuKbGeom.windowHeight) &&
+      Number(skuKbGeom.confirmBottom) <=
+        Number(skuKbGeom.windowHeight) - 300 + 0.5,
+    skuKbGeom && skuKbGeom.sheetTop !== null
+      ? `sheet 顶 ${skuKbGeom.sheetTop} · 关闭 ${skuKbGeom.closeTop}~${skuKbGeom.closeBottom} · 按钮底 ${skuKbGeom.confirmBottom}（键盘顶 ≈${Number(skuKbGeom.windowHeight) - 300}）`
+      : '未取到键盘布局'
+  )
+  await invoke(
+    mp,
+    "const sheet = page.selectComponent('#skuSheet'); if (sheet) sheet.onNoteBlur(); return true"
+  )
+  await sleep(400)
+  const skuKbReset = await measureSkuSheet()
+  check(
+    'mock 规格弹层键盘收起后恢复原位',
+    Boolean(skuKbReset) &&
+      skuKbReset.kbHeight === 0 &&
+      Number(skuKbReset.confirmBottom) >
+        Number(skuKbReset.windowHeight) - 300,
+    skuKbReset && skuKbReset.confirmBottom !== null
+      ? `kb=${skuKbReset.kbHeight} · 按钮底 ${skuKbReset.confirmBottom} / 视口 ${skuKbReset.windowHeight}`
+      : '未取到复位数据'
+  )
+  await invoke(mp, 'page.onSkuClose()')
+  await sleep(400)
+  const skuTabBarBack = await invoke(
+    mp,
+    "const tabBar = page.getTabBar ? page.getTabBar() : null; return tabBar && tabBar.data ? Boolean(tabBar.data.hidden) : null"
+  )
+  check(
+    'mock 规格弹层关闭后 tabBar 恢复显示',
+    skuTabBarBack === false,
+    skuTabBarBack === false ? '已恢复' : String(skuTabBarBack)
+  )
+  await sleep(300)
   const dishFavTarget = await invoke(
     mp,
     "const list = page.selectAllComponents('.home-dish-card') || []; const comp = list.find(item => item.data.dish && !item.data.favorite); return comp ? comp.data.dish.id : ''"

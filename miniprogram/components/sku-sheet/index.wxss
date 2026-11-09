@@ -26,7 +26,8 @@
   max-height: 88vh;
   display: flex;
   flex-direction: column;
-  padding: 20rpx 28rpx calc(28rpx + env(safe-area-inset-bottom));
+  /* 底部操作栏改为绝对定位钉在弹层底部，padding-bottom 预留它的高度，防止被长内容挤出屏幕 */
+  padding: 20rpx 28rpx calc(150rpx + env(safe-area-inset-bottom));
   background: #FFFDF6;
   border-top: 4rpx solid #111111;
   border-radius: 44rpx 44rpx 0 0;
@@ -175,7 +176,8 @@
 }
 
 .body {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   max-height: 46vh;
   margin-top: 8rpx;
 }
@@ -306,11 +308,16 @@
 }
 
 .foot {
+  position: absolute;
+  left: 28rpx;
+  right: 28rpx;
+  bottom: calc(30rpx + env(safe-area-inset-bottom));
   display: flex;
   align-items: center;
   gap: 16rpx;
-  margin-top: 16rpx;
+  flex-shrink: 0;
   padding-top: 20rpx;
+  background: #FFFDF6;
   border-top: 3rpx dashed #111111;
 }
 

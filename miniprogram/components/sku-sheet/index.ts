@@ -18,7 +18,20 @@ Component({
     recipeLines: [] as string[],
     recipeOpen: false,
     favorite: false,
-    imageFailed: false
+    imageFailed: false,
+    // 滚动区高度上限（px）。部分机型内核不认 vh/flex 约束，
+    // 内容一长（做法展开）会把底部「加购」顶出屏幕，这里用 px 兜底。
+    bodyMaxHeight: 0,
+    windowHeight: 0,
+    // 键盘弹起时给 .sheet 的 max-height（px）：弹层被 mask 的 padding 顶到键盘上方后，
+    // 高度必须同步缩到「视口 - 键盘」，否则顶部（含 × 关闭按钮）会被挤出屏幕
+    sheetMaxHeight: 0,
+    // 备注输入时的键盘高度（px），弹层整体上移避免盖住「加购」
+    kbHeight: 0
+  },
+
+  attached() {
+    this.measureBody()
   },
 
   observers: {
@@ -30,6 +43,27 @@ Component({
   },
 
   methods: {
+    measureBody() {
+      let height = 0
+      try {
+        const info: any = wx.getWindowInfo
+          ? wx.getWindowInfo()
+          : wx.getSystemInfoSync()
+        height = Number(info.windowHeight || info.screenHeight || 0)
+      } catch (e) {
+        height = 0
+      }
+      if (height > 0) {
+        const bodyMaxHeight = Math.round(height * 0.46)
+        if (
+          bodyMaxHeight !== this.data.bodyMaxHeight ||
+          height !== this.data.windowHeight
+        ) {
+          this.setData({ bodyMaxHeight, windowHeight: height })
+        }
+      }
+    },
+
     reset(dish: any) {
       // 自定义组件属性里的空数组可能被序列化成对象，这里统一兜底
       const spicyLevels = Array.isArray(dish.spicyLevels)
@@ -52,8 +86,13 @@ Component({
         recipeLines,
         recipeOpen: false,
         favorite: favorites.has(dish.id),
-        imageFailed: false
+        imageFailed: false,
+        kbHeight: 0,
+        sheetMaxHeight: 0
       })
+      if (!this.data.bodyMaxHeight) {
+        this.measureBody()
+      }
     },
 
     onImageError() {
@@ -85,6 +124,34 @@ Component({
 
     onNote(e: any) {
       this.setData({ note: e.detail.value })
+    },
+
+    onNoteFocus(e: any) {
+      this.applyKeyboard(Number((e.detail && e.detail.height) || 0))
+    },
+
+    onNoteBlur() {
+      this.applyKeyboard(0)
+    },
+
+    onNoteKb(e: any) {
+      this.applyKeyboard(Number((e.detail && e.detail.height) || 0))
+    },
+
+    applyKeyboard(rawHeight: number) {
+      const kbHeight = rawHeight > 0 ? Math.round(rawHeight) : 0
+      const windowHeight = this.data.windowHeight || 0
+      const sheetMaxHeight =
+        kbHeight > 0 && windowHeight > 0
+          ? Math.max(160, Math.round(windowHeight - kbHeight - 16))
+          : 0
+      if (
+        kbHeight === this.data.kbHeight &&
+        sheetMaxHeight === this.data.sheetMaxHeight
+      ) {
+        return
+      }
+      this.setData({ kbHeight, sheetMaxHeight })
     },
 
     onToggleRecipe() {
