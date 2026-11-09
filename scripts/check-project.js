@@ -44,6 +44,47 @@ for (const page of appJson.pages || []) {
   }
 }
 
+// 2.5 sitemap 中的页面必须存在于 app.json，action 合法并保留 allow * 兜底
+const sitemapRel = appJson.sitemapLocation || 'sitemap.json'
+const sitemapPath = path.join(ROOT, sitemapRel)
+if (!fs.existsSync(sitemapPath)) {
+  errors.push(`缺少 sitemap 文件: ${sitemapRel}`)
+} else {
+  let sitemap = null
+  try {
+    sitemap = JSON.parse(fs.readFileSync(sitemapPath, 'utf8'))
+  } catch (e) {
+    errors.push(`sitemap 解析失败: ${e.message}`)
+  }
+  if (sitemap) {
+    const pages = new Set(appJson.pages || [])
+    const rules = Array.isArray(sitemap.rules) ? sitemap.rules : []
+    if (!rules.length) {
+      errors.push('sitemap 没有任何规则')
+    }
+    rules.forEach((rule, index) => {
+      const page = rule && rule.page
+      if (!page) {
+        errors.push(`sitemap 第 ${index + 1} 条规则缺少 page`)
+        return
+      }
+      if (page !== '*' && !pages.has(page)) {
+        errors.push(`sitemap 引用了不存在的页面: ${page}`)
+      }
+      if (rule.action !== 'allow' && rule.action !== 'disallow') {
+        errors.push(`sitemap 规则 action 非法: ${page} -> ${rule.action}`)
+      }
+    })
+    if (
+      !rules.some(
+        rule => rule && rule.page === '*' && rule.action === 'allow'
+      )
+    ) {
+      warnings.push('sitemap 建议以 allow * 兜底，避免未列出的页面不可索引')
+    }
+  }
+}
+
 // 3. usingComponents 指向的组件文件存在
 for (const file of files.filter(f => f.endsWith('.json'))) {
   let json
